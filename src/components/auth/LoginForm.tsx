@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from "@/context/AuthContext";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -13,17 +14,20 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signIn, user } = useAuth();
+
+  // Redirect if already logged in
+  if (user) {
+    navigate('/dashboard');
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // This is a mock authentication - would be replaced with actual auth logic
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate successful login
-      localStorage.setItem("user", JSON.stringify({ email }));
+      await signIn(email, password);
       
       toast({
         title: "Login successful",
@@ -31,10 +35,10 @@ const LoginForm = () => {
       });
       
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from "@/context/AuthContext";
 
 const SignupForm = () => {
   const [email, setEmail] = useState("");
@@ -16,6 +17,13 @@ const SignupForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signUp, user } = useAuth();
+
+  // Redirect if already logged in
+  if (user) {
+    navigate('/dashboard');
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,11 +40,7 @@ const SignupForm = () => {
     setIsLoading(true);
     
     try {
-      // This is a mock signup - would be replaced with actual auth logic
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate successful signup
-      localStorage.setItem("user", JSON.stringify({ email, name }));
+      await signUp(email, password, name);
       
       toast({
         title: "Account created",
@@ -44,10 +48,10 @@ const SignupForm = () => {
       });
       
       navigate("/onboarding");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Signup failed",
-        description: "There was an error creating your account. Please try again.",
+        description: error.message || "There was an error creating your account. Please try again.",
         variant: "destructive",
       });
     } finally {

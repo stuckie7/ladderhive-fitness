@@ -3,42 +3,71 @@ import AppLayout from "@/components/layout/AppLayout";
 import UserProfile from "@/components/profile/UserProfile";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const Profile = () => {
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   useEffect(() => {
-    // Get user data from localStorage
     const fetchUserData = async () => {
+      if (!user) return;
+      
       try {
-        // Simulate network delay for demonstration purposes
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Fetch user profile data
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
         
-        const user = localStorage.getItem("user");
-        if (user) {
-          const parsedUser = JSON.parse(user);
-          
-          // Add some mock stats for the profile
-          setUserData({
-            ...parsedUser,
-            stats: {
-              workoutsCompleted: 3,
-              totalMinutes: 135,
-              streakDays: 2,
-              caloriesBurned: 450
-            }
-          });
-        }
-      } catch (error) {
-        console.error("Error parsing user data:", error);
+        if (error) throw error;
+        
+        // Fetch user workout stats
+        const { data: completedWorkouts, error: workoutsError } = await supabase
+          .from('user_workouts')
+          .select('*, workout:workouts(*)')
+          .eq('user_id', user.id)
+          .eq('status', 'completed');
+        
+        if (workoutsError) throw workoutsError;
+        
+        // Calculate stats
+        const totalMinutes = completedWorkouts.reduce((sum, workout) => sum + workout.workout.duration, 0);
+        const caloriesBurned = Math.round(totalMinutes * 6.5); // Simple estimation
+        
+        // Calculate streak (placeholder logic - would need more complex date-based calculations in real app)
+        const streakDays = Math.min(completedWorkouts.length, 5);
+        
+        setUserData({
+          ...profile,
+          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email,
+          email: user.email,
+          stats: {
+            workoutsCompleted: completedWorkouts.length,
+            totalMinutes,
+            streakDays,
+            caloriesBurned
+          }
+        });
+      } catch (error: any) {
+        console.error("Error fetching user data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile data. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchUserData();
-  }, []);
+  }, [user, toast]);
   
   return (
     <AppLayout>

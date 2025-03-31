@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
 import { Button } from "@/components/ui/button";
@@ -20,93 +20,92 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
-// Mock workouts data
-const mockWorkouts = [
-  {
-    id: "1",
-    title: "Full Body Strength",
-    description: "Build strength with this full body workout focusing on compound movements.",
-    duration: 45,
-    exercises: 8,
-    difficulty: "Intermediate"
-  },
-  {
-    id: "2",
-    title: "Upper Body Push",
-    description: "Focus on chest, shoulders and triceps with this pushing workout.",
-    duration: 40,
-    exercises: 6,
-    difficulty: "Intermediate"
-  },
-  {
-    id: "3",
-    title: "Lower Body Strength",
-    description: "Build leg strength with this high-intensity lower body workout.",
-    duration: 50,
-    exercises: 7,
-    difficulty: "Advanced"
-  },
-  {
-    id: "4",
-    title: "Core Crusher",
-    description: "Strengthen your core with this targeted abdominal and lower back workout.",
-    duration: 30,
-    exercises: 6,
-    difficulty: "Beginner"
-  },
-  {
-    id: "5",
-    title: "HIIT Cardio",
-    description: "Boost your cardiovascular fitness with this high-intensity interval training session.",
-    duration: 25,
-    exercises: 10,
-    difficulty: "Advanced"
-  },
-  {
-    id: "6",
-    title: "Mobility Flow",
-    description: "Improve your range of motion and joint health with this mobility routine.",
-    duration: 35,
-    exercises: 8,
-    difficulty: "Beginner"
-  }
-];
-
-// Mock completed workouts
-const mockCompletedWorkouts = [
-  {
-    id: "7",
-    title: "Full Body Strength",
-    description: "Completed on June 10, 2023",
-    duration: 45,
-    exercises: 8,
-    difficulty: "Intermediate"
-  },
-  {
-    id: "8",
-    title: "HIIT Cardio",
-    description: "Completed on June 8, 2023",
-    duration: 25,
-    exercises: 10,
-    difficulty: "Advanced"
-  },
-  {
-    id: "9",
-    title: "Upper Body Push",
-    description: "Completed on June 6, 2023",
-    duration: 40,
-    exercises: 6,
-    difficulty: "Intermediate"
-  }
-];
+interface Workout {
+  id: string;
+  title: string;
+  description: string;
+  duration: number;
+  exercises: number;
+  difficulty: string;
+  date?: string;
+}
 
 const Workouts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [durationFilter, setDurationFilter] = useState("any");
+  const [allWorkouts, setAllWorkouts] = useState<Workout[]>([]);
+  const [completedWorkouts, setCompletedWorkouts] = useState<Workout[]>([]);
+  const [plannedWorkouts, setPlannedWorkouts] = useState<Workout[]>([]);
+  const [savedWorkouts, setSavedWorkouts] = useState<Workout[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const filteredWorkouts = mockWorkouts.filter(workout => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const fetchWorkouts = async () => {
+      try {
+        // Fetch all workouts
+        const { data: workoutsData, error: workoutsError } = await supabase
+          .from('workouts')
+          .select('*');
+        
+        if (workoutsError) throw workoutsError;
+        
+        // Fetch user workouts (completed, planned, saved)
+        const { data: userWorkoutsData, error: userWorkoutsError } = await supabase
+          .from('user_workouts')
+          .select('*, workout:workouts(*)')
+          .eq('user_id', user?.id || '');
+        
+        if (userWorkoutsError) throw userWorkoutsError;
+        
+        // Process workouts data
+        setAllWorkouts(workoutsData as Workout[]);
+        
+        // Process user workouts
+        const completed = userWorkoutsData
+          .filter(uw => uw.status === 'completed')
+          .map(uw => ({
+            ...uw.workout,
+            description: `Completed on ${new Date(uw.completed_at).toLocaleDateString()}`,
+          }));
+        
+        const planned = userWorkoutsData
+          .filter(uw => uw.status === 'planned')
+          .map(uw => ({
+            ...uw.workout,
+            date: new Date(uw.planned_for).toLocaleDateString(),
+          }));
+        
+        const saved = userWorkoutsData
+          .filter(uw => uw.status === 'saved')
+          .map(uw => uw.workout);
+        
+        setCompletedWorkouts(completed);
+        setPlannedWorkouts(planned);
+        setSavedWorkouts(saved);
+      } catch (error: any) {
+        console.error("Error fetching workouts:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load workouts. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchWorkouts();
+  }, [user, toast]);
+  
+  const filteredWorkouts = allWorkouts.filter(workout => {
     // Apply search filter
     if (searchQuery && !workout.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -119,7 +118,6 @@ const Workouts = () => {
     
     // Apply duration filter
     if (durationFilter !== "any") {
-      const duration = parseInt(durationFilter);
       if (durationFilter === "lt30" && workout.duration >= 30) {
         return false;
       } else if (durationFilter === "30-45" && (workout.duration < 30 || workout.duration > 45)) {
@@ -131,6 +129,16 @@ const Workouts = () => {
     
     return true;
   });
+  
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <p>Loading workouts...</p>
+        </div>
+      </AppLayout>
+    );
+  }
   
   return (
     <AppLayout>
@@ -226,33 +234,63 @@ const Workouts = () => {
           </TabsContent>
           
           <TabsContent value="my-plan">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockWorkouts.slice(0, 3).map((workout) => (
-                <WorkoutCard 
-                  key={workout.id} 
-                  workout={{
-                    ...workout,
-                    date: ["Today", "Tomorrow", "Wed, Jun 12"][parseInt(workout.id) - 1]
-                  }} 
-                />
-              ))}
-            </div>
+            {plannedWorkouts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {plannedWorkouts.map((workout) => (
+                  <WorkoutCard key={workout.id} workout={workout} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">You don't have any planned workouts yet.</p>
+                <Button 
+                  className="mt-4 bg-fitness-primary hover:bg-fitness-primary/90"
+                  onClick={() => document.querySelector('[value="all"]')?.dispatchEvent(new MouseEvent('click'))}
+                >
+                  Browse Workouts
+                </Button>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="completed">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockCompletedWorkouts.map((workout) => (
-                <WorkoutCard key={workout.id} workout={workout} />
-              ))}
-            </div>
+            {completedWorkouts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {completedWorkouts.map((workout) => (
+                  <WorkoutCard key={workout.id} workout={workout} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">You haven't completed any workouts yet.</p>
+                <Button 
+                  className="mt-4 bg-fitness-primary hover:bg-fitness-primary/90"
+                  onClick={() => document.querySelector('[value="all"]')?.dispatchEvent(new MouseEvent('click'))}
+                >
+                  Start a Workout
+                </Button>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="saved">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockWorkouts.slice(3, 5).map((workout) => (
-                <WorkoutCard key={workout.id} workout={workout} />
-              ))}
-            </div>
+            {savedWorkouts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {savedWorkouts.map((workout) => (
+                  <WorkoutCard key={workout.id} workout={workout} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">You haven't saved any workouts yet.</p>
+                <Button 
+                  className="mt-4 bg-fitness-primary hover:bg-fitness-primary/90"
+                  onClick={() => document.querySelector('[value="all"]')?.dispatchEvent(new MouseEvent('click'))}
+                >
+                  Browse Workouts
+                </Button>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -25,6 +24,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -36,31 +37,53 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const location = useLocation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { user, signOut } = useAuth();
   
   useEffect(() => {
     // Check if user is logged in
-    const user = localStorage.getItem("user");
     if (!user) {
       navigate("/login");
       return;
     }
     
-    try {
-      setUserData(JSON.parse(user));
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      localStorage.removeItem("user");
-      navigate("/login");
-    }
-  }, [navigate]);
+    // Fetch user profile data
+    const fetchUserProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) throw error;
+        
+        setUserData({
+          ...data,
+          email: user.email,
+          name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || user.email
+        });
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setUserData({
+          email: user.email,
+          name: user.email
+        });
+      }
+    };
+    
+    fetchUserProfile();
+  }, [navigate, user]);
   
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
   
   const getInitials = (name?: string) => {
@@ -72,7 +95,6 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       .toUpperCase();
   };
   
-  // Navigation items
   const navItems = [
     { path: "/dashboard", label: "Dashboard", icon: Home },
     { path: "/workouts", label: "Workouts", icon: Dumbbell },
@@ -87,7 +109,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   };
   
   if (!userData) {
-    return null; // Or a loading spinner
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
   
   return (

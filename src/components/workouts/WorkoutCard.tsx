@@ -1,8 +1,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Dumbbell } from "lucide-react";
+import { Calendar, Clock, Dumbbell, Bookmark, BookmarkCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface WorkoutCardProps {
   workout: {
@@ -14,10 +18,15 @@ interface WorkoutCardProps {
     difficulty: string;
     date?: string;
   };
+  isSaved?: boolean;
 }
 
-const WorkoutCard = ({ workout }: WorkoutCardProps) => {
+const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [saved, setSaved] = useState(isSaved);
+  const [isLoading, setIsLoading] = useState(false);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
@@ -31,6 +40,56 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+    }
+  };
+
+  const handleSaveWorkout = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      if (saved) {
+        // Remove from saved
+        const { error } = await supabase
+          .from('user_workouts')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('workout_id', workout.id)
+          .eq('status', 'saved');
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Workout removed",
+          description: "The workout has been removed from your saved list.",
+        });
+        setSaved(false);
+      } else {
+        // Add to saved
+        const { error } = await supabase
+          .from('user_workouts')
+          .insert({
+            user_id: user.id,
+            workout_id: workout.id,
+            status: 'saved'
+          });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Workout saved",
+          description: "The workout has been added to your saved list.",
+        });
+        setSaved(true);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save workout. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,12 +124,22 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
           )}
         </div>
       </CardContent>
-      <CardFooter className="pt-0">
+      <CardFooter className="pt-0 flex gap-2">
         <Button 
-          className="w-full bg-fitness-primary hover:bg-fitness-primary/90"
+          className="flex-1 bg-fitness-primary hover:bg-fitness-primary/90"
           onClick={() => navigate(`/workout/${workout.id}`)}
         >
           Start Workout
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="icon"
+          disabled={isLoading}
+          onClick={handleSaveWorkout}
+          className={saved ? "text-fitness-primary" : ""}
+        >
+          {saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
         </Button>
       </CardFooter>
     </Card>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { Slider } from "@/components/ui/slider";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const OnboardingForm = () => {
   const [activeTab, setActiveTab] = useState("basics");
@@ -22,6 +23,7 @@ const OnboardingForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleAddGoal = (goal: string) => {
     if (fitnessGoals.includes(goal)) {
@@ -83,31 +85,26 @@ const OnboardingForm = () => {
   };
 
   const handleSubmit = async () => {
+    if (!user) return;
+    
     setIsLoading(true);
     
     try {
-      // Mock saving user profile data
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Get existing user data from localStorage
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      
-      // Update with profile data
-      const updatedUserData = {
-        ...userData,
-        profile: {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
           height,
           weight,
           age,
           gender,
-          fitnessLevel,
-          fitnessGoals,
-          workoutDays
-        }
-      };
+          fitness_level: fitnessLevel,
+          fitness_goals: fitnessGoals,
+          workout_days: workoutDays,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
       
-      // Save updated user data
-      localStorage.setItem("user", JSON.stringify(updatedUserData));
+      if (error) throw error;
       
       toast({
         title: "Profile setup complete",
@@ -115,10 +112,10 @@ const OnboardingForm = () => {
       });
       
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "There was an error saving your profile. Please try again.",
+        description: error.message || "There was an error saving your profile. Please try again.",
         variant: "destructive",
       });
     } finally {

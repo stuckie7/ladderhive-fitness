@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 
 // Pages
 import Index from "./pages/Index";
@@ -16,6 +17,9 @@ import Workouts from "./pages/Workouts";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import Profile from "./pages/Profile";
 
+// Routes protection component
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -24,17 +28,24 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/workouts" element={<Workouts />} />
-          <Route path="/workout/:id" element={<WorkoutDetail />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            {/* Protected routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/workouts" element={<Workouts />} />
+              <Route path="/workout/:id" element={<WorkoutDetail />} />
+              <Route path="/profile" element={<Profile />} />
+            </Route>
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
