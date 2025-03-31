@@ -15,7 +15,7 @@ const OnboardingForm = () => {
   const [height, setHeight] = useState(175); // in cm
   const [weight, setWeight] = useState(70); // in kg
   const [age, setAge] = useState(30);
-  const [gender, setGender] = useState(""); 
+  const [gender, setGender] = useState("not-selected"); 
   const [fitnessLevel, setFitnessLevel] = useState("");
   const [fitnessGoals, setFitnessGoals] = useState<string[]>([]);
   const [workoutDays, setWorkoutDays] = useState<string[]>([]);
@@ -182,6 +182,7 @@ const OnboardingForm = () => {
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="not-selected">Select gender</SelectItem>
                   <SelectItem value="male">Male</SelectItem>
                   <SelectItem value="female">Female</SelectItem>
                   <SelectItem value="non-binary">Non-binary</SelectItem>

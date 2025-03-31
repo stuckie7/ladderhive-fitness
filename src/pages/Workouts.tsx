@@ -103,8 +103,8 @@ const mockCompletedWorkouts = [
 
 const Workouts = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [difficultyFilter, setDifficultyFilter] = useState("");
-  const [durationFilter, setDurationFilter] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState("all");
+  const [durationFilter, setDurationFilter] = useState("any");
   
   const filteredWorkouts = mockWorkouts.filter(workout => {
     // Apply search filter
@@ -113,18 +113,18 @@ const Workouts = () => {
     }
     
     // Apply difficulty filter
-    if (difficultyFilter && workout.difficulty.toLowerCase() !== difficultyFilter.toLowerCase()) {
+    if (difficultyFilter !== "all" && workout.difficulty.toLowerCase() !== difficultyFilter.toLowerCase()) {
       return false;
     }
     
     // Apply duration filter
-    if (durationFilter) {
+    if (durationFilter !== "any") {
       const duration = parseInt(durationFilter);
-      if (durationFilter === "30" && workout.duration >= 30) {
+      if (durationFilter === "lt30" && workout.duration >= 30) {
         return false;
       } else if (durationFilter === "30-45" && (workout.duration < 30 || workout.duration > 45)) {
         return false;
-      } else if (durationFilter === "45+" && workout.duration <= 45) {
+      } else if (durationFilter === "gt45" && workout.duration <= 45) {
         return false;
       }
     }
@@ -155,7 +155,7 @@ const Workouts = () => {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Levels</SelectItem>
+                <SelectItem value="all">All Levels</SelectItem>
                 <SelectItem value="beginner">Beginner</SelectItem>
                 <SelectItem value="intermediate">Intermediate</SelectItem>
                 <SelectItem value="advanced">Advanced</SelectItem>
@@ -170,20 +170,20 @@ const Workouts = () => {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any Duration</SelectItem>
-                <SelectItem value="30">&lt; 30 min</SelectItem>
+                <SelectItem value="any">Any Duration</SelectItem>
+                <SelectItem value="lt30">&lt; 30 min</SelectItem>
                 <SelectItem value="30-45">30-45 min</SelectItem>
-                <SelectItem value="45+">&gt; 45 min</SelectItem>
+                <SelectItem value="gt45">&gt; 45 min</SelectItem>
               </SelectContent>
             </Select>
             
-            {(searchQuery || difficultyFilter || durationFilter) && (
+            {(searchQuery || difficultyFilter !== "all" || durationFilter !== "any") && (
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setSearchQuery("");
-                  setDifficultyFilter("");
-                  setDurationFilter("");
+                  setDifficultyFilter("all");
+                  setDurationFilter("any");
                 }}
               >
                 Clear Filters
@@ -215,8 +215,8 @@ const Workouts = () => {
                   className="mt-4"
                   onClick={() => {
                     setSearchQuery("");
-                    setDifficultyFilter("");
-                    setDurationFilter("");
+                    setDifficultyFilter("all");
+                    setDurationFilter("any");
                   }}
                 >
                   Clear Filters
