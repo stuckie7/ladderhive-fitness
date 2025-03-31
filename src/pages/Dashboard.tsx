@@ -5,7 +5,7 @@ import UserProfile from "@/components/profile/UserProfile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Plus, TrendingUp, Calendar } from "lucide-react";
+import { Trophy, Plus, TrendingUp, Calendar, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // Mock data

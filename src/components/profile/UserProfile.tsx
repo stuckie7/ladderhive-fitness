@@ -1,4 +1,3 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import {
   Calendar, 
   Clock, 
   Dumbbell, 
-  Fire, 
+  Flame, 
   ChevronRight,
   Settings
 } from "lucide-react";
@@ -40,7 +39,6 @@ interface UserProfileProps {
 const UserProfile = ({ userData }: UserProfileProps) => {
   const navigate = useNavigate();
   
-  // Default stats if not provided
   const stats = userData.stats || {
     workoutsCompleted: 0,
     totalMinutes: 0,
@@ -121,7 +119,7 @@ const UserProfile = ({ userData }: UserProfileProps) => {
             
             <div className="stat-card">
               <div className="flex flex-col items-center">
-                <Fire className="h-5 w-5 text-fitness-primary mb-1" />
+                <Flame className="h-5 w-5 text-fitness-primary mb-1" />
                 <p className="text-xl font-semibold">{stats.caloriesBurned}</p>
                 <p className="text-xs text-muted-foreground">Calories</p>
               </div>
