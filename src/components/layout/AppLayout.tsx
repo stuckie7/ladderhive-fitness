@@ -31,8 +31,17 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
+interface UserProfileData {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  name?: string;
+  [key: string]: any;
+}
+
 const AppLayout = ({ children }: AppLayoutProps) => {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserProfileData | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -57,14 +66,19 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         
         if (error) throw error;
         
-        setUserData({
-          ...data,
-          email: user.email,
-          name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || user.email
-        });
+        if (data) {
+          setUserData({
+            ...data,
+            email: user.email,
+            name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || user.email
+          });
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
         setUserData({
+          id: user.id,
+          first_name: null,
+          last_name: null,
           email: user.email,
           name: user.email
         });
@@ -149,7 +163,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-3">
               <Avatar>
-                <AvatarImage src="" alt={userData.name} />
+                <AvatarImage src="" alt={userData.name || ""} />
                 <AvatarFallback className="bg-fitness-primary text-white">
                   {getInitials(userData.name)}
                 </AvatarFallback>

@@ -7,8 +7,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 
+interface UserProfileData {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  name: string;
+  profile?: any;
+  stats?: {
+    workoutsCompleted: number;
+    totalMinutes: number;
+    streakDays: number;
+    caloriesBurned: number;
+  };
+}
+
+interface UserWorkout {
+  id: string;
+  user_id: string;
+  workout_id: string;
+  status: string;
+  completed_at: string | null;
+  workout: {
+    id: string;
+    title: string;
+    description: string;
+    duration: number;
+    difficulty: string;
+  };
+}
+
 const Profile = () => {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -37,23 +67,29 @@ const Profile = () => {
         if (workoutsError) throw workoutsError;
         
         // Calculate stats
-        const totalMinutes = completedWorkouts.reduce((sum, workout) => sum + workout.workout.duration, 0);
+        const typedWorkouts = completedWorkouts as unknown as UserWorkout[];
+        const totalMinutes = typedWorkouts.reduce((sum, workout) => 
+          sum + (workout.workout?.duration || 0), 0);
         const caloriesBurned = Math.round(totalMinutes * 6.5); // Simple estimation
         
         // Calculate streak (placeholder logic - would need more complex date-based calculations in real app)
-        const streakDays = Math.min(completedWorkouts.length, 5);
+        const streakDays = Math.min(typedWorkouts.length, 5);
         
-        setUserData({
-          ...profile,
-          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email,
-          email: user.email,
-          stats: {
-            workoutsCompleted: completedWorkouts.length,
-            totalMinutes,
-            streakDays,
-            caloriesBurned
-          }
-        });
+        if (profile) {
+          setUserData({
+            id: user.id,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email || '',
+            email: user.email || '',
+            stats: {
+              workoutsCompleted: typedWorkouts.length,
+              totalMinutes,
+              streakDays,
+              caloriesBurned
+            }
+          });
+        }
       } catch (error: any) {
         console.error("Error fetching user data:", error);
         toast({

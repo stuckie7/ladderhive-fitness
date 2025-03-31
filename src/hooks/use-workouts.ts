@@ -13,12 +13,17 @@ interface Workout {
   difficulty: string;
 }
 
+interface SaveWorkoutResult {
+  success: boolean;
+  error?: any;
+}
+
 export const useWorkouts = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const saveWorkout = async (workoutId: string) => {
+  const saveWorkout = async (workoutId: string): Promise<SaveWorkoutResult> => {
     if (!user) return { success: false };
     
     setIsLoading(true);
@@ -51,7 +56,7 @@ export const useWorkouts = () => {
     }
   };
 
-  const unsaveWorkout = async (workoutId: string) => {
+  const unsaveWorkout = async (workoutId: string): Promise<SaveWorkoutResult> => {
     if (!user) return { success: false };
     
     setIsLoading(true);
@@ -83,7 +88,7 @@ export const useWorkouts = () => {
     }
   };
 
-  const completeWorkout = async (workoutId: string) => {
+  const completeWorkout = async (workoutId: string): Promise<SaveWorkoutResult> => {
     if (!user) return { success: false };
     
     setIsLoading(true);
@@ -117,7 +122,7 @@ export const useWorkouts = () => {
     }
   };
 
-  const scheduledWorkout = async (workoutId: string, date: Date) => {
+  const scheduledWorkout = async (workoutId: string, date: Date): Promise<SaveWorkoutResult> => {
     if (!user) return { success: false };
     
     setIsLoading(true);

@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 const OnboardingForm = () => {
   const [activeTab, setActiveTab] = useState("basics");
@@ -179,7 +180,6 @@ const OnboardingForm = () => {
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="not-selected">Select gender</SelectItem>
                   <SelectItem value="male">Male</SelectItem>
                   <SelectItem value="female">Female</SelectItem>
                   <SelectItem value="non-binary">Non-binary</SelectItem>
