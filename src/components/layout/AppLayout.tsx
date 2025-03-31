@@ -149,14 +149,13 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         
         <div className="flex-1 flex flex-col min-h-screen max-h-screen overflow-hidden">
           <header className="h-16 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 lg:px-6">
-            <SidebarTrigger 
-              className={isMobile ? "block mr-2" : "hidden"} 
-              asChild
-            >
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SidebarTrigger>
+            {isMobile && (
+              <SidebarTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SidebarTrigger>
+            )}
             <div className="flex-1">
               <h1 className="text-lg font-semibold">
                 {navItems.find(item => isActive(item.path))?.label || "Dashboard"}
