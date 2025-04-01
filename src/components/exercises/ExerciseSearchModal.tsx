@@ -22,6 +22,7 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ExerciseSearchModalProps {
   open: boolean;
@@ -56,7 +57,7 @@ const ExerciseSearchModal = ({ open, onOpenChange, onAddExercise, workoutId }: E
       console.error("Error searching exercises:", error);
       toast({
         title: "Search failed",
-        description: "Failed to search exercises. Please try again.",
+        description: "Failed to search exercises. Using mock data instead.",
         variant: "destructive",
       });
     } finally {
@@ -106,7 +107,19 @@ const ExerciseSearchModal = ({ open, onOpenChange, onAddExercise, workoutId }: E
         </div>
 
         <div className="mt-4 h-[300px] overflow-y-auto border rounded-md">
-          {searchResults.length > 0 ? (
+          {isSearching ? (
+            <div className="p-4 space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <div className="flex flex-col space-y-2">
+                    <Skeleton className="h-4 w-[200px]" />
+                    <Skeleton className="h-3 w-[150px]" />
+                  </div>
+                  <Skeleton className="h-8 w-16" />
+                </div>
+              ))}
+            </div>
+          ) : searchResults.length > 0 ? (
             <Command>
               <CommandList>
                 <CommandGroup heading="Search Results">
@@ -142,6 +155,9 @@ const ExerciseSearchModal = ({ open, onOpenChange, onAddExercise, workoutId }: E
               <Search className="h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-muted-foreground">
                 {isSearching ? "Searching..." : "Search for exercises to add to your workout"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Try searching for exercises like "push up", "squat", or "bench press"
               </p>
             </div>
           )}

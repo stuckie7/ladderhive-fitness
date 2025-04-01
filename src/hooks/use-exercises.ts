@@ -95,24 +95,16 @@ export const useExercises = () => {
         }));
       }
       
-      // If no results or error from Supabase, fallback to ExerciseDB API
-      // Since the API doesn't have a direct search endpoint, 
-      // we'll fetch all exercises by body parts and filter client-side
-      const bodyParts = await exerciseApi.getBodyParts();
-      const allExercisesPromises = bodyParts.map(part => 
-        exerciseApi.getExercisesByBodyPart(part)
-      );
-      
-      const allExercisesArrays = await Promise.all(allExercisesPromises);
-      const allExercises = allExercisesArrays.flat();
-      
-      // Filter exercises by query (case-insensitive search in name)
-      const filteredExercises = allExercises.filter(ex => 
-        ex.name.toLowerCase().includes(query.toLowerCase())
-      );
-      
-      // Map API response to our Exercise interface for compatibility
-      return filteredExercises.map(mapExerciseResponse);
+      // If no results from Supabase, use the ExerciseDB API with our mock fallback
+      try {
+        const exercises = await exerciseApi.searchExercises(query);
+        console.log("Search results:", exercises);
+        return exercises.map(mapExerciseResponse);
+      } catch (apiError) {
+        console.error("Error searching exercises with external API:", apiError);
+        // Return empty array if both Supabase and API searches fail
+        return [];
+      }
     } catch (error: any) {
       console.error("Error searching exercises:", error);
       toast({
@@ -142,7 +134,7 @@ export const useExercises = () => {
       description: exercise.instructions ? exercise.instructions.join(' ') : '',
       difficulty: mapDifficulty(exercise),
       video_url: null,
-      image_url: exercise.gifUrl
+      image_url: exercise.gifUrl || exercise.image_url
     };
   };
 
