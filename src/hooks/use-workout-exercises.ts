@@ -55,6 +55,20 @@ export const useWorkoutExercises = (workoutId?: string) => {
   const fetchWorkoutExercises = async (id: string) => {
     if (!id) return [];
     
+    // Check if the ID is a valid UUID
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isValidUuid = uuidPattern.test(id);
+    
+    if (!isValidUuid) {
+      console.error("Invalid UUID format:", id);
+      toast({
+        title: "Error",
+        description: "Invalid workout ID format",
+        variant: "destructive",
+      });
+      return [];
+    }
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase

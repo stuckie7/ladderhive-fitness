@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import AppLayout from "@/components/layout/AppLayout";
@@ -29,6 +28,7 @@ const WorkoutDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { 
     exercises: workoutExercises, 
     isLoading: exercisesLoading,
@@ -57,6 +57,16 @@ const WorkoutDetail = () => {
       
       setIsLoading(true);
       try {
+        console.log("Fetching workout with ID:", id);
+        
+        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const isValidUuid = uuidPattern.test(id);
+        
+        if (!isValidUuid) {
+          console.error("Invalid UUID format:", id);
+          throw new Error("Invalid workout ID format. Please check the URL.");
+        }
+        
         const { data, error } = await supabase
           .from('workouts')
           .select('*')
@@ -67,7 +77,6 @@ const WorkoutDetail = () => {
         
         setWorkout(data);
         
-        // Fetch exercises for this workout
         fetchWorkoutExercises(id);
       } catch (error: any) {
         console.error("Error fetching workout:", error);
@@ -76,13 +85,17 @@ const WorkoutDetail = () => {
           description: error.message || "Failed to load workout details",
           variant: "destructive",
         });
+        
+        setTimeout(() => {
+          navigate("/workouts");
+        }, 3000);
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchWorkout();
-  }, [id, toast, fetchWorkoutExercises]);
+  }, [id, toast, fetchWorkoutExercises, navigate]);
 
   const handleAddExercise = async (exercise: Exercise) => {
     if (!id) return;
@@ -112,14 +125,16 @@ const WorkoutDetail = () => {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold mb-4">Workout not found</h1>
-          <p>The workout you're looking for doesn't exist or you don't have access to it.</p>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Workout not found</h1>
+            <p className="text-muted-foreground mb-6">The workout you're looking for doesn't exist or you don't have access to it.</p>
+            <Button onClick={() => navigate("/workouts")}>Back to Workouts</Button>
+          </div>
         </div>
       </AppLayout>
     );
   }
 
-  // Convert workoutExercises to the format expected by ExerciseList
   const exerciseListItems = workoutExercises.map(we => ({
     id: we.id,
     name: we.exercise?.name || "Unknown Exercise",
