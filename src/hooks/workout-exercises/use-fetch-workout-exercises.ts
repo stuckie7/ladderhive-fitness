@@ -12,14 +12,14 @@ export const useFetchWorkoutExercises = () => {
   const fetchWorkoutExercises = async (id: string) => {
     if (!id) return [];
     
-    // Check if the ID is a valid UUID
+    // Check if the ID is a valid UUID before making the request
     const isValidUuid = validateUuid(id);
     
     if (!isValidUuid) {
       console.error("Invalid UUID format:", id);
       toast({
         title: "Error",
-        description: "Invalid workout ID format",
+        description: "Invalid workout ID format. Please check the URL.",
         variant: "destructive",
       });
       return [];

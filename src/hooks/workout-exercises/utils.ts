@@ -45,9 +45,13 @@ export const mapSupabaseExerciseToExercise = (supabaseExercise: SupabaseExercise
   };
 };
 
-// Validate UUID format
+// Validate UUID format - improved to handle hyphens properly
 export const validateUuid = (id: string): boolean => {
+  if (!id) return false;
+  
+  // Standard UUID pattern with hyphens
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  
   return uuidPattern.test(id);
 };
 

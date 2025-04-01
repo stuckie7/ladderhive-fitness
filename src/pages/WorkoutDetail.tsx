@@ -4,11 +4,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import AppLayout from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWorkoutExercises } from "@/hooks/use-workout-exercises";
 import { Exercise } from "@/types/exercise";
+import { validateUuid } from "@/hooks/workout-exercises/utils";
 
-// Import our new components
+// Import our components
 import WorkoutDetailHeader from "@/components/workouts/WorkoutDetailHeader";
 import WorkoutDetailStats from "@/components/workouts/WorkoutDetailStats";
 import WorkoutExerciseSection from "@/components/workouts/WorkoutExerciseSection";
@@ -38,19 +38,31 @@ const WorkoutDetail = () => {
 
   useEffect(() => {
     const fetchWorkout = async () => {
-      if (!id) return;
+      if (!id) {
+        toast({
+          title: "Error",
+          description: "No workout ID provided",
+          variant: "destructive",
+        });
+        setTimeout(() => navigate("/workouts"), 3000);
+        return;
+      }
+      
+      // Validate UUID format before making the request
+      if (!validateUuid(id)) {
+        console.error("Invalid UUID format:", id);
+        toast({
+          title: "Error",
+          description: "Invalid workout ID format. Please check the URL.",
+          variant: "destructive",
+        });
+        setTimeout(() => navigate("/workouts"), 3000);
+        return;
+      }
       
       setIsLoading(true);
       try {
         console.log("Fetching workout with ID:", id);
-        
-        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const isValidUuid = uuidPattern.test(id);
-        
-        if (!isValidUuid) {
-          console.error("Invalid UUID format:", id);
-          throw new Error("Invalid workout ID format. Please check the URL.");
-        }
         
         const { data, error } = await supabase
           .from('workouts')
@@ -62,7 +74,10 @@ const WorkoutDetail = () => {
         
         setWorkout(data);
         
-        fetchWorkoutExercises(id);
+        // Only fetch exercises if we have a valid workout
+        if (data) {
+          fetchWorkoutExercises(id);
+        }
       } catch (error: any) {
         console.error("Error fetching workout:", error);
         toast({
