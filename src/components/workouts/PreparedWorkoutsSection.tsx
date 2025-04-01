@@ -9,7 +9,7 @@ import { ChevronDown, ChevronUp, Dumbbell, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Exercise } from "@/types/exercise";
 import { Workout } from "@/types/workout";
-import { WorkoutExercise } from "@/hooks/workout-exercises/utils";
+import { WorkoutExercise, mapSupabaseExerciseToExercise } from "@/hooks/workout-exercises/utils";
 
 interface PreparedWorkoutsProps {
   currentWorkoutId: string;
@@ -37,6 +37,15 @@ const PreparedWorkoutsSection = ({ currentWorkoutId, onAddExercise }: PreparedWo
         if (error) throw error;
         
         setPreparedWorkouts(data);
+        
+        // Load exercises for all prepared workouts immediately
+        if (data && data.length > 0) {
+          // Immediately load exercises for the first workout to show something by default
+          if (data[0]) {
+            setExpandedWorkout(data[0].id);
+            fetchWorkoutExercises(data[0].id);
+          }
+        }
       } catch (error: any) {
         console.error("Error fetching prepared workouts:", error);
         toast({
@@ -71,7 +80,7 @@ const PreparedWorkoutsSection = ({ currentWorkoutId, onAddExercise }: PreparedWo
       if (error) throw error;
       
       // Transform the data to match our WorkoutExercise type
-      const mappedExercises = data.map(item => ({
+      const mappedExercises: WorkoutExercise[] = data.map(item => ({
         id: item.id,
         workout_id: item.workout_id,
         exercise_id: item.exercise_id,
@@ -80,13 +89,15 @@ const PreparedWorkoutsSection = ({ currentWorkoutId, onAddExercise }: PreparedWo
         weight: item.weight,
         rest_time: item.rest_time,
         order_index: item.order_index,
-        exercise: item.exercise
+        exercise: item.exercise ? mapSupabaseExerciseToExercise(item.exercise) : undefined
       }));
       
-      setWorkoutExercises(prev => ({
-        ...prev,
-        [workoutId]: mappedExercises
-      }));
+      // Update the workoutExercises state with the new data
+      setWorkoutExercises((prev) => {
+        const updatedState = { ...prev };
+        updatedState[workoutId] = mappedExercises;
+        return updatedState;
+      });
     } catch (error: any) {
       console.error("Error fetching workout exercises:", error);
       toast({
@@ -108,20 +119,11 @@ const PreparedWorkoutsSection = ({ currentWorkoutId, onAddExercise }: PreparedWo
     }
   };
 
-  const handleAddExercise = async (exercise: any) => {
+  const handleAddExercise = async (exercise: Exercise) => {
     if (!exercise) return;
     
     try {
-      await onAddExercise({
-        id: exercise.id,
-        name: exercise.name,
-        muscle_group: exercise.muscle_group,
-        equipment: exercise.equipment,
-        description: exercise.description,
-        difficulty: exercise.difficulty,
-        image_url: exercise.image_url,
-        video_url: exercise.video_url
-      });
+      await onAddExercise(exercise);
       
       toast({
         title: "Exercise added",
@@ -223,7 +225,7 @@ const PreparedWorkoutsSection = ({ currentWorkoutId, onAddExercise }: PreparedWo
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleAddExercise(item.exercise)}
+                              onClick={() => item.exercise && handleAddExercise(item.exercise)}
                             >
                               <Plus className="h-4 w-4 mr-1" />
                               Add
