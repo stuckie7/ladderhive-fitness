@@ -1,241 +1,235 @@
 
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 import AppLayout from "@/components/layout/AppLayout";
 import ExerciseList from "@/components/workouts/ExerciseList";
 import WorkoutProgress from "@/components/workouts/WorkoutProgress";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Play, Pause, CheckCircle2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Dumbbell, CalendarClock, Plus } from "lucide-react";
+import { useWorkoutExercises } from "@/hooks/use-workout-exercises";
+import ExerciseSearchModal from "@/components/exercises/ExerciseSearchModal";
+import { Exercise } from "@/types/exercise";
 
-// Mock workout data
-const workoutData = {
-  id: "1",
-  title: "Full Body Strength",
-  description: "Build strength with this full body workout focusing on compound movements.",
-  duration: 45,
-  difficulty: "Intermediate",
-  exercises: [
-    {
-      id: "ex1",
-      name: "Barbell Squat",
-      sets: 4,
-      reps: 8,
-      weight: "70% 1RM",
-      restTime: 90,
-      description: "Stand with feet shoulder-width apart, barbell resting on traps. Bend knees and lower until thighs are parallel to ground, then return to starting position."
-    },
-    {
-      id: "ex2",
-      name: "Bench Press",
-      sets: 4,
-      reps: 8,
-      weight: "70% 1RM",
-      restTime: 90,
-      description: "Lie on bench with feet flat on floor. Grip barbell slightly wider than shoulder width. Lower bar to chest, then press back up to starting position."
-    },
-    {
-      id: "ex3",
-      name: "Bent-Over Row",
-      sets: 3,
-      reps: 10,
-      weight: "60% 1RM",
-      restTime: 60,
-      description: "Bend at hips until torso is almost parallel to floor, back straight. Pull barbell to lower chest, then lower back to starting position."
-    },
-    {
-      id: "ex4",
-      name: "Overhead Press",
-      sets: 3,
-      reps: 10,
-      weight: "60% 1RM",
-      restTime: 60,
-      description: "Stand with feet shoulder-width apart, barbell at shoulder height. Press bar overhead until arms are fully extended, then lower back to starting position."
-    },
-    {
-      id: "ex5",
-      name: "Romanian Deadlift",
-      sets: 3,
-      reps: 12,
-      weight: "60% 1RM",
-      restTime: 60,
-      description: "Stand with feet hip-width apart, holding barbell at thighs. Hinge at hips, keeping back straight, until barbell is just below knees, then return to starting position."
-    },
-    {
-      id: "ex6",
-      name: "Dumbbell Bicep Curl",
-      sets: 3,
-      reps: 12,
-      weight: "Moderate",
-      restTime: 45,
-      description: "Stand with feet shoulder-width apart, holding dumbbells at sides. Curl weights to shoulders, then lower back to starting position."
-    },
-    {
-      id: "ex7",
-      name: "Tricep Pushdown",
-      sets: 3,
-      reps: 12,
-      weight: "Moderate",
-      restTime: 45,
-      description: "Stand facing cable machine, gripping attachment at chest height. Push attachment down until arms are fully extended, then return to starting position."
-    },
-    {
-      id: "ex8",
-      name: "Plank",
-      sets: 3,
-      reps: 60,
-      weight: "Body weight",
-      restTime: 30,
-      description: "Start in push-up position, then bend elbows 90° and rest weight on forearms. Hold body in straight line from head to heels."
-    }
-  ]
-};
+interface Workout {
+  id: string;
+  title: string;
+  description: string;
+  duration: number;
+  exercises: number;
+  difficulty: string;
+}
 
 const WorkoutDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [workout] = useState(workoutData);
-  const [completedExercises, setCompletedExercises] = useState<string[]>([]);
-  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [intervalId, setIntervalId] = useState<number | null>(null);
-  const navigate = useNavigate();
+  const [workout, setWorkout] = useState<Workout | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const { toast } = useToast();
+  const { 
+    exercises: workoutExercises, 
+    isLoading: exercisesLoading,
+    fetchWorkoutExercises,
+    addExerciseToWorkout
+  } = useWorkoutExercises(id);
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty?.toLowerCase()) {
+      case 'beginner':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'intermediate':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'advanced':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'elite':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+    }
+  };
 
   useEffect(() => {
-    // Clean up interval on unmount
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+    const fetchWorkout = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('workouts')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) throw error;
+        
+        setWorkout(data);
+        
+        // Fetch exercises for this workout
+        fetchWorkoutExercises(id);
+      } catch (error: any) {
+        console.error("Error fetching workout:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to load workout details",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
-  }, [intervalId]);
+    
+    fetchWorkout();
+  }, [id, toast, fetchWorkoutExercises]);
 
-  const handleExerciseComplete = (exerciseId: string, completed: boolean) => {
-    if (completed) {
-      setCompletedExercises(prev => [...prev, exerciseId]);
-    } else {
-      setCompletedExercises(prev => prev.filter(id => id !== exerciseId));
-    }
+  const handleAddExercise = async (exercise: Exercise) => {
+    if (!id) return;
+    
+    await addExerciseToWorkout(id, exercise);
+    setSearchModalOpen(false);
   };
 
-  const toggleWorkout = () => {
-    if (!isWorkoutActive) {
-      // Start workout timer
-      const id = window.setInterval(() => {
-        setElapsedTime(prev => prev + 1);
-      }, 1000);
-      setIntervalId(id);
-      setIsWorkoutActive(true);
-    } else {
-      // Pause workout timer
-      if (intervalId) {
-        clearInterval(intervalId);
-        setIntervalId(null);
-      }
-      setIsWorkoutActive(false);
-    }
-  };
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto px-4 py-6">
+          <div className="animate-pulse">
+            <div className="h-10 bg-muted rounded w-1/3 mb-4"></div>
+            <div className="h-6 bg-muted rounded w-1/2 mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="h-64 bg-muted rounded"></div>
+              <div className="h-64 bg-muted rounded"></div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
-  const completeWorkout = () => {
-    // Stop timer
-    if (intervalId) {
-      clearInterval(intervalId);
-      setIntervalId(null);
-    }
-    
-    // Get existing user data from localStorage
-    const userData = JSON.parse(localStorage.getItem("user") || "{}");
-    
-    // Update workout stats
-    const stats = userData.stats || {
-      workoutsCompleted: 0,
-      totalMinutes: 0,
-      streakDays: 0,
-      caloriesBurned: 0
-    };
-    
-    stats.workoutsCompleted += 1;
-    stats.totalMinutes += Math.floor(elapsedTime / 60);
-    stats.streakDays += 1;
-    stats.caloriesBurned += 150; // Mock calorie calculation
-    
-    // Save updated user data
-    localStorage.setItem("user", JSON.stringify({
-      ...userData,
-      stats
-    }));
-    
-    toast({
-      title: "Workout Completed!",
-      description: "Great job! Your workout has been logged.",
-    });
-    
-    navigate("/dashboard");
-  };
+  if (!workout) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold mb-4">Workout not found</h1>
+          <p>The workout you're looking for doesn't exist or you don't have access to it.</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Convert workoutExercises to the format expected by ExerciseList
+  const exerciseListItems = workoutExercises.map(we => ({
+    id: we.id,
+    name: we.exercise?.name || "Unknown Exercise",
+    sets: we.sets,
+    reps: we.reps,
+    weight: we.weight,
+    restTime: we.rest_time,
+    description: we.exercise?.description,
+    demonstration: we.exercise?.image_url
+  }));
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-2 mb-6">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => navigate(-1)}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">{workout.title}</h1>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">{workout.title}</h1>
+            <p className="text-muted-foreground mt-1">{workout.description}</p>
+          </div>
+          <div className="mt-4 md:mt-0 flex items-center">
+            <Badge 
+              className={`text-sm px-3 py-1 ${getDifficultyColor(workout.difficulty)}`}
+            >
+              {workout.difficulty}
+            </Badge>
+          </div>
         </div>
-        
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <WorkoutProgress 
-                totalExercises={workout.exercises.length}
-                completedExercises={completedExercises.length}
-                duration={workout.duration}
-                elapsedTime={elapsedTime}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Button 
-                className={`flex-1 text-lg ${
-                  isWorkoutActive 
-                    ? "bg-amber-500 hover:bg-amber-600" 
-                    : "bg-fitness-primary hover:bg-fitness-primary/90"
-                }`}
-                onClick={toggleWorkout}
-              >
-                {isWorkoutActive ? (
-                  <>
-                    <Pause className="h-5 w-5 mr-2" />
-                    Pause
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-5 w-5 mr-2" />
-                    Start
-                  </>
-                )}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1 border-fitness-primary text-fitness-primary hover:bg-fitness-primary/10"
-                disabled={completedExercises.length < workout.exercises.length}
-                onClick={completeWorkout}
-              >
-                <CheckCircle2 className="h-5 w-5 mr-2" />
-                Complete
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4 flex items-center">
+              <Clock className="h-6 w-6 mr-3 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Duration</p>
+                <p className="font-medium">{workout.duration} minutes</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center">
+              <Dumbbell className="h-6 w-6 mr-3 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Exercises</p>
+                <p className="font-medium">{workoutExercises.length}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center">
+              <CalendarClock className="h-6 w-6 mr-3 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Next scheduled</p>
+                <p className="font-medium">Not scheduled</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Workout Exercises</h2>
+              <Button onClick={() => setSearchModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Exercise
               </Button>
             </div>
+            
+            {exercisesLoading ? (
+              <div className="animate-pulse">
+                <div className="h-64 bg-muted rounded"></div>
+              </div>
+            ) : workoutExercises.length > 0 ? (
+              <ExerciseList exercises={exerciseListItems} />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center p-6">
+                  <Dumbbell className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No exercises yet</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    This workout doesn't have any exercises yet. Add some to get started.
+                  </p>
+                  <Button onClick={() => setSearchModalOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Exercise
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
           
-          <ExerciseList 
-            exercises={workout.exercises} 
-            onComplete={handleExerciseComplete}
-          />
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold">Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <WorkoutProgress workout={workout} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
+
+      <ExerciseSearchModal 
+        open={searchModalOpen}
+        onOpenChange={setSearchModalOpen}
+        onAddExercise={handleAddExercise}
+        workoutId={id}
+      />
     </AppLayout>
   );
 };
