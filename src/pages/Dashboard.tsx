@@ -4,9 +4,10 @@ import WorkoutCard from "@/components/workouts/WorkoutCard";
 import UserProfile from "@/components/profile/UserProfile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Trophy, Plus, TrendingUp, Calendar, Flame } from "lucide-react";
+import { Trophy, Plus, TrendingUp, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useDailyProgress } from "@/hooks/use-daily-progress";
+import DailyProgressCard from "@/components/progress/DailyProgressCard";
 
 // Mock data
 const mockWorkouts = [
@@ -33,6 +34,7 @@ const mockWorkouts = [
 const Dashboard = () => {
   const [userData, setUserData] = useState<any>(null);
   const navigate = useNavigate();
+  const { progress, isLoading: progressLoading } = useDailyProgress();
   
   useEffect(() => {
     // Get user data from localStorage
@@ -45,7 +47,7 @@ const Dashboard = () => {
         setUserData({
           ...parsedUser,
           stats: {
-            workoutsCompleted: 3,
+            workoutsCompleted: progress?.workouts_completed || 0,
             totalMinutes: 135,
             streakDays: 2,
             caloriesBurned: 450
@@ -55,7 +57,7 @@ const Dashboard = () => {
         console.error("Error parsing user data:", error);
       }
     }
-  }, []);
+  }, [progress]);
   
   if (!userData) {
     return <div>Loading...</div>;
@@ -75,37 +77,7 @@ const Dashboard = () => {
           </Button>
         </div>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Today's Progress</CardTitle>
-            <CardDescription>Your daily fitness goals</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Step Count</span>
-                <span className="text-sm font-medium">2,850 / 10,000</span>
-              </div>
-              <Progress value={28.5} className="h-2" />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Active Minutes</span>
-                <span className="text-sm font-medium">25 / 60</span>
-              </div>
-              <Progress value={41.6} className="h-2" />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Workouts</span>
-                <span className="text-sm font-medium">0 / 1</span>
-              </div>
-              <Progress value={0} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
+        <DailyProgressCard progress={progress} isLoading={progressLoading} />
         
         <div>
           <h2 className="text-xl font-semibold mb-4">Upcoming Workouts</h2>
@@ -197,7 +169,9 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              You've completed 3 workouts in the last 7 days, that's 1 more than last week!
+              You've completed {progress?.workouts_completed || 0} workouts today.
+              {progress?.workouts_completed === 0 && " Complete your first workout to start building your streak!"}
+              {progress?.workouts_completed > 0 && " Keep up the good work!"}
             </p>
             <Button 
               variant="outline" 

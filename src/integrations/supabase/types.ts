@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      daily_progress: {
+        Row: {
+          active_minutes: number
+          active_minutes_goal: number
+          created_at: string
+          date: string
+          id: string
+          step_count: number
+          step_goal: number
+          updated_at: string
+          user_id: string
+          workouts_completed: number
+          workouts_goal: number
+        }
+        Insert: {
+          active_minutes?: number
+          active_minutes_goal?: number
+          created_at?: string
+          date?: string
+          id?: string
+          step_count?: number
+          step_goal?: number
+          updated_at?: string
+          user_id: string
+          workouts_completed?: number
+          workouts_goal?: number
+        }
+        Update: {
+          active_minutes?: number
+          active_minutes_goal?: number
+          created_at?: string
+          date?: string
+          id?: string
+          step_count?: number
+          step_goal?: number
+          updated_at?: string
+          user_id?: string
+          workouts_completed?: number
+          workouts_goal?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number | null
