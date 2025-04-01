@@ -67,13 +67,15 @@ const Profile = () => {
         if (workoutsError) throw workoutsError;
         
         // Calculate stats
-        const typedWorkouts = completedWorkouts as unknown as UserWorkout[];
-        const totalMinutes = typedWorkouts.reduce((sum, workout) => 
-          sum + (workout.workout?.duration || 0), 0);
+        const totalMinutes = completedWorkouts && completedWorkouts.length > 0 
+          ? completedWorkouts.reduce((sum, workout) => 
+              sum + ((workout.workout as any)?.duration || 0), 0)
+          : 0;
+        
         const caloriesBurned = Math.round(totalMinutes * 6.5); // Simple estimation
         
         // Calculate streak (placeholder logic - would need more complex date-based calculations in real app)
-        const streakDays = Math.min(typedWorkouts.length, 5);
+        const streakDays = completedWorkouts ? Math.min(completedWorkouts.length, 5) : 0;
         
         if (profile) {
           setUserData({
@@ -83,7 +85,7 @@ const Profile = () => {
             name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email || '',
             email: user.email || '',
             stats: {
-              workoutsCompleted: typedWorkouts.length,
+              workoutsCompleted: completedWorkouts ? completedWorkouts.length : 0,
               totalMinutes,
               streakDays,
               caloriesBurned
