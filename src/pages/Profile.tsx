@@ -13,6 +13,7 @@ interface UserProfileData {
   last_name: string | null;
   email: string;
   name: string;
+  profile_photo_url?: string | null;
   profile?: any;
   stats?: {
     workoutsCompleted: number;
@@ -82,6 +83,7 @@ const Profile = () => {
             id: user.id,
             first_name: profile.first_name,
             last_name: profile.last_name,
+            profile_photo_url: profile.profile_photo_url,
             name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email || '',
             email: user.email || '',
             stats: {

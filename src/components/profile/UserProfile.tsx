@@ -11,6 +11,7 @@ import ProgressTracking from "./ProgressTracking";
 interface UserData {
   name: string;
   email: string;
+  profile_photo_url?: string | null;
   profile?: {
     height: number;
     weight: number;
@@ -48,6 +49,7 @@ const UserProfile = ({ userData }: UserProfileProps) => {
             name={userData.name} 
             email={userData.email} 
             fitnessLevel={userData.profile?.fitnessLevel}
+            photoUrl={userData.profile_photo_url}
           />
         </CardHeader>
         <CardContent>

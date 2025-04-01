@@ -1,7 +1,7 @@
 
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Save, User } from "lucide-react";
+import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -34,6 +35,15 @@ const Settings = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [defaultTab, setDefaultTab] = useState("profile");
+  const [profileData, setProfileData] = useState<{
+    firstName: string;
+    lastName: string;
+    profilePhotoUrl: string | null;
+  }>({
+    firstName: "",
+    lastName: "",
+    profilePhotoUrl: null
+  });
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -44,11 +54,18 @@ const Settings = () => {
       try {
         const { data } = await supabase
           .from("profiles")
-          .select("first_name, last_name")
+          .select("first_name, last_name, profile_photo_url")
           .eq("id", user.id)
           .single();
           
         setIsLoading(false);
+        
+        setProfileData({
+          firstName: data?.first_name || "",
+          lastName: data?.last_name || "",
+          profilePhotoUrl: data?.profile_photo_url || null
+        });
+        
         return {
           firstName: data?.first_name || "",
           lastName: data?.last_name || "",
@@ -85,6 +102,13 @@ const Settings = () => {
 
       if (error) throw error;
       
+      // Update the local state
+      setProfileData({
+        ...profileData,
+        firstName: data.firstName,
+        lastName: data.lastName
+      });
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
@@ -109,6 +133,15 @@ const Settings = () => {
       description: "Your notification preferences have been saved.",
     });
   };
+
+  const handlePhotoUpdated = (url: string) => {
+    setProfileData({
+      ...profileData,
+      profilePhotoUrl: url || null
+    });
+  };
+
+  const userName = `${profileData.firstName} ${profileData.lastName}`.trim() || user?.email || 'User';
 
   return (
     <AppLayout>
@@ -135,10 +168,18 @@ const Settings = () => {
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
                 <CardDescription>
-                  Update your personal information.
+                  Update your personal information and profile photo.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
+                <div className="flex justify-center mb-4">
+                  <ProfilePhotoUpload 
+                    currentPhotoUrl={profileData.profilePhotoUrl} 
+                    onPhotoUpdated={handlePhotoUpdated}
+                    userName={userName}
+                  />
+                </div>
+                
                 <Form {...profileForm}>
                   <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
                     <FormField

@@ -9,9 +9,10 @@ interface ProfileHeaderProps {
   name: string;
   email: string;
   fitnessLevel?: string;
+  photoUrl?: string | null;
 }
 
-const ProfileHeader = ({ name, email, fitnessLevel }: ProfileHeaderProps) => {
+const ProfileHeader = ({ name, email, fitnessLevel, photoUrl }: ProfileHeaderProps) => {
   const navigate = useNavigate();
 
   const getInitials = (name: string) => {
@@ -43,7 +44,7 @@ const ProfileHeader = ({ name, email, fitnessLevel }: ProfileHeaderProps) => {
       </div>
       <div className="flex items-center gap-4 mb-4">
         <Avatar className="h-16 w-16">
-          <AvatarImage src="" alt={name} />
+          <AvatarImage src={photoUrl || ""} alt={name} />
           <AvatarFallback className="bg-fitness-primary text-white text-lg">
             {getInitials(name)}
           </AvatarFallback>

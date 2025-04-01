@@ -62,6 +62,7 @@ export type Database = {
           height: number | null
           id: string
           last_name: string | null
+          profile_photo_url: string | null
           updated_at: string
           weight: number | null
           workout_days: string[] | null
@@ -76,6 +77,7 @@ export type Database = {
           height?: number | null
           id: string
           last_name?: string | null
+          profile_photo_url?: string | null
           updated_at?: string
           weight?: number | null
           workout_days?: string[] | null
@@ -90,6 +92,7 @@ export type Database = {
           height?: number | null
           id?: string
           last_name?: string | null
+          profile_photo_url?: string | null
           updated_at?: string
           weight?: number | null
           workout_days?: string[] | null
