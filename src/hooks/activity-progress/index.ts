@@ -30,5 +30,5 @@ export const useActivityProgress = (): ActivityProgressResult => {
   };
 };
 
-// Re-export types from the types file for backward compatibility
+// Re-export types from the types file using 'export type'
 export type { ActivityData, MonthlySummary } from '@/types/activity';
