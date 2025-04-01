@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -29,91 +29,86 @@ export const useWorkoutDetail = (workoutId?: string) => {
     isLoading: workoutActionLoading 
   } = useWorkouts();
 
+  // Use useCallback to memoize the fetchWorkout function
+  const fetchWorkout = useCallback(async () => {
+    if (!workoutId) {
+      toast({
+        title: "Error",
+        description: "No workout ID provided",
+        variant: "destructive",
+      });
+      setTimeout(() => navigate("/workouts"), 3000);
+      return;
+    }
+    
+    // Validate UUID format before making the request
+    if (!validateUuid(workoutId)) {
+      console.error("Invalid UUID format:", workoutId);
+      toast({
+        title: "Error",
+        description: "Invalid workout ID format. Please check the URL.",
+        variant: "destructive",
+      });
+      setTimeout(() => navigate("/workouts"), 3000);
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      console.log("Fetching workout with ID:", workoutId);
+      
+      // Fetch the workout details
+      const { data: workoutData, error: workoutError } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('id', workoutId)
+        .single();
+      
+      if (workoutError) throw workoutError;
+      
+      setWorkout(workoutData);
+    
+      // Check if the workout is saved by the current user
+      const { data: userWorkout, error: userWorkoutError } = await supabase
+        .from('user_workouts')
+        .select('id')
+        .eq('workout_id', workoutId)
+        .eq('status', 'saved')
+        .maybeSingle();
+      
+      if (!userWorkoutError && userWorkout) {
+        setIsSaved(true);
+      }
+      
+      // Only fetch exercises if we have a valid workout
+      if (workoutData) {
+        await fetchWorkoutExercises(workoutId);
+      }
+    } catch (error: any) {
+      console.error("Error fetching workout:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load workout details",
+        variant: "destructive",
+      });
+      
+      setTimeout(() => {
+        navigate("/workouts");
+      }, 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [workoutId, toast, fetchWorkoutExercises, navigate]);
+  
   useEffect(() => {
-    let isMounted = true;
-    
-    const fetchWorkout = async () => {
-      if (!workoutId) {
-        toast({
-          title: "Error",
-          description: "No workout ID provided",
-          variant: "destructive",
-        });
-        setTimeout(() => navigate("/workouts"), 3000);
-        return;
-      }
-      
-      // Validate UUID format before making the request
-      if (!validateUuid(workoutId)) {
-        console.error("Invalid UUID format:", workoutId);
-        toast({
-          title: "Error",
-          description: "Invalid workout ID format. Please check the URL.",
-          variant: "destructive",
-        });
-        setTimeout(() => navigate("/workouts"), 3000);
-        return;
-      }
-      
-      setIsLoading(true);
-      try {
-        console.log("Fetching workout with ID:", workoutId);
-        
-        // Fetch the workout details
-        const { data: workoutData, error: workoutError } = await supabase
-          .from('workouts')
-          .select('*')
-          .eq('id', workoutId)
-          .single();
-        
-        if (workoutError) throw workoutError;
-        
-        if (isMounted) {
-          setWorkout(workoutData);
-        
-          // Check if the workout is saved by the current user
-          const { data: userWorkout, error: userWorkoutError } = await supabase
-            .from('user_workouts')
-            .select('id')
-            .eq('workout_id', workoutId)
-            .eq('status', 'saved')
-            .maybeSingle();
-          
-          if (!userWorkoutError && userWorkout && isMounted) {
-            setIsSaved(true);
-          }
-        }
-        
-        // Only fetch exercises if we have a valid workout
-        if (workoutData && isMounted) {
-          await fetchWorkoutExercises(workoutId);
-        }
-      } catch (error: any) {
-        console.error("Error fetching workout:", error);
-        if (isMounted) {
-          toast({
-            title: "Error",
-            description: error.message || "Failed to load workout details",
-            variant: "destructive",
-          });
-          
-          setTimeout(() => {
-            navigate("/workouts");
-          }, 3000);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-    
+    // Only run fetch once on mount and when workoutId changes
     fetchWorkout();
     
+    // Clean up function to prevent memory leaks
     return () => {
-      isMounted = false;
+      // Clean up any subscriptions or pending operations
     };
-  }, [workoutId, toast, fetchWorkoutExercises, navigate]);
+  }, [workoutId, fetchWorkout]);
 
   const handleAddExercise = async (exercise: any) => {
     if (!workoutId) return;

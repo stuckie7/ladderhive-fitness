@@ -27,6 +27,7 @@ export const useFetchWorkoutExercises = () => {
     
     setIsLoading(true);
     try {
+      console.log("Fetching exercises for workout ID:", id);
       const { data, error } = await supabase
         .from('workout_exercises')
         .select(`
@@ -51,6 +52,7 @@ export const useFetchWorkoutExercises = () => {
         exercise: item.exercise ? mapSupabaseExerciseToExercise(item.exercise) : undefined
       }));
       
+      console.log("Fetched exercises:", mappedExercises.length);
       setExercises(mappedExercises);
       return mappedExercises;
     } catch (error: any) {
