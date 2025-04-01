@@ -92,7 +92,8 @@ export interface WorkoutPlan {
 }
 
 export const getAIWorkoutPlan = async (params: WorkoutPlanParams): Promise<WorkoutPlan> => {
-  return fetchFromApi<WorkoutPlan>("4824/ai+workout+planner", params as Record<string, string>);
+  // Cast params to Record<string, string> to satisfy TypeScript
+  return fetchFromApi<WorkoutPlan>("4824/ai+workout+planner", params as unknown as Record<string, string>);
 };
 
 /**
@@ -113,5 +114,6 @@ export interface CaloriesResult {
 }
 
 export const getCaloriesBurned = async (params: CaloriesParams): Promise<CaloriesResult> => {
-  return fetchFromApi<CaloriesResult>("4825/calories+burned", params as Record<string, string>);
+  // Cast params to Record<string, string> to satisfy TypeScript
+  return fetchFromApi<CaloriesResult>("4825/calories+burned", params as unknown as Record<string, string>);
 };
