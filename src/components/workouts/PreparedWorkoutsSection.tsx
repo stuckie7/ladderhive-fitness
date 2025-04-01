@@ -32,8 +32,8 @@ const PreparedWorkoutsSection = ({ currentWorkoutId, onAddExercise }: PreparedWo
   };
 
   return (
-    <div className="mt-6 space-y-4">
-      <h3 className="text-lg font-medium">Prepared Workouts</h3>
+    <div className="mt-8 space-y-4">
+      <h3 className="text-xl font-semibold text-foreground">Prepared Workouts</h3>
       <PreparedWorkoutsList 
         currentWorkoutId={currentWorkoutId}
         onAddExercise={handleAddExercise}

@@ -25,7 +25,7 @@ const PreparedWorkoutsList = ({
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="border border-border">
         <CardContent className="p-4">
           <div className="space-y-4">
             {[1, 2, 3].map((item) => (
@@ -48,9 +48,9 @@ const PreparedWorkoutsList = ({
   }
 
   return (
-    <Card>
+    <Card className="border border-border overflow-hidden">
       <CardContent className="p-0">
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="divide-y divide-border">
           {preparedWorkouts.map((workout) => (
             <PreparedWorkout
               key={workout.id}
