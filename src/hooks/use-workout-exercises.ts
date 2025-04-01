@@ -16,13 +16,44 @@ interface WorkoutExercise {
   exercise?: Exercise;
 }
 
+// Define the shape of the data coming from Supabase
+interface SupabaseExercise {
+  id: string;
+  name: string;
+  muscle_group?: string;
+  equipment?: string;
+  difficulty?: string;
+  description?: string;
+  image_url?: string;
+  video_url?: string;
+  instructions?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const useWorkoutExercises = (workoutId?: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const { toast } = useToast();
 
+  // Helper function to map Supabase exercise data to our Exercise type
+  const mapSupabaseExerciseToExercise = (supabaseExercise: SupabaseExercise): Exercise => {
+    return {
+      id: supabaseExercise.id,
+      name: supabaseExercise.name,
+      bodyPart: supabaseExercise.muscle_group || "",
+      target: supabaseExercise.muscle_group || "", // Default target to muscle_group if available
+      equipment: supabaseExercise.equipment || "",
+      muscle_group: supabaseExercise.muscle_group,
+      description: supabaseExercise.description,
+      difficulty: supabaseExercise.difficulty as any,
+      image_url: supabaseExercise.image_url,
+      video_url: supabaseExercise.video_url
+    };
+  };
+
   const fetchWorkoutExercises = async (id: string) => {
-    if (!id) return;
+    if (!id) return [];
     
     setIsLoading(true);
     try {
@@ -37,8 +68,21 @@ export const useWorkoutExercises = (workoutId?: string) => {
       
       if (error) throw error;
       
-      setExercises(data as WorkoutExercise[] || []);
-      return data as WorkoutExercise[];
+      // Transform the data to match our WorkoutExercise type
+      const mappedExercises: WorkoutExercise[] = (data || []).map(item => ({
+        id: item.id,
+        workout_id: item.workout_id,
+        exercise_id: item.exercise_id,
+        sets: item.sets,
+        reps: item.reps,
+        weight: item.weight,
+        rest_time: item.rest_time,
+        order_index: item.order_index,
+        exercise: item.exercise ? mapSupabaseExerciseToExercise(item.exercise as SupabaseExercise) : undefined
+      }));
+      
+      setExercises(mappedExercises);
+      return mappedExercises;
     } catch (error: any) {
       console.error("Error fetching workout exercises:", error);
       toast({
@@ -67,17 +111,17 @@ export const useWorkoutExercises = (workoutId?: string) => {
       const { data: existingExercise, error: checkError } = await supabase
         .from('exercises')
         .select('id')
-        .eq('external_id', exercise.id)
+        .eq('id', exercise.id)
         .single();
       
-      let exerciseId;
+      let exerciseId: string;
       
       if (checkError || !existingExercise) {
         // Exercise doesn't exist yet, add it
         const { data: newExercise, error: insertError } = await supabase
           .from('exercises')
           .insert({
-            external_id: exercise.id,
+            id: exercise.id,
             name: exercise.name,
             description: exercise.description || '',
             muscle_group: exercise.muscle_group || exercise.bodyPart,
