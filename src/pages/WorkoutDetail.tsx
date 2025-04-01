@@ -49,6 +49,8 @@ const WorkoutDetail = () => {
   } = useWorkouts();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchWorkout = async () => {
       if (!id) {
         toast({
@@ -85,41 +87,51 @@ const WorkoutDetail = () => {
         
         if (workoutError) throw workoutError;
         
-        setWorkout(workoutData);
+        if (isMounted) {
+          setWorkout(workoutData);
         
-        // Check if the workout is saved by the current user
-        const { data: userWorkout, error: userWorkoutError } = await supabase
-          .from('user_workouts')
-          .select('id')
-          .eq('workout_id', id)
-          .eq('status', 'saved')
-          .maybeSingle();
-        
-        if (!userWorkoutError && userWorkout) {
-          setIsSaved(true);
+          // Check if the workout is saved by the current user
+          const { data: userWorkout, error: userWorkoutError } = await supabase
+            .from('user_workouts')
+            .select('id')
+            .eq('workout_id', id)
+            .eq('status', 'saved')
+            .maybeSingle();
+          
+          if (!userWorkoutError && userWorkout && isMounted) {
+            setIsSaved(true);
+          }
         }
         
         // Only fetch exercises if we have a valid workout
-        if (workoutData) {
-          fetchWorkoutExercises(id);
+        if (workoutData && isMounted) {
+          await fetchWorkoutExercises(id);
         }
       } catch (error: any) {
         console.error("Error fetching workout:", error);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to load workout details",
-          variant: "destructive",
-        });
-        
-        setTimeout(() => {
-          navigate("/workouts");
-        }, 3000);
+        if (isMounted) {
+          toast({
+            title: "Error",
+            description: error.message || "Failed to load workout details",
+            variant: "destructive",
+          });
+          
+          setTimeout(() => {
+            navigate("/workouts");
+          }, 3000);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     fetchWorkout();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [id, toast, fetchWorkoutExercises, navigate]);
 
   const handleAddExercise = async (exercise: Exercise) => {
@@ -229,7 +241,7 @@ const WorkoutDetail = () => {
         </div>
         
         <WorkoutDetailStats 
-          duration={workout.duration} 
+          duration={workout?.duration || 0} 
           exerciseCount={workoutExercises.length} 
         />
 
