@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import Workouts from "./pages/Workouts";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import Profile from "./pages/Profile";
+import Schedule from "./pages/Schedule";
 
 // Routes protection component
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/workouts" element={<Workouts />} />
               <Route path="/workout/:id" element={<WorkoutDetail />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/schedule" element={<Schedule />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />
