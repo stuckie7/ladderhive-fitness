@@ -1,9 +1,8 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Activity, TrendingUp } from "lucide-react";
-import { MonthlySummary } from "@/hooks/use-activity-progress";
+import { MonthlySummary } from "@/types/activity";
 
 interface MonthlyActivityProps {
   monthlySummary: MonthlySummary | null;
