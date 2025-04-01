@@ -1,7 +1,5 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/layout/AppLayout";
 import ExerciseFilters from "@/components/exercises/ExerciseFilters";
 import ExerciseCard from "@/components/exercises/ExerciseCard";
@@ -9,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useExercises } from "@/hooks/use-exercises";
 
 export interface Exercise {
   id: string;
@@ -41,35 +40,44 @@ const ExerciseLibrary = () => {
     equipment: "",
     difficulty: ""
   });
+  const { getExercisesByMuscleGroup, searchExercises } = useExercises();
 
   // Fetch exercises from the database
   const fetchExercises = async () => {
-    let query = supabase.from("exercises").select("*");
-
-    // Apply filters
-    if (filters.muscleGroup) {
-      query = query.eq("muscle_group", filters.muscleGroup);
-    }
-    if (filters.equipment) {
-      query = query.eq("equipment", filters.equipment);
-    }
-    if (filters.difficulty) {
-      query = query.eq("difficulty", filters.difficulty);
-    }
     if (searchQuery) {
-      query = query.ilike("name", `%${searchQuery}%`);
+      return await searchExercises(searchQuery);
     }
-
-    // Order by name
-    query = query.order("name");
-
-    const { data, error } = await query;
     
+    if (filters.muscleGroup) {
+      return await getExercisesByMuscleGroup(filters.muscleGroup);
+    }
+    
+    // Using supabase directly with type casting for the initial fetch
+    const { data, error } = await (window.supabase as any)
+      .from('exercises')
+      .select('*')
+      .order('name');
+      
     if (error) {
       throw error;
     }
     
-    return data as Exercise[];
+    // Apply client-side filtering for equipment and difficulty
+    let filteredData = data;
+    
+    if (filters.equipment) {
+      filteredData = filteredData.filter((ex: any) => 
+        ex.equipment === filters.equipment
+      );
+    }
+    
+    if (filters.difficulty) {
+      filteredData = filteredData.filter((ex: any) => 
+        ex.difficulty === filters.difficulty
+      );
+    }
+    
+    return filteredData as Exercise[];
   };
 
   const { data: exercises, isLoading, refetch } = useQuery({

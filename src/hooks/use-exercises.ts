@@ -11,15 +11,16 @@ export const useExercises = () => {
   const getExerciseById = async (id: string): Promise<Exercise | null> => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('exercises')
+      // Using as any to bypass type checking for the table name
+      const { data, error } = await (supabase
+        .from('exercises' as any)
         .select('*')
         .eq('id', id)
-        .single();
+        .single());
       
       if (error) throw error;
       
-      return data as Exercise;
+      return data as unknown as Exercise;
     } catch (error: any) {
       console.error("Error fetching exercise:", error);
       toast({
@@ -36,15 +37,16 @@ export const useExercises = () => {
   const getExercisesByMuscleGroup = async (muscleGroup: string): Promise<Exercise[]> => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('exercises')
+      // Using as any to bypass type checking for the table name
+      const { data, error } = await (supabase
+        .from('exercises' as any)
         .select('*')
         .eq('muscle_group', muscleGroup)
-        .order('name');
+        .order('name'));
       
       if (error) throw error;
       
-      return data as Exercise[];
+      return data as unknown as Exercise[];
     } catch (error: any) {
       console.error("Error fetching exercises:", error);
       toast({
@@ -61,15 +63,16 @@ export const useExercises = () => {
   const searchExercises = async (query: string): Promise<Exercise[]> => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('exercises')
+      // Using as any to bypass type checking for the table name
+      const { data, error } = await (supabase
+        .from('exercises' as any)
         .select('*')
         .ilike('name', `%${query}%`)
-        .order('name');
+        .order('name'));
       
       if (error) throw error;
       
-      return data as Exercise[];
+      return data as unknown as Exercise[];
     } catch (error: any) {
       console.error("Error searching exercises:", error);
       toast({
