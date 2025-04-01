@@ -40,7 +40,7 @@ export const useDailyProgress = () => {
       if (error) throw error;
       
       if (data) {
-        setProgress(data as DailyProgress);
+        setProgress(data as unknown as DailyProgress);
       } else {
         // If no entry exists for today, create one
         const { data: newEntry, error: insertError } = await supabase
@@ -54,7 +54,7 @@ export const useDailyProgress = () => {
         
         if (insertError) throw insertError;
         
-        setProgress(newEntry as DailyProgress);
+        setProgress(newEntry as unknown as DailyProgress);
       }
     } catch (error: any) {
       console.error('Error fetching daily progress:', error);
