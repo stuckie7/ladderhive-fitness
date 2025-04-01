@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useWeeklyData } from './use-weekly-data';
 import { useMonthlySummary } from './use-monthly-summary';
-import { ActivityData, MonthlySummary } from '@/types/activity';
+import type { ActivityData, MonthlySummary } from '@/types/activity';
 
 export interface ActivityProgressResult {
   weeklyData: ActivityData[];
@@ -31,4 +31,4 @@ export const useActivityProgress = (): ActivityProgressResult => {
 };
 
 // Re-export types from the types file for backward compatibility
-export { ActivityData, MonthlySummary } from '@/types/activity';
+export type { ActivityData, MonthlySummary } from '@/types/activity';
