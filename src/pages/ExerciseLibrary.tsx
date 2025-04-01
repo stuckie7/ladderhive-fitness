@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import AppLayout from "@/components/layout/AppLayout";
 import ExerciseFilters from "@/components/exercises/ExerciseFilters";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useExercises } from "@/hooks/use-exercises";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Exercise {
   id: string;
@@ -42,7 +43,6 @@ const ExerciseLibrary = () => {
   });
   const { getExercisesByMuscleGroup, searchExercises } = useExercises();
 
-  // Fetch exercises from the database
   const fetchExercises = async () => {
     if (searchQuery) {
       return await searchExercises(searchQuery);
@@ -52,9 +52,8 @@ const ExerciseLibrary = () => {
       return await getExercisesByMuscleGroup(filters.muscleGroup);
     }
     
-    // Using supabase directly with type casting for the initial fetch
-    const { data, error } = await (window.supabase as any)
-      .from('exercises')
+    const { data, error } = await supabase
+      .from('exercises' as any)
       .select('*')
       .order('name');
       
@@ -62,7 +61,6 @@ const ExerciseLibrary = () => {
       throw error;
     }
     
-    // Apply client-side filtering for equipment and difficulty
     let filteredData = data;
     
     if (filters.equipment) {
@@ -77,7 +75,7 @@ const ExerciseLibrary = () => {
       );
     }
     
-    return filteredData as Exercise[];
+    return filteredData as unknown as Exercise[];
   };
 
   const { data: exercises, isLoading, refetch } = useQuery({
@@ -85,7 +83,6 @@ const ExerciseLibrary = () => {
     queryFn: fetchExercises
   });
 
-  // Reset filters
   const resetFilters = () => {
     setFilters({
       muscleGroup: "",
@@ -95,7 +92,6 @@ const ExerciseLibrary = () => {
     setSearchQuery("");
   };
 
-  // Filter by muscle group (for tabs)
   const getFilteredExercises = (muscleGroup: string) => {
     if (!exercises) return [];
     
@@ -106,7 +102,6 @@ const ExerciseLibrary = () => {
     return exercises.filter(ex => ex.muscle_group === muscleGroup);
   };
 
-  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
@@ -120,7 +115,6 @@ const ExerciseLibrary = () => {
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-3xl font-bold mb-6">Exercise Library</h1>
         
-        {/* Search Bar */}
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -132,7 +126,6 @@ const ExerciseLibrary = () => {
           />
         </div>
         
-        {/* Filters */}
         <ExerciseFilters 
           filters={filters}
           setFilters={setFilters}
@@ -142,7 +135,6 @@ const ExerciseLibrary = () => {
           difficultyLevels={difficultyLevels}
         />
         
-        {/* Tabs for quick muscle group filtering */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
           <TabsList className="flex overflow-x-auto pb-2 mb-4 w-full">
             <TabsTrigger value="all" className="flex-shrink-0">All Exercises</TabsTrigger>
@@ -153,7 +145,6 @@ const ExerciseLibrary = () => {
             ))}
           </TabsList>
           
-          {/* Tab content */}
           <TabsContent value={activeTab} className="mt-6">
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
