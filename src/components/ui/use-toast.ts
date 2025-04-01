@@ -1,3 +1,3 @@
 
-// This file should directly export from our hooks
+// This file should directly export from our hooks file
 export { useToast, toast } from "@/hooks/use-toast";

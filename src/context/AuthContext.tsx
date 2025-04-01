@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   session: Session | null;
@@ -21,7 +21,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener first
@@ -63,17 +62,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
+      // Use toast outside of component render
+      setTimeout(() => {
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
+      }, 0);
     } catch (error: any) {
       console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: error.message || "Check your credentials and try again.",
-        variant: "destructive",
-      });
+      setTimeout(() => {
+        toast({
+          title: "Login failed",
+          description: error.message || "Check your credentials and try again.",
+          variant: "destructive",
+        });
+      }, 0);
       throw error;
     } finally {
       setLoading(false);
@@ -97,16 +101,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       
-      toast({
-        title: "Account created",
-        description: "Please check your email to confirm your registration.",
-      });
+      setTimeout(() => {
+        toast({
+          title: "Account created",
+          description: "Please check your email to confirm your registration.",
+        });
+      }, 0);
     } catch (error: any) {
-      toast({
-        title: "Registration failed",
-        description: error.message || "An error occurred during signup.",
-        variant: "destructive",
-      });
+      setTimeout(() => {
+        toast({
+          title: "Registration failed",
+          description: error.message || "An error occurred during signup.",
+          variant: "destructive",
+        });
+      }, 0);
       throw error;
     } finally {
       setLoading(false);
@@ -119,17 +127,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
+      setTimeout(() => {
+        toast({
+          title: "Logged out",
+          description: "You have been successfully logged out.",
+        });
+      }, 0);
     } catch (error: any) {
       console.error("Error logging out:", error);
-      toast({
-        title: "Error",
-        description: "An error occurred while logging out.",
-        variant: "destructive",
-      });
+      setTimeout(() => {
+        toast({
+          title: "Error",
+          description: "An error occurred while logging out.",
+          variant: "destructive",
+        });
+      }, 0);
     } finally {
       setLoading(false);
     }
