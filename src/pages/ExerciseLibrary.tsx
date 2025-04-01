@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import AppLayout from "@/components/layout/AppLayout";
@@ -8,20 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useExercises } from "@/hooks/use-exercises";
-import { supabase } from "@/integrations/supabase/client";
+import { Exercise, ExerciseFilters as Filters } from "@/types/exercise";
+import { getBodyParts, getEquipmentList } from "@/integrations/exercisedb/client";
 
-export interface Exercise {
-  id: string;
-  name: string;
-  description: string | null;
-  muscle_group: string | null;
-  equipment: string | null;
-  difficulty: string | null;
-  instructions: string | null;
-  video_url: string | null;
-  image_url: string | null;
-}
-
+// We'll fetch these from the API, but default to static lists initially
 const muscleGroups = [
   "Chest", "Back", "Shoulders", "Arms", "Legs", "Core", "Full Body", "Cardio"
 ];
@@ -36,12 +27,44 @@ const difficultyLevels = ["Beginner", "Intermediate", "Advanced"];
 const ExerciseLibrary = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     muscleGroup: "",
     equipment: "",
     difficulty: ""
   });
-  const { getExercisesByMuscleGroup, searchExercises } = useExercises();
+  const [availableMuscleGroups, setAvailableMuscleGroups] = useState<string[]>(muscleGroups);
+  const [availableEquipment, setAvailableEquipment] = useState<string[]>(equipmentTypes);
+  const { getExercisesByMuscleGroup, getExercisesByEquipment, searchExercises } = useExercises();
+
+  // Fetch available muscle groups and equipment from API
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const [bodyParts, equipment] = await Promise.all([
+          getBodyParts(),
+          getEquipmentList()
+        ]);
+        
+        if (bodyParts.length) {
+          // Capitalize first letter of each body part for display
+          setAvailableMuscleGroups(
+            bodyParts.map(part => part.charAt(0).toUpperCase() + part.slice(1))
+          );
+        }
+        
+        if (equipment.length) {
+          // Capitalize first letter of each equipment for display
+          setAvailableEquipment(
+            equipment.map(eq => eq.charAt(0).toUpperCase() + eq.slice(1))
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch filter options:", error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
 
   const fetchExercises = async () => {
     if (searchQuery) {
@@ -49,38 +72,33 @@ const ExerciseLibrary = () => {
     }
     
     if (filters.muscleGroup) {
-      return await getExercisesByMuscleGroup(filters.muscleGroup);
+      return await getExercisesByMuscleGroup(filters.muscleGroup.toLowerCase());
     }
-    
-    const { data, error } = await supabase
-      .from('exercises' as any)
-      .select('*')
-      .order('name');
-      
-    if (error) {
-      throw error;
-    }
-    
-    let filteredData = data;
     
     if (filters.equipment) {
-      filteredData = filteredData.filter((ex: any) => 
-        ex.equipment === filters.equipment
-      );
+      return await getExercisesByEquipment(filters.equipment.toLowerCase());
     }
     
+    // Default: fetch exercises for the first muscle group
+    const firstBodyPart = availableMuscleGroups[0]?.toLowerCase() || 'back';
+    const exercises = await getExercisesByMuscleGroup(firstBodyPart);
+    
+    let filteredData = exercises;
+    
+    // Apply client-side filtering for difficulty if set
     if (filters.difficulty) {
-      filteredData = filteredData.filter((ex: any) => 
+      filteredData = filteredData.filter(ex => 
         ex.difficulty === filters.difficulty
       );
     }
     
-    return filteredData as unknown as Exercise[];
+    return filteredData;
   };
 
   const { data: exercises, isLoading, refetch } = useQuery({
-    queryKey: ['exercises', filters, searchQuery],
-    queryFn: fetchExercises
+    queryKey: ['exercises', filters, searchQuery, availableMuscleGroups[0]],
+    queryFn: fetchExercises,
+    enabled: availableMuscleGroups.length > 0 // Only run query when we have muscle groups
   });
 
   const resetFilters = () => {
@@ -99,7 +117,10 @@ const ExerciseLibrary = () => {
       return exercises;
     }
     
-    return exercises.filter(ex => ex.muscle_group === muscleGroup);
+    return exercises.filter(ex => 
+      ex.muscle_group?.toLowerCase() === muscleGroup.toLowerCase() ||
+      ex.bodyPart?.toLowerCase() === muscleGroup.toLowerCase()
+    );
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,16 +151,16 @@ const ExerciseLibrary = () => {
           filters={filters}
           setFilters={setFilters}
           resetFilters={resetFilters}
-          muscleGroups={muscleGroups}
-          equipmentTypes={equipmentTypes}
+          muscleGroups={availableMuscleGroups}
+          equipmentTypes={availableEquipment}
           difficultyLevels={difficultyLevels}
         />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
           <TabsList className="flex overflow-x-auto pb-2 mb-4 w-full">
             <TabsTrigger value="all" className="flex-shrink-0">All Exercises</TabsTrigger>
-            {muscleGroups.map(group => (
-              <TabsTrigger key={group} value={group} className="flex-shrink-0">
+            {availableMuscleGroups.slice(0, 7).map(group => (
+              <TabsTrigger key={group} value={group.toLowerCase()} className="flex-shrink-0">
                 {group}
               </TabsTrigger>
             ))}

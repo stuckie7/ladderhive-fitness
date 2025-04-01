@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Exercise } from '@/pages/ExerciseLibrary';
+import { Exercise } from '@/types/exercise';
+import * as exerciseApi from '@/integrations/exercisedb/client';
 
 export const useExercises = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -11,16 +11,10 @@ export const useExercises = () => {
   const getExerciseById = async (id: string): Promise<Exercise | null> => {
     setIsLoading(true);
     try {
-      // Using as any to bypass type checking for the table name
-      const { data, error } = await (supabase
-        .from('exercises' as any)
-        .select('*')
-        .eq('id', id)
-        .single());
+      const exercise = await exerciseApi.getExerciseById(id);
       
-      if (error) throw error;
-      
-      return data as unknown as Exercise;
+      // Map API response to our Exercise interface for compatibility
+      return mapExerciseResponse(exercise);
     } catch (error: any) {
       console.error("Error fetching exercise:", error);
       toast({
@@ -37,16 +31,30 @@ export const useExercises = () => {
   const getExercisesByMuscleGroup = async (muscleGroup: string): Promise<Exercise[]> => {
     setIsLoading(true);
     try {
-      // Using as any to bypass type checking for the table name
-      const { data, error } = await (supabase
-        .from('exercises' as any)
-        .select('*')
-        .eq('muscle_group', muscleGroup)
-        .order('name'));
+      const exercises = await exerciseApi.getExercisesByBodyPart(muscleGroup);
       
-      if (error) throw error;
+      // Map API response to our Exercise interface for compatibility
+      return exercises.map(mapExerciseResponse);
+    } catch (error: any) {
+      console.error("Error fetching exercises:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch exercises.",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getExercisesByEquipment = async (equipment: string): Promise<Exercise[]> => {
+    setIsLoading(true);
+    try {
+      const exercises = await exerciseApi.getExercisesByEquipment(equipment);
       
-      return data as unknown as Exercise[];
+      // Map API response to our Exercise interface for compatibility
+      return exercises.map(mapExerciseResponse);
     } catch (error: any) {
       console.error("Error fetching exercises:", error);
       toast({
@@ -63,16 +71,23 @@ export const useExercises = () => {
   const searchExercises = async (query: string): Promise<Exercise[]> => {
     setIsLoading(true);
     try {
-      // Using as any to bypass type checking for the table name
-      const { data, error } = await (supabase
-        .from('exercises' as any)
-        .select('*')
-        .ilike('name', `%${query}%`)
-        .order('name'));
+      // Since the API doesn't have a direct search endpoint, 
+      // we'll fetch all exercises by body parts and filter client-side
+      const bodyParts = await exerciseApi.getBodyParts();
+      const allExercisesPromises = bodyParts.map(part => 
+        exerciseApi.getExercisesByBodyPart(part)
+      );
       
-      if (error) throw error;
+      const allExercisesArrays = await Promise.all(allExercisesPromises);
+      const allExercises = allExercisesArrays.flat();
       
-      return data as unknown as Exercise[];
+      // Filter exercises by query (case-insensitive search in name)
+      const filteredExercises = allExercises.filter(ex => 
+        ex.name.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      // Map API response to our Exercise interface for compatibility
+      return filteredExercises.map(mapExerciseResponse);
     } catch (error: any) {
       console.error("Error searching exercises:", error);
       toast({
@@ -86,10 +101,43 @@ export const useExercises = () => {
     }
   };
 
+  // Helper function to map API response to our Exercise interface
+  const mapExerciseResponse = (exercise: any): Exercise => {
+    return {
+      id: exercise.id.toString(),
+      name: exercise.name,
+      bodyPart: exercise.bodyPart,
+      target: exercise.target,
+      equipment: exercise.equipment,
+      gifUrl: exercise.gifUrl,
+      secondaryMuscles: exercise.secondaryMuscles,
+      instructions: exercise.instructions,
+      // Compatibility with our existing UI
+      muscle_group: exercise.bodyPart,
+      description: exercise.instructions ? exercise.instructions.join(' ') : '',
+      difficulty: mapDifficulty(exercise),
+      video_url: null,
+      image_url: exercise.gifUrl
+    };
+  };
+
+  // Map exercises to difficulty based on some heuristics
+  const mapDifficulty = (exercise: any): string => {
+    // This is a simplistic mapping - in real application you'd want more nuanced logic
+    if (exercise.equipment === 'body weight' || exercise.equipment === 'assisted') {
+      return 'Beginner';
+    } else if (exercise.equipment === 'cable' || exercise.equipment === 'dumbbell') {
+      return 'Intermediate';
+    } else {
+      return 'Advanced';
+    }
+  };
+
   return {
     isLoading,
     getExerciseById,
     getExercisesByMuscleGroup,
+    getExercisesByEquipment,
     searchExercises
   };
 };
