@@ -2,6 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import WorkoutExerciseSection from "@/components/workouts/WorkoutExerciseSection";
 import WorkoutProgress from "@/components/workouts/WorkoutProgress";
+import NutritionSearch from "@/components/nutrition/NutritionSearch";
 import { Exercise } from "@/types/exercise";
 
 interface WorkoutDetailLayoutProps {
@@ -28,6 +29,11 @@ const WorkoutDetailLayout = ({
           isLoading={isLoading}
           onAddExercise={onAddExercise}
         />
+        
+        {/* Add Nutrition Search Component */}
+        <div className="mt-6">
+          <NutritionSearch />
+        </div>
       </div>
       
       <div>
