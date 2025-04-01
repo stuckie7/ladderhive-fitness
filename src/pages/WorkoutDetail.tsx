@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import AppLayout from "@/components/layout/AppLayout";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useWorkoutExercises } from "@/hooks/use-workout-exercises";
 import { Exercise } from "@/types/exercise";
 import { validateUuid } from "@/hooks/workout-exercises/utils";
