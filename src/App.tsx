@@ -19,6 +19,8 @@ import Profile from "./pages/Profile";
 import Schedule from "./pages/Schedule";
 import ProgressPage from "./pages/Progress";
 import Settings from "./pages/Settings";
+import ExerciseLibrary from "./pages/ExerciseLibrary";
+import ExerciseDetail from "./pages/ExerciseDetail";
 
 // Routes protection component
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -41,6 +43,8 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/workouts" element={<Workouts />} />
               <Route path="/workout/:id" element={<WorkoutDetail />} />
+              <Route path="/exercises" element={<ExerciseLibrary />} />
+              <Route path="/exercises/:id" element={<ExerciseDetail />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/progress" element={<ProgressPage />} />

@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardTitle } from "@/components/ui/card";
-import { Settings } from "lucide-react";
+import { Dumbbell, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ProfileHeaderProps {
@@ -34,13 +34,23 @@ const ProfileHeader = ({ name, email, fitnessLevel, photoUrl }: ProfileHeaderPro
           <CardTitle className="text-2xl font-bold">{name}</CardTitle>
           <CardDescription>{email}</CardDescription>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => navigate('/settings')}
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            size="icon"
+            onClick={() => navigate('/exercises')}
+            title="Exercise Library"
+          >
+            <Dumbbell className="h-5 w-5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate('/settings')}
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
       <div className="flex items-center gap-4 mb-4">
         <Avatar className="h-16 w-16">
