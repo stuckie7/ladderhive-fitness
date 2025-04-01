@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, Dumbbell, Bookmark, BookmarkCheck } from "lucide-react";
@@ -57,13 +56,11 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
     setIsLoading(true);
     try {
       if (saved) {
-        // Remove from saved
         const result = await unsaveWorkout(workout.id);
         if (result.success) {
           setSaved(false);
         }
       } else {
-        // Add to saved
         const result = await saveWorkout(workout.id);
         if (result.success) {
           setSaved(true);
@@ -72,6 +69,11 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleStartWorkout = () => {
+    console.log("Navigating to workout with ID:", workout.id);
+    navigate(`/workout/${workout.id}`);
   };
 
   return (
@@ -108,7 +110,7 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
       <CardFooter className="pt-0 flex gap-2">
         <Button 
           className="flex-1 bg-fitness-primary hover:bg-fitness-primary/90"
-          onClick={() => navigate(`/workout/${workout.id}`)}
+          onClick={handleStartWorkout}
         >
           Start Workout
         </Button>

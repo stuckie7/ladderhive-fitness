@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
 import UserProfile from "@/components/profile/UserProfile";
@@ -9,10 +8,10 @@ import { useNavigate } from "react-router-dom";
 import { useDailyProgress } from "@/hooks/use-daily-progress";
 import DailyProgressCard from "@/components/progress/DailyProgressCard";
 
-// Mock data
+// Updated mock data with proper UUIDs
 const mockWorkouts = [
   {
-    id: "1",
+    id: "36e9a4d0-e058-4a9a-a5ac-17e2f555b663",
     title: "Full Body Strength",
     description: "Build strength with this full body workout focusing on compound movements.",
     duration: 45,
@@ -21,7 +20,7 @@ const mockWorkouts = [
     date: "Today"
   },
   {
-    id: "2",
+    id: "b8a9f26b-22a9-4c7f-95c0-f65a0a70c1a1",
     title: "Upper Body Push",
     description: "Focus on chest, shoulders and triceps with this pushing workout.",
     duration: 40,
