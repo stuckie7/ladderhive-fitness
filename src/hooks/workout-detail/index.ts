@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useFetchWorkout } from "./use-fetch-workout";
 import { useWorkoutActions } from "./use-workout-actions";
 import { useWorkoutExercises } from "@/hooks/use-workout-exercises";
@@ -27,18 +27,19 @@ export const useWorkoutDetail = (workoutId?: string) => {
     addExerciseToWorkout
   } = useWorkoutExercises(workoutId);
 
+  const initialFetchDone = useRef(false);
+
   useEffect(() => {
     // Only run fetch once on mount and when workoutId changes
-    const loadWorkout = async () => {
-      const workoutData = await fetchWorkout();
-      // Only fetch exercises if we have a valid workout
-      if (workoutData && workoutId) {
-        await fetchWorkoutExercises(workoutId);
-      }
-    };
-    
-    loadWorkout();
-  }, [workoutId, fetchWorkout, fetchWorkoutExercises]);
+    if (!initialFetchDone.current && workoutId) {
+      const loadWorkout = async () => {
+        await fetchWorkout();
+      };
+      
+      loadWorkout();
+      initialFetchDone.current = true;
+    }
+  }, [workoutId, fetchWorkout]);
 
   const handleAddExercise = async (exercise: Exercise) => {
     if (!workoutId) return;

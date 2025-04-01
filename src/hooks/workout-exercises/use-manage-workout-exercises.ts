@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Exercise } from "@/types/exercise";
@@ -9,12 +9,16 @@ import { useFetchWorkoutExercises } from "./use-fetch-workout-exercises";
 export const useManageWorkoutExercises = (workoutId?: string) => {
   const { exercises, isLoading, fetchWorkoutExercises, setExercises, setIsLoading } = useFetchWorkoutExercises();
   const { toast } = useToast();
+  const initialFetchDone = useRef(false);
   
   useEffect(() => {
-    if (workoutId) fetchWorkoutExercises(workoutId);
-  }, [workoutId]);
+    if (workoutId && !initialFetchDone.current) {
+      fetchWorkoutExercises(workoutId);
+      initialFetchDone.current = true;
+    }
+  }, [workoutId, fetchWorkoutExercises]);
 
-  const addExerciseToWorkout = async (workoutId: string, exercise: Exercise, details: Partial<WorkoutExercise> = {}) => {
+  const addExerciseToWorkout = useCallback(async (workoutId: string, exercise: Exercise, details: Partial<WorkoutExercise> = {}) => {
     if (!workoutId) return null;
     
     setIsLoading(true);
@@ -69,9 +73,9 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [exercises, setExercises, setIsLoading, toast]);
 
-  const removeExerciseFromWorkout = async (exerciseId: string) => {
+  const removeExerciseFromWorkout = useCallback(async (exerciseId: string) => {
     if (!exerciseId) return false;
     
     setIsLoading(true);
@@ -103,7 +107,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [exercises, setExercises, setIsLoading, toast]);
 
   return {
     exercises,

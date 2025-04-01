@@ -1,5 +1,6 @@
 
 import { useManageWorkoutExercises } from "./workout-exercises/use-manage-workout-exercises";
+import { useCallback } from "react";
 
 export const useWorkoutExercises = (workoutId?: string) => {
   const {
@@ -10,10 +11,17 @@ export const useWorkoutExercises = (workoutId?: string) => {
     removeExerciseFromWorkout
   } = useManageWorkoutExercises(workoutId);
 
+  const fetchExercises = useCallback(() => {
+    if (workoutId) {
+      return fetchWorkoutExercises(workoutId);
+    }
+    return Promise.resolve([]);
+  }, [workoutId, fetchWorkoutExercises]);
+
   return {
     exercises,
     isLoading,
-    fetchWorkoutExercises,
+    fetchWorkoutExercises: fetchExercises,
     addExerciseToWorkout,
     removeExerciseFromWorkout
   };

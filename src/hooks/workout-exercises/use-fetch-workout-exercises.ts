@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { WorkoutExercise, mapSupabaseExerciseToExercise } from "./utils";
@@ -9,7 +9,7 @@ export const useFetchWorkoutExercises = () => {
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const { toast } = useToast();
 
-  const fetchWorkoutExercises = async (id: string) => {
+  const fetchWorkoutExercises = useCallback(async (id: string) => {
     if (!id) return [];
     
     setIsLoading(true);
@@ -53,7 +53,7 @@ export const useFetchWorkoutExercises = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   return {
     exercises,
