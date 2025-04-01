@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dumbbell, Search } from "lucide-react";
 import ExerciseList from "@/components/workouts/ExerciseList";
 import ExerciseSearchModal from "@/components/exercises/ExerciseSearchModal";
+import WorkoutExerciseSkeleton from "@/components/workouts/WorkoutExerciseSkeleton";
 import { Exercise } from "@/types/exercise";
 import { WorkoutExercise } from "@/hooks/workout-exercises/utils";
 
@@ -64,9 +65,7 @@ const WorkoutExerciseSection = ({
       </div>
       
       {isLoading ? (
-        <div className="animate-pulse">
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
+        <WorkoutExerciseSkeleton />
       ) : exercises.length > 0 ? (
         <ExerciseList exercises={exerciseListItems} />
       ) : (

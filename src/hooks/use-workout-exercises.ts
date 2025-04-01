@@ -1,8 +1,10 @@
 
 import { useManageWorkoutExercises } from "./workout-exercises/use-manage-workout-exercises";
-import { useCallback } from "react";
+import { useCallback, useState, useEffect } from "react";
 
 export const useWorkoutExercises = (workoutId?: string) => {
+  const [initialLoading, setInitialLoading] = useState(true);
+  
   const {
     exercises,
     isLoading,
@@ -18,9 +20,16 @@ export const useWorkoutExercises = (workoutId?: string) => {
     return Promise.resolve([]);
   }, [workoutId, fetchWorkoutExercises]);
 
+  // Set initial loading to false after first data fetch
+  useEffect(() => {
+    if (!isLoading && initialLoading) {
+      setInitialLoading(false);
+    }
+  }, [isLoading, initialLoading]);
+
   return {
     exercises,
-    isLoading,
+    isLoading: isLoading || initialLoading,
     fetchWorkoutExercises: fetchExercises,
     addExerciseToWorkout,
     removeExerciseFromWorkout

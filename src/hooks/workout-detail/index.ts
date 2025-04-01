@@ -34,10 +34,10 @@ export const useWorkoutDetail = (workoutId?: string) => {
     if (!initialFetchDone.current && workoutId) {
       const loadWorkout = async () => {
         await fetchWorkout();
+        initialFetchDone.current = true;
       };
       
       loadWorkout();
-      initialFetchDone.current = true;
     }
   }, [workoutId, fetchWorkout]);
 
