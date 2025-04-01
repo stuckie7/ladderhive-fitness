@@ -33,36 +33,30 @@ export const useFetchWorkout = (workoutId?: string) => {
         .from('workouts')
         .select('*')
         .eq('id', workoutId)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to prevent error
       
       if (workoutError) throw workoutError;
       
-      setWorkout(workoutData);
-    
-      // Check if the workout is saved by the current user
-      const { data: userWorkout, error: userWorkoutError } = await supabase
-        .from('user_workouts')
-        .select('id')
-        .eq('workout_id', workoutId)
-        .eq('status', 'saved')
-        .maybeSingle();
+      if (workoutData) {
+        setWorkout(workoutData);
       
-      if (!userWorkoutError && userWorkout) {
-        setIsSaved(true);
+        // Check if the workout is saved by the current user
+        const { data: userWorkout, error: userWorkoutError } = await supabase
+          .from('user_workouts')
+          .select('id')
+          .eq('workout_id', workoutId)
+          .eq('status', 'saved')
+          .maybeSingle();
+        
+        if (!userWorkoutError && userWorkout) {
+          setIsSaved(true);
+        }
       }
       
       return workoutData;
     } catch (error: any) {
       console.error("Error fetching workout:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to load workout details",
-        variant: "destructive",
-      });
-      
-      setTimeout(() => {
-        navigate("/workouts");
-      }, 3000);
+      // Don't toast an error here since we might display a mock workout instead
       return null;
     } finally {
       setIsLoading(false);
