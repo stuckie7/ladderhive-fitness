@@ -59,6 +59,7 @@ export const useFetchWorkoutExercises = () => {
     exercises,
     isLoading,
     fetchWorkoutExercises,
-    setExercises
+    setExercises,
+    setIsLoading
   };
 };

@@ -7,7 +7,7 @@ import { WorkoutExercise } from "./utils";
 import { useFetchWorkoutExercises } from "./use-fetch-workout-exercises";
 
 export const useManageWorkoutExercises = (workoutId?: string) => {
-  const { exercises, isLoading, fetchWorkoutExercises, setExercises } = useFetchWorkoutExercises();
+  const { exercises, isLoading, fetchWorkoutExercises, setExercises, setIsLoading } = useFetchWorkoutExercises();
   const { toast } = useToast();
   
   useEffect(() => {
