@@ -5,7 +5,7 @@ import { useDailyProgress } from "@/hooks/use-daily-progress";
 import DailyProgressCard from "@/components/progress/DailyProgressCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Progress as ProgressBar } from "@/components/ui/progress";
 import { Activity, TrendingUp, ChartBar } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
@@ -32,7 +32,7 @@ const monthlyStats = {
   completionRate: 82,
 };
 
-const Progress = () => {
+const ProgressPage = () => {
   const { progress, isLoading } = useDailyProgress();
   const [activeTab, setActiveTab] = useState("daily");
   
@@ -181,7 +181,7 @@ const Progress = () => {
                         <span className="text-sm font-medium">Total Steps</span>
                         <span className="text-sm font-medium">{monthlyStats.totalSteps.toLocaleString()}</span>
                       </div>
-                      <Progress value={85} className="h-2" />
+                      <ProgressBar value={85} className="h-2" />
                       <p className="text-xs text-muted-foreground mt-1">
                         Avg {monthlyStats.avgStepsPerDay.toLocaleString()} steps per day
                       </p>
@@ -192,7 +192,7 @@ const Progress = () => {
                         <span className="text-sm font-medium">Active Minutes</span>
                         <span className="text-sm font-medium">{monthlyStats.totalActiveMinutes} min</span>
                       </div>
-                      <Progress value={90} className="h-2" />
+                      <ProgressBar value={90} className="h-2" />
                       <p className="text-xs text-muted-foreground mt-1">
                         Avg {monthlyStats.avgActiveMinutesPerDay} minutes per day
                       </p>
@@ -203,7 +203,7 @@ const Progress = () => {
                         <span className="text-sm font-medium">Workouts</span>
                         <span className="text-sm font-medium">{monthlyStats.totalWorkouts}</span>
                       </div>
-                      <Progress value={88} className="h-2" />
+                      <ProgressBar value={88} className="h-2" />
                       <p className="text-xs text-muted-foreground mt-1">
                         Avg {monthlyStats.avgWorkoutsPerWeek} workouts per week
                       </p>
@@ -258,7 +258,7 @@ const Progress = () => {
                             <span>300,000 steps</span>
                             <span>{Math.round((monthlyStats.totalSteps / 300000) * 100)}%</span>
                           </div>
-                          <Progress value={(monthlyStats.totalSteps / 300000) * 100} className="h-2" />
+                          <ProgressBar value={(monthlyStats.totalSteps / 300000) * 100} className="h-2" />
                         </div>
                         
                         <div>
@@ -266,7 +266,7 @@ const Progress = () => {
                             <span>1,500 active minutes</span>
                             <span>{Math.round((monthlyStats.totalActiveMinutes / 1500) * 100)}%</span>
                           </div>
-                          <Progress value={(monthlyStats.totalActiveMinutes / 1500) * 100} className="h-2" />
+                          <ProgressBar value={(monthlyStats.totalActiveMinutes / 1500) * 100} className="h-2" />
                         </div>
                       </div>
                     </div>
@@ -281,4 +281,4 @@ const Progress = () => {
   );
 };
 
-export default Progress;
+export default ProgressPage;

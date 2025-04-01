@@ -17,7 +17,7 @@ import Workouts from "./pages/Workouts";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import Profile from "./pages/Profile";
 import Schedule from "./pages/Schedule";
-import Progress from "./pages/Progress";
+import ProgressPage from "./pages/Progress";
 
 // Routes protection component
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -42,7 +42,7 @@ const App = () => (
               <Route path="/workout/:id" element={<WorkoutDetail />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/schedule" element={<Schedule />} />
-              <Route path="/progress" element={<Progress />} />
+              <Route path="/progress" element={<ProgressPage />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />
@@ -56,4 +56,3 @@ const App = () => (
 );
 
 export default App;
-
