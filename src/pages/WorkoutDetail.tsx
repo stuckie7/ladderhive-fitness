@@ -8,12 +8,15 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useWorkoutExercises } from "@/hooks/use-workout-exercises";
 import { Exercise } from "@/types/exercise";
 import { validateUuid } from "@/hooks/workout-exercises/utils";
+import { useWorkouts } from "@/hooks/use-workouts";
 
 // Import our components
 import WorkoutDetailHeader from "@/components/workouts/WorkoutDetailHeader";
 import WorkoutDetailStats from "@/components/workouts/WorkoutDetailStats";
 import WorkoutExerciseSection from "@/components/workouts/WorkoutExerciseSection";
 import WorkoutProgress from "@/components/workouts/WorkoutProgress";
+import { Button } from "@/components/ui/button";
+import { Check, Save } from "lucide-react";
 
 interface Workout {
   id: string;
@@ -28,6 +31,7 @@ const WorkoutDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaved, setIsSaved] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { 
@@ -36,6 +40,13 @@ const WorkoutDetail = () => {
     fetchWorkoutExercises,
     addExerciseToWorkout
   } = useWorkoutExercises(id);
+  
+  const { 
+    saveWorkout, 
+    unsaveWorkout, 
+    completeWorkout,
+    isLoading: workoutActionLoading 
+  } = useWorkouts();
 
   useEffect(() => {
     const fetchWorkout = async () => {
@@ -65,18 +76,31 @@ const WorkoutDetail = () => {
       try {
         console.log("Fetching workout with ID:", id);
         
-        const { data, error } = await supabase
+        // Fetch the workout details
+        const { data: workoutData, error: workoutError } = await supabase
           .from('workouts')
           .select('*')
           .eq('id', id)
           .single();
         
-        if (error) throw error;
+        if (workoutError) throw workoutError;
         
-        setWorkout(data);
+        setWorkout(workoutData);
+        
+        // Check if the workout is saved by the current user
+        const { data: userWorkout, error: userWorkoutError } = await supabase
+          .from('user_workouts')
+          .select('id')
+          .eq('workout_id', id)
+          .eq('status', 'saved')
+          .maybeSingle();
+        
+        if (!userWorkoutError && userWorkout) {
+          setIsSaved(true);
+        }
         
         // Only fetch exercises if we have a valid workout
-        if (data) {
+        if (workoutData) {
           fetchWorkoutExercises(id);
         }
       } catch (error: any) {
@@ -102,6 +126,38 @@ const WorkoutDetail = () => {
     if (!id) return;
     
     await addExerciseToWorkout(id, exercise);
+  };
+
+  const handleSaveWorkout = async () => {
+    if (!id) return;
+    
+    if (isSaved) {
+      const result = await unsaveWorkout(id);
+      if (result.success) {
+        setIsSaved(false);
+      }
+    } else {
+      const result = await saveWorkout(id);
+      if (result.success) {
+        setIsSaved(true);
+      }
+    }
+  };
+
+  const handleCompleteWorkout = async () => {
+    if (!id) return;
+    
+    const result = await completeWorkout(id);
+    if (result.success) {
+      toast({
+        title: "Workout Completed",
+        description: "Great job! Your workout has been recorded.",
+      });
+      
+      setTimeout(() => {
+        navigate("/workouts");
+      }, 2000);
+    }
   };
 
   if (isLoading) {
@@ -141,6 +197,36 @@ const WorkoutDetail = () => {
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
         <WorkoutDetailHeader workout={workout} />
+        
+        <div className="flex justify-end gap-3 mb-6">
+          <Button 
+            variant={isSaved ? "outline" : "default"}
+            onClick={handleSaveWorkout}
+            disabled={workoutActionLoading}
+            className={isSaved ? "border-fitness-primary text-fitness-primary" : "bg-fitness-primary hover:bg-fitness-primary/90"}
+          >
+            {isSaved ? (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Saved
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Workout
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            onClick={handleCompleteWorkout}
+            disabled={workoutActionLoading}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Check className="h-4 w-4 mr-2" />
+            Mark as Complete
+          </Button>
+        </div>
         
         <WorkoutDetailStats 
           duration={workout.duration} 

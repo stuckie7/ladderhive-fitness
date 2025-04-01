@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,6 +15,7 @@ interface Workout {
   duration: number;
   exercises: number;
   difficulty: string;
+  isSaved?: boolean;
 }
 
 interface UserWorkout {
@@ -24,6 +26,7 @@ interface UserWorkout {
   completed_at: string | null;
   planned_for: string | null;
   workout: Workout;
+  date?: string;
 }
 
 const Workouts = () => {
@@ -54,7 +57,15 @@ const Workouts = () => {
         // Get user's saved, completed, and planned workouts
         const { data: userWorkouts, error: userWorkoutsError } = await supabase
           .from('user_workouts')
-          .select('*, workout:workouts(*)')
+          .select(`
+            id,
+            user_id,
+            workout_id,
+            status,
+            completed_at,
+            planned_for,
+            workout:workouts(*)
+          `)
           .eq('user_id', user.id);
         
         if (userWorkoutsError) throw userWorkoutsError;
@@ -62,17 +73,18 @@ const Workouts = () => {
         const typedWorkouts = allWorkouts as Workout[];
         const typedUserWorkouts = userWorkouts as unknown as UserWorkout[];
         
-        setWorkouts(typedWorkouts);
-        
         // Filter user workouts by status
         const saved = typedUserWorkouts.filter(uw => uw.status === 'saved');
-        const completed = typedUserWorkouts.filter(uw => uw.status === 'completed')
+        
+        const completed = typedUserWorkouts
+          .filter(uw => uw.status === 'completed')
           .map(w => ({
             ...w,
             date: w.completed_at ? format(new Date(w.completed_at), 'MMM dd, yyyy') : undefined
           }));
         
-        const planned = typedUserWorkouts.filter(uw => uw.status === 'planned')
+        const planned = typedUserWorkouts
+          .filter(uw => uw.status === 'planned')
           .map(w => ({
             ...w,
             date: w.planned_for ? format(new Date(w.planned_for), 'MMM dd, yyyy') : undefined
@@ -83,7 +95,7 @@ const Workouts = () => {
         setPlannedWorkouts(planned);
         
         // Get list of saved workout IDs to mark workouts as saved
-        const savedIds = saved.map(sw => sw.workout.id);
+        const savedIds = saved.map(sw => sw.workout_id);
         
         // Update allWorkouts with isSaved property
         setWorkouts(typedWorkouts.map(w => ({
@@ -131,7 +143,7 @@ const Workouts = () => {
             {isLoading ? (
               <p>Loading workouts...</p>
             ) : workouts.length > 0 ? (
-              workouts.map((workout: any) => (
+              workouts.map((workout) => (
                 <WorkoutCard 
                   key={workout.id} 
                   workout={workout} 
@@ -172,7 +184,7 @@ const Workouts = () => {
                   key={userWorkout.id} 
                   workout={{
                     ...userWorkout.workout,
-                    date: format(new Date(userWorkout.completed_at!), 'MMM dd, yyyy') 
+                    date: userWorkout.date
                   }}
                 />
               ))
@@ -192,7 +204,7 @@ const Workouts = () => {
                   key={userWorkout.id} 
                   workout={{
                     ...userWorkout.workout,
-                    date: format(new Date(userWorkout.planned_for!), 'MMM dd, yyyy')
+                    date: userWorkout.date
                   }}
                 />
               ))

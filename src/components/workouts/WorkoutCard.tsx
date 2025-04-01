@@ -1,10 +1,11 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, Dumbbell, Bookmark, BookmarkCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useWorkouts } from "@/hooks/use-workouts";
 import { useToast } from "@/components/ui/use-toast";
 
 interface WorkoutCardProps {
@@ -26,6 +27,7 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
   const { toast } = useToast();
   const [saved, setSaved] = useState(isSaved);
   const [isLoading, setIsLoading] = useState(false);
+  const { saveWorkout, unsaveWorkout } = useWorkouts();
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
@@ -43,50 +45,30 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
   };
 
   const handleSaveWorkout = async () => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to save workouts.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsLoading(true);
     try {
       if (saved) {
         // Remove from saved
-        const { error } = await supabase
-          .from('user_workouts')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('workout_id', workout.id)
-          .eq('status', 'saved');
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Workout removed",
-          description: "The workout has been removed from your saved list.",
-        });
-        setSaved(false);
+        const result = await unsaveWorkout(workout.id);
+        if (result.success) {
+          setSaved(false);
+        }
       } else {
         // Add to saved
-        const { error } = await supabase
-          .from('user_workouts')
-          .insert({
-            user_id: user.id,
-            workout_id: workout.id,
-            status: 'saved'
-          });
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Workout saved",
-          description: "The workout has been added to your saved list.",
-        });
-        setSaved(true);
+        const result = await saveWorkout(workout.id);
+        if (result.success) {
+          setSaved(true);
+        }
       }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save workout. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
