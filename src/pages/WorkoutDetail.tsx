@@ -1,6 +1,8 @@
+
 import { useParams } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useWorkoutDetail } from "@/hooks/use-workout-detail";
+import { useEffect, useState } from "react";
 
 // Import our components
 import WorkoutDetailHeader from "@/components/workouts/WorkoutDetailHeader";
@@ -8,8 +10,13 @@ import WorkoutDetailStats from "@/components/workouts/WorkoutDetailStats";
 import WorkoutActions from "@/components/workouts/WorkoutActions";
 import WorkoutDetailLayout from "@/components/workouts/WorkoutDetailLayout";
 
+// Import mock data from Dashboard for development purposes
+import { mockWorkouts } from "@/data/mock-workouts";
+
 const WorkoutDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const [mockWorkout, setMockWorkout] = useState<any>(null);
+  
   const {
     workout,
     isLoading,
@@ -22,7 +29,18 @@ const WorkoutDetail = () => {
     handleCompleteWorkout
   } = useWorkoutDetail(id);
 
-  if (isLoading) {
+  // Check if this is a mock workout from the dashboard
+  useEffect(() => {
+    if (id) {
+      const foundMockWorkout = mockWorkouts.find(w => w.id === id);
+      if (foundMockWorkout) {
+        console.log("Found mock workout:", foundMockWorkout);
+        setMockWorkout(foundMockWorkout);
+      }
+    }
+  }, [id]);
+
+  if (isLoading && !mockWorkout) {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-6">
@@ -39,7 +57,10 @@ const WorkoutDetail = () => {
     );
   }
 
-  if (!workout) {
+  // Use mock workout if database workout not found
+  const displayWorkout = workout || mockWorkout;
+
+  if (!displayWorkout) {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-6">
@@ -58,7 +79,7 @@ const WorkoutDetail = () => {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <WorkoutDetailHeader workout={workout} />
+        <WorkoutDetailHeader workout={displayWorkout} />
         
         <WorkoutActions 
           isSaved={isSaved}
@@ -68,15 +89,15 @@ const WorkoutDetail = () => {
         />
         
         <WorkoutDetailStats 
-          duration={workout?.duration || 0} 
-          exerciseCount={workoutExercises.length} 
+          duration={displayWorkout?.duration || 0} 
+          exerciseCount={mockWorkout ? 0 : workoutExercises.length} 
         />
 
         <WorkoutDetailLayout 
           workoutId={id}
           exercises={workoutExercises}
           isLoading={exercisesLoading}
-          duration={workout?.duration || 0}
+          duration={displayWorkout?.duration || 0}
           onAddExercise={handleAddExercise}
         />
       </div>
