@@ -1,0 +1,26 @@
+
+/* Exercise list styling */
+.exercise-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.exercise-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dark .exercise-item:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease forwards;
+}
