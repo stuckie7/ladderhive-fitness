@@ -16,7 +16,7 @@ const WorkoutProgress = ({
   duration, 
   elapsedTime = 0 
 }: WorkoutProgressProps) => {
-  const progressPercentage = Math.round((completedExercises / totalExercises) * 100);
+  const progressPercentage = Math.round((completedExercises / totalExercises) * 100) || 0;
   
   const formatTime = (timeInSeconds: number) => {
     const minutes = Math.floor(timeInSeconds / 60);

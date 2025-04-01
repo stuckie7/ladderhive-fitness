@@ -217,7 +217,11 @@ const WorkoutDetail = () => {
                 <CardTitle className="text-xl font-semibold">Progress</CardTitle>
               </CardHeader>
               <CardContent>
-                <WorkoutProgress workout={workout} />
+                <WorkoutProgress 
+                  totalExercises={workoutExercises.length} 
+                  completedExercises={0}
+                  duration={workout?.duration || 0}
+                />
               </CardContent>
             </Card>
           </div>

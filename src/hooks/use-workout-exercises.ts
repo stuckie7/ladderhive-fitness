@@ -12,7 +12,7 @@ interface WorkoutExercise {
   reps: number;
   weight?: string;
   rest_time?: number;
-  order: number;
+  order_index: number; // Changed from 'order' to 'order_index' to match DB schema
   exercise?: Exercise;
 }
 
@@ -33,12 +33,12 @@ export const useWorkoutExercises = (workoutId?: string) => {
           exercise:exercises(*)
         `)
         .eq('workout_id', id)
-        .order('order', { ascending: true });
+        .order('order_index', { ascending: true });
       
       if (error) throw error;
       
-      setExercises(data || []);
-      return data;
+      setExercises(data as WorkoutExercise[] || []);
+      return data as WorkoutExercise[];
     } catch (error: any) {
       console.error("Error fetching workout exercises:", error);
       toast({
@@ -60,7 +60,7 @@ export const useWorkoutExercises = (workoutId?: string) => {
       // Get the current highest order
       const currentExercises = await fetchWorkoutExercises(workoutId);
       const nextOrder = currentExercises.length > 0 
-        ? Math.max(...currentExercises.map(e => e.order)) + 1 
+        ? Math.max(...currentExercises.map(e => e.order_index)) + 1 
         : 0;
       
       // First, check if the exercise exists in the exercises table
@@ -104,7 +104,7 @@ export const useWorkoutExercises = (workoutId?: string) => {
           reps: details.reps || 10,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
-          order: nextOrder
+          order_index: nextOrder // Changed from 'order' to 'order_index'
         })
         .select()
         .single();
