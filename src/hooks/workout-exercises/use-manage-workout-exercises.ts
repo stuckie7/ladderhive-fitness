@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Exercise } from "@/types/exercise";
@@ -7,77 +7,57 @@ import { WorkoutExercise } from "./utils";
 import { useFetchWorkoutExercises } from "./use-fetch-workout-exercises";
 
 export const useManageWorkoutExercises = (workoutId?: string) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const { exercises, isLoading, fetchWorkoutExercises, setExercises } = useFetchWorkoutExercises();
   const { toast } = useToast();
-  const { 
-    exercises, 
-    fetchWorkoutExercises, 
-    setExercises 
-  } = useFetchWorkoutExercises();
+  
+  useEffect(() => {
+    if (workoutId) fetchWorkoutExercises(workoutId);
+  }, [workoutId]);
 
   const addExerciseToWorkout = async (workoutId: string, exercise: Exercise, details: Partial<WorkoutExercise> = {}) => {
     if (!workoutId) return null;
     
     setIsLoading(true);
     try {
-      // Get the current highest order
-      const currentExercises = await fetchWorkoutExercises(workoutId);
-      const nextOrder = currentExercises.length > 0 
-        ? Math.max(...currentExercises.map(e => e.order_index)) + 1 
-        : 0;
+      // Find the highest order_index to add the new exercise at the end
+      const maxOrderIndex = exercises.length > 0
+        ? Math.max(...exercises.map(e => e.order_index))
+        : -1;
       
-      // First, check if the exercise exists in the exercises table
-      const { data: existingExercise, error: checkError } = await supabase
-        .from('exercises')
-        .select('id')
-        .eq('id', exercise.id)
-        .single();
+      const newOrderIndex = maxOrderIndex + 1;
       
-      let exerciseId: string;
+      const newExercise = {
+        workout_id: workoutId,
+        exercise_id: exercise.id,
+        sets: details.sets || 3,
+        reps: details.reps || 10,
+        weight: details.weight || null,
+        rest_time: details.rest_time || 60,
+        order_index: newOrderIndex
+      };
       
-      if (checkError || !existingExercise) {
-        // Exercise doesn't exist yet, add it
-        const { data: newExercise, error: insertError } = await supabase
-          .from('exercises')
-          .insert({
-            id: exercise.id,
-            name: exercise.name,
-            description: exercise.description || '',
-            muscle_group: exercise.muscle_group || exercise.bodyPart,
-            equipment: exercise.equipment,
-            difficulty: exercise.difficulty || 'Intermediate',
-            image_url: exercise.image_url || exercise.gifUrl
-          })
-          .select('id')
-          .single();
-        
-        if (insertError) throw insertError;
-        exerciseId = newExercise.id;
-      } else {
-        exerciseId = existingExercise.id;
-      }
-      
-      // Now add the exercise to the workout
       const { data, error } = await supabase
         .from('workout_exercises')
-        .insert({
-          workout_id: workoutId,
-          exercise_id: exerciseId,
-          sets: details.sets || 3,
-          reps: details.reps || 10,
-          weight: details.weight || null,
-          rest_time: details.rest_time || 60,
-          order_index: nextOrder
-        })
+        .insert(newExercise)
         .select()
         .single();
       
       if (error) throw error;
       
-      // Refresh exercises
-      await fetchWorkoutExercises(workoutId);
+      // Add the new exercise to the local state with the full exercise details
+      const updatedExercise: WorkoutExercise = {
+        ...data,
+        exercise
+      };
       
-      return data;
+      setExercises([...exercises, updatedExercise]);
+      
+      toast({
+        title: "Exercise added",
+        description: `${exercise.name} has been added to your workout.`
+      });
+      
+      return updatedExercise;
     } catch (error: any) {
       console.error("Error adding exercise to workout:", error);
       toast({
@@ -92,7 +72,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
   };
 
   const removeExerciseFromWorkout = async (exerciseId: string) => {
-    if (!workoutId) return false;
+    if (!exerciseId) return false;
     
     setIsLoading(true);
     try {
@@ -103,7 +83,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       if (error) throw error;
       
-      // Update local state
+      // Update local state by removing the exercise
       setExercises(exercises.filter(e => e.id !== exerciseId));
       
       toast({
@@ -116,7 +96,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       console.error("Error removing exercise from workout:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to remove exercise from workout",
+        description: error.message || "Failed to remove exercise",
         variant: "destructive",
       });
       return false;
