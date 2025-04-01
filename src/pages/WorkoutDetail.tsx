@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useWorkoutDetail } from "@/hooks/use-workout-detail";
@@ -64,7 +63,7 @@ const WorkoutDetail = () => {
         <WorkoutActions 
           isSaved={isSaved}
           isLoading={workoutActionLoading}
-          onSave={handleSaveWorkout}
+          onSave={() => handleSaveWorkout(isSaved)}
           onComplete={handleCompleteWorkout}
         />
         
