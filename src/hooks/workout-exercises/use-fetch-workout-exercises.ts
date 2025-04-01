@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { WorkoutExercise, mapSupabaseExerciseToExercise, validateUuid } from "./utils";
+import { WorkoutExercise, mapSupabaseExerciseToExercise } from "./utils";
 
 export const useFetchWorkoutExercises = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -11,19 +11,6 @@ export const useFetchWorkoutExercises = () => {
 
   const fetchWorkoutExercises = async (id: string) => {
     if (!id) return [];
-    
-    // Check if the ID is a valid UUID before making the request
-    const isValidUuid = validateUuid(id);
-    
-    if (!isValidUuid) {
-      console.error("Invalid UUID format:", id);
-      toast({
-        title: "Error",
-        description: "Invalid workout ID format. Please check the URL.",
-        variant: "destructive",
-      });
-      return [];
-    }
     
     setIsLoading(true);
     try {

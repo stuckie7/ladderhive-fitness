@@ -3,7 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Exercise } from "@/types/exercise";
-import { WorkoutExercise, validateUuid } from "./utils";
+import { WorkoutExercise } from "./utils";
 import { useFetchWorkoutExercises } from "./use-fetch-workout-exercises";
 
 export const useManageWorkoutExercises = (workoutId?: string) => {
@@ -17,16 +17,6 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
 
   const addExerciseToWorkout = async (workoutId: string, exercise: Exercise, details: Partial<WorkoutExercise> = {}) => {
     if (!workoutId) return null;
-    
-    // Validate UUID
-    if (!validateUuid(workoutId)) {
-      toast({
-        title: "Error",
-        description: "Invalid workout ID format",
-        variant: "destructive",
-      });
-      return null;
-    }
     
     setIsLoading(true);
     try {
