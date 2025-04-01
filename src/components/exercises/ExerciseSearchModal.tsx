@@ -50,6 +50,7 @@ const ExerciseSearchModal = ({ open, onOpenChange, onAddExercise, workoutId }: E
     setIsSearching(true);
     try {
       const results = await searchExercises(searchQuery);
+      console.log("Search results:", results);
       setSearchResults(results);
     } catch (error) {
       console.error("Error searching exercises:", error);

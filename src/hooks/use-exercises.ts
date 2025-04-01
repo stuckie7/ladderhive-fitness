@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Exercise } from '@/types/exercise';
 import * as exerciseApi from '@/integrations/exercisedb/client';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useExercises = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -71,6 +72,30 @@ export const useExercises = () => {
   const searchExercises = async (query: string): Promise<Exercise[]> => {
     setIsLoading(true);
     try {
+      // Try to search from our Supabase database first
+      const { data: supabaseExercises, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .ilike('name', `%${query}%`)
+        .limit(20);
+      
+      if (supabaseExercises && supabaseExercises.length > 0) {
+        console.log("Found exercises in Supabase:", supabaseExercises);
+        return supabaseExercises.map(ex => ({
+          id: ex.id,
+          name: ex.name,
+          bodyPart: ex.muscle_group || '',
+          target: ex.muscle_group || '',
+          equipment: ex.equipment || '',
+          muscle_group: ex.muscle_group,
+          description: ex.description,
+          difficulty: ex.difficulty as any,
+          video_url: ex.video_url,
+          image_url: ex.image_url
+        }));
+      }
+      
+      // If no results or error from Supabase, fallback to ExerciseDB API
       // Since the API doesn't have a direct search endpoint, 
       // we'll fetch all exercises by body parts and filter client-side
       const bodyParts = await exerciseApi.getBodyParts();

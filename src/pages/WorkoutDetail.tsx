@@ -9,7 +9,7 @@ import WorkoutProgress from "@/components/workouts/WorkoutProgress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Dumbbell, CalendarClock, Plus } from "lucide-react";
+import { Clock, Dumbbell, CalendarClock, Plus, Search } from "lucide-react";
 import { useWorkoutExercises } from "@/hooks/use-workout-exercises";
 import ExerciseSearchModal from "@/components/exercises/ExerciseSearchModal";
 import { Exercise } from "@/types/exercise";
@@ -182,9 +182,12 @@ const WorkoutDetail = () => {
           <div className="md:col-span-2">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Workout Exercises</h2>
-              <Button onClick={() => setSearchModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Exercise
+              <Button 
+                onClick={() => setSearchModalOpen(true)}
+                className="bg-fitness-primary hover:bg-fitness-primary/90"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Search & Add Exercise
               </Button>
             </div>
             
@@ -202,9 +205,12 @@ const WorkoutDetail = () => {
                   <p className="text-muted-foreground text-center mb-4">
                     This workout doesn't have any exercises yet. Add some to get started.
                   </p>
-                  <Button onClick={() => setSearchModalOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Exercise
+                  <Button 
+                    onClick={() => setSearchModalOpen(true)}
+                    className="bg-fitness-primary hover:bg-fitness-primary/90"
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Search & Add Exercise
                   </Button>
                 </CardContent>
               </Card>
