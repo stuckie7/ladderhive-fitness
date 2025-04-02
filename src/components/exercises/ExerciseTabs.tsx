@@ -13,6 +13,7 @@ interface ExerciseTabsProps {
   isLoading: boolean;
   getFilteredExercises: (muscleGroup: string) => Exercise[];
   resetFilters: () => void;
+  viewMode?: string;
 }
 
 const ExerciseTabs = ({
@@ -23,6 +24,7 @@ const ExerciseTabs = ({
   isLoading,
   getFilteredExercises,
   resetFilters,
+  viewMode = "grid",
 }: ExerciseTabsProps) => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
@@ -43,11 +45,12 @@ const ExerciseTabs = ({
 
       <TabsContent value={activeTab} className="mt-6">
         {isLoading ? (
-          <ExerciseSkeletons />
+          <ExerciseSkeletons viewMode={viewMode} />
         ) : (
           <ExerciseResults
             exercises={getFilteredExercises(activeTab)}
             resetFilters={resetFilters}
+            viewMode={viewMode}
           />
         )}
       </TabsContent>
@@ -55,10 +58,17 @@ const ExerciseTabs = ({
   );
 };
 
-const ExerciseSkeletons = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+interface ExerciseSkeletonsProps {
+  viewMode?: string;
+}
+
+const ExerciseSkeletons = ({ viewMode = "grid" }: ExerciseSkeletonsProps) => (
+  <div className={viewMode === "grid" 
+    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+    : "space-y-4"
+  }>
     {[1, 2, 3, 4, 5, 6].map((i) => (
-      <Skeleton key={i} className="h-64 rounded-lg" />
+      <Skeleton key={i} className={viewMode === "grid" ? "h-64 rounded-lg" : "h-24 rounded-lg"} />
     ))}
   </div>
 );
@@ -66,9 +76,10 @@ const ExerciseSkeletons = () => (
 interface ExerciseResultsProps {
   exercises: Exercise[];
   resetFilters: () => void;
+  viewMode?: string;
 }
 
-const ExerciseResults = ({ exercises, resetFilters }: ExerciseResultsProps) => (
+const ExerciseResults = ({ exercises, resetFilters, viewMode = "grid" }: ExerciseResultsProps) => (
   <>
     <p className="mb-4 text-muted-foreground">
       Showing {exercises.length} exercises
@@ -83,9 +94,16 @@ const ExerciseResults = ({ exercises, resetFilters }: ExerciseResultsProps) => (
         </Button>
       </div>
     ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className={viewMode === "grid" 
+        ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+        : "space-y-4"
+      }>
         {exercises.map((exercise) => (
-          <ExerciseCard key={exercise.id} exercise={exercise} />
+          <ExerciseCard 
+            key={exercise.id} 
+            exercise={exercise} 
+            variant={viewMode === "grid" ? "card" : "list"} 
+          />
         ))}
       </div>
     )}
