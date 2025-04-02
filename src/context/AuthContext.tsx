@@ -33,9 +33,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // If user just signed in, redirect to dashboard
         if (event === 'SIGNED_IN') {
-          navigate('/dashboard');
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 0);
         } else if (event === 'SIGNED_OUT') {
-          navigate('/login');
+          setTimeout(() => {
+            navigate('/login');
+          }, 0);
         }
       }
     );
