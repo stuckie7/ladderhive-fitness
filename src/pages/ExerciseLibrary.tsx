@@ -7,12 +7,10 @@ import ExerciseCard from "@/components/exercises/ExerciseCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Upload } from "lucide-react";
+import { Search } from "lucide-react";
 import { useExercises } from "@/hooks/use-exercises";
 import { Exercise, ExerciseFilters as Filters } from "@/types/exercise";
 import { getBodyParts, getEquipmentList } from "@/integrations/exercisedb/client";
-import ExcelImportForm from "@/components/exercises/ExcelImportForm";
 
 // We'll fetch these from the API, but default to static lists initially
 const muscleGroups = [
@@ -37,7 +35,6 @@ const ExerciseLibrary = () => {
   const [availableMuscleGroups, setAvailableMuscleGroups] = useState<string[]>(muscleGroups);
   const [availableEquipment, setAvailableEquipment] = useState<string[]>(equipmentTypes);
   const { getExercisesByMuscleGroup, getExercisesByEquipment, searchExercises } = useExercises();
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   // Fetch available muscle groups and equipment from API
   useEffect(() => {
@@ -104,11 +101,6 @@ const ExerciseLibrary = () => {
     enabled: availableMuscleGroups.length > 0 // Only run query when we have muscle groups
   });
 
-  const handleImportComplete = () => {
-    setImportDialogOpen(false);
-    refetch();
-  };
-
   const resetFilters = () => {
     setFilters({
       muscleGroup: "",
@@ -142,23 +134,7 @@ const ExerciseLibrary = () => {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Exercise Library</h1>
-          <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Upload className="h-4 w-4" />
-                Import Exercises
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Import Exercises from Excel</DialogTitle>
-              </DialogHeader>
-              <ExcelImportForm onImportComplete={handleImportComplete} />
-            </DialogContent>
-          </Dialog>
-        </div>
+        <h1 className="text-3xl font-bold mb-6">Exercise Library</h1>
         
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
