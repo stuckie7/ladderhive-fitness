@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import ExerciseFilters from "@/components/exercises/ExerciseFilters";
 import ExerciseCard from "@/components/exercises/ExerciseCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Upload } from "lucide-react";
 import { useExercises } from "@/hooks/use-exercises";
 import { Exercise, ExerciseFilters as Filters } from "@/types/exercise";
 import { getBodyParts, getEquipmentList } from "@/integrations/exercisedb/client";
@@ -134,7 +135,15 @@ const ExerciseLibrary = () => {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <h1 className="text-3xl font-bold mb-6">Exercise Library</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Exercise Library</h1>
+          <Link to="/exercises/import">
+            <Button variant="outline" className="gap-2">
+              <Upload className="h-4 w-4" />
+              Import Exercises
+            </Button>
+          </Link>
+        </div>
         
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
