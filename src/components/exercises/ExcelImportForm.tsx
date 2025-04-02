@@ -10,7 +10,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise } from "@/types/exercise";
 
-const ExcelImportForm = () => {
+interface ExcelImportFormProps {
+  onImportComplete?: () => void;
+}
+
+const ExcelImportForm = ({ onImportComplete }: ExcelImportFormProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +126,11 @@ const ExcelImportForm = () => {
       const fileInput = document.getElementById('excel-file') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
       
+      // Call onImportComplete callback if provided
+      if (onImportComplete) {
+        onImportComplete();
+      }
+      
     } catch (err: any) {
       console.error("Import error:", err);
       setError(err.message || "Failed to import exercises");
@@ -136,14 +145,8 @@ const ExcelImportForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold">Import Exercises from Excel</CardTitle>
-        <CardDescription>
-          Upload an Excel spreadsheet containing exercise data to add to your database
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="w-full">
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <Input
@@ -157,7 +160,7 @@ const ExcelImportForm = () => {
           <Button 
             onClick={handleImport} 
             disabled={!file || isUploading}
-            className="bg-fitness-primary hover:bg-fitness-primary/90"
+            className="bg-primary hover:bg-primary/90"
           >
             {isUploading ? (
               "Importing..."
@@ -204,13 +207,8 @@ const ExcelImportForm = () => {
             <li><strong>video_url</strong>: URL to a video demonstration</li>
           </ul>
         </div>
-      </CardContent>
-      <CardFooter className="flex justify-end">
-        <p className="text-sm text-muted-foreground">
-          Make sure your data follows the required format to avoid import errors.
-        </p>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 };
 
