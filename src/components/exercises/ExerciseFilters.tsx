@@ -66,7 +66,7 @@ const ExerciseFilters = ({
               <SelectValue placeholder="All muscle groups" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All muscle groups</SelectItem>
+              <SelectItem value="all_muscle_groups">All muscle groups</SelectItem>
               {muscleGroups.map((group) => (
                 <SelectItem key={group} value={group}>
                   {group}
@@ -86,7 +86,7 @@ const ExerciseFilters = ({
               <SelectValue placeholder="All equipment" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All equipment</SelectItem>
+              <SelectItem value="all_equipment">All equipment</SelectItem>
               {equipmentTypes.map((equipment) => (
                 <SelectItem key={equipment} value={equipment}>
                   {equipment}
@@ -106,7 +106,7 @@ const ExerciseFilters = ({
               <SelectValue placeholder="All difficulties" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All difficulties</SelectItem>
+              <SelectItem value="all_difficulties">All difficulties</SelectItem>
               {difficultyLevels.map((level) => (
                 <SelectItem key={level} value={level}>
                   {level}

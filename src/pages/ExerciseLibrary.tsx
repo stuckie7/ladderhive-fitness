@@ -28,9 +28,9 @@ const ExerciseLibrary = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [filters, setFilters] = useState<Filters>({
-    muscleGroup: "",
-    equipment: "",
-    difficulty: ""
+    muscleGroup: "all_muscle_groups",
+    equipment: "all_equipment",
+    difficulty: "all_difficulties"
   });
   const [availableMuscleGroups, setAvailableMuscleGroups] = useState<string[]>(muscleGroups);
   const [availableEquipment, setAvailableEquipment] = useState<string[]>(equipmentTypes);
@@ -71,11 +71,13 @@ const ExerciseLibrary = () => {
       return await searchExercises(searchQuery);
     }
     
-    if (filters.muscleGroup) {
+    // If the muscleGroup filter is set to a real value (not the "all" option)
+    if (filters.muscleGroup && filters.muscleGroup !== "all_muscle_groups") {
       return await getExercisesByMuscleGroup(filters.muscleGroup.toLowerCase());
     }
     
-    if (filters.equipment) {
+    // If the equipment filter is set to a real value (not the "all" option)
+    if (filters.equipment && filters.equipment !== "all_equipment") {
       return await getExercisesByEquipment(filters.equipment.toLowerCase());
     }
     
@@ -86,7 +88,7 @@ const ExerciseLibrary = () => {
     let filteredData = exercises;
     
     // Apply client-side filtering for difficulty if set
-    if (filters.difficulty) {
+    if (filters.difficulty && filters.difficulty !== "all_difficulties") {
       filteredData = filteredData.filter(ex => 
         ex.difficulty === filters.difficulty
       );
@@ -103,9 +105,9 @@ const ExerciseLibrary = () => {
 
   const resetFilters = () => {
     setFilters({
-      muscleGroup: "",
-      equipment: "",
-      difficulty: ""
+      muscleGroup: "all_muscle_groups",
+      equipment: "all_equipment",
+      difficulty: "all_difficulties"
     });
     setSearchQuery("");
   };
