@@ -23,9 +23,6 @@ export const useExerciseLibrary = () => {
     equipment: "all_equipment",
     difficulty: "all_difficulties"
   });
-  const [sortOption, setSortOption] = useState("name_asc");
-  const [activeView, setActiveView] = useState("grid");
-  const [showFiltersPopover, setShowFiltersPopover] = useState(false);
   const [availableMuscleGroups, setAvailableMuscleGroups] = useState<string[]>(defaultMuscleGroups);
   const [availableEquipment, setAvailableEquipment] = useState<string[]>(defaultEquipmentTypes);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -110,63 +107,23 @@ export const useExerciseLibrary = () => {
       difficulty: "all_difficulties"
     });
     setSearchQuery("");
-    setSortOption("name_asc");
-  };
-
-  const hasActiveFilters = 
-    filters.muscleGroup !== "all_muscle_groups" || 
-    filters.equipment !== "all_equipment" || 
-    filters.difficulty !== "all_difficulties" ||
-    searchQuery.trim() !== "";
-
-  const getSortedExercises = (exerciseList: Exercise[]) => {
-    if (!exerciseList) return [];
-    
-    return [...exerciseList].sort((a, b) => {
-      switch (sortOption) {
-        case "name_asc":
-          return a.name.localeCompare(b.name);
-        case "name_desc":
-          return b.name.localeCompare(a.name);
-        case "difficulty_asc":
-          // Sort: Beginner, Intermediate, Advanced
-          const difficultyOrder = { "Beginner": 1, "Intermediate": 2, "Advanced": 3 };
-          return (difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0) - 
-                 (difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0);
-        case "difficulty_desc":
-          // Sort: Advanced, Intermediate, Beginner
-          const reverseDifficultyOrder = { "Advanced": 1, "Intermediate": 2, "Beginner": 3 };
-          return (reverseDifficultyOrder[a.difficulty as keyof typeof reverseDifficultyOrder] || 0) - 
-                 (reverseDifficultyOrder[b.difficulty as keyof typeof reverseDifficultyOrder] || 0);
-        case "muscle_group_asc":
-          return (a.muscle_group || "").localeCompare(b.muscle_group || "");
-        default:
-          return 0;
-      }
-    });
   };
 
   const getFilteredExercises = (muscleGroup: string) => {
     if (!exercises) return [];
     
-    let filtered = exercises;
-    
-    if (muscleGroup !== "all") {
-      filtered = filtered.filter(ex => 
-        ex.muscle_group?.toLowerCase() === muscleGroup.toLowerCase() ||
-        ex.bodyPart?.toLowerCase() === muscleGroup.toLowerCase()
-      );
+    if (muscleGroup === "all") {
+      return exercises;
     }
     
-    return getSortedExercises(filtered);
+    return exercises.filter(ex => 
+      ex.muscle_group?.toLowerCase() === muscleGroup.toLowerCase() ||
+      ex.bodyPart?.toLowerCase() === muscleGroup.toLowerCase()
+    );
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-  };
-
-  const handleSortChange = (value: string) => {
-    setSortOption(value);
   };
 
   useEffect(() => {
@@ -179,25 +136,16 @@ export const useExerciseLibrary = () => {
     searchQuery,
     activeTab,
     filters,
-    sortOption,
-    activeView,
-    showFiltersPopover,
     availableMuscleGroups,
     availableEquipment,
     importDialogOpen,
-    hasActiveFilters,
-    availableViews: ["grid", "list"],
     setSearchQuery,
     setActiveTab,
     setFilters,
-    setSortOption,
-    setActiveView,
-    setShowFiltersPopover,
     setImportDialogOpen,
     resetFilters,
     getFilteredExercises,
     handleSearchChange,
-    handleSortChange,
     refetch
   };
 };

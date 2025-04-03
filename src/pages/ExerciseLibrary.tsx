@@ -11,25 +11,17 @@ const ExerciseLibrary = () => {
     searchQuery,
     activeTab,
     filters,
-    sortOption,
-    activeView,
-    showFiltersPopover,
     availableMuscleGroups,
     availableEquipment,
-    availableViews,
     exercises,
     isLoading,
     importDialogOpen,
-    hasActiveFilters,
     setActiveTab,
     setFilters,
-    setActiveView,
-    setShowFiltersPopover,
     setImportDialogOpen,
     resetFilters,
     getFilteredExercises,
-    handleSearchChange,
-    handleSortChange
+    handleSearchChange
   } = useExerciseLibrary();
 
   // List of difficulty levels - kept here as it's static
@@ -41,21 +33,11 @@ const ExerciseLibrary = () => {
         <ExerciseLibraryHeader 
           importDialogOpen={importDialogOpen}
           setImportDialogOpen={setImportDialogOpen}
-          filters={filters}
-          resetFilters={resetFilters}
-          hasActiveFilters={hasActiveFilters}
-          showFiltersPopover={showFiltersPopover}
-          setShowFiltersPopover={setShowFiltersPopover}
-          availableViews={availableViews}
-          activeView={activeView}
-          setActiveView={setActiveView}
         />
         
         <SearchBar 
           searchQuery={searchQuery}
           handleSearchChange={handleSearchChange}
-          sortOption={sortOption}
-          handleSortChange={handleSortChange}
         />
         
         <ExerciseFilters 
@@ -75,7 +57,6 @@ const ExerciseLibrary = () => {
           isLoading={isLoading}
           getFilteredExercises={getFilteredExercises}
           resetFilters={resetFilters}
-          viewMode={activeView}
         />
       </div>
     </AppLayout>
