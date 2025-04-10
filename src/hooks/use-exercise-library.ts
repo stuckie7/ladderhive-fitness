@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Exercise, ExerciseFilters } from "@/types/exercise";
 import { useExercises } from "./use-exercises";
+import { useExercisesFull, ExerciseFull } from "./use-exercises-full";
 import { getBodyParts, getEquipmentList } from "@/integrations/exercisedb/client";
 
 // Default muscle groups and equipment
@@ -14,6 +15,25 @@ const defaultEquipmentTypes = [
   "Bodyweight", "Dumbbells", "Barbell", "Kettlebell", "Resistance Bands", 
   "Cable Machine", "Smith Machine", "Machine", "Medicine Ball", "Foam Roller"
 ];
+
+// Helper function to map ExerciseFull to Exercise
+const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise => {
+  return {
+    id: exerciseFull.id.toString(),
+    name: exerciseFull.name || '',
+    bodyPart: exerciseFull.body_region || '',
+    target: exerciseFull.target_muscle_group || '',
+    equipment: exerciseFull.primary_equipment || '',
+    gifUrl: exerciseFull.short_youtube_demo || '',
+    secondaryMuscles: exerciseFull.secondary_muscle ? [exerciseFull.secondary_muscle] : [],
+    instructions: [],
+    muscle_group: exerciseFull.target_muscle_group || '',
+    description: `${exerciseFull.prime_mover_muscle || ''} - ${exerciseFull.mechanics || ''} - ${exerciseFull.force_type || ''}`,
+    difficulty: exerciseFull.difficulty || 'Intermediate',
+    video_url: exerciseFull.in_depth_youtube_exp || exerciseFull.short_youtube_demo || '',
+    image_url: ''
+  };
+};
 
 export const useExerciseLibrary = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,28 +52,46 @@ export const useExerciseLibrary = () => {
     getExercisesByEquipment, 
     searchExercises 
   } = useExercises();
+  
+  const {
+    fetchExercisesFull,
+    searchExercisesFull,
+    getMuscleGroups,
+    getEquipmentTypes,
+    isLoading: isLoadingFull
+  } = useExercisesFull();
 
-  // Fetch available muscle groups and equipment from API
+  // Fetch available muscle groups and equipment from both API and Supabase
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
+        // Get filter options from ExerciseDB API
         const [bodyParts, equipment] = await Promise.all([
           getBodyParts(),
           getEquipmentList()
         ]);
         
-        if (bodyParts.length) {
-          // Capitalize first letter of each body part for display
-          setAvailableMuscleGroups(
-            bodyParts.map(part => part.charAt(0).toUpperCase() + part.slice(1))
-          );
+        // Get filter options from Supabase exercises_full table
+        const [supabaseMuscleGroups, supabaseEquipment] = await Promise.all([
+          getMuscleGroups(),
+          getEquipmentTypes()
+        ]);
+        
+        // Combine and deduplicate options
+        if (bodyParts.length || supabaseMuscleGroups.length) {
+          const allMuscleGroups = [
+            ...bodyParts.map(part => part.charAt(0).toUpperCase() + part.slice(1)),
+            ...supabaseMuscleGroups
+          ];
+          setAvailableMuscleGroups([...new Set(allMuscleGroups)]);
         }
         
-        if (equipment.length) {
-          // Capitalize first letter of each equipment for display
-          setAvailableEquipment(
-            equipment.map(eq => eq.charAt(0).toUpperCase() + eq.slice(1))
-          );
+        if (equipment.length || supabaseEquipment.length) {
+          const allEquipment = [
+            ...equipment.map(eq => eq.charAt(0).toUpperCase() + eq.slice(1)),
+            ...supabaseEquipment
+          ];
+          setAvailableEquipment([...new Set(allEquipment)]);
         }
       } catch (error) {
         console.error("Failed to fetch filter options:", error);
@@ -64,41 +102,88 @@ export const useExerciseLibrary = () => {
   }, []);
 
   const fetchExercises = async () => {
-    if (searchQuery) {
-      return await searchExercises(searchQuery);
+    // Try to get exercises from exercises_full first
+    try {
+      if (searchQuery) {
+        const fullExercises = await searchExercisesFull(searchQuery);
+        if (fullExercises && fullExercises.length > 0) {
+          console.log("Found exercises in exercises_full:", fullExercises.length);
+          return fullExercises.map(mapExerciseFullToExercise);
+        }
+      }
+      
+      // Apply filters to exercises_full
+      if (filters.muscleGroup && filters.muscleGroup !== "all_muscle_groups") {
+        const fullExercises = await fetchExercisesFull(20, 0); // Get initial set
+        const filtered = fullExercises.filter(ex => 
+          ex.target_muscle_group?.toLowerCase() === filters.muscleGroup.toLowerCase() ||
+          ex.prime_mover_muscle?.toLowerCase() === filters.muscleGroup.toLowerCase()
+        );
+        
+        if (filtered.length > 0) {
+          return filtered.map(mapExerciseFullToExercise);
+        }
+      }
+      
+      if (filters.equipment && filters.equipment !== "all_equipment") {
+        const fullExercises = await fetchExercisesFull(20, 0); // Get initial set
+        const filtered = fullExercises.filter(ex => 
+          ex.primary_equipment?.toLowerCase() === filters.equipment.toLowerCase() ||
+          ex.secondary_equipment?.toLowerCase() === filters.equipment.toLowerCase()
+        );
+        
+        if (filtered.length > 0) {
+          return filtered.map(mapExerciseFullToExercise);
+        }
+      }
+      
+      // If no suitable exercises found in exercises_full, fall back to original approach
+      if (searchQuery) {
+        return await searchExercises(searchQuery);
+      }
+      
+      if (filters.muscleGroup && filters.muscleGroup !== "all_muscle_groups") {
+        return await getExercisesByMuscleGroup(filters.muscleGroup.toLowerCase());
+      }
+      
+      if (filters.equipment && filters.equipment !== "all_equipment") {
+        return await getExercisesByEquipment(filters.equipment.toLowerCase());
+      }
+      
+      // Default: fetch exercises for the first muscle group
+      const firstBodyPart = availableMuscleGroups[0]?.toLowerCase() || 'back';
+      const exercises = await getExercisesByMuscleGroup(firstBodyPart);
+      
+      let filteredData = exercises;
+      
+      // Apply client-side filtering for difficulty if set
+      if (filters.difficulty && filters.difficulty !== "all_difficulties") {
+        filteredData = filteredData.filter(ex => 
+          ex.difficulty === filters.difficulty
+        );
+      }
+      
+      return filteredData;
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+      
+      // Ultimate fallback to original approach
+      if (searchQuery) {
+        return await searchExercises(searchQuery);
+      }
+      
+      const firstBodyPart = availableMuscleGroups[0]?.toLowerCase() || 'back';
+      return await getExercisesByMuscleGroup(firstBodyPart);
     }
-    
-    // If the muscleGroup filter is set to a real value (not the "all" option)
-    if (filters.muscleGroup && filters.muscleGroup !== "all_muscle_groups") {
-      return await getExercisesByMuscleGroup(filters.muscleGroup.toLowerCase());
-    }
-    
-    // If the equipment filter is set to a real value (not the "all" option)
-    if (filters.equipment && filters.equipment !== "all_equipment") {
-      return await getExercisesByEquipment(filters.equipment.toLowerCase());
-    }
-    
-    // Default: fetch exercises for the first muscle group
-    const firstBodyPart = availableMuscleGroups[0]?.toLowerCase() || 'back';
-    const exercises = await getExercisesByMuscleGroup(firstBodyPart);
-    
-    let filteredData = exercises;
-    
-    // Apply client-side filtering for difficulty if set
-    if (filters.difficulty && filters.difficulty !== "all_difficulties") {
-      filteredData = filteredData.filter(ex => 
-        ex.difficulty === filters.difficulty
-      );
-    }
-    
-    return filteredData;
   };
 
-  const { data: exercises, isLoading, refetch } = useQuery({
+  const { data: exercises, isLoading: isLoadingQuery, refetch } = useQuery({
     queryKey: ['exercises', filters, searchQuery, availableMuscleGroups[0]],
     queryFn: fetchExercises,
     enabled: availableMuscleGroups.length > 0
   });
+
+  const isLoading = isLoadingQuery || isLoadingFull;
 
   const resetFilters = () => {
     setFilters({
@@ -118,7 +203,8 @@ export const useExerciseLibrary = () => {
     
     return exercises.filter(ex => 
       ex.muscle_group?.toLowerCase() === muscleGroup.toLowerCase() ||
-      ex.bodyPart?.toLowerCase() === muscleGroup.toLowerCase()
+      ex.bodyPart?.toLowerCase() === muscleGroup.toLowerCase() ||
+      ex.target?.toLowerCase() === muscleGroup.toLowerCase()
     );
   };
 

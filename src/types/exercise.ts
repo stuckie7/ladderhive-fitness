@@ -14,6 +14,14 @@ export interface Exercise {
   difficulty?: string;
   video_url?: string;
   image_url?: string;
+  // Additional fields from exercises_full
+  mechanics?: string;
+  prime_mover_muscle?: string;
+  secondary_muscle?: string;
+  tertiary_muscle?: string;
+  force_type?: string;
+  movement_pattern?: string;
+  plane_of_motion?: string;
 }
 
 export type MuscleGroup = string;
