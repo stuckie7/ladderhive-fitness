@@ -8,13 +8,15 @@ interface WorkoutProgressProps {
   completedExercises: number;
   duration: number;
   elapsedTime?: number;
+  isLoading?: boolean;
 }
 
 const WorkoutProgress = ({ 
   totalExercises, 
   completedExercises, 
   duration, 
-  elapsedTime = 0 
+  elapsedTime = 0,
+  isLoading = false
 }: WorkoutProgressProps) => {
   const progressPercentage = Math.round((completedExercises / totalExercises) * 100) || 0;
   

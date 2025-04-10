@@ -135,25 +135,19 @@ export const useExercisesFull = () => {
 
   const getMuscleGroups = async (): Promise<string[]> => {
     try {
-      // Use rpc call or raw SQL for this operation to avoid type issues
+      // Since there's no get_muscle_groups RPC, use a direct query approach
       const { data, error } = await supabase
-        .rpc('get_muscle_groups');
+        .from('exercises_full')
+        .select('target_muscle_group')
+        .not('target_muscle_group', 'is', null);
 
       if (error) {
-        // Fallback to direct query
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('exercises_full')
-          .select('target_muscle_group')
-          .not('target_muscle_group', 'is', null);
-          
-        if (fallbackError) throw fallbackError;
-        
-        // Extract unique muscle groups
-        const muscleGroups = [...new Set(fallbackData.map(item => item.target_muscle_group))];
-        return muscleGroups.filter((group): group is string => !!group);
+        throw error;
       }
 
-      return data as string[];
+      // Extract unique muscle groups
+      const muscleGroups = [...new Set(data.map(item => item.target_muscle_group))];
+      return muscleGroups.filter((group): group is string => !!group);
     } catch (error: any) {
       console.error('Error fetching muscle groups:', error);
       return [];
@@ -162,25 +156,19 @@ export const useExercisesFull = () => {
 
   const getEquipmentTypes = async (): Promise<string[]> => {
     try {
-      // Use rpc call or raw SQL for this operation to avoid type issues
+      // Since there's no get_equipment_types RPC, use a direct query approach
       const { data, error } = await supabase
-        .rpc('get_equipment_types');
+        .from('exercises_full')
+        .select('primary_equipment')
+        .not('primary_equipment', 'is', null);
 
       if (error) {
-        // Fallback to direct query
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('exercises_full')
-          .select('primary_equipment')
-          .not('primary_equipment', 'is', null);
-          
-        if (fallbackError) throw fallbackError;
-        
-        // Extract unique equipment types
-        const equipmentTypes = [...new Set(fallbackData.map(item => item.primary_equipment))];
-        return equipmentTypes.filter((equip): equip is string => !!equip);
+        throw error;
       }
 
-      return data as string[];
+      // Extract unique equipment types
+      const equipmentTypes = [...new Set(data.map(item => item.primary_equipment))];
+      return equipmentTypes.filter((equip): equip is string => !!equip);
     } catch (error: any) {
       console.error('Error fetching equipment types:', error);
       return [];
