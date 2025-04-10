@@ -1,169 +1,120 @@
-import { useEffect, useState } from "react";
-import WorkoutCard from "@/components/workouts/WorkoutCard";
-import UserProfile from "@/components/profile/UserProfile";
+
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Plus, TrendingUp, Calendar } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useDailyProgress } from "@/hooks/use-daily-progress";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AppLayout from "@/components/layout/AppLayout";
+import { Dumbbell, Calendar, Activity, Plus, ArrowRight } from "lucide-react";
+import WorkoutProgress from "@/components/workouts/WorkoutProgress";
 import DailyProgressCard from "@/components/progress/DailyProgressCard";
-import { mockWorkouts } from "@/data/mock-workouts";
+import PreparedWorkoutsSection from "@/components/workouts/PreparedWorkoutsSection";
+import { useWorkoutData } from "@/hooks/use-workout-data";
+import { useDailyProgress } from "@/hooks/use-daily-progress";
 
 const Dashboard = () => {
-  const [userData, setUserData] = useState<any>(null);
-  const navigate = useNavigate();
-  const { progress, isLoading: progressLoading } = useDailyProgress();
-  
-  useEffect(() => {
-    // Get user data from localStorage
-    const user = localStorage.getItem("user");
-    if (user) {
-      try {
-        const parsedUser = JSON.parse(user);
-        
-        // Add some mock stats for the dashboard
-        setUserData({
-          ...parsedUser,
-          stats: {
-            workoutsCompleted: progress?.workouts_completed || 0,
-            totalMinutes: 135,
-            streakDays: 2,
-            caloriesBurned: 450
-          }
-        });
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
-  }, [progress]);
-  
-  if (!userData) {
-    return <div>Loading...</div>;
-  }
-  
+  const { workouts, savedWorkouts, isLoading: workoutsLoading } = useWorkoutData();
+  const { dailyProgress, isLoading: progressLoading } = useDailyProgress();
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Welcome, {userData.name.split(' ')[0]}</h2>
-          <Button 
-            className="bg-fitness-primary hover:bg-fitness-primary/90"
-            onClick={() => navigate('/workouts')}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Workout
-          </Button>
+    <AppLayout>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
         </div>
-        
-        <DailyProgressCard progress={progress} isLoading={progressLoading} />
-        
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Upcoming Workouts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {mockWorkouts.map((workout) => (
-              <WorkoutCard key={workout.id} workout={workout} />
-            ))}
-          </div>
+
+        <div className="mb-6">
+          <DailyProgressCard dailyProgress={dailyProgress} isLoading={progressLoading} />
         </div>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle>Weekly Schedule</CardTitle>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/schedule')}
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                View Calendar
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-2">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, index) => (
-                <div 
-                  key={day} 
-                  className={`rounded-lg p-3 text-center ${
-                    index === 0 || index === 2 || index === 4
-                      ? "bg-fitness-primary/10 border border-fitness-primary/30"
-                      : "bg-gray-100 dark:bg-gray-800"
-                  }`}
-                >
-                  <p className="text-sm font-medium">{day}</p>
-                  <div className="mt-2 text-xs">
-                    {index === 0 && <p className="text-fitness-primary font-medium">Upper Body</p>}
-                    {index === 2 && <p className="text-fitness-primary font-medium">Lower Body</p>}
-                    {index === 4 && <p className="text-fitness-primary font-medium">Full Body</p>}
-                    {(index !== 0 && index !== 2 && index !== 4) && <p className="text-muted-foreground">Rest</p>}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="col-span-1">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex justify-between items-center">
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Link to="/workouts">
+                <Button variant="outline" className="w-full justify-start">
+                  <Dumbbell className="mr-2 h-5 w-5" /> View Workouts
+                </Button>
+              </Link>
+              <Link to="/schedule">
+                <Button variant="outline" className="w-full justify-start">
+                  <Calendar className="mr-2 h-5 w-5" /> Schedule
+                </Button>
+              </Link>
+              <Link to="/progress">
+                <Button variant="outline" className="w-full justify-start">
+                  <Activity className="mr-2 h-5 w-5" /> Track Progress
+                </Button>
+              </Link>
+              <Link to="/exercises">
+                <Button variant="outline" className="w-full justify-start">
+                  <Dumbbell className="mr-2 h-5 w-5" /> Exercise Library
+                </Button>
+              </Link>
+              <Link to="/advanced-exercises">
+                <Button variant="outline" className="w-full justify-start bg-gray-100 dark:bg-slate-800">
+                  <Dumbbell className="mr-2 h-5 w-5" /> Advanced Exercises
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex justify-between items-center">
+                <span>Recent Workouts</span>
+                <Link to="/workouts">
+                  <Button variant="ghost" className="h-8 px-2 text-sm">
+                    View All <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </Link>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <WorkoutProgress workouts={workouts || []} isLoading={workoutsLoading} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="suggested" className="mb-8">
+          <TabsList>
+            <TabsTrigger value="suggested">Suggested Workouts</TabsTrigger>
+            <TabsTrigger value="saved">Saved Workouts</TabsTrigger>
+          </TabsList>
+          <TabsContent value="suggested">
+            <PreparedWorkoutsSection />
+          </TabsContent>
+          <TabsContent value="saved">
+            <Card>
+              <CardContent className="p-6">
+                {savedWorkouts && savedWorkouts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Saved workouts would go here */}
+                    <p>Your saved workouts will appear here</p>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ) : (
+                  <div className="text-center py-8">
+                    <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium">No saved workouts yet</h3>
+                    <p className="mt-2 text-muted-foreground">
+                      Start by saving some workouts you like.
+                    </p>
+                    <Link to="/workouts">
+                      <Button className="mt-4">
+                        <Plus className="mr-2 h-4 w-4" /> Browse Workouts
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-      
-      <div className="space-y-6">
-        <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-fitness-primary to-fitness-secondary p-6 text-white">
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 rounded-full p-3">
-                <Trophy className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Level Up!</h3>
-                <p className="text-sm opacity-90">Complete today's workout</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex justify-between text-xs mb-1">
-                <span>Progress</span>
-                <span>80%</span>
-              </div>
-              <div className="h-2 bg-white/30 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full w-4/5"></div>
-              </div>
-            </div>
-          </div>
-          <CardContent className="p-4">
-            <Button 
-              variant="outline" 
-              className="w-full border-fitness-primary text-fitness-primary hover:bg-fitness-primary/10"
-              onClick={() => navigate('/workout/1')}
-            >
-              Start Workout
-            </Button>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-fitness-primary" />
-              <span>Progress Insight</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              You've completed {progress?.workouts_completed || 0} workouts today.
-              {progress?.workouts_completed === 0 && " Complete your first workout to start building your streak!"}
-              {progress?.workouts_completed > 0 && " Keep up the good work!"}
-            </p>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => navigate('/progress')}
-            >
-              View Progress
-            </Button>
-          </CardContent>
-        </Card>
-        
-        <UserProfile userData={userData} />
-      </div>
-    </div>
+    </AppLayout>
   );
 };
 
