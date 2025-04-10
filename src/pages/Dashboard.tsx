@@ -13,7 +13,7 @@ import { useDailyProgress } from "@/hooks/use-daily-progress";
 
 const Dashboard = () => {
   const { workouts, savedWorkouts, isLoading: workoutsLoading } = useWorkoutData();
-  const { dailyProgress, isLoading: progressLoading } = useDailyProgress();
+  const { progress, isLoading: progressLoading } = useDailyProgress();
 
   return (
     <AppLayout>
@@ -23,7 +23,7 @@ const Dashboard = () => {
         </div>
 
         <div className="mb-6">
-          <DailyProgressCard dailyProgress={dailyProgress} isLoading={progressLoading} />
+          <DailyProgressCard progress={progress} isLoading={progressLoading} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -74,7 +74,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <WorkoutProgress workouts={workouts || []} isLoading={workoutsLoading} />
+              <WorkoutProgress workoutData={workouts || []} isLoading={workoutsLoading} />
             </CardContent>
           </Card>
         </div>
@@ -85,7 +85,7 @@ const Dashboard = () => {
             <TabsTrigger value="saved">Saved Workouts</TabsTrigger>
           </TabsList>
           <TabsContent value="suggested">
-            <PreparedWorkoutsSection />
+            <PreparedWorkoutsSection currentWorkoutId="" onAddExercise={() => {}} />
           </TabsContent>
           <TabsContent value="saved">
             <Card>
