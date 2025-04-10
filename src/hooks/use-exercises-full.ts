@@ -108,11 +108,11 @@ export const useExercisesFull = () => {
   const getExerciseFullById = async (id: number): Promise<ExerciseFull | null> => {
     setIsLoading(true);
     try {
-      // Using a direct query with type assertion since the table isn't in TypeScript definitions
+      // Convert id to string before using in the query if needed
       const { data, error } = await supabase
         .from('exercises_full')
         .select('*')
-        .eq('id', id.toString())
+        .eq('id', id)
         .single();
 
       if (error) {
@@ -135,19 +135,25 @@ export const useExercisesFull = () => {
 
   const getMuscleGroups = async (): Promise<string[]> => {
     try {
-      // Using a direct query with proper type handling
+      // Use rpc call or raw SQL for this operation to avoid type issues
       const { data, error } = await supabase
-        .from('exercises_full')
-        .select('target_muscle_group')
-        .not('target_muscle_group', 'is', null);
+        .rpc('get_muscle_groups');
 
       if (error) {
-        throw error;
+        // Fallback to direct query
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('exercises_full')
+          .select('target_muscle_group')
+          .not('target_muscle_group', 'is', null);
+          
+        if (fallbackError) throw fallbackError;
+        
+        // Extract unique muscle groups
+        const muscleGroups = [...new Set(fallbackData.map(item => item.target_muscle_group))];
+        return muscleGroups.filter((group): group is string => !!group);
       }
 
-      // Extract unique muscle groups with proper type handling
-      const muscleGroups = [...new Set(data.map((item: any) => item.target_muscle_group))];
-      return muscleGroups.filter((group): group is string => !!group);
+      return data as string[];
     } catch (error: any) {
       console.error('Error fetching muscle groups:', error);
       return [];
@@ -156,19 +162,25 @@ export const useExercisesFull = () => {
 
   const getEquipmentTypes = async (): Promise<string[]> => {
     try {
-      // Using a direct query with proper type handling
+      // Use rpc call or raw SQL for this operation to avoid type issues
       const { data, error } = await supabase
-        .from('exercises_full')
-        .select('primary_equipment')
-        .not('primary_equipment', 'is', null);
+        .rpc('get_equipment_types');
 
       if (error) {
-        throw error;
+        // Fallback to direct query
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('exercises_full')
+          .select('primary_equipment')
+          .not('primary_equipment', 'is', null);
+          
+        if (fallbackError) throw fallbackError;
+        
+        // Extract unique equipment types
+        const equipmentTypes = [...new Set(fallbackData.map(item => item.primary_equipment))];
+        return equipmentTypes.filter((equip): equip is string => !!equip);
       }
 
-      // Extract unique equipment types with proper type handling
-      const equipmentTypes = [...new Set(data.map((item: any) => item.primary_equipment))];
-      return equipmentTypes.filter((equip): equip is string => !!equip);
+      return data as string[];
     } catch (error: any) {
       console.error('Error fetching equipment types:', error);
       return [];

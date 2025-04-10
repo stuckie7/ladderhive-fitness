@@ -10,6 +10,7 @@ import DailyProgressCard from "@/components/progress/DailyProgressCard";
 import PreparedWorkoutsSection from "@/components/workouts/PreparedWorkoutsSection";
 import { useWorkoutData } from "@/hooks/use-workout-data";
 import { useDailyProgress } from "@/hooks/use-daily-progress";
+import { Exercise } from "@/types/exercise";
 
 const Dashboard = () => {
   const { workouts, savedWorkouts, isLoading: workoutsLoading } = useWorkoutData();
@@ -74,7 +75,12 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <WorkoutProgress workoutData={workouts || []} isLoading={workoutsLoading} />
+              <WorkoutProgress 
+                totalExercises={workouts?.[0]?.exercises || 0} 
+                completedExercises={Math.floor((workouts?.[0]?.exercises || 0) / 2)} 
+                duration={workouts?.[0]?.duration || 0}
+                isLoading={workoutsLoading} 
+              />
             </CardContent>
           </Card>
         </div>
@@ -85,7 +91,13 @@ const Dashboard = () => {
             <TabsTrigger value="saved">Saved Workouts</TabsTrigger>
           </TabsList>
           <TabsContent value="suggested">
-            <PreparedWorkoutsSection currentWorkoutId="" onAddExercise={() => {}} />
+            <PreparedWorkoutsSection 
+              currentWorkoutId="" 
+              onAddExercise={async (exercise: Exercise) => {
+                console.log("Adding exercise:", exercise);
+                return Promise.resolve();
+              }} 
+            />
           </TabsContent>
           <TabsContent value="saved">
             <Card>
