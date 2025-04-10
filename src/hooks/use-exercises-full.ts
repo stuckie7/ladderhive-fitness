@@ -29,26 +29,14 @@ export const useExercisesFull = () => {
   const fetchExercisesFull = async (limit = 20, offset = 0): Promise<ExerciseFull[]> => {
     setIsLoading(true);
     try {
-      // Use the rpc approach for Supabase since the table isn't in the TypeScript definitions
+      // Use a direct query approach instead of rpc to avoid ambiguity issues
       const { data, error } = await supabase
-        .rpc('search_exercises', {
-          limit_count: limit,
-          offset_count: offset
-        });
+        .from('exercises_full')
+        .select('*')
+        .range(offset, offset + limit - 1);
 
       if (error) {
         throw error;
-      }
-
-      // If using rpc doesn't work, fallback to direct query with type assertion
-      if (!data) {
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('exercises_full')
-          .select('*')
-          .range(offset, offset + limit - 1);
-          
-        if (fallbackError) throw fallbackError;
-        return (fallbackData || []) as unknown as ExerciseFull[];
       }
 
       return data as unknown as ExerciseFull[];
@@ -68,29 +56,17 @@ export const useExercisesFull = () => {
   const searchExercisesFull = async (searchTerm: string, limit = 20): Promise<ExerciseFull[]> => {
     setIsLoading(true);
     try {
-      // Use the rpc approach for Supabase
+      // Use direct query approach instead of RPC to avoid column ambiguity issues
       const { data, error } = await supabase
-        .rpc('search_exercises', {
-          search_term: searchTerm,
-          limit_count: limit
-        });
-
+        .from('exercises_full')
+        .select('*')
+        .ilike('name', `%${searchTerm}%`)
+        .limit(limit);
+      
       if (error) {
         throw error;
       }
       
-      // Fallback to direct query with type assertion
-      if (!data) {
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('exercises_full')
-          .select('*')
-          .ilike('name', `%${searchTerm}%`)
-          .limit(limit);
-          
-        if (fallbackError) throw fallbackError;
-        return (fallbackData || []) as unknown as ExerciseFull[];
-      }
-
       return data as unknown as ExerciseFull[];
     } catch (error: any) {
       console.error('Error searching exercises:', error);
@@ -108,7 +84,6 @@ export const useExercisesFull = () => {
   const getExerciseFullById = async (id: number): Promise<ExerciseFull | null> => {
     setIsLoading(true);
     try {
-      // Convert id to string before using in the query if needed
       const { data, error } = await supabase
         .from('exercises_full')
         .select('*')
@@ -135,7 +110,7 @@ export const useExercisesFull = () => {
 
   const getMuscleGroups = async (): Promise<string[]> => {
     try {
-      // Since there's no get_muscle_groups RPC, use a direct query approach
+      // Direct query approach to get unique target_muscle_group values
       const { data, error } = await supabase
         .from('exercises_full')
         .select('target_muscle_group')
@@ -156,7 +131,7 @@ export const useExercisesFull = () => {
 
   const getEquipmentTypes = async (): Promise<string[]> => {
     try {
-      // Since there's no get_equipment_types RPC, use a direct query approach
+      // Direct query approach to get unique primary_equipment values
       const { data, error } = await supabase
         .from('exercises_full')
         .select('primary_equipment')
