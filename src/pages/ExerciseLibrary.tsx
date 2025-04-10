@@ -16,10 +16,8 @@ const ExerciseLibrary = () => {
     availableEquipment,
     exercises,
     isLoading,
-    importDialogOpen,
     setActiveTab,
     setFilters,
-    setImportDialogOpen,
     resetFilters,
     getFilteredExercises,
     handleSearchChange
@@ -39,8 +37,8 @@ const ExerciseLibrary = () => {
         </div>
         
         <ExerciseLibraryHeader 
-          importDialogOpen={importDialogOpen}
-          setImportDialogOpen={setImportDialogOpen}
+          importDialogOpen={false}
+          setImportDialogOpen={() => {}}
         />
         
         <SearchBar 

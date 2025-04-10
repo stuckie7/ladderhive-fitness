@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Exercise, ExerciseFilters } from "@/types/exercise";
@@ -45,7 +44,6 @@ export const useExerciseLibrary = () => {
   });
   const [availableMuscleGroups, setAvailableMuscleGroups] = useState<string[]>(defaultMuscleGroups);
   const [availableEquipment, setAvailableEquipment] = useState<string[]>(defaultEquipmentTypes);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
   
   const { 
     getExercisesByMuscleGroup, 
@@ -224,11 +222,9 @@ export const useExerciseLibrary = () => {
     filters,
     availableMuscleGroups,
     availableEquipment,
-    importDialogOpen,
     setSearchQuery,
     setActiveTab,
     setFilters,
-    setImportDialogOpen,
     resetFilters,
     getFilteredExercises,
     handleSearchChange,
