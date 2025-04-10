@@ -4,7 +4,7 @@ import ExerciseFilters from "@/components/exercises/ExerciseFilters";
 import SearchBar from "@/components/exercises/SearchBar";
 import ExerciseTabs from "@/components/exercises/ExerciseTabs";
 import ExerciseLibraryHeader from "@/components/exercises/ExerciseLibraryHeader";
-import { useExerciseLibrary } from "@/hooks/use-exercise-library";
+import { useExerciseLibrary } from "@/hooks/exercise-library";
 import { Badge } from "@/components/ui/badge";
 
 const ExerciseLibrary = () => {
