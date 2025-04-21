@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
@@ -16,7 +15,44 @@ export default function ExerciseDetail() {
   const { id } = useParams();
   const { user } = useAuth();
 
-  // Fetch exercise details from Supabase
+  // Helper function to map database fields to Exercise interface
+  const mapToExercise = (data: any, fromNewTable: boolean): Exercise => {
+    if (fromNewTable) {
+      return {
+        id: data.id,
+        name: data.name,
+        bodyPart: data.body_region || '',
+        target: data.target_muscle_group || '',
+        equipment: data.primary_equipment || '',
+        secondaryMuscles: data.secondary_muscle ? [data.secondary_muscle] : [],
+        instructions: data.instructions ? 
+          (Array.isArray(data.instructions) ? data.instructions : [data.instructions]) : [],
+        gifUrl: data.image_url,
+        video_url: data.video_explanation_url,
+        video_demonstration_url: data.video_demonstration_url,
+        difficulty: data.difficulty_level as 'Beginner' | 'Intermediate' | 'Advanced',
+        // Additional fields
+        ...data // Spread all other fields that match exactly
+      };
+    } else {
+      return {
+        id: data.id,
+        name: data.name,
+        bodyPart: data.muscle_group || '',
+        target: data.muscle_group || '',
+        equipment: data.equipment || '',
+        instructions: data.instructions ? 
+          (Array.isArray(data.instructions) ? data.instructions : data.instructions.split('\n') : [],
+        gifUrl: data.image_url,
+        video_url: data.video_url,
+        difficulty: data.difficulty as 'Beginner' | 'Intermediate' | 'Advanced',
+        // Map legacy fields
+        muscle_group: data.muscle_group,
+        description: data.description
+      };
+    }
+  };
+
   useEffect(() => {
     const fetchExerciseDetails = async () => {
       if (!id) return;
@@ -24,7 +60,7 @@ export default function ExerciseDetail() {
       setLoading(true);
       
       try {
-        // First try to get from exercises_new table (preferred)
+        // Try exercises_new first
         let { data, error } = await supabase
           .from('exercises_new')
           .select('*')
@@ -32,72 +68,20 @@ export default function ExerciseDetail() {
           .single();
 
         if (error || !data) {
-          // If not found, try the exercises table as fallback
+          // Fallback to exercises table
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('exercises')
             .select('*')
             .eq('id', id)
             .single();
             
-          if (fallbackError) {
-            console.error('Error fetching exercise:', fallbackError);
-            return;
-          }
-          
-          data = fallbackData;
-          
-          // Map the standard exercises table data to our Exercise interface
-          const mappedExercise: Exercise = {
-            id: data.id,
-            name: data.name,
-            bodyPart: data.muscle_group || '',
-            target: data.muscle_group || '',
-            equipment: data.equipment || '',
-            description: data.description,
-            difficulty: data.difficulty,
-            video_url: data.video_url,
-            image_url: data.image_url,
-            muscle_group: data.muscle_group,
-            instructions: data.instructions
-          };
-          
-          setExercise(mappedExercise);
+          if (fallbackError) throw fallbackError;
+          setExercise(mapToExercise(fallbackData, false));
         } else {
-          // Map the exercises_new table data to our Exercise interface
-          const mappedExercise: Exercise = {
-            id: data.id,
-            name: data.name,
-            bodyPart: data.body_region || '',
-            target: data.target_muscle_group || '',
-            equipment: data.primary_equipment || '',
-            description: data.description,
-            difficulty: data.difficulty_level,
-            video_url: data.video_explanation_url,
-            image_url: data.image_url,
-            muscle_group: data.target_muscle_group,
-            instructions: data.instructions,
-            // Additional fields from exercises_new
-            target_muscle_group: data.target_muscle_group,
-            primary_equipment: data.primary_equipment,
-            secondary_equipment: data.secondary_equipment,
-            posture: data.posture,
-            laterality: data.laterality,
-            video_demonstration_url: data.video_demonstration_url,
-            video_explanation_url: data.video_explanation_url,
-            difficulty_level: data.difficulty_level,
-            body_region: data.body_region,
-            exercise_classification: data.exercise_classification,
-            mechanics: data.mechanics,
-            force_type: data.force_type,
-            prime_mover_muscle: data.prime_mover_muscle,
-            secondary_muscle: data.secondary_muscle,
-            tertiary_muscle: data.tertiary_muscle
-          };
-          
-          setExercise(mappedExercise);
+          setExercise(mapToExercise(data, true));
         }
       } catch (error) {
-        console.error('Error fetching exercise details:', error);
+        console.error('Error fetching exercise:', error);
       } finally {
         setLoading(false);
       }
@@ -107,198 +91,171 @@ export default function ExerciseDetail() {
   }, [id]);
 
   if (loading) {
-    return (
-      <AppLayout>
-        <div className="container mx-auto px-4 py-6">
-          <Skeleton className="h-12 w-3/4 mb-4" />
-          <Skeleton className="h-64 mb-4" />
-          <Skeleton className="h-32 mb-4" />
-          <Skeleton className="h-32" />
-        </div>
-      </AppLayout>
-    );
+    return <LoadingSkeleton />;
   }
 
   if (!exercise) {
-    return (
-      <AppLayout>
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold mb-4">Exercise Not Found</h1>
-          <p>The exercise you are looking for does not exist or has been removed.</p>
-        </div>
-      </AppLayout>
-    );
+    return <NotFoundView />;
   }
 
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row justify-between items-start mb-6">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{exercise.name}</h1>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {exercise.muscle_group && (
-                <Badge variant="outline">{exercise.muscle_group}</Badge>
-              )}
-              {exercise.target_muscle_group && (
-                <Badge variant="outline">{exercise.target_muscle_group}</Badge>
-              )}
-              {exercise.equipment && (
-                <Badge variant="secondary">{exercise.equipment}</Badge>
-              )}
-              {exercise.primary_equipment && (
-                <Badge variant="secondary">{exercise.primary_equipment}</Badge>
-              )}
-              {exercise.difficulty && (
-                <Badge className={`
-                  ${exercise.difficulty === 'Beginner' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : ''}
-                  ${exercise.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' : ''}
-                  ${exercise.difficulty === 'Advanced' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : ''}
-                `}>
-                  {exercise.difficulty}
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-
+        <ExerciseHeader exercise={exercise} />
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Exercise Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="description" className="w-full">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="description">Description</TabsTrigger>
-                    <TabsTrigger value="instructions">Instructions</TabsTrigger>
-                    {(exercise.video_url || exercise.video_demonstration_url) && (
-                      <TabsTrigger value="video">Video</TabsTrigger>
-                    )}
-                  </TabsList>
-                  
-                  <TabsContent value="description">
-                    {exercise.description ? (
-                      <p className="text-muted-foreground">{exercise.description}</p>
-                    ) : (
-                      <p className="text-muted-foreground">No description available for this exercise.</p>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="instructions">
-                    {exercise.instructions ? (
-                      <div>
-                        {typeof exercise.instructions === 'string' ? 
-                          exercise.instructions.split('\n').map((instruction, index) => (
-                            <p key={index} className="mb-2">{instruction}</p>
-                          ))
-                        : 
-                          exercise.instructions.map((instruction, index) => (
-                            <p key={index} className="mb-2">{instruction}</p>
-                          ))
-                        }
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No instructions available for this exercise.</p>
-                    )}
-                  </TabsContent>
-                  
-                  {(exercise.video_url || exercise.video_demonstration_url) && (
-                    <TabsContent value="video">
-                      <div className="aspect-video relative overflow-hidden rounded-md">
-                        <iframe 
-                          className="absolute inset-0 w-full h-full"
-                          src={(exercise.video_url || exercise.video_demonstration_url)?.replace('watch?v=', 'embed/')}
-                          title={`${exercise.name} demonstration`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        ></iframe>
-                      </div>
-                    </TabsContent>
-                  )}
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div>
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Exercise Image</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {exercise.image_url ? (
-                  <div className="aspect-square rounded-md overflow-hidden">
-                    <img 
-                      src={exercise.image_url} 
-                      alt={exercise.name}
-                      className="object-cover w-full h-full" 
-                    />
-                  </div>
-                ) : (
-                  <div className="aspect-square rounded-md bg-muted flex items-center justify-center">
-                    <p className="text-muted-foreground">No image available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Specifications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-2">
-                  {exercise.mechanics && (
-                    <>
-                      <dt className="font-medium">Mechanics:</dt>
-                      <dd className="text-muted-foreground">{exercise.mechanics}</dd>
-                    </>
-                  )}
-                  
-                  {exercise.force_type && (
-                    <>
-                      <dt className="font-medium">Force Type:</dt>
-                      <dd className="text-muted-foreground">{exercise.force_type}</dd>
-                    </>
-                  )}
-                  
-                  {exercise.posture && (
-                    <>
-                      <dt className="font-medium">Posture:</dt>
-                      <dd className="text-muted-foreground">{exercise.posture}</dd>
-                    </>
-                  )}
-                  
-                  {exercise.laterality && (
-                    <>
-                      <dt className="font-medium">Laterality:</dt>
-                      <dd className="text-muted-foreground">{exercise.laterality}</dd>
-                    </>
-                  )}
-                  
-                  {exercise.secondary_muscle && (
-                    <>
-                      <dt className="font-medium">Secondary Muscles:</dt>
-                      <dd className="text-muted-foreground">{exercise.secondary_muscle}</dd>
-                    </>
-                  )}
-                  
-                  {exercise.tertiary_muscle && (
-                    <>
-                      <dt className="font-medium">Tertiary Muscles:</dt>
-                      <dd className="text-muted-foreground">{exercise.tertiary_muscle}</dd>
-                    </>
-                  )}
-                </dl>
-              </CardContent>
-            </Card>
-          </div>
+          <MainContent exercise={exercise} />
+          <SidebarContent exercise={exercise} />
         </div>
       </div>
     </AppLayout>
   );
 }
+
+// Sub-components for better organization
+const LoadingSkeleton = () => (
+  <AppLayout>
+    <div className="container mx-auto px-4 py-6">
+      <Skeleton className="h-12 w-3/4 mb-4" />
+      <Skeleton className="h-64 mb-4" />
+      <Skeleton className="h-32 mb-4" />
+      <Skeleton className="h-32" />
+    </div>
+  </AppLayout>
+);
+
+const NotFoundView = () => (
+  <AppLayout>
+    <div className="container mx-auto px-4 py-6">
+      <h1 className="text-2xl font-bold mb-4">Exercise Not Found</h1>
+      <p>The exercise you are looking for does not exist or has been removed.</p>
+    </div>
+  </AppLayout>
+);
+
+const ExerciseHeader = ({ exercise }: { exercise: Exercise }) => (
+  <div className="flex flex-col md:flex-row justify-between items-start mb-6">
+    <div>
+      <h1 className="text-3xl font-bold mb-2">{exercise.name}</h1>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {exercise.bodyPart && <Badge variant="outline">{exercise.bodyPart}</Badge>}
+        {exercise.target && exercise.target !== exercise.bodyPart && (
+          <Badge variant="outline">{exercise.target}</Badge>
+        )}
+        {exercise.equipment && <Badge variant="secondary">{exercise.equipment}</Badge>}
+        {exercise.difficulty && (
+          <Badge className={`
+            ${exercise.difficulty === 'Beginner' ? 'bg-green-100 text-green-800' : ''}
+            ${exercise.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' : ''}
+            ${exercise.difficulty === 'Advanced' ? 'bg-red-100 text-red-800' : ''}
+            dark:bg-${exercise.difficulty.toLowerCase()}-900 dark:text-${exercise.difficulty.toLowerCase()}-300
+          `}>
+            {exercise.difficulty}
+          </Badge>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const MainContent = ({ exercise }: { exercise: Exercise }) => (
+  <div className="lg:col-span-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>Exercise Details</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="description">
+          <TabsList className="mb-4">
+            <TabsTrigger value="description">Description</TabsTrigger>
+            <TabsTrigger value="instructions">Instructions</TabsTrigger>
+            {(exercise.video_url || exercise.video_demonstration_url) && (
+              <TabsTrigger value="video">Video</TabsTrigger>
+            )}
+          </TabsList>
+          
+          <TabsContent value="description">
+            <p className="text-muted-foreground">
+              {exercise.description || 'No description available for this exercise.'}
+            </p>
+          </TabsContent>
+          
+          <TabsContent value="instructions">
+            {exercise.instructions?.length ? (
+              <div>
+                {exercise.instructions.map((instruction, index) => (
+                  <p key={index} className="mb-2">{instruction}</p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No instructions available.</p>
+            )}
+          </TabsContent>
+          
+          {(exercise.video_url || exercise.video_demonstration_url) && (
+            <TabsContent value="video">
+              <div className="aspect-video relative overflow-hidden rounded-md">
+                <iframe 
+                  className="absolute inset-0 w-full h-full"
+                  src={(exercise.video_url || exercise.video_demonstration_url)?.replace('watch?v=', 'embed/')}
+                  title={`${exercise.name} demonstration`}
+                  allowFullScreen
+                />
+              </div>
+            </TabsContent>
+          )}
+        </Tabs>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const SidebarContent = ({ exercise }: { exercise: Exercise }) => (
+  <div>
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Exercise Image</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {exercise.gifUrl ? (
+          <div className="aspect-square rounded-md overflow-hidden">
+            <img 
+              src={exercise.gifUrl} 
+              alt={exercise.name}
+              className="object-cover w-full h-full" 
+            />
+          </div>
+        ) : (
+          <div className="aspect-square rounded-md bg-muted flex items-center justify-center">
+            <p className="text-muted-foreground">No image available</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Specifications</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <dl className="space-y-2">
+          {exercise.mechanics && <SpecItem label="Mechanics" value={exercise.mechanics} />}
+          {exercise.force_type && <SpecItem label="Force Type" value={exercise.force_type} />}
+          {exercise.posture && <SpecItem label="Posture" value={exercise.posture} />}
+          {exercise.laterality && <SpecItem label="Laterality" value={exercise.laterality} />}
+          {exercise.secondaryMuscles?.length && (
+            <SpecItem label="Secondary Muscles" value={exercise.secondaryMuscles.join(', ')} />
+          )}
+          {exercise.tertiary_muscle && <SpecItem label="Tertiary Muscles" value={exercise.tertiary_muscle} />}
+        </dl>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const SpecItem = ({ label, value }: { label: string; value: string }) => (
+  <>
+    <dt className="font-medium">{label}:</dt>
+    <dd className="text-muted-foreground">{value}</dd>
+  </>
+);
