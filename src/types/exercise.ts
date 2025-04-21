@@ -1,50 +1,28 @@
-
-// types/exercise.ts
 export interface Exercise {
-  id: string;
+  id: number;
+  empty_column: string | null;
   name: string;
-  bodyPart: string;
-  target: string;
-  equipment: string;
-  gifUrl?: string;
-  secondaryMuscles?: string[];
-  instructions?: string[];
-  
-  // Legacy fields (for backward compatibility)
-  muscle_group?: string;    // Maps to `bodyPart` or `body_region`
-  description?: string;     // Maps to `instructions`
-  difficulty?: string;      // Maps to `difficulty_level`
-  video_url?: string;       // Maps to `video_explanation_url`
-  image_url?: string;       // Maps to `gifUrl`
-
-  // Fields from `exercises_full`
-  mechanics?: string;
-  prime_mover_muscle?: string;
-  secondary_muscle?: string;
-  tertiary_muscle?: string;
-  force_type?: string;
-  movement_pattern?: string;
-  plane_of_motion?: string;
-
-  // Fields from `exercises_new`
-  target_muscle_group?: string;
-  primary_equipment?: string;
-  secondary_equipment?: string;
-  posture?: string;
-  laterality?: string;
-  video_demonstration_url?: string;
-  video_explanation_url?: string;
-  difficulty_level?: string;
-  body_region?: string;
-  exercise_classification?: string;
-}
-
-export type MuscleGroup = string;
-export type Equipment = string;
-export type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
-
-export interface ExerciseFilters {
-  muscleGroup: string;
-  equipment: string;
+  short_youtube_demo: string;
+  in_depth_youtube_exp: string;
   difficulty: string;
+  target_muscle_group: string;
+  prime_mover_muscle: string;
+  secondary_muscle: string;
+  tertiary_muscle: string;
+  primary_equipment: string;
+  primary_items_count: number;
+  secondary_equipment: string;
+  secondary_items_count: number;
+  posture: string;
+  single_or_double_arm: string;
+  arm_movement_pattern: string;
+  grip: string;
+  load_position: string;
+  leg_movement_pattern: string;
+  foot_elevation: string;
+  combination_exercise: string;
+  movement_pattern_1: string;
+  movement_pattern_2: string;
+  movement_pattern_3: string;
+  plane_of_motion_1: string;
 }
