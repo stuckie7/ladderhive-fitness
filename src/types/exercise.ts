@@ -1,3 +1,4 @@
+
 // types/exercise.ts
 export interface Exercise {
   id: string;

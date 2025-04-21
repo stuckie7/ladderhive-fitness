@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
@@ -28,11 +29,26 @@ export default function ExerciseDetail() {
         instructions: data.instructions ? 
           (Array.isArray(data.instructions) ? data.instructions : [data.instructions]) : [],
         gifUrl: data.image_url,
-        video_url: data.video_explanation_url,
+        // Map fields from exercises_new
+        target_muscle_group: data.target_muscle_group,
+        primary_equipment: data.primary_equipment,
+        secondary_equipment: data.secondary_equipment,
+        posture: data.posture,
+        laterality: data.laterality,
         video_demonstration_url: data.video_demonstration_url,
-        difficulty: data.difficulty_level as 'Beginner' | 'Intermediate' | 'Advanced',
-        // Additional fields
-        ...data // Spread all other fields that match exactly
+        video_explanation_url: data.video_explanation_url,
+        difficulty_level: data.difficulty_level,
+        body_region: data.body_region,
+        exercise_classification: data.exercise_classification,
+        mechanics: data.mechanics,
+        force_type: data.force_type,
+        prime_mover_muscle: data.prime_mover_muscle,
+        // Legacy fields for compatibility
+        muscle_group: data.body_region || data.target_muscle_group,
+        description: data.description,
+        difficulty: data.difficulty_level,
+        video_url: data.video_explanation_url || data.video_demonstration_url,
+        image_url: data.image_url
       };
     } else {
       return {
@@ -42,14 +58,15 @@ export default function ExerciseDetail() {
         target: data.muscle_group || '',
         equipment: data.equipment || '',
         instructions: data.instructions ? 
-          (Array.isArray(data.instructions) ? data.instructions : data.instructions.split('\n') : [],
+          (Array.isArray(data.instructions) ? data.instructions : data.instructions.split('\n')) : [],
         gifUrl: data.image_url,
-        video_url: data.video_url,
-        difficulty: data.difficulty as 'Beginner' | 'Intermediate' | 'Advanced',
-        // Map legacy fields
+        // Legacy fields
         muscle_group: data.muscle_group,
-        description: data.description
-      };
+        description: data.description,
+        difficulty: data.difficulty,
+        video_url: data.video_url,
+        image_url: data.image_url
+      } as Exercise; // Cast to Exercise to handle missing fields
     }
   };
 
