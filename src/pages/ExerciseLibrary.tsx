@@ -1,29 +1,14 @@
+
+import React, { Suspense, lazy } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Badge } from "@/components/ui/badge";
 import { useExerciseLibrary } from "@/hooks/exercise-library";
 import { useState } from "react";
-import dynamic from "next/dynamic";
 
-// Dynamically import components for better code splitting
-const ExerciseLibraryHeader = dynamic(
-  () => import("@/components/exercises/ExerciseLibraryHeader"),
-  { loading: () => <div className="h-12" /> }
-);
-
-const SearchBar = dynamic(
-  () => import("@/components/exercises/SearchBar"),
-  { loading: () => <div className="h-10 mb-4" /> }
-);
-
-const ExerciseFilters = dynamic(
-  () => import("@/components/exercises/ExerciseFilters"),
-  { loading: () => <div className="h-32 mb-4" /> }
-);
-
-const ExerciseTabs = dynamic(
-  () => import("@/components/exercises/ExerciseTabs"),
-  { loading: () => <div className="h-64" /> }
-);
+const ExerciseLibraryHeader = lazy(() => import("@/components/exercises/ExerciseLibraryHeader"));
+const SearchBar = lazy(() => import("@/components/exercises/SearchBar"));
+const ExerciseFilters = lazy(() => import("@/components/exercises/ExerciseFilters"));
+const ExerciseTabs = lazy(() => import("@/components/exercises/ExerciseTabs"));
 
 const DIFFICULTY_LEVELS: ("Beginner" | "Intermediate" | "Advanced")[] = [
   "Beginner",
@@ -59,36 +44,43 @@ const ExerciseLibrary = () => {
             Powered by Supabase Exercise Data
           </Badge>
         </div>
+
+        <Suspense fallback={<div className="h-12" />}>
+          <ExerciseLibraryHeader 
+            importDialogOpen={importDialogOpen}
+            setImportDialogOpen={setImportDialogOpen}
+          />
+        </Suspense>
         
-        {/* Exercise Library Components */}
-        <ExerciseLibraryHeader 
-          importDialogOpen={importDialogOpen}
-          setImportDialogOpen={setImportDialogOpen}
-        />
+        <Suspense fallback={<div className="h-10 mb-4" />}>
+          <SearchBar 
+            searchQuery={searchQuery}
+            handleSearchChange={handleSearchChange}
+          />
+        </Suspense>
         
-        <SearchBar 
-          searchQuery={searchQuery}
-          handleSearchChange={handleSearchChange}
-        />
+        <Suspense fallback={<div className="h-32 mb-4" />}>
+          <ExerciseFilters 
+            filters={filters}
+            setFilters={setFilters}
+            resetFilters={resetFilters}
+            muscleGroups={availableMuscleGroups}
+            equipmentTypes={availableEquipment}
+            difficultyLevels={DIFFICULTY_LEVELS}
+          />
+        </Suspense>
         
-        <ExerciseFilters 
-          filters={filters}
-          setFilters={setFilters}
-          resetFilters={resetFilters}
-          muscleGroups={availableMuscleGroups}
-          equipmentTypes={availableEquipment}
-          difficultyLevels={DIFFICULTY_LEVELS}
-        />
-        
-        <ExerciseTabs
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          muscleGroups={availableMuscleGroups}
-          exercises={exercises}
-          isLoading={isLoading}
-          getFilteredExercises={getFilteredExercises}
-          resetFilters={resetFilters}
-        />
+        <Suspense fallback={<div className="h-64" />}>
+          <ExerciseTabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            muscleGroups={availableMuscleGroups}
+            exercises={exercises}
+            isLoading={isLoading}
+            getFilteredExercises={getFilteredExercises}
+            resetFilters={resetFilters}
+          />
+        </Suspense>
       </div>
     </AppLayout>
   );
