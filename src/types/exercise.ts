@@ -1,4 +1,4 @@
-
+// types/exercise.ts
 export interface Exercise {
   id: string;
   name: string;
@@ -8,13 +8,15 @@ export interface Exercise {
   gifUrl?: string;
   secondaryMuscles?: string[];
   instructions?: string[];
-  // For compatibility with existing code
-  muscle_group?: string;
-  description?: string;
-  difficulty?: string;
-  video_url?: string;
-  image_url?: string;
-  // Additional fields from exercises_full
+  
+  // Legacy fields (for backward compatibility)
+  muscle_group?: string;    // Maps to `bodyPart` or `body_region`
+  description?: string;     // Maps to `instructions`
+  difficulty?: string;      // Maps to `difficulty_level`
+  video_url?: string;       // Maps to `video_explanation_url`
+  image_url?: string;       // Maps to `gifUrl`
+
+  // Fields from `exercises_full`
   mechanics?: string;
   prime_mover_muscle?: string;
   secondary_muscle?: string;
@@ -22,7 +24,8 @@ export interface Exercise {
   force_type?: string;
   movement_pattern?: string;
   plane_of_motion?: string;
-  // Add fields from exercises_new table
+
+  // Fields from `exercises_new`
   target_muscle_group?: string;
   primary_equipment?: string;
   secondary_equipment?: string;
