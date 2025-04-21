@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +8,11 @@ const ExerciseLibraryHeader = lazy(() => import("@/components/exercises/Exercise
 const SearchBar = lazy(() => import("@/components/exercises/SearchBar"));
 const ExerciseFilters = lazy(() => import("@/components/exercises/ExerciseFilters"));
 const ExerciseTabs = lazy(() => import("@/components/exercises/ExerciseTabs"));
+const ExercisesFullTable = lazy(() => import("@/components/exercises/ExercisesFullTable"));
 
 const DIFFICULTY_LEVELS: ("Beginner" | "Intermediate" | "Advanced")[] = [
   "Beginner",
-  "Intermediate",
+  "Intermediate", 
   "Advanced",
 ];
 
@@ -81,6 +81,8 @@ const ExerciseLibrary = () => {
             resetFilters={resetFilters}
           />
         </Suspense>
+
+        <ExercisesFullTable />
       </div>
     </AppLayout>
   );
