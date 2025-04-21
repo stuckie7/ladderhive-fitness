@@ -6,6 +6,7 @@ import ExerciseTabs from "@/components/exercises/ExerciseTabs";
 import ExerciseLibraryHeader from "@/components/exercises/ExerciseLibraryHeader";
 import { useExerciseLibrary } from "@/hooks/exercise-library";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 
 const ExerciseLibrary = () => {
   const {
@@ -22,6 +23,9 @@ const ExerciseLibrary = () => {
     getFilteredExercises,
     handleSearchChange
   } = useExerciseLibrary();
+  
+  // Added state for import dialog (not actually used but needed for props)
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   // List of difficulty levels - kept here as it's static
   const difficultyLevels = ["Beginner", "Intermediate", "Advanced"];
@@ -36,7 +40,10 @@ const ExerciseLibrary = () => {
           </Badge>
         </div>
         
-        <ExerciseLibraryHeader />
+        <ExerciseLibraryHeader 
+          importDialogOpen={importDialogOpen}
+          setImportDialogOpen={setImportDialogOpen}
+        />
         
         <SearchBar 
           searchQuery={searchQuery}

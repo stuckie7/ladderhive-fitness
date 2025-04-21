@@ -2,13 +2,13 @@
 import { Button } from "@/components/ui/button";
 
 interface ExerciseLibraryHeaderProps {
-  importDialogOpen: boolean;
-  setImportDialogOpen: (open: boolean) => void;
+  importDialogOpen?: boolean;
+  setImportDialogOpen?: (open: boolean) => void;
 }
 
 const ExerciseLibraryHeader = ({ 
-  importDialogOpen, 
-  setImportDialogOpen 
+  importDialogOpen = false, 
+  setImportDialogOpen = () => {} 
 }: ExerciseLibraryHeaderProps) => {
   return (
     <div className="flex items-center justify-between mb-6">

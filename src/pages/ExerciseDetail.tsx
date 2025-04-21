@@ -45,9 +45,57 @@ export default function ExerciseDetail() {
           }
           
           data = fallbackData;
+          
+          // Map the standard exercises table data to our Exercise interface
+          const mappedExercise: Exercise = {
+            id: data.id,
+            name: data.name,
+            bodyPart: data.muscle_group || '',
+            target: data.muscle_group || '',
+            equipment: data.equipment || '',
+            description: data.description,
+            difficulty: data.difficulty,
+            video_url: data.video_url,
+            image_url: data.image_url,
+            muscle_group: data.muscle_group,
+            instructions: data.instructions
+          };
+          
+          setExercise(mappedExercise);
+        } else {
+          // Map the exercises_new table data to our Exercise interface
+          const mappedExercise: Exercise = {
+            id: data.id,
+            name: data.name,
+            bodyPart: data.body_region || '',
+            target: data.target_muscle_group || '',
+            equipment: data.primary_equipment || '',
+            description: data.description,
+            difficulty: data.difficulty_level,
+            video_url: data.video_explanation_url,
+            image_url: data.image_url,
+            muscle_group: data.target_muscle_group,
+            instructions: data.instructions,
+            // Additional fields from exercises_new
+            target_muscle_group: data.target_muscle_group,
+            primary_equipment: data.primary_equipment,
+            secondary_equipment: data.secondary_equipment,
+            posture: data.posture,
+            laterality: data.laterality,
+            video_demonstration_url: data.video_demonstration_url,
+            video_explanation_url: data.video_explanation_url,
+            difficulty_level: data.difficulty_level,
+            body_region: data.body_region,
+            exercise_classification: data.exercise_classification,
+            mechanics: data.mechanics,
+            force_type: data.force_type,
+            prime_mover_muscle: data.prime_mover_muscle,
+            secondary_muscle: data.secondary_muscle,
+            tertiary_muscle: data.tertiary_muscle
+          };
+          
+          setExercise(mappedExercise);
         }
-        
-        setExercise(data);
       } catch (error) {
         console.error('Error fetching exercise details:', error);
       } finally {
@@ -142,9 +190,15 @@ export default function ExerciseDetail() {
                   <TabsContent value="instructions">
                     {exercise.instructions ? (
                       <div>
-                        {exercise.instructions.split('\n').map((instruction, index) => (
-                          <p key={index} className="mb-2">{instruction}</p>
-                        ))}
+                        {typeof exercise.instructions === 'string' ? 
+                          exercise.instructions.split('\n').map((instruction, index) => (
+                            <p key={index} className="mb-2">{instruction}</p>
+                          ))
+                        : 
+                          exercise.instructions.map((instruction, index) => (
+                            <p key={index} className="mb-2">{instruction}</p>
+                          ))
+                        }
                       </div>
                     ) : (
                       <p className="text-muted-foreground">No instructions available for this exercise.</p>

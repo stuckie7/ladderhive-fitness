@@ -22,6 +22,17 @@ export interface Exercise {
   force_type?: string;
   movement_pattern?: string;
   plane_of_motion?: string;
+  // Add fields from exercises_new table
+  target_muscle_group?: string;
+  primary_equipment?: string;
+  secondary_equipment?: string;
+  posture?: string;
+  laterality?: string;
+  video_demonstration_url?: string;
+  video_explanation_url?: string;
+  difficulty_level?: string;
+  body_region?: string;
+  exercise_classification?: string;
 }
 
 export type MuscleGroup = string;
