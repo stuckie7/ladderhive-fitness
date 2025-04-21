@@ -32,14 +32,11 @@ const ExerciseLibrary = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
           <h1 className="text-2xl font-bold mb-2 md:mb-0">Exercise Library</h1>
           <Badge variant="secondary" className="mb-2 md:mb-0">
-            Enhanced with Advanced Exercise Data
+            Powered by Supabase Exercise Data
           </Badge>
         </div>
         
-        <ExerciseLibraryHeader 
-          importDialogOpen={false}
-          setImportDialogOpen={() => {}}
-        />
+        <ExerciseLibraryHeader />
         
         <SearchBar 
           searchQuery={searchQuery}

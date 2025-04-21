@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { defaultMuscleGroups, defaultEquipmentTypes } from '@/hooks/exercise-library/constants';
 
 export interface ExerciseFull {
   id: number;
@@ -26,10 +27,11 @@ export const useExercisesFull = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchExercisesFull = async (limit = 20, offset = 0): Promise<ExerciseFull[]> => {
+  const fetchExercisesFull = async (limit = 50, offset = 0): Promise<ExerciseFull[]> => {
     setIsLoading(true);
     try {
-      // Use a direct query approach instead of rpc to avoid ambiguity issues
+      console.log('Fetching exercises_full with limit:', limit, 'offset:', offset);
+      
       const { data, error } = await supabase
         .from('exercises_full')
         .select('*')
@@ -38,7 +40,8 @@ export const useExercisesFull = () => {
       if (error) {
         throw error;
       }
-
+      
+      console.log(`Fetched ${data?.length || 0} exercises from exercises_full table`);
       return data as unknown as ExerciseFull[];
     } catch (error: any) {
       console.error('Error fetching exercises from exercises_full table:', error);
@@ -56,7 +59,8 @@ export const useExercisesFull = () => {
   const searchExercisesFull = async (searchTerm: string, limit = 20): Promise<ExerciseFull[]> => {
     setIsLoading(true);
     try {
-      // Use direct query approach instead of RPC to avoid column ambiguity issues
+      console.log('Searching exercises_full for:', searchTerm);
+      
       const { data, error } = await supabase
         .from('exercises_full')
         .select('*')
@@ -67,6 +71,7 @@ export const useExercisesFull = () => {
         throw error;
       }
       
+      console.log(`Found ${data?.length || 0} matching exercises for search "${searchTerm}"`);
       return data as unknown as ExerciseFull[];
     } catch (error: any) {
       console.error('Error searching exercises:', error);
@@ -122,10 +127,17 @@ export const useExercisesFull = () => {
 
       // Extract unique muscle groups
       const muscleGroups = [...new Set(data.map(item => item.target_muscle_group))];
-      return muscleGroups.filter((group): group is string => !!group);
+      const filtered = muscleGroups.filter((group): group is string => !!group);
+      
+      // If we couldn't get any muscle groups from the database, return the default ones
+      if (filtered.length === 0) {
+        return defaultMuscleGroups;
+      }
+      
+      return filtered;
     } catch (error: any) {
       console.error('Error fetching muscle groups:', error);
-      return [];
+      return defaultMuscleGroups;
     }
   };
 
@@ -143,10 +155,17 @@ export const useExercisesFull = () => {
 
       // Extract unique equipment types
       const equipmentTypes = [...new Set(data.map(item => item.primary_equipment))];
-      return equipmentTypes.filter((equip): equip is string => !!equip);
+      const filtered = equipmentTypes.filter((equip): equip is string => !!equip);
+      
+      // If we couldn't get any equipment types from the database, return the default ones
+      if (filtered.length === 0) {
+        return defaultEquipmentTypes;
+      }
+      
+      return filtered;
     } catch (error: any) {
       console.error('Error fetching equipment types:', error);
-      return [];
+      return defaultEquipmentTypes;
     }
   };
 

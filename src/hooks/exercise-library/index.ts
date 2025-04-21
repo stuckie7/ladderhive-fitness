@@ -6,6 +6,7 @@ import { useExercises } from "../use-exercises";
 import { useExercisesFull } from "../use-exercises-full";
 import { useExerciseFilters } from "./use-exercise-filters";
 import { useFetchExercises } from "./use-fetch-exercises";
+import { defaultMuscleGroups, defaultEquipmentTypes } from "./constants";
 
 export const useExerciseLibrary = () => {
   const [searchQuery, setSearchQuery] = useState("");

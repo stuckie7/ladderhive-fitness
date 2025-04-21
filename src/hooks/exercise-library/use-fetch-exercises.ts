@@ -71,7 +71,7 @@ export const useFetchExercises = (
       }
       
       // Default: fetch exercises for the first muscle group
-      const exercises = await fetchers.getExercisesByMuscleGroup(firstBodyPart);
+      const exercises = await fetchers.getExercisesByMuscleGroup(firstMuscleGroup);
       
       let filteredData = exercises;
       
@@ -91,7 +91,7 @@ export const useFetchExercises = (
         return await fetchers.searchExercises(searchQuery);
       }
       
-      return await fetchers.getExercisesByMuscleGroup(firstBodyPart);
+      return await fetchers.getExercisesByMuscleGroup(firstMuscleGroup);
     } finally {
       setIsLoading(false);
     }
