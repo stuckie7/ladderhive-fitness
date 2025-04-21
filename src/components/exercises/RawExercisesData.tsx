@@ -1,9 +1,9 @@
-// src/components/exercises/RawExercisesData.tsx
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { InfoIcon } from "lucide-react";
 
 export function RawExercisesData() {
   const [exerciseData, setExerciseData] = useState<any[]>([]);
@@ -44,7 +44,9 @@ export function RawExercisesData() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Raw Data: exercises_full (first 10 rows)</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-lg font-medium">
+            Raw Data: exercises_full (first 10 rows)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -62,12 +64,20 @@ export function RawExercisesData() {
   // Error state
   if (error) {
     return (
-      <Card>
+      <Card className="border-red-200">
         <CardHeader>
-          <CardTitle>Raw Data: exercises_full (first 10 rows)</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-lg font-medium">
+            Raw Data: exercises_full (first 10 rows)
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-red-500">Error: {error}</div>
+          <div className="flex items-center gap-2 text-red-500">
+            <InfoIcon className="h-4 w-4" />
+            <span>Error: {error}</span>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Make sure your Supabase credentials are correct and the table exists.
+          </p>
         </CardContent>
       </Card>
     );
@@ -78,10 +88,18 @@ export function RawExercisesData() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Raw Data: exercises_full (first 10 rows)</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-lg font-medium">
+            Raw Data: exercises_full (first 10 rows)
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div>No exercise data available. Make sure your CSV has been imported to Supabase.</div>
+          <div className="flex items-center gap-2 text-amber-500">
+            <InfoIcon className="h-4 w-4" />
+            <span>No exercise data available</span>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Make sure your CSV has been imported to Supabase table "exercises_full".
+          </p>
         </CardContent>
       </Card>
     );
@@ -93,23 +111,27 @@ export function RawExercisesData() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Raw Data: exercises_full (first 10 rows)</CardTitle>
+        <CardTitle className="text-lg font-medium">
+          Raw Data: exercises_full (first 10 rows)
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
                 {headers.map((header) => (
-                  <TableHead key={header}>{header}</TableHead>
+                  <TableHead key={header} className="bg-muted/50">
+                    {header}
+                  </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {exerciseData.map((exercise, index) => (
-                <TableRow key={index}>
+                <TableRow key={index} className={index % 2 === 0 ? "bg-muted/20" : ""}>
                   {headers.map((header) => (
-                    <TableCell key={`${index}-${header}`}>
+                    <TableCell key={`${index}-${header}`} className="text-sm">
                       {exercise[header]?.toString() || ''}
                     </TableCell>
                   ))}
@@ -122,3 +144,5 @@ export function RawExercisesData() {
     </Card>
   );
 }
+
+export default RawExercisesData;
