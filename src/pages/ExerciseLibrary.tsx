@@ -1,12 +1,35 @@
-
 import AppLayout from "@/components/layout/AppLayout";
-import ExerciseFilters from "@/components/exercises/ExerciseFilters";
-import SearchBar from "@/components/exercises/SearchBar";
-import ExerciseTabs from "@/components/exercises/ExerciseTabs";
-import ExerciseLibraryHeader from "@/components/exercises/ExerciseLibraryHeader";
-import { useExerciseLibrary } from "@/hooks/exercise-library";
 import { Badge } from "@/components/ui/badge";
+import { useExerciseLibrary } from "@/hooks/exercise-library";
 import { useState } from "react";
+import dynamic from "next/dynamic";
+
+// Dynamically import components for better code splitting
+const ExerciseLibraryHeader = dynamic(
+  () => import("@/components/exercises/ExerciseLibraryHeader"),
+  { loading: () => <div className="h-12" /> }
+);
+
+const SearchBar = dynamic(
+  () => import("@/components/exercises/SearchBar"),
+  { loading: () => <div className="h-10 mb-4" /> }
+);
+
+const ExerciseFilters = dynamic(
+  () => import("@/components/exercises/ExerciseFilters"),
+  { loading: () => <div className="h-32 mb-4" /> }
+);
+
+const ExerciseTabs = dynamic(
+  () => import("@/components/exercises/ExerciseTabs"),
+  { loading: () => <div className="h-64" /> }
+);
+
+const DIFFICULTY_LEVELS: ("Beginner" | "Intermediate" | "Advanced")[] = [
+  "Beginner",
+  "Intermediate",
+  "Advanced",
+];
 
 const ExerciseLibrary = () => {
   const {
@@ -21,18 +44,15 @@ const ExerciseLibrary = () => {
     setFilters,
     resetFilters,
     getFilteredExercises,
-    handleSearchChange
+    handleSearchChange,
   } = useExerciseLibrary();
   
-  // Added state for import dialog (not actually used but needed for props)
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-
-  // List of difficulty levels - kept here as it's static
-  const difficultyLevels = ["Beginner", "Intermediate", "Advanced"];
 
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
+        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
           <h1 className="text-2xl font-bold mb-2 md:mb-0">Exercise Library</h1>
           <Badge variant="secondary" className="mb-2 md:mb-0">
@@ -40,6 +60,7 @@ const ExerciseLibrary = () => {
           </Badge>
         </div>
         
+        {/* Exercise Library Components */}
         <ExerciseLibraryHeader 
           importDialogOpen={importDialogOpen}
           setImportDialogOpen={setImportDialogOpen}
@@ -56,7 +77,7 @@ const ExerciseLibrary = () => {
           resetFilters={resetFilters}
           muscleGroups={availableMuscleGroups}
           equipmentTypes={availableEquipment}
-          difficultyLevels={difficultyLevels}
+          difficultyLevels={DIFFICULTY_LEVELS}
         />
         
         <ExerciseTabs
