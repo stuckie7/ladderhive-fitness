@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Exercise } from '@/types/exercise';
@@ -7,7 +6,41 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const useExercises = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [rawExercisesData, setRawExercisesData] = useState<any[]>([]);
   const { toast } = useToast();
+
+  // New function to fetch raw exercise data from Supabase
+  const getRawExercisesData = async (limit = 10) => {
+    setIsLoading(true);
+    try {
+      // Query the exercises_full table for the first 10 rows
+      const { data, error } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .limit(limit);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        setRawExercisesData(data);
+        return data;
+      }
+      
+      return [];
+    } catch (error: any) {
+      console.error("Error fetching raw exercise data:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch raw exercise data.",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getExerciseById = async (id: string): Promise<Exercise | null> => {
     setIsLoading(true);
@@ -152,9 +185,11 @@ export const useExercises = () => {
 
   return {
     isLoading,
+    rawExercisesData,
     getExerciseById,
     getExercisesByMuscleGroup,
     getExercisesByEquipment,
-    searchExercises
+    searchExercises,
+    getRawExercisesData // Export the new function
   };
 };
