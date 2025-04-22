@@ -3,6 +3,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { Badge } from "@/components/ui/badge";
 import { useExerciseLibrary } from "@/hooks/exercise-library";
 import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ExerciseLibraryHeader = lazy(() => import("@/components/exercises/ExerciseLibraryHeader"));
 const SearchBar = lazy(() => import("@/components/exercises/SearchBar"));
@@ -45,21 +46,21 @@ const ExerciseLibrary = () => {
           </Badge>
         </div>
 
-        <Suspense fallback={<div className="h-12" />}>
+        <Suspense fallback={<Skeleton className="h-12 w-full" />}>
           <ExerciseLibraryHeader 
             importDialogOpen={importDialogOpen}
             setImportDialogOpen={setImportDialogOpen}
           />
         </Suspense>
         
-        <Suspense fallback={<div className="h-10 mb-4" />}>
+        <Suspense fallback={<Skeleton className="h-10 w-full mb-4" />}>
           <SearchBar 
             searchQuery={searchQuery}
             handleSearchChange={handleSearchChange}
           />
         </Suspense>
         
-        <Suspense fallback={<div className="h-32 mb-4" />}>
+        <Suspense fallback={<Skeleton className="h-32 w-full mb-4" />}>
           <ExerciseFilters 
             filters={filters}
             setFilters={setFilters}
@@ -70,7 +71,7 @@ const ExerciseLibrary = () => {
           />
         </Suspense>
         
-        <Suspense fallback={<div className="h-64" />}>
+        <Suspense fallback={<Skeleton className="h-64 w-full" />}>
           <ExerciseTabs
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -82,7 +83,18 @@ const ExerciseLibrary = () => {
           />
         </Suspense>
 
-        <ExercisesFullTable />
+        {/* Added section title and better spacing */}
+        <div className="mt-12 pt-6 border-t">
+          <h2 className="text-xl font-semibold mb-4">Complete Exercise Database</h2>
+          <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+            <ExercisesFullTable 
+              className="mt-4"
+              // Pass any necessary props here
+              initialSortField="name"
+              initialSortOrder="asc"
+            />
+          </Suspense>
+        </div>
       </div>
     </AppLayout>
   );
