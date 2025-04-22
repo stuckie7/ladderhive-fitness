@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { FilterX } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -7,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FilterX } from "lucide-react";
+import { ExerciseSearch } from "./ExerciseSearch";
 
 interface FiltersState {
   muscleGroup: string;
@@ -55,7 +56,11 @@ const ExerciseFilters = ({
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="md:col-span-1">
+          <ExerciseSearch className="mb-4" />
+        </div>
+        
         <div className="space-y-2">
           <label className="text-sm font-medium">Muscle Group</label>
           <Select
