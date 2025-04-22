@@ -61,11 +61,12 @@ export const useExercisesFull = () => {
     try {
       console.log('Searching exercises_full for:', searchTerm);
       
+      // Use the search_exercises function instead of direct query
       const { data, error } = await supabase
-        .from('exercises_full')
-        .select('*')
-        .ilike('name', `%${searchTerm}%`)
-        .limit(limit);
+        .rpc('search_exercises', {
+          search_term: searchTerm,
+          limit_count: limit
+        });
       
       if (error) {
         throw error;
