@@ -1,11 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Exercise } from "@/types/exercise";
+import { Exercise, ExerciseFilters } from "@/types/exercise";
 import { useExercises } from "../use-exercises";
 import { useExercisesFull } from "../use-exercises-full";
 import { useExerciseFilters } from "./use-exercise-filters";
 import { useFetchExercises } from "./use-fetch-exercises";
+import { mapExerciseFullToExercise } from "./mappers";
 import { defaultMuscleGroups, defaultEquipmentTypes } from "./constants";
 
 export const useExerciseLibrary = () => {
@@ -26,7 +26,6 @@ export const useExerciseLibrary = () => {
     isLoading: isLoadingFull
   } = useExercisesFull();
 
-  // Get filters and filter options
   const {
     filters,
     setFilters,
@@ -35,7 +34,6 @@ export const useExerciseLibrary = () => {
     availableEquipment
   } = useExerciseFilters(getMuscleGroups, getEquipmentTypes);
 
-  // Set up exercise fetching
   const firstMuscleGroup = availableMuscleGroups[0]?.toLowerCase() || 'back';
   
   const { fetchExercises } = useFetchExercises(
@@ -51,7 +49,6 @@ export const useExerciseLibrary = () => {
     firstMuscleGroup
   );
 
-  // Fetch exercises with React Query
   const { data: exercises, isLoading: isLoadingQuery, refetch } = useQuery({
     queryKey: ['exercises', filters, searchQuery, firstMuscleGroup],
     queryFn: fetchExercises,
@@ -60,7 +57,6 @@ export const useExerciseLibrary = () => {
 
   const isLoading = isLoadingQuery || isLoadingFull;
 
-  // Helper function to get exercises filtered by muscle group
   const getFilteredExercises = (muscleGroup: string) => {
     if (!exercises) return [];
     
@@ -75,8 +71,46 @@ export const useExerciseLibrary = () => {
     );
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  const handleSearch = async (query: string) => {
+    try {
+      console.log('Searching exercises with query:', query);
+      
+      const [apiResults, supabaseResults] = await Promise.all([
+        searchExercises(query),
+        searchExercisesFull(query)
+      ]);
+
+      console.log('API results:', apiResults?.length || 0);
+      console.log('Supabase results:', supabaseResults?.length || 0);
+
+      const combined = [
+        ...(apiResults || []),
+        ...(supabaseResults || []).map(mapExerciseFullToExercise)
+      ];
+
+      const uniqueResults = combined.reduce((acc, current) => {
+        if (!acc.some(ex => ex.name.toLowerCase() === current.name.toLowerCase())) {
+          acc.push(current);
+        }
+        return acc;
+      }, [] as Exercise[]);
+
+      console.log('Total unique results:', uniqueResults.length);
+      return uniqueResults;
+    } catch (error) {
+      console.error('Error searching exercises:', error);
+      return [];
+    }
+  };
+
+  const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    if (query.trim()) {
+      const results = await handleSearch(query);
+      refetch();
+    }
   };
 
   useEffect(() => {
@@ -97,6 +131,7 @@ export const useExerciseLibrary = () => {
     resetFilters,
     getFilteredExercises,
     handleSearchChange,
+    handleSearch,
     refetch
   };
 };
