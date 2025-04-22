@@ -1,6 +1,5 @@
 
-import { Exercise } from "@/types/exercise";
-import { ExerciseFull } from "@/hooks/use-exercises-full";
+import { Exercise, ExerciseFull } from "@/types/exercise";
 
 export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise => {
   return {
@@ -17,8 +16,8 @@ export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise 
     secondaryMuscles: exerciseFull.secondary_muscle ? [exerciseFull.secondary_muscle] : [],
     instructions: [],
     gifUrl: exerciseFull.short_youtube_demo || '',
-    video_demonstration_url: exerciseFull.short_youtube_demo || '',
-    laterality: exerciseFull.laterality || null,
+    video_demonstration_url: exerciseFull.video_demonstration_url || '',
+    video_explanation_url: exerciseFull.video_explanation_url || '',
     
     // Map all the original properties
     target_muscle_group: exerciseFull.target_muscle_group,
@@ -33,6 +32,7 @@ export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise 
     movement_pattern_1: exerciseFull.movement_pattern_1,
     plane_of_motion_1: exerciseFull.plane_of_motion_1,
     short_youtube_demo: exerciseFull.short_youtube_demo,
-    in_depth_youtube_exp: exerciseFull.in_depth_youtube_exp
+    in_depth_youtube_exp: exerciseFull.in_depth_youtube_exp,
+    laterality: exerciseFull.laterality
   };
 };
