@@ -22,6 +22,9 @@ export interface Exercise {
   body_region?: string | null;
   force_type?: string | null;
   mechanics?: string | null;
+  laterality?: string | null;
+  video_demonstration_url?: string | null;
+  gifUrl?: string | null;
   
   // Compatibility fields for UI components
   bodyPart?: string;
