@@ -38,7 +38,6 @@ const ExerciseLibrary = () => {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
           <h1 className="text-2xl font-bold mb-2 md:mb-0">Exercise Library</h1>
           <Badge variant="secondary" className="mb-2 md:mb-0">
@@ -83,16 +82,10 @@ const ExerciseLibrary = () => {
           />
         </Suspense>
 
-        {/* Added section title and better spacing */}
         <div className="mt-12 pt-6 border-t">
           <h2 className="text-xl font-semibold mb-4">Complete Exercise Database</h2>
           <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-            <ExercisesFullTable 
-              className="mt-4"
-              // Pass any necessary props here
-              initialSortField="name"
-              initialSortOrder="asc"
-            />
+            <ExercisesFullTable />
           </Suspense>
         </div>
       </div>
