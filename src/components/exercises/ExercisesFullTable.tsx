@@ -27,7 +27,8 @@ const ExercisesFullTable = () => {
   useEffect(() => {
     const loadExercises = async () => {
       const data = await fetchExercisesFull(10, 0);
-      setExercises(data);
+      // Explicit casting to ensure type compatibility
+      setExercises(data as unknown as ExerciseFull[]);
     };
     loadExercises();
   }, [fetchExercisesFull]);

@@ -25,7 +25,6 @@ export interface Exercise {
   laterality?: string | null;
   video_demonstration_url?: string | null;
   video_explanation_url?: string | null;
-  gifUrl?: string | null;
   
   // Compatibility fields for UI components
   bodyPart?: string;
@@ -37,6 +36,8 @@ export interface Exercise {
   video_url?: string;
   image_url?: string;
   secondaryMuscles?: string[];
+  difficulty_level?: string;
+  gifUrl?: string | null;
 }
 
 export interface ExerciseFilters {
@@ -71,4 +72,18 @@ export interface ExerciseFull {
   laterality: string | null;
   video_demonstration_url: string | null;
   video_explanation_url: string | null;
+  
+  // Additional fields from the Supabase exercises_full table
+  primary_items_count: number | null;
+  secondary_items_count: number | null;
+  combination_exercise: boolean | null;
+  single_or_double_arm: string | null;
+  arm_movement_pattern: string | null;
+  grip: string | null;
+  load_position: string | null;
+  leg_movement_pattern: string | null;
+  foot_elevation: string | null;
+  exercise_classification: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }

@@ -11,6 +11,7 @@ export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise 
     muscle_group: exerciseFull.target_muscle_group || '',
     description: `${exerciseFull.prime_mover_muscle || ''} - ${exerciseFull.mechanics || ''} - ${exerciseFull.force_type || ''}`,
     difficulty: exerciseFull.difficulty || 'Intermediate',
+    difficulty_level: exerciseFull.difficulty || 'Intermediate',
     video_url: exerciseFull.in_depth_youtube_exp || exerciseFull.short_youtube_demo || '',
     image_url: exerciseFull.short_youtube_demo || '',
     secondaryMuscles: exerciseFull.secondary_muscle ? [exerciseFull.secondary_muscle] : [],
@@ -33,6 +34,7 @@ export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise 
     plane_of_motion_1: exerciseFull.plane_of_motion_1,
     short_youtube_demo: exerciseFull.short_youtube_demo,
     in_depth_youtube_exp: exerciseFull.in_depth_youtube_exp,
-    laterality: exerciseFull.laterality
+    laterality: exerciseFull.laterality,
+    empty_column: exerciseFull.empty_column
   };
 };
