@@ -38,6 +38,7 @@ export interface Exercise {
   secondaryMuscles?: string[];
   difficulty_level?: string;
   gifUrl?: string | null;
+  exercise_classification?: string | null;
 }
 
 export interface ExerciseFilters {

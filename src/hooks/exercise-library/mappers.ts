@@ -19,6 +19,7 @@ export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise 
     gifUrl: exerciseFull.short_youtube_demo || '',
     video_demonstration_url: exerciseFull.video_demonstration_url || '',
     video_explanation_url: exerciseFull.video_explanation_url || '',
+    exercise_classification: exerciseFull.exercise_classification || null,
     
     // Map all the original properties
     target_muscle_group: exerciseFull.target_muscle_group,
