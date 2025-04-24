@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -38,7 +37,6 @@ const ExercisesFullTable = () => {
       try {
         const data = await fetchExercisesFull(10, 0);
         if (data && data.length > 0) {
-          // Cast to ensure type compatibility
           setExercises(data);
           setFetchError(null);
         } else if (retryCount < 2) {

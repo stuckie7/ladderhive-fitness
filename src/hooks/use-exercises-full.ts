@@ -1,27 +1,8 @@
-
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { defaultMuscleGroups, defaultEquipmentTypes } from '@/hooks/exercise-library/constants';
-
-export interface ExerciseFull {
-  id: number;
-  name: string;
-  difficulty: string | null;
-  body_region: string | null;
-  target_muscle_group: string | null;
-  primary_equipment: string | null;
-  secondary_equipment: string | null;
-  prime_mover_muscle: string | null;
-  secondary_muscle: string | null;
-  tertiary_muscle: string | null;
-  movement_pattern_1: string | null;
-  plane_of_motion_1: string | null;
-  mechanics: string | null;
-  force_type: string | null;
-  short_youtube_demo: string | null;
-  in_depth_youtube_exp: string | null;
-}
+import { ExerciseFull } from '@/types/exercise';
 
 // In-memory cache to reduce redundant requests
 const cache = {
