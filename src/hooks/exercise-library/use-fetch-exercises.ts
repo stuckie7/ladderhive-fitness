@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Exercise, ExerciseFilters } from "@/types/exercise";
-import { ExerciseFull } from "@/hooks/use-exercises-full";
+import { ExerciseFull } from "@/types/exercise";
 import { mapExerciseFullToExercise } from "./mappers";
 
 type ExerciseFetchers = {

@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Exercise, ExerciseFilters } from "@/types/exercise";
+import { Exercise, ExerciseFilters, ExerciseFull } from "@/types/exercise";
 import { useExercises } from "./use-exercises";
-import { useExercisesFull, ExerciseFull } from "./use-exercises-full";
+import { useExercisesFull } from "./use-exercises-full";
 import { getBodyParts, getEquipmentList } from "@/integrations/exercisedb/client";
 
 // Default muscle groups and equipment

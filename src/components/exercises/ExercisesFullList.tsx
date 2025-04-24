@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { useExercisesFull, ExerciseFull } from '@/hooks/use-exercises-full';
+import { useExercisesFull } from '@/hooks/use-exercises-full';
+import { ExerciseFull } from '@/types/exercise';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
