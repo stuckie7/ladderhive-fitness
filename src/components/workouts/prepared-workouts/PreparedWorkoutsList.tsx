@@ -6,7 +6,7 @@ import PreparedWorkout from "./PreparedWorkout";
 import { usePreparedWorkouts } from "./usePreparedWorkouts";
 
 interface PreparedWorkoutsListProps {
-  currentWorkoutId: string;
+  currentWorkoutId: string | null;
   onAddExercise: (exercise: Exercise) => Promise<void>;
 }
 

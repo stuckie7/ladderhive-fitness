@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Workout } from "@/types/workout";
 import { WorkoutExercise, mapSupabaseExerciseToExercise } from "@/hooks/workout-exercises/utils";
 
-export const usePreparedWorkouts = (currentWorkoutId: string) => {
+export const usePreparedWorkouts = (currentWorkoutId: string | null = null) => {
   const [preparedWorkouts, setPreparedWorkouts] = useState<Workout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
@@ -17,15 +17,21 @@ export const usePreparedWorkouts = (currentWorkoutId: string) => {
   useEffect(() => {
     const fetchPreparedWorkouts = async () => {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('workouts')
           .select('*')
-          .neq('id', currentWorkoutId) // Exclude current workout
           .limit(5);
+        
+        // Only apply filter if currentWorkoutId is a valid UUID
+        if (currentWorkoutId && currentWorkoutId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)) {
+          query = query.neq('id', currentWorkoutId);
+        }
+        
+        const { data, error } = await query;
         
         if (error) throw error;
         
-        setPreparedWorkouts(data);
+        setPreparedWorkouts(data || []);
         
         // Load exercises for all prepared workouts immediately
         if (data && data.length > 0) {
@@ -52,7 +58,7 @@ export const usePreparedWorkouts = (currentWorkoutId: string) => {
 
   // Fetch exercises for a specific workout when expanded
   const fetchWorkoutExercises = async (workoutId: string) => {
-    if (workoutExercises[workoutId]?.length > 0) return; // Already loaded
+    if (!workoutId || workoutExercises[workoutId]?.length > 0) return; // Already loaded or invalid ID
     
     setLoadingExercises(prev => ({ ...prev, [workoutId]: true }));
     

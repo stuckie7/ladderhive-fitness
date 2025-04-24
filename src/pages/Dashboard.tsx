@@ -92,7 +92,7 @@ const Dashboard = () => {
           </TabsList>
           <TabsContent value="suggested">
             <PreparedWorkoutsSection 
-              currentWorkoutId="" 
+              currentWorkoutId={null}
               onAddExercise={async (exercise: Exercise) => {
                 console.log("Adding exercise:", exercise);
                 return Promise.resolve();
