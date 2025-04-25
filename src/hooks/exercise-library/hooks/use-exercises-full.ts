@@ -8,7 +8,7 @@ import {
   getExerciseFullById,
   getMuscleGroups,
   getEquipmentTypes
-} from '../services/exercise-service';
+} from '../services';  // Updated to use the index.ts export
 
 export const useExercisesFull = () => {
   const [isLoading, setIsLoading] = useState(false);
