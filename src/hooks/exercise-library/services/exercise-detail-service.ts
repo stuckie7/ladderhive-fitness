@@ -6,16 +6,19 @@ export const getExerciseFullById = async (id: number): Promise<ExerciseFull | nu
   try {
     console.log(`Fetching exercise with ID ${id}`);
     
-    const { data, error } = await supabase
+    const response = await supabase
       .from('exercises_full')
       .select('*')
       .eq('id', id)
       .single();
     
-    if (error) {
-      console.error(`Error fetching exercise with ID ${id}:`, error);
-      throw error;
+    if (response.error) {
+      console.error(`Error fetching exercise with ID ${id}:`, response.error);
+      throw response.error;
     }
+    
+    const { data } = response;
+    console.log(`Exercise data found:`, data ? 'Yes' : 'No');
     
     // Transform the data to match our ExerciseFull type
     if (data) {

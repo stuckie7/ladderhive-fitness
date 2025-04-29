@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -12,8 +13,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useExercisesFull } from "@/hooks/use-exercises-full";
 import { ExerciseFull } from "@/types/exercise";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 export interface ExercisesFullTableProps {
   initialSortField?: string;
@@ -35,21 +37,17 @@ const ExercisesFullTable = () => {
   useEffect(() => {
     const loadExercises = async () => {
       try {
+        setFetchError(null);
         const data = await fetchExercisesFull(10, 0);
         if (data && data.length > 0) {
           setExercises(data);
-          setFetchError(null);
-        } else if (retryCount < 2) {
-          // Try up to 3 times (initial + 2 retries)
-          setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-          }, 1500); // Retry after 1.5 seconds
         } else {
-          setFetchError("Unable to load exercise data. Please check your connection.");
+          setFetchError("No exercises found in the database. The exercises_full table may be empty.");
+          console.log("No data returned from exercise fetch service");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading exercises:", error);
-        setFetchError("Failed to load exercise data.");
+        setFetchError(`Failed to load exercise data: ${error.message || 'Unknown error'}`);
       }
     };
     
@@ -64,7 +62,11 @@ const ExercisesFullTable = () => {
     );
   };
 
-  if (isLoading && exercises.length === 0) {
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
+
+  if (isLoading) {
     return (
       <Card className="mt-6">
         <CardHeader>
@@ -89,17 +91,50 @@ const ExercisesFullTable = () => {
         <CardContent>
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Connection Error</AlertTitle>
-            <AlertDescription>
-              {fetchError}<br />
-              <button 
-                onClick={() => setRetryCount(prev => prev + 1)}
-                className="text-sm font-medium underline hover:text-primary mt-2"
+            <AlertTitle>Data Error</AlertTitle>
+            <AlertDescription className="space-y-4">
+              {fetchError}
+              <div>
+                <p className="text-sm mt-2 mb-3">Possible solutions:</p>
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  <li>Check that the 'exercises_full' table exists in your Supabase project</li>
+                  <li>Verify the table has data and the correct structure</li>
+                  <li>Ensure your Supabase connection is working properly</li>
+                </ul>
+              </div>
+              <Button 
+                onClick={handleRetry}
+                className="mt-4 flex items-center"
+                variant="outline"
               >
+                <RefreshCw className="h-4 w-4 mr-2" />
                 Retry loading data
-              </button>
+              </Button>
             </AlertDescription>
           </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!renderedExercises.length) {
+    return (
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Raw Data: exercises_full</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No exercise data available</p>
+            <Button 
+              onClick={handleRetry}
+              className="mt-4 flex items-center mx-auto"
+              variant="outline"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry loading data
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -132,6 +167,7 @@ const ExercisesFullTable = () => {
                 <TableRow key={ex.id}>
                   <TableCell className="text-center">
                     <Checkbox
+                      id={`exercise-${ex.id}`}
                       checked={selectedIds.includes(ex.id)}
                       onCheckedChange={(checked: boolean) =>
                         onCheckboxChange(ex.id, checked)
@@ -153,13 +189,6 @@ const ExercisesFullTable = () => {
                   <TableCell>{ex.body_region || '-'}</TableCell>
                 </TableRow>
               ))}
-              {renderedExercises.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                    No exercise data available
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </div>
