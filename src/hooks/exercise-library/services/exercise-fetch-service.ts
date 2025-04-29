@@ -1,29 +1,28 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { ExerciseFull } from "@/types/exercise";
-import { exerciseCache, isCacheValid, getCachedExercises, setCachedExercises } from "../cache/exercise-cache";
+import { supabase } from '@/integrations/supabase/client';
+import { ExerciseFull } from '@/types/exercise';
 
-export const fetchExercisesFull = async (limit = 50, offset = 0): Promise<ExerciseFull[]> => {
-  const cacheKey = `exercises_${limit}_${offset}`;
-  
-  if (isCacheValid(cacheKey)) {
-    return getCachedExercises(cacheKey);
-  }
-  
-  console.log('Fetching exercises_full with limit:', limit, 'offset:', offset);
-  
-  const { data, error } = await supabase
-    .from('exercises_full')
-    .select('*')
-    .range(offset, offset + limit - 1);
-
-  if (error) {
+export const fetchExercisesFull = async (
+  limit = 50, 
+  offset = 0
+): Promise<ExerciseFull[]> => {
+  try {
+    console.log(`Fetching exercises with limit ${limit} and offset ${offset}`);
+    const { data, error } = await supabase
+      .from('exercises_full')
+      .select('*')
+      .range(offset, offset + limit - 1)
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching exercises_full data:', error);
+      throw error;
+    }
+    
+    console.log(`Fetched ${data?.length || 0} exercises from exercises_full`);
+    return data || [];
+  } catch (error) {
+    console.error('Failed to fetch exercises_full:', error);
     throw error;
   }
-  
-  const exercises = data as ExerciseFull[];
-  setCachedExercises(cacheKey, exercises);
-  
-  console.log(`Fetched ${exercises?.length || 0} exercises from exercises_full table`);
-  return exercises;
 };
