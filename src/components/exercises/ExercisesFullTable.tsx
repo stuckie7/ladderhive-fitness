@@ -30,33 +30,12 @@ const ExercisesFullTable = () => {
   const [tableExists, setTableExists] = useState<boolean | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [debugInfo, setDebugInfo] = useState<any>(null);
-  const { fetchExercisesFull, isLoading } = useExercisesFull();
+  const { fetchExercisesFull, isLoading, checkTableExists } = useExercisesFull();
   
   // Use a memoized exercise list to prevent re-renders
   const renderedExercises = React.useMemo(() => {
     return exercises;
   }, [exercises]);
-
-  const checkTableExists = async () => {
-    try {
-      // This query checks if the exercises_full table exists in the public schema
-      const { data, error } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .eq('table_name', 'exercises_full');
-      
-      if (error) {
-        console.error("Error checking if table exists:", error);
-        return null;
-      }
-      
-      return data && data.length > 0;
-    } catch (err) {
-      console.error("Failed to check if table exists:", err);
-      return null;
-    }
-  };
 
   useEffect(() => {
     const loadExercises = async () => {
@@ -67,7 +46,7 @@ const ExercisesFullTable = () => {
         const exists = await checkTableExists();
         setTableExists(exists);
         
-        if (exists === false) {
+        if (!exists) {
           setFetchError("The 'exercises_full' table does not exist in your Supabase database.");
           return;
         }
@@ -85,17 +64,7 @@ const ExercisesFullTable = () => {
         if (data && data.length > 0) {
           setExercises(data);
         } else {
-          // Get table information for debugging
-          const { data: tableInfo, error: tableError } = await supabase
-            .rpc('get_table_info', { table_name: 'exercises_full' })
-            .maybeSingle();
-            
           setFetchError("No exercises found in the database. The exercises_full table may be empty.");
-          console.log("Query returned empty result. Table info attempt:", tableInfo || 'Failed to get table info');
-          
-          if (tableError) {
-            console.error("Error getting table info:", tableError);
-          }
         }
       } catch (error: any) {
         console.error("Error loading exercises:", error);
@@ -108,7 +77,7 @@ const ExercisesFullTable = () => {
     };
     
     loadExercises();
-  }, [fetchExercisesFull, retryCount]);
+  }, [fetchExercisesFull, checkTableExists, retryCount]);
 
   const onCheckboxChange = (exerciseId: number, checked: boolean) => {
     setSelectedIds((prev) =>

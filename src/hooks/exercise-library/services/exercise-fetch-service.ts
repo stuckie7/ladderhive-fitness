@@ -27,23 +27,6 @@ export const fetchExercisesFull = async (
     
     if (data?.length === 0) {
       console.log('No data returned from exercises_full table. Please check if the table exists and has data.');
-      
-      // Try to get metadata about the table
-      try {
-        const { data: metadata } = await supabase
-          .from('information_schema.columns')
-          .select('column_name, data_type')
-          .eq('table_name', 'exercises_full')
-          .eq('table_schema', 'public');
-          
-        if (metadata && metadata.length > 0) {
-          console.log('Table exists with columns:', metadata);
-        } else {
-          console.log('Table might not exist or has no columns.');
-        }
-      } catch (metadataError) {
-        console.error('Failed to get table metadata:', metadataError);
-      }
     }
     
     // Transform the data to match our ExerciseFull type
@@ -64,18 +47,24 @@ export const fetchExercisesFull = async (
 // Add a utility function to check if the table exists
 export const checkExercisesFullTableExists = async (): Promise<boolean> => {
   try {
+    // Instead of querying information_schema, we'll try to get a single row
+    // If the table doesn't exist, we'll get an error
     const { data, error } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', 'exercises_full');
+      .from('exercises_full')
+      .select('id')
+      .limit(1);
       
     if (error) {
+      if (error.code === '42P01') { // PostgreSQL error code for undefined_table
+        console.error('Table exercises_full does not exist:', error);
+        return false;
+      }
       console.error('Error checking if exercises_full table exists:', error);
       return false;
     }
     
-    return Boolean(data && data.length > 0);
+    // If we get here, the table exists (even if empty)
+    return true;
   } catch (error) {
     console.error('Failed to check if exercises_full table exists:', error);
     return false;

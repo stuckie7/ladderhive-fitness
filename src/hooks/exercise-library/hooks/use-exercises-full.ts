@@ -53,6 +53,7 @@ export const useExercisesFull = () => {
       }
     }
     
+    // Don't show toast for network errors as they're common during development
     if (error.message !== "Failed to fetch") {
       toast({
         title: 'Error',
