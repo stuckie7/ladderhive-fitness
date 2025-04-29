@@ -17,7 +17,18 @@ export const getExerciseFullById = async (id: number): Promise<ExerciseFull | nu
       throw error;
     }
     
-    return data;
+    // Transform the data to match our ExerciseFull type
+    if (data) {
+      const exerciseData: ExerciseFull = {
+        ...data,
+        // Add the missing properties with default null values
+        video_demonstration_url: data.short_youtube_demo || null,
+        video_explanation_url: data.in_depth_youtube_exp || null
+      };
+      return exerciseData;
+    }
+    
+    return null;
   } catch (error) {
     console.error(`Failed to fetch exercise with ID ${id}:`, error);
     throw error;

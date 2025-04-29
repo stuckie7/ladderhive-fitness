@@ -22,7 +22,16 @@ export const searchExercisesFull = async (
     }
     
     console.log(`Found ${data?.length || 0} exercises matching search term "${searchTerm}"`);
-    return data || [];
+    
+    // Transform the data to match our ExerciseFull type
+    const transformedData: ExerciseFull[] = (data || []).map(item => ({
+      ...item,
+      // Add the missing properties with default null values
+      video_demonstration_url: item.short_youtube_demo || null,
+      video_explanation_url: item.in_depth_youtube_exp || null
+    }));
+    
+    return transformedData;
   } catch (error) {
     console.error('Failed to search exercises_full:', error);
     throw error;

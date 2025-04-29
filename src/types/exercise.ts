@@ -1,4 +1,3 @@
-
 export interface Exercise {
   id: string;
   name: string;
@@ -71,6 +70,8 @@ export interface ExerciseFull {
   force_type: string | null;
   mechanics: string | null;
   laterality: string | null;
+  
+  // Fields that are derived from other fields but required by our type system
   video_demonstration_url: string | null;
   video_explanation_url: string | null;
   
