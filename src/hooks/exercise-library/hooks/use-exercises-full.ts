@@ -4,6 +4,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { ExerciseFull } from '@/types/exercise';
 import { 
   fetchExercisesFull,
+  checkExercisesFullTableExists,
   searchExercisesFull,
   getExerciseFullById,
   getMuscleGroups,
@@ -12,14 +13,50 @@ import {
 
 export const useExercisesFull = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [tableExists, setTableExists] = useState<boolean | null>(null);
   const { toast } = useToast();
+
+  const checkTableExists = async (): Promise<boolean> => {
+    try {
+      const exists = await checkExercisesFullTableExists();
+      setTableExists(exists);
+      return exists;
+    } catch (error) {
+      console.error("Failed to check if table exists:", error);
+      setTableExists(null);
+      return false;
+    }
+  };
 
   const handleApiError = (error: any, errorMessage: string) => {
     console.error(errorMessage, error);
+    
+    // Format the error message based on the type of error
+    let displayMessage = errorMessage;
+    
+    if (error && error.code) {
+      switch (error.code) {
+        case '42P01': // Undefined table
+          displayMessage = "The exercises_full table doesn't exist in your database. Please create it first.";
+          break;
+        case '28000': // Invalid authorization
+        case '28P01': // Invalid password
+          displayMessage = "Authorization failed. Check your Supabase API key and URL.";
+          break;
+        case '3D000': // Invalid schema
+          displayMessage = "Invalid schema specified. Check your database configuration.";
+          break;
+        default:
+          if (error.message) {
+            displayMessage = `${errorMessage}: ${error.message}`;
+          }
+      }
+    }
+    
     if (error.message !== "Failed to fetch") {
       toast({
         title: 'Error',
-        description: errorMessage,
+        description: displayMessage,
         variant: 'destructive',
       });
     }
@@ -28,6 +65,17 @@ export const useExercisesFull = () => {
   const handleFetchExercisesFull = async (limit = 50, offset = 0): Promise<ExerciseFull[]> => {
     setIsLoading(true);
     try {
+      // Check if table exists first
+      const exists = await checkTableExists();
+      if (!exists) {
+        toast({
+          title: 'Missing Table',
+          description: "The exercises_full table doesn't exist in your Supabase database. Please create it first.",
+          variant: 'destructive',
+        });
+        return [];
+      }
+      
       return await fetchExercisesFull(limit, offset);
     } catch (error) {
       handleApiError(error, 'Failed to fetch exercises data');
@@ -40,6 +88,17 @@ export const useExercisesFull = () => {
   const handleSearchExercisesFull = async (searchTerm: string, limit = 20): Promise<ExerciseFull[]> => {
     setIsLoading(true);
     try {
+      // Check if table exists first
+      const exists = await checkTableExists();
+      if (!exists) {
+        toast({
+          title: 'Missing Table',
+          description: "The exercises_full table doesn't exist in your Supabase database. Please create it first.",
+          variant: 'destructive',
+        });
+        return [];
+      }
+      
       return await searchExercisesFull(searchTerm, limit);
     } catch (error) {
       handleApiError(error, 'Failed to search exercises');
@@ -63,6 +122,8 @@ export const useExercisesFull = () => {
 
   return {
     isLoading,
+    tableExists,
+    checkTableExists,
     fetchExercisesFull: handleFetchExercisesFull,
     searchExercisesFull: handleSearchExercisesFull,
     getExerciseFullById: handleGetExerciseFullById,

@@ -21,13 +21,29 @@ export const fetchExercisesFull = async (
       throw response.error;
     }
     
-    const { data } = response;
+    const { data, count } = response;
     
-    console.log(`Fetched ${data?.length || 0} exercises from exercises_full`);
+    console.log(`Fetched ${data?.length || 0} exercises from exercises_full (total count: ${count || 'unknown'})`);
+    
     if (data?.length === 0) {
       console.log('No data returned from exercises_full table. Please check if the table exists and has data.');
-      // Log the first few results or error details
-      console.log('Response:', JSON.stringify(response, null, 2));
+      
+      // Try to get metadata about the table
+      try {
+        const { data: metadata } = await supabase
+          .from('information_schema.columns')
+          .select('column_name, data_type')
+          .eq('table_name', 'exercises_full')
+          .eq('table_schema', 'public');
+          
+        if (metadata && metadata.length > 0) {
+          console.log('Table exists with columns:', metadata);
+        } else {
+          console.log('Table might not exist or has no columns.');
+        }
+      } catch (metadataError) {
+        console.error('Failed to get table metadata:', metadataError);
+      }
     }
     
     // Transform the data to match our ExerciseFull type
@@ -42,5 +58,26 @@ export const fetchExercisesFull = async (
   } catch (error) {
     console.error('Failed to fetch exercises_full:', error);
     throw error;
+  }
+};
+
+// Add a utility function to check if the table exists
+export const checkExercisesFullTableExists = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public')
+      .eq('table_name', 'exercises_full');
+      
+    if (error) {
+      console.error('Error checking if exercises_full table exists:', error);
+      return false;
+    }
+    
+    return Boolean(data && data.length > 0);
+  } catch (error) {
+    console.error('Failed to check if exercises_full table exists:', error);
+    return false;
   }
 };

@@ -13,9 +13,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useExercisesFull } from "@/hooks/use-exercises-full";
 import { ExerciseFull } from "@/types/exercise";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, Database, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface ExercisesFullTableProps {
   initialSortField?: string;
@@ -26,7 +27,9 @@ const ExercisesFullTable = () => {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [exercises, setExercises] = useState<ExerciseFull[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [tableExists, setTableExists] = useState<boolean | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const { fetchExercisesFull, isLoading } = useExercisesFull();
   
   // Use a memoized exercise list to prevent re-renders
@@ -34,20 +37,73 @@ const ExercisesFullTable = () => {
     return exercises;
   }, [exercises]);
 
+  const checkTableExists = async () => {
+    try {
+      // This query checks if the exercises_full table exists in the public schema
+      const { data, error } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public')
+        .eq('table_name', 'exercises_full');
+      
+      if (error) {
+        console.error("Error checking if table exists:", error);
+        return null;
+      }
+      
+      return data && data.length > 0;
+    } catch (err) {
+      console.error("Failed to check if table exists:", err);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const loadExercises = async () => {
       try {
         setFetchError(null);
+        
+        // Check if the table exists
+        const exists = await checkTableExists();
+        setTableExists(exists);
+        
+        if (exists === false) {
+          setFetchError("The 'exercises_full' table does not exist in your Supabase database.");
+          return;
+        }
+        
+        // Try to fetch exercises
         const data = await fetchExercisesFull(10, 0);
+        
+        // Store debug info about the query
+        setDebugInfo({
+          timestamp: new Date().toISOString(),
+          result: data ? 'Data found' : 'No data found',
+          count: data?.length || 0
+        });
+        
         if (data && data.length > 0) {
           setExercises(data);
         } else {
+          // Get table information for debugging
+          const { data: tableInfo, error: tableError } = await supabase
+            .rpc('get_table_info', { table_name: 'exercises_full' })
+            .maybeSingle();
+            
           setFetchError("No exercises found in the database. The exercises_full table may be empty.");
-          console.log("No data returned from exercise fetch service");
+          console.log("Query returned empty result. Table info attempt:", tableInfo || 'Failed to get table info');
+          
+          if (tableError) {
+            console.error("Error getting table info:", tableError);
+          }
         }
       } catch (error: any) {
         console.error("Error loading exercises:", error);
         setFetchError(`Failed to load exercise data: ${error.message || 'Unknown error'}`);
+        setDebugInfo({
+          error: error.message,
+          details: error.details || 'No additional details'
+        });
       }
     };
     
@@ -64,6 +120,36 @@ const ExercisesFullTable = () => {
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
+  };
+
+  const handleDirectCheckData = async () => {
+    try {
+      // Direct query to check any data in the table
+      const { data, error, count } = await supabase
+        .from('exercises_full')
+        .select('*', { count: 'exact' })
+        .limit(1);
+        
+      if (error) {
+        setDebugInfo({
+          directQuery: 'Failed',
+          error: error.message,
+          code: error.code
+        });
+      } else {
+        setDebugInfo({
+          directQuery: 'Success',
+          rowCount: count,
+          firstRowSample: data && data.length > 0 ? data[0] : 'No rows found',
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (err: any) {
+      setDebugInfo({
+        directQuery: 'Exception',
+        error: err.message
+      });
+    }
   };
 
   if (isLoading) {
@@ -91,25 +177,57 @@ const ExercisesFullTable = () => {
         <CardContent>
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Data Error</AlertTitle>
+            <AlertTitle>Database Error</AlertTitle>
             <AlertDescription className="space-y-4">
-              {fetchError}
+              <p>{fetchError}</p>
+              
+              <div className="mt-4 p-3 bg-muted/50 rounded-md text-sm">
+                <h4 className="font-semibold mb-2">Debug Information:</h4>
+                <p>Table exists check: {tableExists === null ? "Unknown" : tableExists ? "Yes" : "No"}</p>
+                {debugInfo && (
+                  <pre className="text-xs mt-2 p-2 bg-background overflow-auto max-h-32">
+                    {JSON.stringify(debugInfo, null, 2)}
+                  </pre>
+                )}
+              </div>
+              
               <div>
                 <p className="text-sm mt-2 mb-3">Possible solutions:</p>
                 <ul className="list-disc pl-5 space-y-1 text-sm">
-                  <li>Check that the 'exercises_full' table exists in your Supabase project</li>
-                  <li>Verify the table has data and the correct structure</li>
-                  <li>Ensure your Supabase connection is working properly</li>
+                  <li>Create the 'exercises_full' table in your Supabase project</li>
+                  <li>Import your exercise data using the Supabase CSV import feature</li>
+                  <li>Check your RLS policies to ensure anonymous access is allowed</li>
                 </ul>
               </div>
-              <Button 
-                onClick={handleRetry}
-                className="mt-4 flex items-center"
-                variant="outline"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry loading data
-              </Button>
+              
+              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <Button 
+                  onClick={handleRetry}
+                  className="flex items-center"
+                  variant="outline"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry loading data
+                </Button>
+                
+                <Button 
+                  onClick={handleDirectCheckData}
+                  className="flex items-center"
+                  variant="outline"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  Debug table data
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  className="flex items-center"
+                  onClick={() => window.open('https://supabase.com/dashboard/project/jrwyptpespjvjisrwnbh/editor', '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Supabase SQL Editor
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         </CardContent>
