@@ -1,17 +1,19 @@
+
 import { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Search, Filter, Edit, Trash2, Info, Dumbbell, Youtube } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus } from "lucide-react";
 import { ExerciseFull } from "@/types/exercise";
-import { fetchExercisesFull, searchExercisesFull, checkExercisesFullTableExists } from "@/hooks/exercise-library/services/exercise-fetch-service";
 import { supabase } from "@/integrations/supabase/client";
+import { checkExercisesFullTableExists } from "@/hooks/exercise-library/services/exercise-fetch-service";
+
+// Import our new components
+import ExerciseSearchAndFilters from "@/components/exercises/ExerciseSearchAndFilters";
+import ExerciseCardGrid from "@/components/exercises/ExerciseCardGrid";
+import ExercisePagination from "@/components/exercises/ExercisePagination";
+import ExerciseFormDialog from "@/components/exercises/ExerciseFormDialog";
+import ExerciseDeleteDialog from "@/components/exercises/ExerciseDeleteDialog";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -64,27 +66,58 @@ const ExerciseLibraryEnhanced = () => {
           return;
         }
         
-        // Load exercises based on filters and search query
-        const filters = {
-          muscleGroup: selectedMuscleGroup !== 'all' ? selectedMuscleGroup : undefined,
-          equipment: selectedEquipment !== 'all' ? selectedEquipment : undefined,
-          difficulty: selectedDifficulty !== 'all' ? selectedDifficulty : undefined
-        };
+        // Build the query
+        let query = supabase.from('exercises_full').select('*');
         
-        const data = await searchExercisesFull(
-          searchQuery,
-          filters,
-          ITEMS_PER_PAGE,
-          currentPage * ITEMS_PER_PAGE
-        );
+        // Apply filters
+        if (selectedMuscleGroup !== 'all') {
+          query = query.eq('prime_mover_muscle', selectedMuscleGroup);
+        }
         
-        setExercises(data);
+        if (selectedEquipment !== 'all') {
+          query = query.eq('primary_equipment', selectedEquipment);
+        }
         
-        // Get total count for pagination (simplified approach)
-        const countResponse = await supabase
-          .from('exercises_full')
-          .select('id', { count: 'exact', head: true });
-          
+        if (selectedDifficulty !== 'all') {
+          query = query.eq('difficulty', selectedDifficulty);
+        }
+        
+        // Apply search if provided
+        if (searchQuery.trim()) {
+          query = query.ilike('name', `%${searchQuery}%`);
+        }
+        
+        // Apply pagination
+        const { data, error } = await query
+          .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1)
+          .order('name', { ascending: true });
+        
+        if (error) throw error;
+        
+        setExercises(data || []);
+        
+        // Get total count for pagination (separate query)
+        let countQuery = supabase.from('exercises_full').select('*', { count: 'exact', head: true });
+        
+        // Apply the same filters to the count query
+        if (selectedMuscleGroup !== 'all') {
+          countQuery = countQuery.eq('prime_mover_muscle', selectedMuscleGroup);
+        }
+        
+        if (selectedEquipment !== 'all') {
+          countQuery = countQuery.eq('primary_equipment', selectedEquipment);
+        }
+        
+        if (selectedDifficulty !== 'all') {
+          countQuery = countQuery.eq('difficulty', selectedDifficulty);
+        }
+        
+        // Apply search to count if provided
+        if (searchQuery.trim()) {
+          countQuery = countQuery.ilike('name', `%${searchQuery}%`);
+        }
+        
+        const countResponse = await countQuery;
         setTotalCount(countResponse.count || 0);
         
         // Load filter options if they're not already loaded
@@ -164,6 +197,40 @@ const ExerciseLibraryEnhanced = () => {
     setCurrentPage(0); // Reset to first page on new search
   };
   
+  // Handle filter change
+  const handleFilterChange = (key: "muscleGroup" | "equipment" | "difficulty", value: string) => {
+    setCurrentPage(0); // Reset to first page when filter changes
+    
+    switch (key) {
+      case "muscleGroup":
+        setSelectedMuscleGroup(value);
+        break;
+      case "equipment":
+        setSelectedEquipment(value);
+        break;
+      case "difficulty":
+        setSelectedDifficulty(value);
+        break;
+    }
+  };
+  
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setSelectedMuscleGroup("all");
+    setSelectedEquipment("all");
+    setSelectedDifficulty("all");
+    setCurrentPage(0);
+  };
+  
+  // Handle form input changes
+  const handleFormChange = (field: string, value: string) => {
+    setFormState(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
   // Handle add exercise
   const handleAddExercise = async () => {
     try {
@@ -195,8 +262,13 @@ const ExerciseLibraryEnhanced = () => {
       setIsAddDialogOpen(false);
       
       // Refresh the exercise list
-      const data = await fetchExercisesFull(ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-      setExercises(data);
+      const { data } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1)
+        .order('name');
+      
+      if (data) setExercises(data);
       
     } catch (error) {
       console.error("Failed to add exercise:", error);
@@ -234,8 +306,13 @@ const ExerciseLibraryEnhanced = () => {
       setIsEditDialogOpen(false);
       
       // Refresh the exercise list
-      const data = await fetchExercisesFull(ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-      setExercises(data);
+      const { data } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1)
+        .order('name');
+      
+      if (data) setExercises(data);
       
     } catch (error) {
       console.error("Failed to update exercise:", error);
@@ -267,8 +344,13 @@ const ExerciseLibraryEnhanced = () => {
       setIsDeleteDialogOpen(false);
       
       // Refresh the exercise list
-      const data = await fetchExercisesFull(ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-      setExercises(data);
+      const { data } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1)
+        .order('name');
+      
+      if (data) setExercises(data);
       
     } catch (error) {
       console.error("Failed to delete exercise:", error);
@@ -297,30 +379,6 @@ const ExerciseLibraryEnhanced = () => {
   const openDeleteDialog = (exercise: ExerciseFull) => {
     setCurrentExercise(exercise);
     setIsDeleteDialogOpen(true);
-  };
-  
-  // Handle form input changes
-  const handleFormChange = (field: string, value: string) => {
-    setFormState(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Show appropriate difficulty badge color
-  const getDifficultyBadgeClass = (difficulty: string | null) => {
-    if (!difficulty) return "bg-gray-100 text-gray-800";
-    
-    switch(difficulty.toLowerCase()) {
-      case 'beginner':
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case 'intermediate':
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      case 'advanced':
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
   };
 
   // Render error state if table doesn't exist
@@ -368,6 +426,7 @@ const ExerciseLibraryEnhanced = () => {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8">
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold mb-2">Exercise Library</h1>
@@ -377,469 +436,90 @@ const ExerciseLibraryEnhanced = () => {
           </div>
           
           <div className="flex gap-2 mt-4 md:mt-0">
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Exercise
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Exercise</DialogTitle>
-                  <DialogDescription>
-                    Create a new exercise in your database
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium">Name</label>
-                    <Input 
-                      id="name"
-                      name="name" 
-                      placeholder="Exercise name" 
-                      value={formState.name} 
-                      onChange={(e) => handleFormChange('name', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label htmlFor="muscle-group" className="text-sm font-medium">Target Muscle Group</label>
-                      <Input 
-                        id="muscle-group"
-                        name="prime_mover_muscle"
-                        list="muscle-groups"
-                        placeholder="Target muscle" 
-                        value={formState.prime_mover_muscle} 
-                        onChange={(e) => handleFormChange('prime_mover_muscle', e.target.value)}
-                      />
-                      <datalist id="muscle-groups">
-                        {muscleGroups.map(group => (
-                          <option key={group} value={group} />
-                        ))}
-                      </datalist>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label htmlFor="equipment" className="text-sm font-medium">Equipment</label>
-                      <Input 
-                        id="equipment"
-                        name="primary_equipment"
-                        list="equipments"
-                        placeholder="Equipment needed" 
-                        value={formState.primary_equipment} 
-                        onChange={(e) => handleFormChange('primary_equipment', e.target.value)}
-                      />
-                      <datalist id="equipments">
-                        {equipmentTypes.map(eq => (
-                          <option key={eq} value={eq} />
-                        ))}
-                      </datalist>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="difficulty" className="text-sm font-medium">Difficulty Level</label>
-                    <Select 
-                      name="difficulty"
-                      value={formState.difficulty} 
-                      onValueChange={(value) => handleFormChange('difficulty', value)}
-                    >
-                      <SelectTrigger id="difficulty">
-                        <SelectValue placeholder="Select difficulty" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Beginner">Beginner</SelectItem>
-                        <SelectItem value="Intermediate">Intermediate</SelectItem>
-                        <SelectItem value="Advanced">Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="video" className="text-sm font-medium">Video URL</label>
-                    <Input 
-                      id="video"
-                      name="short_youtube_demo"
-                      placeholder="YouTube video URL" 
-                      value={formState.short_youtube_demo} 
-                      onChange={(e) => handleFormChange('short_youtube_demo', e.target.value)}
-                    />
-                  </div>
-                </div>
-                
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddExercise}>Add Exercise</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Exercise
+            </Button>
           </div>
         </div>
         
         {/* Search and filters */}
-        <div className="mb-6">
-          <div className="flex flex-col md:flex-row gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search exercises by name"
-                className="pl-10"
-                value={searchQuery}
-                onChange={handleSearchChange}
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => {
-                setSearchQuery("");
-                setSelectedMuscleGroup("all");
-                setSelectedEquipment("all");
-                setSelectedDifficulty("all");
-                setCurrentPage(0);
-              }} className="whitespace-nowrap">
-                Reset Filters
-              </Button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/20 p-4 rounded-lg">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Muscle Group</label>
-              <Select
-                value={selectedMuscleGroup}
-                onValueChange={setSelectedMuscleGroup}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All muscle groups" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All muscle groups</SelectItem>
-                  {muscleGroups.map((group) => (
-                    <SelectItem key={group} value={group}>{group}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Equipment</label>
-              <Select
-                value={selectedEquipment}
-                onValueChange={setSelectedEquipment}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All equipment" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All equipment</SelectItem>
-                  {equipmentTypes.map((equipment) => (
-                    <SelectItem key={equipment} value={equipment}>{equipment}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Difficulty</label>
-              <Select
-                value={selectedDifficulty}
-                onValueChange={setSelectedDifficulty}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All difficulties" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All difficulties</SelectItem>
-                  {difficultyLevels.map((level) => (
-                    <SelectItem key={level} value={level}>{level}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
+        <ExerciseSearchAndFilters 
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          filters={{
+            muscleGroup: selectedMuscleGroup,
+            equipment: selectedEquipment,
+            difficulty: selectedDifficulty
+          }}
+          muscleGroups={muscleGroups}
+          equipmentTypes={equipmentTypes}
+          difficultyLevels={difficultyLevels}
+          onFilterChange={handleFilterChange}
+          onResetFilters={resetFilters}
+        />
+        
+        {/* Exercise count */}
+        {!loading && exercises.length > 0 && (
+          <p className="mb-4 text-muted-foreground">
+            Showing {exercises.length} exercises {totalCount > 0 ? `(${currentPage * ITEMS_PER_PAGE + 1}-${Math.min((currentPage + 1) * ITEMS_PER_PAGE, totalCount)} of ${totalCount})` : ''}
+          </p>
+        )}
         
         {/* Exercise Cards */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-64 rounded-lg" />
-            ))}
-          </div>
-        ) : exercises.length > 0 ? (
-          <>
-            <p className="mb-4 text-muted-foreground">
-              Showing {exercises.length} exercises {totalCount > 0 ? `(${currentPage * ITEMS_PER_PAGE + 1}-${Math.min((currentPage + 1) * ITEMS_PER_PAGE, totalCount)} of ${totalCount})` : ''}
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {exercises.map((exercise) => (
-                <Card key={exercise.id} className="h-full flex flex-col">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between">
-                      <CardTitle className="text-lg">{exercise.name}</CardTitle>
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8" 
-                          onClick={() => openEditDialog(exercise)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-red-500 hover:text-red-600" 
-                          onClick={() => openDeleteDialog(exercise)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap gap-2">
-                        {exercise.prime_mover_muscle && (
-                          <Badge variant="outline" className="bg-muted/50">
-                            {exercise.prime_mover_muscle}
-                          </Badge>
-                        )}
-                        {exercise.primary_equipment && (
-                          <Badge variant="outline" className="bg-muted/50">
-                            {exercise.primary_equipment}
-                          </Badge>
-                        )}
-                        {exercise.difficulty && (
-                          <Badge className={getDifficultyBadgeClass(exercise.difficulty)}>
-                            {exercise.difficulty}
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <div className="aspect-video bg-muted rounded-md relative overflow-hidden">
-                        {exercise.short_youtube_demo ? (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              className="rounded-full bg-white text-black border-0"
-                              onClick={() => window.open(exercise.short_youtube_demo!, '_blank')}
-                            >
-                              <Youtube className="h-6 w-6" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            <Dumbbell className="h-8 w-8 opacity-30" />
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="text-sm">
-                        {exercise.prime_mover_muscle && (
-                          <p><span className="font-medium">Primary Muscle:</span> {exercise.prime_mover_muscle}</p>
-                        )}
-                        {exercise.mechanics && (
-                          <p><span className="font-medium">Mechanics:</span> {exercise.mechanics}</p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pt-2">
-                    <div className="flex w-full gap-2">
-                      <Button variant="default" className="flex-1">
-                        <Info className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
-                      <Button variant="outline" className="flex-1">
-                        Add to Workout
-                      </Button>
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-            
-            {/* Pagination */}
-            <div className="flex justify-between mt-8">
-              <Button 
-                variant="outline" 
-                onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                disabled={currentPage === 0}
-              >
-                Previous
-              </Button>
-              <div className="flex items-center gap-2">
-                {[...Array(Math.min(5, Math.ceil(totalCount / ITEMS_PER_PAGE)))].map((_, i) => {
-                  const pageNum = i;
-                  return (
-                    <Button 
-                      key={i}
-                      variant={currentPage === pageNum ? "default" : "outline"} 
-                      className="w-10 h-10 p-0"
-                      onClick={() => setCurrentPage(pageNum)}
-                    >
-                      {pageNum + 1}
-                    </Button>
-                  );
-                })}
-              </div>
-              <Button 
-                variant="outline"
-                onClick={() => setCurrentPage(p => p + 1)}
-                disabled={currentPage >= Math.ceil(totalCount / ITEMS_PER_PAGE) - 1 || exercises.length < ITEMS_PER_PAGE}
-              >
-                Next
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div className="text-center py-10">
-            <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg text-muted-foreground mb-4">
-              No exercises found matching your criteria
-            </p>
-            <Button onClick={() => {
-              setSearchQuery("");
-              setSelectedMuscleGroup("all");
-              setSelectedEquipment("all");
-              setSelectedDifficulty("all");
-            }} variant="outline">
-              Reset Filters
-            </Button>
-          </div>
+        <ExerciseCardGrid 
+          exercises={exercises}
+          loading={loading}
+          onEdit={openEditDialog}
+          onDelete={openDeleteDialog}
+          onReset={resetFilters}
+        />
+        
+        {/* Pagination */}
+        {!loading && exercises.length > 0 && (
+          <ExercisePagination 
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
       
+      {/* Add Exercise Dialog */}
+      <ExerciseFormDialog 
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        title="Add New Exercise"
+        description="Create a new exercise in your database"
+        formState={formState}
+        onFormChange={handleFormChange}
+        onSubmit={handleAddExercise}
+        submitLabel="Add Exercise"
+        muscleGroups={muscleGroups}
+        equipmentTypes={equipmentTypes}
+      />
+      
       {/* Edit Exercise Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Exercise</DialogTitle>
-            <DialogDescription>
-              Update the exercise details
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="edit-name" className="text-sm font-medium">Name</label>
-              <Input 
-                id="edit-name"
-                name="name" 
-                placeholder="Exercise name" 
-                value={formState.name} 
-                onChange={(e) => handleFormChange('name', e.target.value)}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="edit-muscle-group" className="text-sm font-medium">Target Muscle Group</label>
-                <Input 
-                  id="edit-muscle-group"
-                  name="prime_mover_muscle"
-                  list="edit-muscle-groups"
-                  placeholder="Target muscle" 
-                  value={formState.prime_mover_muscle} 
-                  onChange={(e) => handleFormChange('prime_mover_muscle', e.target.value)}
-                />
-                <datalist id="edit-muscle-groups">
-                  {muscleGroups.map(group => (
-                    <option key={group} value={group} />
-                  ))}
-                </datalist>
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="edit-equipment" className="text-sm font-medium">Equipment</label>
-                <Input 
-                  id="edit-equipment"
-                  name="primary_equipment"
-                  list="edit-equipments"
-                  placeholder="Equipment needed" 
-                  value={formState.primary_equipment} 
-                  onChange={(e) => handleFormChange('primary_equipment', e.target.value)}
-                />
-                <datalist id="edit-equipments">
-                  {equipmentTypes.map(eq => (
-                    <option key={eq} value={eq} />
-                  ))}
-                </datalist>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="edit-difficulty" className="text-sm font-medium">Difficulty Level</label>
-              <Select 
-                name="difficulty"
-                value={formState.difficulty} 
-                onValueChange={(value) => handleFormChange('difficulty', value)}
-              >
-                <SelectTrigger id="edit-difficulty">
-                  <SelectValue placeholder="Select difficulty" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Beginner">Beginner</SelectItem>
-                  <SelectItem value="Intermediate">Intermediate</SelectItem>
-                  <SelectItem value="Advanced">Advanced</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="edit-video" className="text-sm font-medium">Video URL</label>
-              <Input 
-                id="edit-video"
-                name="short_youtube_demo"
-                placeholder="YouTube video URL" 
-                value={formState.short_youtube_demo || ''} 
-                onChange={(e) => handleFormChange('short_youtube_demo', e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleEditExercise}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ExerciseFormDialog 
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        title="Edit Exercise"
+        description="Update the exercise details"
+        formState={formState}
+        onFormChange={handleFormChange}
+        onSubmit={handleEditExercise}
+        submitLabel="Save Changes"
+        muscleGroups={muscleGroups}
+        equipmentTypes={equipmentTypes}
+      />
       
       {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this exercise? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {currentExercise && (
-            <div className="py-4">
-              <p className="font-medium">{currentExercise.name}</p>
-              <div className="flex gap-2 mt-2">
-                {currentExercise.prime_mover_muscle && (
-                  <Badge variant="outline">{currentExercise.prime_mover_muscle}</Badge>
-                )}
-                {currentExercise.primary_equipment && (
-                  <Badge variant="outline">{currentExercise.primary_equipment}</Badge>
-                )}
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteExercise}>Delete Exercise</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ExerciseDeleteDialog 
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        exercise={currentExercise}
+        onConfirmDelete={handleDeleteExercise}
+      />
     </AppLayout>
   );
 };
