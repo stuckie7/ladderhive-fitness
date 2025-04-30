@@ -4,6 +4,7 @@ import ExerciseCardFull from "./ExerciseCardFull";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface ExerciseCardGridProps {
   exercises: ExerciseFull[];
@@ -20,6 +21,8 @@ const ExerciseCardGrid = ({
   onDelete,
   onReset
 }: ExerciseCardGridProps) => {
+  const navigate = useNavigate();
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

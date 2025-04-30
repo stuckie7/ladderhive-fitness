@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Info, Plus, Youtube, Dumbbell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ExerciseCardFullProps {
   exercise: ExerciseFull;
@@ -12,6 +13,8 @@ interface ExerciseCardFullProps {
 }
 
 const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps) => {
+  const navigate = useNavigate();
+  
   // Helper function to determine difficulty badge class
   const getDifficultyBadgeClass = (difficulty: string | null) => {
     if (!difficulty) return "bg-gray-100 text-gray-800";
@@ -26,6 +29,11 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+  
+  // Handle navigation to exercise detail page
+  const handleViewDetails = () => {
+    navigate(`/exercises/${exercise.id}`);
   };
 
   return (
@@ -108,7 +116,7 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
       </CardContent>
       <CardFooter className="pt-2">
         <div className="flex w-full gap-2">
-          <Button variant="default" className="flex-1">
+          <Button variant="default" className="flex-1" onClick={handleViewDetails}>
             <Info className="h-4 w-4 mr-2" />
             View Details
           </Button>

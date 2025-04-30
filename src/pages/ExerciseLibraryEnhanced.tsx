@@ -7,8 +7,9 @@ import { Plus } from "lucide-react";
 import { ExerciseFull } from "@/types/exercise";
 import { supabase } from "@/integrations/supabase/client";
 import { checkExercisesFullTableExists } from "@/hooks/exercise-library/services/exercise-fetch-service";
+import { useNavigate } from "react-router-dom";
 
-// Import our new components
+// Import our components
 import ExerciseSearchAndFilters from "@/components/exercises/ExerciseSearchAndFilters";
 import ExerciseCardGrid from "@/components/exercises/ExerciseCardGrid";
 import ExercisePagination from "@/components/exercises/ExercisePagination";
@@ -36,6 +37,7 @@ const ExerciseLibraryEnhanced = () => {
   const [currentExercise, setCurrentExercise] = useState<ExerciseFull | null>(null);
   
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Form state for add/edit dialog
   const [formState, setFormState] = useState({
@@ -94,7 +96,18 @@ const ExerciseLibraryEnhanced = () => {
         
         if (error) throw error;
         
-        setExercises(data || []);
+        // Map the data to include the required fields for ExerciseFull
+        if (data) {
+          const mappedData: ExerciseFull[] = data.map(item => ({
+            ...item,
+            // Add the required fields that might be missing
+            target_muscle_group: item.prime_mover_muscle,
+            video_demonstration_url: item.short_youtube_demo,
+            video_explanation_url: item.in_depth_youtube_exp
+          }));
+          
+          setExercises(mappedData);
+        }
         
         // Get total count for pagination (separate query)
         let countQuery = supabase.from('exercises_full').select('*', { count: 'exact', head: true });
@@ -268,7 +281,15 @@ const ExerciseLibraryEnhanced = () => {
         .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1)
         .order('name');
       
-      if (data) setExercises(data);
+      if (data) {
+        const mappedData: ExerciseFull[] = data.map(item => ({
+          ...item,
+          target_muscle_group: item.prime_mover_muscle,
+          video_demonstration_url: item.short_youtube_demo,
+          video_explanation_url: item.in_depth_youtube_exp
+        }));
+        setExercises(mappedData);
+      }
       
     } catch (error) {
       console.error("Failed to add exercise:", error);
@@ -312,7 +333,15 @@ const ExerciseLibraryEnhanced = () => {
         .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1)
         .order('name');
       
-      if (data) setExercises(data);
+      if (data) {
+        const mappedData: ExerciseFull[] = data.map(item => ({
+          ...item,
+          target_muscle_group: item.prime_mover_muscle,
+          video_demonstration_url: item.short_youtube_demo,
+          video_explanation_url: item.in_depth_youtube_exp
+        }));
+        setExercises(mappedData);
+      }
       
     } catch (error) {
       console.error("Failed to update exercise:", error);
@@ -350,7 +379,15 @@ const ExerciseLibraryEnhanced = () => {
         .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1)
         .order('name');
       
-      if (data) setExercises(data);
+      if (data) {
+        const mappedData: ExerciseFull[] = data.map(item => ({
+          ...item,
+          target_muscle_group: item.prime_mover_muscle,
+          video_demonstration_url: item.short_youtube_demo,
+          video_explanation_url: item.in_depth_youtube_exp
+        }));
+        setExercises(mappedData);
+      }
       
     } catch (error) {
       console.error("Failed to delete exercise:", error);
@@ -379,6 +416,11 @@ const ExerciseLibraryEnhanced = () => {
   const openDeleteDialog = (exercise: ExerciseFull) => {
     setCurrentExercise(exercise);
     setIsDeleteDialogOpen(true);
+  };
+
+  // Navigate to exercise detail page
+  const handleViewExerciseDetails = (exercise: ExerciseFull) => {
+    navigate(`/exercises/${exercise.id}`);
   };
 
   // Render error state if table doesn't exist
