@@ -24,9 +24,8 @@ export const getExerciseFullById = async (id: number): Promise<ExerciseFull | nu
     if (data) {
       const exerciseData: ExerciseFull = {
         ...data,
-        // Add the missing properties with default null values
-        empty_column: data.empty_column || null,
-        target_muscle_group: data.target_muscle_group || null,
+        // Map properties correctly using optional chaining
+        target_muscle_group: data.prime_mover_muscle || null,
         video_demonstration_url: data.short_youtube_demo || null,
         video_explanation_url: data.in_depth_youtube_exp || null
       } as ExerciseFull;

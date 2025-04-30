@@ -5,9 +5,9 @@ export const getMuscleGroups = async (): Promise<string[]> => {
   try {
     const { data, error } = await supabase
       .from('exercises_full')
-      .select('target_muscle_group')
-      .not('target_muscle_group', 'is', null)
-      .order('target_muscle_group');
+      .select('prime_mover_muscle')
+      .not('prime_mover_muscle', 'is', null)
+      .order('prime_mover_muscle');
     
     if (error) {
       console.error('Error fetching muscle groups:', error);
@@ -16,7 +16,7 @@ export const getMuscleGroups = async (): Promise<string[]> => {
     
     // Extract unique muscle groups
     const muscleGroups = data
-      ?.map(item => item.target_muscle_group)
+      ?.map(item => item.prime_mover_muscle)
       .filter((value): value is string => value !== null);
     
     const uniqueMuscleGroups = [...new Set(muscleGroups)];

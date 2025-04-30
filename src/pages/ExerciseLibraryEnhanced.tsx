@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +38,7 @@ const ExerciseLibraryEnhanced = () => {
   // Form state for add/edit dialog
   const [formState, setFormState] = useState({
     name: "",
-    target_muscle_group: "",
+    prime_mover_muscle: "",
     primary_equipment: "",
     difficulty: "Beginner",
     short_youtube_demo: ""
@@ -113,13 +112,13 @@ const ExerciseLibraryEnhanced = () => {
       // Get unique muscle groups
       const muscleGroupsResponse = await supabase
         .from('exercises_full')
-        .select('target_muscle_group')
-        .not('target_muscle_group', 'is', null);
+        .select('prime_mover_muscle')
+        .not('prime_mover_muscle', 'is', null);
         
       if (muscleGroupsResponse.data) {
         const uniqueMuscleGroups = Array.from(new Set(
           muscleGroupsResponse.data
-            .map(item => item.target_muscle_group)
+            .map(item => item.prime_mover_muscle)
             .filter(Boolean)
         )).sort();
         setMuscleGroups(uniqueMuscleGroups as string[]);
@@ -172,7 +171,7 @@ const ExerciseLibraryEnhanced = () => {
         .from('exercises_full')
         .insert([{
           name: formState.name,
-          target_muscle_group: formState.target_muscle_group,
+          prime_mover_muscle: formState.prime_mover_muscle,
           primary_equipment: formState.primary_equipment,
           difficulty: formState.difficulty,
           short_youtube_demo: formState.short_youtube_demo
@@ -188,7 +187,7 @@ const ExerciseLibraryEnhanced = () => {
       // Reset form and refresh data
       setFormState({
         name: "",
-        target_muscle_group: "",
+        prime_mover_muscle: "",
         primary_equipment: "",
         difficulty: "Beginner",
         short_youtube_demo: ""
@@ -218,7 +217,7 @@ const ExerciseLibraryEnhanced = () => {
         .from('exercises_full')
         .update({
           name: formState.name,
-          target_muscle_group: formState.target_muscle_group,
+          prime_mover_muscle: formState.prime_mover_muscle,
           primary_equipment: formState.primary_equipment,
           difficulty: formState.difficulty,
           short_youtube_demo: formState.short_youtube_demo
@@ -286,7 +285,7 @@ const ExerciseLibraryEnhanced = () => {
     setCurrentExercise(exercise);
     setFormState({
       name: exercise.name || "",
-      target_muscle_group: exercise.target_muscle_group || "",
+      prime_mover_muscle: exercise.prime_mover_muscle || "",
       primary_equipment: exercise.primary_equipment || "",
       difficulty: exercise.difficulty || "Beginner",
       short_youtube_demo: exercise.short_youtube_demo || ""
@@ -351,7 +350,7 @@ const ExerciseLibraryEnhanced = () => {
                 {`CREATE TABLE exercises_full (
   id BIGINT PRIMARY KEY,
   name TEXT NOT NULL,
-  target_muscle_group TEXT,
+  prime_mover_muscle TEXT,
   primary_equipment TEXT,
   difficulty TEXT,
   short_youtube_demo TEXT,
@@ -410,11 +409,11 @@ const ExerciseLibraryEnhanced = () => {
                       <label htmlFor="muscle-group" className="text-sm font-medium">Target Muscle Group</label>
                       <Input 
                         id="muscle-group"
-                        name="target_muscle_group"
+                        name="prime_mover_muscle"
                         list="muscle-groups"
                         placeholder="Target muscle" 
-                        value={formState.target_muscle_group} 
-                        onChange={(e) => handleFormChange('target_muscle_group', e.target.value)}
+                        value={formState.prime_mover_muscle} 
+                        onChange={(e) => handleFormChange('prime_mover_muscle', e.target.value)}
                       />
                       <datalist id="muscle-groups">
                         {muscleGroups.map(group => (
@@ -604,9 +603,9 @@ const ExerciseLibraryEnhanced = () => {
                   <CardContent className="flex-1">
                     <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
-                        {exercise.target_muscle_group && (
+                        {exercise.prime_mover_muscle && (
                           <Badge variant="outline" className="bg-muted/50">
-                            {exercise.target_muscle_group}
+                            {exercise.prime_mover_muscle}
                           </Badge>
                         )}
                         {exercise.primary_equipment && (
@@ -743,11 +742,11 @@ const ExerciseLibraryEnhanced = () => {
                 <label htmlFor="edit-muscle-group" className="text-sm font-medium">Target Muscle Group</label>
                 <Input 
                   id="edit-muscle-group"
-                  name="target_muscle_group"
+                  name="prime_mover_muscle"
                   list="edit-muscle-groups"
                   placeholder="Target muscle" 
-                  value={formState.target_muscle_group} 
-                  onChange={(e) => handleFormChange('target_muscle_group', e.target.value)}
+                  value={formState.prime_mover_muscle} 
+                  onChange={(e) => handleFormChange('prime_mover_muscle', e.target.value)}
                 />
                 <datalist id="edit-muscle-groups">
                   {muscleGroups.map(group => (
@@ -825,8 +824,8 @@ const ExerciseLibraryEnhanced = () => {
             <div className="py-4">
               <p className="font-medium">{currentExercise.name}</p>
               <div className="flex gap-2 mt-2">
-                {currentExercise.target_muscle_group && (
-                  <Badge variant="outline">{currentExercise.target_muscle_group}</Badge>
+                {currentExercise.prime_mover_muscle && (
+                  <Badge variant="outline">{currentExercise.prime_mover_muscle}</Badge>
                 )}
                 {currentExercise.primary_equipment && (
                   <Badge variant="outline">{currentExercise.primary_equipment}</Badge>

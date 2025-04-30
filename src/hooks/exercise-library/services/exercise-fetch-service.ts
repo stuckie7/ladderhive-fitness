@@ -32,9 +32,8 @@ export const fetchExercisesFull = async (
     // Transform the data to match our ExerciseFull type
     const transformedData: ExerciseFull[] = (data || []).map(item => ({
       ...item,
-      // Add the missing properties with default null values
-      empty_column: item.empty_column || null,
-      target_muscle_group: item.target_muscle_group || null,
+      // Map properties correctly
+      target_muscle_group: item.prime_mover_muscle || null,
       video_demonstration_url: item.short_youtube_demo || null,
       video_explanation_url: item.in_depth_youtube_exp || null
     })) as ExerciseFull[];
@@ -105,7 +104,7 @@ export const getExercisesFullColumns = async (): Promise<string[]> => {
     
     // If we got a successful response but no data, 
     // the table exists but is empty. Return default columns.
-    return ['id', 'name', 'target_muscle_group', 'primary_equipment', 'difficulty', 'short_youtube_demo'];
+    return ['id', 'name', 'prime_mover_muscle', 'primary_equipment', 'difficulty', 'short_youtube_demo'];
   } catch (error) {
     console.error('Failed to get column names:', error);
     return [];
@@ -132,12 +131,12 @@ export const searchExercisesFull = async (
     
     // Apply search query if provided
     if (searchQuery.trim()) {
-      query = query.or(`name.ilike.%${searchQuery}%,target_muscle_group.ilike.%${searchQuery}%,primary_equipment.ilike.%${searchQuery}%`);
+      query = query.or(`name.ilike.%${searchQuery}%,prime_mover_muscle.ilike.%${searchQuery}%,primary_equipment.ilike.%${searchQuery}%`);
     }
     
     // Apply filters
     if (filters.muscleGroup && filters.muscleGroup !== 'all') {
-      query = query.eq('target_muscle_group', filters.muscleGroup);
+      query = query.eq('prime_mover_muscle', filters.muscleGroup);
     }
     
     if (filters.equipment && filters.equipment !== 'all') {
@@ -163,9 +162,8 @@ export const searchExercisesFull = async (
     // Transform the data to match our ExerciseFull type
     const transformedData: ExerciseFull[] = (data || []).map(item => ({
       ...item,
-      // Add the missing properties with default null values
-      empty_column: item.empty_column || null,
-      target_muscle_group: item.target_muscle_group || null,
+      // Map properties correctly
+      target_muscle_group: item.prime_mover_muscle || null,
       video_demonstration_url: item.short_youtube_demo || null,
       video_explanation_url: item.in_depth_youtube_exp || null
     })) as ExerciseFull[];

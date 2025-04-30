@@ -1,11 +1,10 @@
+
 export interface Exercise {
   id: string;
   name: string;
-  empty_column?: string | null;
   short_youtube_demo?: string | null;
   in_depth_youtube_exp?: string | null;
   difficulty?: string | null;
-  target_muscle_group?: string | null;
   prime_mover_muscle?: string | null;
   secondary_muscle?: string | null;
   tertiary_muscle?: string | null;
@@ -22,8 +21,6 @@ export interface Exercise {
   force_type?: string | null;
   mechanics?: string | null;
   laterality?: string | null;
-  video_demonstration_url?: string | null;
-  video_explanation_url?: string | null;
   
   // Compatibility fields for UI components
   bodyPart?: string;
@@ -38,6 +35,11 @@ export interface Exercise {
   difficulty_level?: string;
   gifUrl?: string | null;
   exercise_classification?: string | null;
+  
+  // Mapped fields for backward compatibility
+  target_muscle_group?: string | null;
+  video_demonstration_url?: string | null;
+  video_explanation_url?: string | null;
 }
 
 export interface ExerciseFilters {
@@ -49,11 +51,9 @@ export interface ExerciseFilters {
 export interface ExerciseFull {
   id: number;
   name: string | null;
-  empty_column: string | null;
   short_youtube_demo: string | null;
   in_depth_youtube_exp: string | null;
   difficulty: string | null;
-  target_muscle_group: string | null;
   prime_mover_muscle: string | null;
   secondary_muscle: string | null;
   tertiary_muscle: string | null;
@@ -71,7 +71,8 @@ export interface ExerciseFull {
   mechanics: string | null;
   laterality: string | null;
   
-  // Fields that are derived from other fields but required by our type system
+  // Mapped fields for backward compatibility
+  target_muscle_group: string | null;
   video_demonstration_url: string | null;
   video_explanation_url: string | null;
   

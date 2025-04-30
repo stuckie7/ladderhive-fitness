@@ -13,7 +13,7 @@ export const searchExercisesFull = async (
     const { data, error } = await supabase
       .from('exercises_full')
       .select('*')
-      .or(`name.ilike.%${searchTerm}%, target_muscle_group.ilike.%${searchTerm}%, primary_equipment.ilike.%${searchTerm}%`)
+      .or(`name.ilike.%${searchTerm}%, prime_mover_muscle.ilike.%${searchTerm}%, primary_equipment.ilike.%${searchTerm}%`)
       .limit(limit);
     
     if (error) {
@@ -26,9 +26,8 @@ export const searchExercisesFull = async (
     // Transform the data to match our ExerciseFull type
     const transformedData: ExerciseFull[] = (data || []).map(item => ({
       ...item,
-      // Add the missing properties with default null values
-      empty_column: item.empty_column || null,
-      target_muscle_group: item.target_muscle_group || null,
+      // Map properties correctly
+      target_muscle_group: item.prime_mover_muscle || null,
       video_demonstration_url: item.short_youtube_demo || null,
       video_explanation_url: item.in_depth_youtube_exp || null
     })) as ExerciseFull[];
