@@ -9,7 +9,7 @@ import {
   getExerciseFullById,
   getMuscleGroups,
   getEquipmentTypes
-} from '../services';  // Updated to use the index.ts export
+} from '../services';
 
 export const useExercisesFull = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -86,7 +86,12 @@ export const useExercisesFull = () => {
     }
   };
 
-  const handleSearchExercisesFull = async (searchTerm: string, limit = 20): Promise<ExerciseFull[]> => {
+  const handleSearchExercisesFull = async (
+    searchTerm: string, 
+    filters = {}, 
+    limit = 20, 
+    offset = 0
+  ): Promise<ExerciseFull[]> => {
     setIsLoading(true);
     try {
       // Check if table exists first
@@ -98,6 +103,10 @@ export const useExercisesFull = () => {
           variant: 'destructive',
         });
         return [];
+      }
+      
+      if (typeof searchTerm !== 'string') {
+        searchTerm = '';
       }
       
       return await searchExercisesFull(searchTerm, limit);
@@ -121,6 +130,24 @@ export const useExercisesFull = () => {
     }
   };
 
+  const handleGetMuscleGroups = async (): Promise<string[]> => {
+    try {
+      return await getMuscleGroups();
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch muscle groups');
+      return [];
+    }
+  };
+
+  const handleGetEquipmentTypes = async (): Promise<string[]> => {
+    try {
+      return await getEquipmentTypes();
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch equipment types');
+      return [];
+    }
+  };
+
   return {
     isLoading,
     tableExists,
@@ -128,7 +155,7 @@ export const useExercisesFull = () => {
     fetchExercisesFull: handleFetchExercisesFull,
     searchExercisesFull: handleSearchExercisesFull,
     getExerciseFullById: handleGetExerciseFullById,
-    getMuscleGroups,
-    getEquipmentTypes,
+    getMuscleGroups: handleGetMuscleGroups,
+    getEquipmentTypes: handleGetEquipmentTypes,
   };
 };

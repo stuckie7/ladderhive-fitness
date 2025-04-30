@@ -25,9 +25,11 @@ export const getExerciseFullById = async (id: number): Promise<ExerciseFull | nu
       const exerciseData: ExerciseFull = {
         ...data,
         // Add the missing properties with default null values
+        empty_column: data.empty_column || null,
+        target_muscle_group: data.target_muscle_group || null,
         video_demonstration_url: data.short_youtube_demo || null,
         video_explanation_url: data.in_depth_youtube_exp || null
-      };
+      } as ExerciseFull;
       return exerciseData;
     }
     

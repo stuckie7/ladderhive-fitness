@@ -27,9 +27,11 @@ export const searchExercisesFull = async (
     const transformedData: ExerciseFull[] = (data || []).map(item => ({
       ...item,
       // Add the missing properties with default null values
+      empty_column: item.empty_column || null,
+      target_muscle_group: item.target_muscle_group || null,
       video_demonstration_url: item.short_youtube_demo || null,
       video_explanation_url: item.in_depth_youtube_exp || null
-    }));
+    })) as ExerciseFull[];
     
     return transformedData;
   } catch (error) {

@@ -1,10 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Exercise, ExerciseFilters } from "@/types/exercise";
+import { Exercise } from "@/types/exercise";
 import { useExercises } from "../use-exercises";
-import { useExercisesFull } from "../use-exercises-full";
+import { useExercisesFull } from "./hooks/use-exercises-full";
 import { useExerciseFilters } from "./use-exercise-filters";
-import { useFetchExercises } from "./use-fetch-exercises";
 import { mapExerciseFullToExercise } from "./mappers";
 
 export const useExerciseLibrary = () => {
@@ -121,12 +121,12 @@ export const useExerciseLibrary = () => {
     }
   };
 
-  const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
   };
 
-  const { data: exercises, isLoading: isLoadingQuery, refetch } = useQuery({
+  const { data: exercises = [], isLoading: isLoadingQuery, refetch } = useQuery({
     queryKey: ['exercises', filters, searchQuery, firstMuscleGroup],
     queryFn: fetchExercises,
     enabled: availableMuscleGroups.length > 0

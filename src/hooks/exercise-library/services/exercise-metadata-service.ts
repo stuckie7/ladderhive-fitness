@@ -15,8 +15,12 @@ export const getMuscleGroups = async (): Promise<string[]> => {
     }
     
     // Extract unique muscle groups
-    const muscleGroups = [...new Set(data.map(item => item.target_muscle_group))].filter(Boolean) as string[];
-    return muscleGroups;
+    const muscleGroups = data
+      ?.map(item => item.target_muscle_group)
+      .filter((value): value is string => value !== null);
+    
+    const uniqueMuscleGroups = [...new Set(muscleGroups)];
+    return uniqueMuscleGroups;
   } catch (error) {
     console.error('Failed to fetch muscle groups:', error);
     return [];
@@ -37,8 +41,12 @@ export const getEquipmentTypes = async (): Promise<string[]> => {
     }
     
     // Extract unique equipment types
-    const equipmentTypes = [...new Set(data.map(item => item.primary_equipment))].filter(Boolean) as string[];
-    return equipmentTypes;
+    const equipmentTypes = data
+      ?.map(item => item.primary_equipment)
+      .filter((value): value is string => value !== null);
+    
+    const uniqueEquipmentTypes = [...new Set(equipmentTypes)];
+    return uniqueEquipmentTypes;
   } catch (error) {
     console.error('Failed to fetch equipment types:', error);
     return [];
