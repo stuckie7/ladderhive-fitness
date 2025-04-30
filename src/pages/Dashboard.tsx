@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,14 +18,12 @@ const Dashboard = () => {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-        </div>
-
+        <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+        
         <div className="mb-6">
           <DailyProgressCard progress={progress} isLoading={progressLoading} />
         </div>
-
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="col-span-1">
             <CardHeader className="pb-2">
@@ -62,7 +59,7 @@ const Dashboard = () => {
               </Link>
             </CardContent>
           </Card>
-
+          
           <Card className="col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex justify-between items-center">
@@ -84,7 +81,40 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-
+        
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Exercise Library</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link to="/exercise-library-enhanced">
+              <div className="bg-muted/30 hover:bg-muted/50 transition-colors p-6 rounded-lg border flex items-center gap-4">
+                <div className="bg-primary/20 p-3 rounded-full">
+                  <Dumbbell className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Enhanced Exercise Library</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Browse and manage exercises with advanced features
+                  </p>
+                </div>
+              </div>
+            </Link>
+            
+            <Link to="/exercise-library">
+              <div className="bg-muted/30 hover:bg-muted/50 transition-colors p-6 rounded-lg border flex items-center gap-4">
+                <div className="bg-primary/20 p-3 rounded-full">
+                  <Dumbbell className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Standard Exercise Library</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Browse exercises with basic functionality
+                  </p>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+        
         <Tabs defaultValue="suggested" className="mb-8">
           <TabsList>
             <TabsTrigger value="suggested">Suggested Workouts</TabsTrigger>

@@ -121,7 +121,6 @@ export type Database = {
           combination_exercise: boolean | null
           created_at: string | null
           difficulty: string | null
-          empty_column: string | null
           exercise_classification: string | null
           foot_elevation: string | null
           force_type: string | null
@@ -135,7 +134,7 @@ export type Database = {
           movement_pattern_1: string | null
           movement_pattern_2: string | null
           movement_pattern_3: string | null
-          name: string | null
+          name: string
           plane_of_motion_1: string | null
           plane_of_motion_2: string | null
           plane_of_motion_3: string | null
@@ -148,7 +147,6 @@ export type Database = {
           secondary_muscle: string | null
           short_youtube_demo: string | null
           single_or_double_arm: string | null
-          target_muscle_group: string | null
           tertiary_muscle: string | null
           updated_at: string | null
         }
@@ -158,7 +156,6 @@ export type Database = {
           combination_exercise?: boolean | null
           created_at?: string | null
           difficulty?: string | null
-          empty_column?: string | null
           exercise_classification?: string | null
           foot_elevation?: string | null
           force_type?: string | null
@@ -172,7 +169,7 @@ export type Database = {
           movement_pattern_1?: string | null
           movement_pattern_2?: string | null
           movement_pattern_3?: string | null
-          name?: string | null
+          name?: string
           plane_of_motion_1?: string | null
           plane_of_motion_2?: string | null
           plane_of_motion_3?: string | null
@@ -185,7 +182,6 @@ export type Database = {
           secondary_muscle?: string | null
           short_youtube_demo?: string | null
           single_or_double_arm?: string | null
-          target_muscle_group?: string | null
           tertiary_muscle?: string | null
           updated_at?: string | null
         }
@@ -195,7 +191,6 @@ export type Database = {
           combination_exercise?: boolean | null
           created_at?: string | null
           difficulty?: string | null
-          empty_column?: string | null
           exercise_classification?: string | null
           foot_elevation?: string | null
           force_type?: string | null
@@ -209,7 +204,7 @@ export type Database = {
           movement_pattern_1?: string | null
           movement_pattern_2?: string | null
           movement_pattern_3?: string | null
-          name?: string | null
+          name?: string
           plane_of_motion_1?: string | null
           plane_of_motion_2?: string | null
           plane_of_motion_3?: string | null
@@ -222,7 +217,6 @@ export type Database = {
           secondary_muscle?: string | null
           short_youtube_demo?: string | null
           single_or_double_arm?: string | null
-          target_muscle_group?: string | null
           tertiary_muscle?: string | null
           updated_at?: string | null
         }
@@ -754,13 +748,13 @@ export type Database = {
       }
       search_exercises: {
         Args: {
-          search_term?: string
-          muscle_group?: string
-          equipment?: string
-          difficulty?: string
-          body_region?: string
-          limit_count?: number
-          offset_count?: number
+          p_search_term?: string
+          p_muscle_group?: string
+          p_equipment?: string
+          p_difficulty?: string
+          p_body_region?: string
+          p_limit?: number
+          p_offset?: number
         }
         Returns: {
           body_region: string

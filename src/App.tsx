@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +21,7 @@ import Settings from "./pages/Settings";
 import ExerciseLibrary from "./pages/ExerciseLibrary";
 import ExerciseDetail from "./pages/ExerciseDetail";
 import AdvancedExercises from "./pages/AdvancedExercises";
+import ExerciseLibraryEnhanced from "./pages/ExerciseLibraryEnhanced";
 
 // Routes protection component
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -51,6 +51,7 @@ const App = () => (
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/progress" element={<ProgressPage />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/exercise-library-enhanced" element={<ExerciseLibraryEnhanced />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />
