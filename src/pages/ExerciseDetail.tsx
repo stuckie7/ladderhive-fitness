@@ -6,7 +6,7 @@ import { Exercise } from '@/types/exercise';
 import AppLayout from '@/components/layout/AppLayout';
 
 // Import refactored components
-import ExerciseDetailHeader from '@/components/exercises/exercise-detail/ExerciseDetailHeader';
+import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
 import ExerciseDetailSkeleton from '@/components/exercises/exercise-detail/ExerciseDetailSkeleton';
 import ExerciseNotFound from '@/components/exercises/exercise-detail/ExerciseNotFound';
 import ExerciseMainContent from '@/components/exercises/exercise-detail/ExerciseMainContent';
@@ -132,12 +132,20 @@ export default function ExerciseDetail() {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <ExerciseDetailHeader exercise={exercise} onBackClick={handleBackClick} />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <ExerciseMainContent exercise={exercise} />
-          <ExerciseSidebarContent exercise={exercise} />
-        </div>
+        {loading ? (
+          <ExerciseDetailSkeleton onBackClick={handleBackClick} />
+        ) : !exercise ? (
+          <ExerciseNotFound onBackClick={handleBackClick} />
+        ) : (
+          <>
+            <ExerciseHeader exercise={exercise} onBackClick={handleBackClick} />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <ExerciseMainContent exercise={exercise} />
+              <ExerciseSidebarContent exercise={exercise} />
+            </div>
+          </>
+        )}
       </div>
     </AppLayout>
   );
