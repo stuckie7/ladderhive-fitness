@@ -132,20 +132,12 @@ export default function ExerciseDetail() {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        {loading ? (
-          <ExerciseDetailSkeleton onBackClick={handleBackClick} />
-        ) : !exercise ? (
-          <ExerciseNotFound onBackClick={handleBackClick} />
-        ) : (
-          <>
-            <ExerciseHeader exercise={exercise} onBackClick={handleBackClick} />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <ExerciseMainContent exercise={exercise} />
-              <ExerciseSidebarContent exercise={exercise} />
-            </div>
-          </>
-        )}
+        <ExerciseHeader exercise={exercise} onBackClick={handleBackClick} />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ExerciseMainContent exercise={exercise} />
+          <ExerciseSidebarContent exercise={exercise} />
+        </div>
       </div>
     </AppLayout>
   );

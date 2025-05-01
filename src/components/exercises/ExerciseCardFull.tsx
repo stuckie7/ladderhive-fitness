@@ -3,7 +3,7 @@ import { ExerciseFull } from "@/types/exercise";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Info, Plus, Youtube, Dumbbell } from "lucide-react";
+import { Edit, Trash2, Info, Plus, Video, Dumbbell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ExerciseCardFullProps {
@@ -94,7 +94,7 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
                   className="rounded-full bg-white text-black border-0"
                   onClick={() => window.open(exercise.short_youtube_demo!, '_blank')}
                 >
-                  <Youtube className="h-6 w-6" />
+                  <Video className="h-6 w-6" />
                 </Button>
               </div>
             ) : (
