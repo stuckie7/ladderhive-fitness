@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ExerciseFull } from '@/types/exercise';
@@ -9,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Dumbbell, YouTube, Edit, Plus } from 'lucide-react';
+import { ArrowLeft, Dumbbell, PlayCircle, Edit, Plus } from 'lucide-react';
 
 export default function ExerciseDetailEnhanced() {
   const [exercise, setExercise] = useState<ExerciseFull | null>(null);
@@ -236,7 +235,7 @@ export default function ExerciseDetailEnhanced() {
                         {exercise.short_youtube_demo && (
                           <div>
                             <h3 className="text-lg font-medium mb-3 flex items-center">
-                              <YouTube className="h-5 w-5 mr-2 text-red-600" />
+                              <PlayCircle className="h-5 w-5 mr-2 text-red-600" />
                               Quick Demonstration
                             </h3>
                             <div className="aspect-video rounded-md overflow-hidden">
@@ -253,7 +252,7 @@ export default function ExerciseDetailEnhanced() {
                         {exercise.in_depth_youtube_exp && (
                           <div>
                             <h3 className="text-lg font-medium mb-3 flex items-center">
-                              <YouTube className="h-5 w-5 mr-2 text-red-600" />
+                              <PlayCircle className="h-5 w-5 mr-2 text-red-600" />
                               In-Depth Explanation
                             </h3>
                             <div className="aspect-video rounded-md overflow-hidden">
