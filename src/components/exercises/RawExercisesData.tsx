@@ -1,41 +1,76 @@
-// types/exercise.ts
-export interface ExerciseFull {
-  id: number;
-  empty_column?: string | null;
-  name: string | null;
-  short_youtube_demo: string | null;
-  in_depth_youtube_exp: string | null;
-  difficulty: string | null;
-  target_muscle_group: string | null;
-  prime_mover_muscle: string | null;
-  secondary_muscle: string | null;
-  tertiary_muscle: string | null;
-  primary_equipment: string | null;
-  primary_items_count: number | null;
-  secondary_equipment: string | null;
-  secondary_items_count: number | null;
-  posture: string | null;
-  single_or_double_arm: string | null;
-  arm_movement_pattern: string | null;
-  grip: string | null;
-  load_position: string | null;
-  leg_movement_pattern: string | null;
-  foot_elevation: string | null;
-  combination_exercise: boolean | null;
-  movement_pattern_1: string | null;
-  movement_pattern_2: string | null;
-  movement_pattern_3: string | null;
-  plane_of_motion_1: string | null;
-  plane_of_motion_2: string | null;
-  plane_of_motion_3: string | null;
-  body_region: string | null;
-  force_type: string | null;
-  mechanics: string | null;
-  laterality: string | null;
-  exercise_classification: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  // Add the missing properties
-  video_demonstration_url?: string | null;
-  video_explanation_url?: string | null;
-}
+
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Spinner } from '@/components/ui/spinner';
+
+const RawExercisesData = () => {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Use useCallback to memoize the fetch function
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      console.info("Fetching exercises with limit 10 and offset 0");
+      
+      const { data: exercisesData, error } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .limit(10);
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.info(`Fetched ${exercisesData.length} exercises from exercises_full (total count: unknown)`);
+      setData(exercisesData || []);
+      setError(null);
+    } catch (err: any) {
+      console.error("Error fetching raw exercises data:", err);
+      setError(err.message || "Failed to fetch exercises data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Only fetch data once when the component mounts
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]); // fetchData is memoized, so this won't cause re-renders
+
+  if (loading) {
+    return (
+      <div className="p-4 border rounded-md bg-muted/20">
+        <div className="flex items-center justify-center p-8">
+          <div className="flex items-center gap-2">
+            <Spinner />
+            <span>Loading Supabase exercises_full...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 border rounded-md bg-red-50 text-red-800">
+        <h3 className="font-medium">Error loading data</h3>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 border rounded-md overflow-hidden">
+      <h3 className="font-semibold mb-2">Raw Data: exercises_full (first 10 rows)</h3>
+      <div className="overflow-x-auto">
+        <pre className="text-xs bg-muted/10 p-2 rounded">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      </div>
+    </div>
+  );
+};
+
+export default RawExercisesData;
