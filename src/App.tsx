@@ -1,72 +1,140 @@
+import React from "react";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import Onboarding from "@/pages/Onboarding";
+import Dashboard from "@/pages/Dashboard";
+import Profile from "@/pages/Profile";
+import Settings from "@/pages/Settings";
+import ExerciseLibrary from "@/pages/ExerciseLibrary";
+import ExercisesFullData from "@/pages/ExercisesFullData";
+import ExerciseDetail from "@/pages/ExerciseDetail";
+import AdvancedExercises from "@/pages/AdvancedExercises";
+import Workouts from "@/pages/Workouts";
+import WorkoutDetail from "@/pages/WorkoutDetail";
+import Progress from "@/pages/Progress";
+import Schedule from "@/pages/Schedule";
+import NotFound from "@/pages/NotFound";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ExerciseDetailEnhanced from "@/pages/ExerciseDetailEnhanced";
+import ExerciseLibrarySimple from "@/pages/ExerciseLibrarySimple";
 
-// Pages
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Onboarding from "./pages/Onboarding";
-import Dashboard from "./pages/Dashboard";
-import Workouts from "./pages/Workouts";
-import WorkoutDetail from "./pages/WorkoutDetail";
-import Profile from "./pages/Profile";
-import Schedule from "./pages/Schedule";
-import ProgressPage from "./pages/Progress";
-import Settings from "./pages/Settings";
-import ExerciseLibrary from "./pages/ExerciseLibrary";
-import ExerciseDetail from "./pages/ExerciseDetail";
-import AdvancedExercises from "./pages/AdvancedExercises";
-import ExerciseLibraryEnhanced from "./pages/ExerciseLibraryEnhanced";
-import ExerciseDetailEnhanced from "./pages/ExerciseDetailEnhanced";
-import ExercisesFullData from "./pages/ExercisesFullData";
+// Update the route section to include our new simple exercise library route
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Index />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/signup",
+    element: <Signup />,
+  },
+  {
+    path: "/onboarding",
+    element: (
+      <ProtectedRoute>
+        <Onboarding />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/settings",
+    element: (
+      <ProtectedRoute>
+        <Settings />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/exercises",
+    element: <ExerciseLibrary />,
+  },
+  {
+    path: "/exercises-simple",
+    element: <ExerciseLibrarySimple />,
+  },
+  {
+    path: "/exercises-full",
+    element: <ExercisesFullData />,
+  },
+  {
+    path: "/exercises/:id",
+    element: <ExerciseDetailEnhanced />,
+  },
+  {
+    path: "/exercise-detail/:id",
+    element: <ExerciseDetail />,
+  },
+  {
+    path: "/advanced-exercises",
+    element: <AdvancedExercises />,
+  },
+  {
+    path: "/workouts",
+    element: (
+      <ProtectedRoute>
+        <Workouts />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/workouts/:id",
+    element: (
+      <ProtectedRoute>
+        <WorkoutDetail />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/progress",
+    element: (
+      <ProtectedRoute>
+        <Progress />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/schedule",
+    element: (
+      <ProtectedRoute>
+        <Schedule />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+]);
 
-// Routes protection component
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <TooltipProvider>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            
-            {/* Protected routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/workouts" element={<Workouts />} />
-              <Route path="/workout/:id" element={<WorkoutDetail />} />
-              <Route path="/exercises" element={<ExerciseLibrary />} />
-              <Route path="/exercises/:id" element={<ExerciseDetail />} />
-              <Route path="/advanced-exercises" element={<AdvancedExercises />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/progress" element={<ProgressPage />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/exercise-library-enhanced" element={<ExerciseLibraryEnhanced />} />
-              <Route path="/exercise/:id" element={<ExerciseDetailEnhanced />} />
-              <Route path="/exercises-full-data" element={<ExercisesFullData />} />
-            </Route>
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-          <Sonner />
-        </AuthProvider>
-      </TooltipProvider>
-    </BrowserRouter>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <React.StrictMode>
+      <RouterProvider router={router} />
+    </React.StrictMode>
+  );
+}
 
 export default App;

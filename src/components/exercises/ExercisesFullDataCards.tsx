@@ -1,213 +1,185 @@
 
-import { useState, useEffect } from 'react';
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from '@/integrations/supabase/client';
-import { ExerciseFull } from '@/types/exercise';
-import ExerciseCardFull from './ExerciseCardFull';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
 } from "@/components/ui/pagination";
+import { supabase } from "@/integrations/supabase/client";
+import ExerciseCardFull from "./ExerciseCardFull";
+import { ExerciseFull } from "@/types/exercise";
+import RawExercisesData from "./RawExercisesData";
 
-interface ExercisesFullDataCardsProps {
-  perPage?: number;
-}
-
-const ExercisesFullDataCards = ({ perPage = 9 }: ExercisesFullDataCardsProps) => {
+const ExercisesFullDataCards = () => {
   const [exercises, setExercises] = useState<ExerciseFull[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const { toast } = useToast();
+  const itemsPerPage = 12;
 
   useEffect(() => {
     const fetchExercises = async () => {
       setLoading(true);
+      setError(null);
       
       try {
-        // Fetch data with pagination
-        const { data, error, count } = await supabase
+        // Fetch count first
+        const { count, error: countError } = await supabase
           .from('exercises_full')
-          .select('*', { count: 'exact' })
-          .range(page * perPage, (page + 1) * perPage - 1)
-          .order('name');
-        
-        if (error) throw error;
-        
-        // Map the data to include the required fields for ExerciseFull
-        if (data) {
-          const mappedData: ExerciseFull[] = data.map(item => ({
-            ...item,
-            target_muscle_group: item.prime_mover_muscle,
-            video_demonstration_url: item.short_youtube_demo,
-            video_explanation_url: item.in_depth_youtube_exp
-          }));
+          .select('*', { count: 'exact', head: true });
           
-          setExercises(mappedData);
-          
-          if (count) {
-            setTotalCount(count);
-            setTotalPages(Math.ceil(count / perPage));
-          }
+        if (countError) {
+          throw countError;
         }
-      } catch (error) {
-        console.error("Failed to fetch exercises:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch exercises data",
-          variant: "destructive"
-        });
+        
+        if (count !== null) {
+          setTotalCount(count);
+        }
+        
+        // Then fetch actual data
+        const { data, error } = await supabase
+          .from('exercises_full')
+          .select('*')
+          .range(page * itemsPerPage, (page + 1) * itemsPerPage - 1)
+          .order('name');
+          
+        if (error) {
+          throw error;
+        }
+        
+        setExercises(data || []);
+      } catch (err: any) {
+        console.error("Error fetching exercises:", err);
+        setError(err.message || "Failed to fetch exercises");
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchExercises();
-  }, [page, perPage, toast]);
+  }, [page]);
+
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-  };
-
-  const renderPageNumbers = () => {
-    // For small number of pages, show all
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => (
-        <PaginationItem key={i}>
-          <PaginationLink 
-            isActive={page === i} 
-            onClick={() => handlePageChange(i)}
-          >
-            {i + 1}
-          </PaginationLink>
-        </PaginationItem>
-      ));
-    }
-    
-    // For many pages, use ellipsis pattern
-    const items = [];
-    
-    // Always show first page
-    items.push(
-      <PaginationItem key="first">
-        <PaginationLink 
-          isActive={page === 0} 
-          onClick={() => handlePageChange(0)}
-        >
-          1
-        </PaginationLink>
-      </PaginationItem>
-    );
-    
-    // Add ellipsis if needed
-    if (page > 3) {
-      items.push(
-        <PaginationItem key="ellipsis1">
-          <span className="flex h-9 w-9 items-center justify-center">...</span>
-        </PaginationItem>
-      );
-    }
-    
-    // Add pages around current
-    const start = Math.max(1, page - 1);
-    const end = Math.min(totalPages - 2, page + 1);
-    
-    for (let i = start; i <= end; i++) {
-      items.push(
-        <PaginationItem key={i}>
-          <PaginationLink 
-            isActive={page === i} 
-            onClick={() => handlePageChange(i)}
-          >
-            {i + 1}
-          </PaginationLink>
-        </PaginationItem>
-      );
-    }
-    
-    // Add ellipsis if needed
-    if (page < totalPages - 4) {
-      items.push(
-        <PaginationItem key="ellipsis2">
-          <span className="flex h-9 w-9 items-center justify-center">...</span>
-        </PaginationItem>
-      );
-    }
-    
-    // Always show last page
-    items.push(
-      <PaginationItem key="last">
-        <PaginationLink 
-          isActive={page === totalPages - 1} 
-          onClick={() => handlePageChange(totalPages - 1)}
-        >
-          {totalPages}
-        </PaginationLink>
-      </PaginationItem>
-    );
-    
-    return items;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Exercise Database</h2>
-        <p className="text-muted-foreground">
-          {loading ? 'Loading...' : 
-           `Showing ${page * perPage + 1}-${Math.min((page + 1) * perPage, totalCount)} of ${totalCount} exercises`}
-        </p>
+    <div>
+      {/* Debug section for raw data */}
+      <div className="mb-10">
+        <RawExercisesData />
       </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: perPage }).map((_, i) => (
-            <Skeleton key={i} className="h-[350px] w-full" />
-          ))}
-        </div>
-      ) : exercises.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {exercises.map((exercise) => (
-            <ExerciseCardFull key={exercise.id} exercise={exercise} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 border rounded-lg bg-muted/20">
-          <p className="text-lg text-muted-foreground">No exercises found</p>
-        </div>
-      )}
-
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              {page === 0 ? (
-                <PaginationPrevious className="pointer-events-none opacity-50" />
-              ) : (
-                <PaginationPrevious onClick={() => handlePageChange(Math.max(0, page - 1))} />
-              )}
-            </PaginationItem>
+      
+      {/* Exercise cards grid */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-4">Exercise Cards</h2>
+        
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Spinner />
+            <span className="ml-2">Loading exercises...</span>
+          </div>
+        ) : error ? (
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-red-500">
+                <h3 className="font-semibold mb-2">Error Loading Exercises</h3>
+                <p>{error}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {exercises.map((exercise) => (
+                <ExerciseCardFull key={exercise.id} exercise={exercise} />
+              ))}
+            </div>
             
-            {renderPageNumbers()}
+            {totalCount > 0 && (
+              <div className="mt-8">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handlePageChange(Math.max(0, page - 1))}
+                        className={page === 0 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        // Show all pages if 5 or fewer
+                        pageNum = i;
+                      } else if (page < 3) {
+                        // Near the start
+                        pageNum = i;
+                      } else if (page > totalPages - 4) {
+                        // Near the end
+                        pageNum = totalPages - 5 + i;
+                      } else {
+                        // In the middle
+                        pageNum = page - 2 + i;
+                      }
+                      
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink 
+                            isActive={page === pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                          >
+                            {pageNum + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handlePageChange(page + 1)}
+                        className={page >= totalPages - 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+                
+                <div className="mt-2 text-center text-sm text-muted-foreground">
+                  Showing {page * itemsPerPage + 1}-{Math.min((page + 1) * itemsPerPage, totalCount)} of {totalCount} exercises
+                </div>
+              </div>
+            )}
             
-            <PaginationItem>
-              {page === totalPages - 1 ? (
-                <PaginationNext className="pointer-events-none opacity-50" />
-              ) : (
-                <PaginationNext onClick={() => handlePageChange(Math.min(totalPages - 1, page + 1))} />
-              )}
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+            {exercises.length === 0 && !loading && (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <p className="text-muted-foreground">No exercises found</p>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
+      
+      {/* Link to other exercise views */}
+      <div className="flex justify-center space-x-4 mt-10 mb-6">
+        <Button variant="outline" onClick={() => window.location.href = "/exercises"}>
+          Go to Advanced Exercise Library
+        </Button>
+        <Button variant="outline" onClick={() => window.location.href = "/exercises-simple"}>
+          Go to Simple Exercise View
+        </Button>
+      </div>
     </div>
   );
 };
