@@ -1,6 +1,6 @@
 
 import React from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 
 import Index from "@/pages/Index";
@@ -23,119 +23,62 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ExerciseDetailEnhanced from "@/pages/ExerciseDetailEnhanced";
 import ExerciseLibrarySimple from "@/pages/ExerciseLibrarySimple";
 
-// Update the route section to include our new simple exercise library route
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Index />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/signup",
-    element: <Signup />,
-  },
-  {
-    path: "/onboarding",
-    element: (
-      <ProtectedRoute>
-        <Onboarding />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/dashboard",
-    element: (
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <Profile />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/settings",
-    element: (
-      <ProtectedRoute>
-        <Settings />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/exercises",
-    element: <ExerciseLibrary />,
-  },
-  {
-    path: "/exercises-simple",
-    element: <ExerciseLibrarySimple />,
-  },
-  {
-    path: "/exercises-full",
-    element: <ExercisesFullData />,
-  },
-  {
-    path: "/exercises/:id",
-    element: <ExerciseDetailEnhanced />,
-  },
-  {
-    path: "/exercise-detail/:id",
-    element: <ExerciseDetail />,
-  },
-  {
-    path: "/advanced-exercises",
-    element: <AdvancedExercises />,
-  },
-  {
-    path: "/workouts",
-    element: (
-      <ProtectedRoute>
-        <Workouts />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/workouts/:id",
-    element: (
-      <ProtectedRoute>
-        <WorkoutDetail />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/progress",
-    element: (
-      <ProtectedRoute>
-        <Progress />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/schedule",
-    element: (
-      <ProtectedRoute>
-        <Schedule />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
-]);
-
 function App() {
   return (
     <React.StrictMode>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              <Onboarding />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
+          <Route path="/exercises" element={<ExerciseLibrary />} />
+          <Route path="/exercises-simple" element={<ExerciseLibrarySimple />} />
+          <Route path="/exercises-full" element={<ExercisesFullData />} />
+          <Route path="/exercises/:id" element={<ExerciseDetailEnhanced />} />
+          <Route path="/exercise-detail/:id" element={<ExerciseDetail />} />
+          <Route path="/advanced-exercises" element={<AdvancedExercises />} />
+          <Route path="/workouts" element={
+            <ProtectedRoute>
+              <Workouts />
+            </ProtectedRoute>
+          } />
+          <Route path="/workouts/:id" element={
+            <ProtectedRoute>
+              <WorkoutDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/progress" element={
+            <ProtectedRoute>
+              <Progress />
+            </ProtectedRoute>
+          } />
+          <Route path="/schedule" element={
+            <ProtectedRoute>
+              <Schedule />
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </AuthProvider>
     </React.StrictMode>
   );
