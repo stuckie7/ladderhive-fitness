@@ -189,19 +189,21 @@ const ExercisesFullDataCards = ({ perPage = 9 }: ExercisesFullDataCardsProps) =>
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious 
-                onClick={() => handlePageChange(Math.max(0, page - 1))}
-                disabled={page === 0} 
-              />
+              {page === 0 ? (
+                <PaginationPrevious className="pointer-events-none opacity-50" />
+              ) : (
+                <PaginationPrevious onClick={() => handlePageChange(Math.max(0, page - 1))} />
+              )}
             </PaginationItem>
             
             {renderPageNumbers()}
             
             <PaginationItem>
-              <PaginationNext 
-                onClick={() => handlePageChange(Math.min(totalPages - 1, page + 1))}
-                disabled={page === totalPages - 1} 
-              />
+              {page === totalPages - 1 ? (
+                <PaginationNext className="pointer-events-none opacity-50" />
+              ) : (
+                <PaginationNext onClick={() => handlePageChange(Math.min(totalPages - 1, page + 1))} />
+              )}
             </PaginationItem>
           </PaginationContent>
         </Pagination>
