@@ -54,7 +54,15 @@ const ExercisesFullDataCards = () => {
           throw error;
         }
         
-        setExercises(data || []);
+        // Map the data to include required fields for ExerciseFull
+        const mappedData = data?.map(item => ({
+          ...item,
+          target_muscle_group: item.prime_mover_muscle || null,
+          video_demonstration_url: item.short_youtube_demo || null,
+          video_explanation_url: item.in_depth_youtube_exp || null
+        })) || [];
+        
+        setExercises(mappedData);
       } catch (err: any) {
         console.error("Error fetching exercises:", err);
         setError(err.message || "Failed to fetch exercises");

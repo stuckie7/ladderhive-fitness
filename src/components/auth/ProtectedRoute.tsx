@@ -1,11 +1,15 @@
 
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const ProtectedRoute = () => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
 
   // Create or fetch daily progress when user is authenticated
@@ -59,7 +63,7 @@ const ProtectedRoute = () => {
   }
 
   // If logged in, render the child routes
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
