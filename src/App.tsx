@@ -1,5 +1,7 @@
+
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { AuthProvider } from "@/context/AuthContext";
 
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
@@ -132,7 +134,9 @@ const router = createBrowserRouter([
 function App() {
   return (
     <React.StrictMode>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </React.StrictMode>
   );
 }
