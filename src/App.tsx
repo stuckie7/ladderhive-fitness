@@ -24,6 +24,7 @@ import ExerciseDetail from "./pages/ExerciseDetail";
 import AdvancedExercises from "./pages/AdvancedExercises";
 import ExerciseLibraryEnhanced from "./pages/ExerciseLibraryEnhanced";
 import ExerciseDetailEnhanced from "./pages/ExerciseDetailEnhanced";
+import ExercisesFullData from "./pages/ExercisesFullData";
 
 // Routes protection component
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/settings" element={<Settings />} />
               <Route path="/exercise-library-enhanced" element={<ExerciseLibraryEnhanced />} />
               <Route path="/exercise/:id" element={<ExerciseDetailEnhanced />} />
+              <Route path="/exercises-full-data" element={<ExercisesFullData />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />
