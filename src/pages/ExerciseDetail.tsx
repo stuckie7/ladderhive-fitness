@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -12,6 +11,40 @@ import ExerciseNotFound from '@/components/exercises/exercise-detail/ExerciseNot
 import ExerciseMainContent from '@/components/exercises/exercise-detail/ExerciseMainContent';
 import ExerciseSidebarContent from '@/components/exercises/exercise-detail/ExerciseSidebarContent';
 
+// Video Link Handler Component
+const VideoLinkHandler = ({ videoLink, className = "" }) => {
+  // If no video link provided, return null or placeholder
+  if (!videoLink) {
+    return <span className={`text-gray-400 ${className}`}>No video available</span>;
+  }
+  
+  // Check if it's a URL (starts with http or https)
+  const isUrl = typeof videoLink === 'string' && 
+                (videoLink.startsWith('http://') || 
+                 videoLink.startsWith('https://'));
+  
+  // If it's a URL, render as link
+  if (isUrl) {
+    return (
+      <a 
+        href={videoLink} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        className={`text-blue-600 hover:text-blue-800 hover:underline ${className}`}
+      >
+        Watch Video
+      </a>
+    );
+  }
+  
+  // Otherwise, render as plain text (for "Video Demonstration" or similar)
+  return (
+    <span className={`${className}`}>
+      {videoLink}
+    </span>
+  );
+};
+
 export default function ExerciseDetail() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,6 +54,10 @@ export default function ExerciseDetail() {
   // Helper function to map database fields to Exercise interface
   const mapToExercise = (data: any, fromNewTable: boolean): Exercise => {
     if (fromNewTable) {
+      // Process video URLs to handle "Video Demonstration" text
+      const videoDemo = data.video_demonstration_url || '';
+      const videoExplanation = data.video_explanation_url || '';
+      
       return {
         id: data.id,
         name: data.name,
@@ -37,8 +74,8 @@ export default function ExerciseDetail() {
         secondary_equipment: data.secondary_equipment,
         posture: data.posture,
         laterality: data.laterality,
-        video_demonstration_url: data.video_demonstration_url,
-        video_explanation_url: data.video_explanation_url,
+        video_demonstration_url: videoDemo,
+        video_explanation_url: videoExplanation,
         difficulty_level: data.difficulty_level,
         body_region: data.body_region,
         exercise_classification: data.exercise_classification,
@@ -49,10 +86,13 @@ export default function ExerciseDetail() {
         muscle_group: data.body_region || data.target_muscle_group,
         description: data.description,
         difficulty: data.difficulty_level,
-        video_url: data.video_explanation_url || data.video_demonstration_url,
+        video_url: videoExplanation || videoDemo,
         image_url: data.image_url
       };
     } else {
+      // Handle legacy table format
+      const videoUrl = data.video_url || '';
+      
       return {
         id: data.id,
         name: data.name,
@@ -66,7 +106,7 @@ export default function ExerciseDetail() {
         muscle_group: data.muscle_group,
         description: data.description,
         difficulty: data.difficulty,
-        video_url: data.video_url,
+        video_url: videoUrl,
         image_url: data.image_url
       } as Exercise; // Cast to Exercise to handle missing fields
     }
@@ -99,6 +139,8 @@ export default function ExerciseDetail() {
         } else {
           setExercise(mapToExercise(data, true));
         }
+        
+        console.log('Exercise data found:', data ? 'Yes' : 'No');
       } catch (error) {
         console.error('Error fetching exercise:', error);
       } finally {
