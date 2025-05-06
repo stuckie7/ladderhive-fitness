@@ -24,7 +24,15 @@ export const getExerciseFullById = async (id: number): Promise<ExerciseFull | nu
     if (data) {
       // Clean up any URL fields that might have quotes in them
       const cleanYoutubeUrls = (url: string | null): string | null => {
-        return url ? url.replace(/^["']|["']$/g, '') : null;
+        // If null or empty string, return null
+        if (!url) return null;
+        
+        // Remove quotes if they exist in the URL
+        const cleanUrl = url.replace(/^["']|["']$/g, '');
+        
+        // If it's just a text description like "Video Demonstration", just return it as is
+        // The UI component will handle non-URL values appropriately
+        return cleanUrl;
       };
       
       const exerciseData: ExerciseFull = {
