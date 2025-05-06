@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Badge } from "@/components/ui/badge";

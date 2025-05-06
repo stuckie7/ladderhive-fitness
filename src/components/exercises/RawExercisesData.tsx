@@ -23,7 +23,7 @@ const RawExercisesData = () => {
         throw error;
       }
       
-      console.info(`Fetched ${exercisesData.length} exercises from exercises_full (total count: unknown)`);
+      console.info(`Fetched ${exercisesData?.length || 0} exercises from exercises_full (total count: unknown)`);
       setData(exercisesData || []);
       setError(null);
     } catch (err: any) {

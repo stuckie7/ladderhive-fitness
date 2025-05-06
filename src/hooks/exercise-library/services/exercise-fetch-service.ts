@@ -114,16 +114,10 @@ export const getExercisesFullColumns = async (): Promise<string[]> => {
 // New function to search exercises with all the filtering capabilities
 export const searchExercisesFull = async (
   searchQuery = '',
-  filters: {
-    muscleGroup?: string;
-    equipment?: string;
-    difficulty?: string;
-  } = {},
-  limit = 20,
-  offset = 0
+  limit = 20
 ): Promise<ExerciseFull[]> => {
   try {
-    console.log(`Searching exercises with term "${searchQuery}" and filters:`, filters);
+    console.log(`Searching exercises with term "${searchQuery}"`);
     
     let query = supabase
       .from('exercises_full')
@@ -134,30 +128,17 @@ export const searchExercisesFull = async (
       query = query.or(`name.ilike.%${searchQuery}%,prime_mover_muscle.ilike.%${searchQuery}%,primary_equipment.ilike.%${searchQuery}%`);
     }
     
-    // Apply filters
-    if (filters.muscleGroup && filters.muscleGroup !== 'all') {
-      query = query.eq('prime_mover_muscle', filters.muscleGroup);
-    }
+    // Add pagination and order
+    query = query.limit(limit).order('name');
     
-    if (filters.equipment && filters.equipment !== 'all') {
-      query = query.eq('primary_equipment', filters.equipment);
-    }
-    
-    if (filters.difficulty && filters.difficulty !== 'all') {
-      query = query.eq('difficulty', filters.difficulty);
-    }
-    
-    // Add pagination
-    query = query.range(offset, offset + limit - 1).order('name');
-    
-    const { data, error, count } = await query;
+    const { data, error } = await query;
     
     if (error) {
       console.error('Error searching exercises_full:', error);
       throw error;
     }
     
-    console.log(`Found ${data?.length || 0} exercises matching criteria (total: ${count || 'unknown'})`);
+    console.log(`Found ${data?.length || 0} exercises matching search criteria`);
     
     // Transform the data to match our ExerciseFull type
     const transformedData: ExerciseFull[] = (data || []).map(item => ({
@@ -172,5 +153,87 @@ export const searchExercisesFull = async (
   } catch (error) {
     console.error('Failed to search exercises_full:', error);
     throw error;
+  }
+};
+
+// Get exercise by id
+export const getExerciseFullById = async (id: number): Promise<ExerciseFull | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('exercises_full')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error) {
+      console.error('Error fetching exercise by id:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      return null;
+    }
+    
+    // Transform the data to match our ExerciseFull type
+    const transformedData: ExerciseFull = {
+      ...data,
+      // Map properties correctly
+      target_muscle_group: data.prime_mover_muscle || null,
+      video_demonstration_url: data.short_youtube_demo || null,
+      video_explanation_url: data.in_depth_youtube_exp || null
+    } as ExerciseFull;
+    
+    return transformedData;
+  } catch (error) {
+    console.error('Failed to fetch exercise by id:', error);
+    throw error;
+  }
+};
+
+// Get all muscle groups
+export const getMuscleGroups = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('exercises_full')
+      .select('prime_mover_muscle')
+      .not('prime_mover_muscle', 'is', null);
+      
+    if (error) {
+      throw error;
+    }
+    
+    // Extract unique muscle groups
+    const muscleGroups = [...new Set(data.map(item => item.prime_mover_muscle))].filter(
+      (group): group is string => typeof group === 'string'
+    ).sort();
+    
+    return muscleGroups;
+  } catch (error) {
+    console.error('Failed to fetch muscle groups:', error);
+    return [];
+  }
+};
+
+// Get all equipment types
+export const getEquipmentTypes = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('exercises_full')
+      .select('primary_equipment')
+      .not('primary_equipment', 'is', null);
+      
+    if (error) {
+      throw error;
+    }
+    
+    // Extract unique equipment types
+    const equipmentTypes = [...new Set(data.map(item => item.primary_equipment))].filter(
+      (type): type is string => typeof type === 'string'
+    ).sort();
+    
+    return equipmentTypes;
+  } catch (error) {
+    console.error('Failed to fetch equipment types:', error);
+    return [];
   }
 };
