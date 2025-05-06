@@ -22,6 +22,7 @@ import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ExerciseDetailEnhanced from "@/pages/ExerciseDetailEnhanced";
 import ExerciseLibrarySimple from "@/pages/ExerciseLibrarySimple";
+import ExerciseLibraryEnhanced from "@/pages/ExerciseLibraryEnhanced";
 
 function App() {
   return (
@@ -54,6 +55,8 @@ function App() {
           <Route path="/exercises" element={<ExerciseLibrary />} />
           <Route path="/exercises-simple" element={<ExerciseLibrarySimple />} />
           <Route path="/exercises-full" element={<ExercisesFullData />} />
+          <Route path="/exercise-library" element={<ExerciseLibraryEnhanced />} />
+          <Route path="/exercise-library-enhanced" element={<ExerciseLibraryEnhanced />} />
           <Route path="/exercises/:id" element={<ExerciseDetailEnhanced />} />
           <Route path="/exercise-detail/:id" element={<ExerciseDetail />} />
           <Route path="/advanced-exercises" element={<AdvancedExercises />} />

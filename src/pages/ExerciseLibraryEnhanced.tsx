@@ -3,11 +3,12 @@ import { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { ExerciseFull } from "@/types/exercise";
 import { supabase } from "@/integrations/supabase/client";
 import { checkExercisesFullTableExists } from "@/hooks/exercise-library/services/exercise-fetch-service";
 import { useNavigate } from "react-router-dom";
+import ExercisesEnhancedNavigation from "@/components/exercises/ExercisesEnhancedNavigation";
 
 // Import our components
 import ExerciseSearchAndFilters from "@/components/exercises/ExerciseSearchAndFilters";
@@ -95,6 +96,8 @@ const ExerciseLibraryEnhanced = () => {
           .order('name', { ascending: true });
         
         if (error) throw error;
+        
+        console.log("Fetched exercises:", data);
         
         // Map the data to include the required fields for ExerciseFull
         if (data) {
@@ -418,9 +421,11 @@ const ExerciseLibraryEnhanced = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  // Navigate to exercise detail page
-  const handleViewExerciseDetails = (exercise: ExerciseFull) => {
-    navigate(`/exercises/${exercise.id}`);
+  // Refresh database to requery for exercises
+  const handleRefresh = () => {
+    setLoading(true);
+    setCurrentPage(0); // Reset to first page
+    loadFilterOptions(); // Reload filter options
   };
 
   // Render error state if table doesn't exist
@@ -440,7 +445,7 @@ const ExerciseLibraryEnhanced = () => {
               <Button variant="outline" onClick={() => window.location.reload()}>
                 Retry
               </Button>
-              <Button variant="default">
+              <Button variant="default" onClick={() => navigate('/dashboard')}>
                 Go to Dashboard
               </Button>
             </div>
@@ -471,19 +476,26 @@ const ExerciseLibraryEnhanced = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Exercise Library</h1>
+            <h1 className="text-2xl font-bold mb-2">Enhanced Exercise Library</h1>
             <p className="text-muted-foreground">
               Browse, search, and manage your exercise database
             </p>
           </div>
           
           <div className="flex gap-2 mt-4 md:mt-0">
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh Data
+            </Button>
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Exercise
             </Button>
           </div>
         </div>
+        
+        {/* Navigation between different exercise views */}
+        <ExercisesEnhancedNavigation currentView="exercise-library" />
         
         {/* Search and filters */}
         <ExerciseSearchAndFilters 
@@ -518,7 +530,7 @@ const ExerciseLibraryEnhanced = () => {
         />
         
         {/* Pagination */}
-        {!loading && exercises.length > 0 && (
+        {!loading && totalCount > ITEMS_PER_PAGE && (
           <ExercisePagination 
             currentPage={currentPage}
             totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
