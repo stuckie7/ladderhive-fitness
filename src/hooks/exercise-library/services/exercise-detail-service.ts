@@ -22,12 +22,19 @@ export const getExerciseFullById = async (id: number): Promise<ExerciseFull | nu
     
     // Transform the data to match our ExerciseFull type
     if (data) {
+      // Clean up any URL fields that might have quotes in them
+      const cleanYoutubeUrls = (url: string | null): string | null => {
+        return url ? url.replace(/^["']|["']$/g, '') : null;
+      };
+      
       const exerciseData: ExerciseFull = {
         ...data,
-        // Map properties correctly using optional chaining
+        // Clean and map properties correctly using optional chaining
+        short_youtube_demo: cleanYoutubeUrls(data.short_youtube_demo),
+        in_depth_youtube_exp: cleanYoutubeUrls(data.in_depth_youtube_exp),
         target_muscle_group: data.prime_mover_muscle || null,
-        video_demonstration_url: data.short_youtube_demo || null,
-        video_explanation_url: data.in_depth_youtube_exp || null
+        video_demonstration_url: cleanYoutubeUrls(data.short_youtube_demo),
+        video_explanation_url: cleanYoutubeUrls(data.in_depth_youtube_exp)
       } as ExerciseFull;
       return exerciseData;
     }
