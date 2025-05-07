@@ -44,7 +44,7 @@ const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <Button
               variant="outline"
               size="sm"
