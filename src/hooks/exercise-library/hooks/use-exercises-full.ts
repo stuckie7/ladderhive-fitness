@@ -77,7 +77,14 @@ export const useExercisesFull = () => {
         return [];
       }
       
-      return await fetchExercisesFull(limit, offset);
+    const rawData = await fetchExercisesFull(limit, offset);
+
+// Deduplicate exercises by ID
+const uniqueExercises = Array.from(
+  new Map(rawData.map((ex) => [ex.id, ex])).values()
+);
+
+return uniqueExercises;
     } catch (error) {
       handleApiError(error, 'Failed to fetch exercises data');
       return [];
