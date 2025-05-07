@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,7 +40,7 @@ const WorkoutExerciseSection = ({
     setSearchModalOpen(false);
   };
 
-  // Include demonstration property that uses the video or image URL
+  // Include demonstration property that uses ExerciseVideoHandler in the render stage
   const exerciseListItems: ExerciseListItem[] = exercises.map(we => ({
     id: we.id,
     name: we.exercise?.name || "Unknown Exercise",
