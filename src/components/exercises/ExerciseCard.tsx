@@ -3,7 +3,7 @@ import { Exercise } from "@/types/exercise";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Info, Play, Youtube, Dumbbell, Activity } from "lucide-react";
+import { Info, Youtube, Dumbbell, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ExerciseVideoHandler from "./ExerciseVideoHandler";
 

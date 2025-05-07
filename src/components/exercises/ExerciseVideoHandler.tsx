@@ -1,68 +1,80 @@
-
-import { Info, PlayCircle } from "lucide-react";
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { Play, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ExerciseVideoHandlerProps {
-  url: string | null | undefined;
-  title: string;
+  url?: string | null;
+  title?: string;
   className?: string;
   showPlaceholder?: boolean;
 }
 
-/**
- * A component for handling exercise video links that might be:
- * 1. Actual URL links to videos
- * 2. Text descriptions like "Video Demonstration" 
- * 3. Null/undefined values
- */
-export default function ExerciseVideoHandler({ 
-  url, 
-  title, 
+const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({
+  url,
+  title = "Watch Video",
   className = "",
-  showPlaceholder = true
-}: ExerciseVideoHandlerProps) {
-  // If no video data provided at all
+  showPlaceholder = true,
+}) => {
+  // If no URL is provided and we don't want to show a placeholder, return null
+  if (!url && !showPlaceholder) {
+    return null;
+  }
+
+  // If no URL is provided but we want to show a placeholder
   if (!url) {
-    if (!showPlaceholder) return null;
-    
     return (
       <div className={`text-muted-foreground text-sm ${className}`}>
         No video available
       </div>
     );
   }
-  
-  // Helper function to check if it's a valid URL
-  const isValidUrl = (str: string): boolean => {
-    // Basic URL validation - check if it contains youtube domains or starts with http/https
+
+  // Check if the URL is actually "Video Demonstration" or similar text
+  if (
+    url === "Video Demonstration" ||
+    url.includes("Video Demonstration") ||
+    !url.includes("://")
+  ) {
     return (
-      str.includes("youtube.com") || 
-      str.includes("youtu.be") || 
-      str.startsWith("http://") || 
-      str.startsWith("https://")
-    );
-  };
-  
-  // If it's just text and not a URL (like "Video Demonstration"), show info button
-  if (!isValidUrl(url)) {
-    return (
-      <div className={`flex items-center gap-2 ${className}`}>
-        <Info className="h-4 w-4 text-muted-foreground" />
-        <span className="text-muted-foreground text-sm">{url}</span>
-      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`gap-1 ${className}`}
+              onClick={(e) => e.preventDefault()}
+            >
+              <Info className="h-4 w-4" />
+              <span>Video Info</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{url}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
-  
-  // It's a valid URL, show as a button
+
+  // Otherwise, it's a valid URL
   return (
     <Button
       variant="outline"
       size="sm"
-      className={`flex items-center gap-2 ${className}`}
-      onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+      className={`gap-1 ${className}`}
+      onClick={() => window.open(url, "_blank")}
     >
-      <PlayCircle className="h-4 w-4 text-red-600" />
+      <Play className="h-4 w-4" />
       <span>{title}</span>
     </Button>
   );
-}
+};
+
+export default ExerciseVideoHandler;
