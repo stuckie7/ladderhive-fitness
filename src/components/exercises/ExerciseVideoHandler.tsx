@@ -1,5 +1,5 @@
 
-import { Info, PlayCircle } from "lucide-react";
+import { Info, PlayCircle, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ExerciseVideoHandlerProps {
