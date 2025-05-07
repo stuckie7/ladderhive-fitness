@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Info, Play, Youtube, Dumbbell, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ExerciseVideoHandler from "./ExerciseVideoHandler";
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -26,6 +27,11 @@ const ExerciseCard = ({ exercise }: ExerciseCardProps) => {
       return <Activity className="h-5 w-5 text-green-500" />;
     }
   };
+
+  // Determine video URL from any available video field
+  const videoUrl = exercise.video_url || 
+                  exercise.video_demonstration_url || 
+                  exercise.short_youtube_demo;
   
   return (
     <Card className="h-full flex flex-col">
@@ -48,19 +54,14 @@ const ExerciseCard = ({ exercise }: ExerciseCardProps) => {
               No image available
             </div>
           )}
-          {exercise.video_url && (
+          {videoUrl && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
-              <Button 
-                variant="outline" 
-                size="icon" 
+              <ExerciseVideoHandler
+                url={videoUrl}
+                title="Play Video"
                 className="rounded-full bg-white text-black border-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(exercise.video_url, '_blank');
-                }}
-              >
-                <Play className="h-6 w-6 fill-current" />
-              </Button>
+                showPlaceholder={false}
+              />
             </div>
           )}
         </div>

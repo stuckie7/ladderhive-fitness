@@ -1,8 +1,9 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExerciseFull } from "@/types/exercise";
 import ExerciseSpecItem from "./ExerciseSpecItem";
-import ExerciseVideoPlayer from "./ExerciseVideoPlayer";
+import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 
 interface ExerciseMainDetailsProps {
   exercise: ExerciseFull;
@@ -89,17 +90,53 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
             <TabsContent value="videos">
               <div className="space-y-8">
                 {exercise.short_youtube_demo && (
-                  <ExerciseVideoPlayer 
-                    url={exercise.short_youtube_demo} 
-                    title="Quick Demonstration" 
-                  />
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium">Quick Demonstration</h3>
+                    <div className="aspect-video bg-muted rounded-md overflow-hidden">
+                      {exercise.short_youtube_demo.includes("youtube.com") || 
+                       exercise.short_youtube_demo.includes("youtu.be") ? (
+                        <iframe 
+                          className="w-full h-full"
+                          src={getEmbeddedYoutubeUrl(exercise.short_youtube_demo)} 
+                          title="Quick Demonstration"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ExerciseVideoHandler 
+                            url={exercise.short_youtube_demo} 
+                            title="Quick Demonstration"
+                            className="text-center p-4" 
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
                 
                 {exercise.in_depth_youtube_exp && (
-                  <ExerciseVideoPlayer 
-                    url={exercise.in_depth_youtube_exp} 
-                    title="In-Depth Explanation" 
-                  />
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium">In-Depth Explanation</h3>
+                    <div className="aspect-video bg-muted rounded-md overflow-hidden">
+                      {exercise.in_depth_youtube_exp.includes("youtube.com") || 
+                       exercise.in_depth_youtube_exp.includes("youtu.be") ? (
+                        <iframe 
+                          className="w-full h-full"
+                          src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
+                          title="In-Depth Explanation"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ExerciseVideoHandler 
+                            url={exercise.in_depth_youtube_exp} 
+                            title="In-Depth Explanation"
+                            className="text-center p-4" 
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             </TabsContent>
@@ -108,4 +145,25 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
       </CardContent>
     </Card>
   );
+}
+
+// Helper function to convert YouTube URL to embedded format
+function getEmbeddedYoutubeUrl(url: string): string {
+  if (!url) return '';
+  
+  // Remove quotes if they exist in the URL
+  let cleanUrl = url.replace(/^["']|["']$/g, '');
+  
+  // Handle youtube.com/watch?v= format
+  if (cleanUrl.includes('watch?v=')) {
+    return cleanUrl.replace(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/, 'https://www.youtube.com/embed/$1');
+  }
+  
+  // Handle youtu.be/ format
+  if (cleanUrl.includes('youtu.be/')) {
+    return cleanUrl.replace(/(?:https?:\/\/)?(?:www\.)?youtu\.be\/(.+)/, 'https://www.youtube.com/embed/$1');
+  }
+  
+  // If it's already in the embed format or can't be parsed, return as is
+  return cleanUrl;
 }

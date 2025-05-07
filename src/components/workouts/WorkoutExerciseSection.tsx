@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import ExerciseSearchModal from "@/components/exercises/ExerciseSearchModal";
 import WorkoutExerciseSkeleton from "@/components/workouts/WorkoutExerciseSkeleton";
 import { Exercise } from "@/types/exercise";
 import { WorkoutExercise } from "@/hooks/workout-exercises/utils";
+import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 
 interface ExerciseListItem {
   id: string;
@@ -40,6 +40,7 @@ const WorkoutExerciseSection = ({
     setSearchModalOpen(false);
   };
 
+  // Include demonstration property that uses ExerciseVideoHandler in the render stage
   const exerciseListItems: ExerciseListItem[] = exercises.map(we => ({
     id: we.id,
     name: we.exercise?.name || "Unknown Exercise",
@@ -48,7 +49,9 @@ const WorkoutExerciseSection = ({
     weight: we.weight,
     restTime: we.rest_time,
     description: we.exercise?.description,
-    demonstration: we.exercise?.image_url
+    demonstration: we.exercise?.video_demonstration_url || 
+                  we.exercise?.video_url || 
+                  we.exercise?.image_url
   }));
 
   return (
