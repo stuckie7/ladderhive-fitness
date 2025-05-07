@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Exercise } from '@/types/exercise';
 import AppLayout from '@/components/layout/AppLayout';
+import ExerciseVideoHandler from '@/components/exercises/ExerciseVideoHandler';
 
 // Import refactored components
 import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
@@ -10,40 +12,6 @@ import ExerciseDetailSkeleton from '@/components/exercises/exercise-detail/Exerc
 import ExerciseNotFound from '@/components/exercises/exercise-detail/ExerciseNotFound';
 import ExerciseMainContent from '@/components/exercises/exercise-detail/ExerciseMainContent';
 import ExerciseSidebarContent from '@/components/exercises/exercise-detail/ExerciseSidebarContent';
-
-// Video Link Handler Component
-const VideoLinkHandler = ({ videoLink, className = "" }) => {
-  // If no video link provided, return null or placeholder
-  if (!videoLink) {
-    return <span className={`text-gray-400 ${className}`}>No video available</span>;
-  }
-  
-  // Check if it's a URL (starts with http or https)
-  const isUrl = typeof videoLink === 'string' && 
-                (videoLink.startsWith('http://') || 
-                 videoLink.startsWith('https://'));
-  
-  // If it's a URL, render as link
-  if (isUrl) {
-    return (
-      <a 
-        href={videoLink} 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className={`text-blue-600 hover:text-blue-800 hover:underline ${className}`}
-      >
-        Watch Video
-      </a>
-    );
-  }
-  
-  // Otherwise, render as plain text (for "Video Demonstration" or similar)
-  return (
-    <span className={`${className}`}>
-      {videoLink}
-    </span>
-  );
-};
 
 export default function ExerciseDetail() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
@@ -184,4 +152,3 @@ export default function ExerciseDetail() {
     </AppLayout>
   );
 }
-
