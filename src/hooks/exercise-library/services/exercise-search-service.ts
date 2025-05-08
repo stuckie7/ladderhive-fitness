@@ -1,16 +1,9 @@
-const isValidYouTubeUrl = (url?: string): boolean => {
-  if (!url) return false;
-
-  const lowerUrl = url.toLowerCase();
-
-  return (
-    (lowerUrl.includes('youtube.com/watch') || lowerUrl.includes('youtu.be/')) &&
-    !lowerUrl.includes('lovableproject.com') &&
-    !lowerUrl.includes('/video demonstration')
-  );
-};
 import { supabase } from '@/integrations/supabase/client';
 import { ExerciseFull } from '@/types/exercise';
+
+const getBestVideoUrl = (exercise: ExerciseFull): string | null => {
+  return exercise.short_youtube_demo || exercise.in_depth_youtube_exp || null;
+};
 
 export const searchExercisesFull = async (
   searchTerm: string,
@@ -18,74 +11,41 @@ export const searchExercisesFull = async (
 ): Promise<ExerciseFull[]> => {
   try {
     console.log(`Searching exercises with term "${searchTerm}" and limit ${limit}`);
-    
-    // Build the search query using ILIKE for case-insensitive matching
+
     const { data, error } = await supabase
       .from('exercises_full')
       .select('*')
       .or(`name.ilike.%${searchTerm}%, prime_mover_muscle.ilike.%${searchTerm}%, primary_equipment.ilike.%${searchTerm}%`)
       .limit(limit);
-    
+
     if (error) {
       console.error('Error searching exercises_full:', error);
       throw error;
     }
-    
+
     console.log(`Found ${data?.length || 0} exercises matching search term "${searchTerm}"`);
-    
-    // Enhanced deduplication that prioritizes entries with video links
+
     const uniqueMap = new Map<string, ExerciseFull>();
-    
-(data || []).forEach(item => {
-  const name = item.name?.toLowerCase().trim() || '';
-  const existingItem = uniqueMap.get(name);
 
-  const itemUrl = item.short_youtube_demo || item.video_demonstration_url;
-  const existingUrl = existingItem?.short_youtube_demo || existingItem?.video_demonstration_url;
-
-  const currentIsValid = isValidYouTubeUrl(itemUrl);
-  const existingIsValid = isValidYouTubeUrl(existingUrl);
-
-  if (
-    !existingItem ||
-    (currentIsValid && !existingIsValid) ||
-    (!existingIsValid && !currentIsValid)
-  ) {
-    uniqueMap.set(name, item as ExerciseFull);
-  }
-});
+    (data || []).forEach(item => {
+      const name = item.name?.toLowerCase().trim() || '';
+      const existingItem = uniqueMap.get(name);
+      const currentHasVideo = Boolean(getBestVideoUrl(item));
+      const existingHasVideo = existingItem ? Boolean(getBestVideoUrl(existingItem)) : false;
       
-      // Check if the current item has a video URL
-      const hasVideo = Boolean(
-        item.short_youtube_demo || 
-        item.video_demonstration_url
-      );
-      
-      // Check if existing item has a video URL
-      const existingHasVideo = existingItem && Boolean(
-        existingItem.short_youtube_demo || 
-        existingItem.video_demonstration_url
-      );
-      
-      // Add item if name doesn't exist yet in the map
-      // OR if current item has video but existing one doesn't
-      if (!existingItem || (hasVideo && !existingHasVideo)) {
-        uniqueMap.set(name, item as ExerciseFull);
+      if (!existingItem || 
+          (currentHasVideo && !existingHasVideo) ||
+          (currentHasVideo && existingHasVideo && 
+           (item.in_depth_youtube_exp && !existingItem.in_depth_youtube_exp))) {
+        uniqueMap.set(name, {
+          ...item,
+          video_demonstration_url: getBestVideoUrl(item),
+          video_explanation_url: item.in_depth_youtube_exp || null
+        } as ExerciseFull);
       }
     });
-    
-    const uniqueData = Array.from(uniqueMap.values());
-    
-    // Transform the data to match our ExerciseFull type
-    const transformedData: ExerciseFull[] = uniqueData.map(item => ({
-      ...item,
-      // Map properties correctly
-      target_muscle_group: item.prime_mover_muscle || null,
-      video_demonstration_url: item.short_youtube_demo || null,
-      video_explanation_url: item.in_depth_youtube_exp || null
-    })) as ExerciseFull[];
-    
-    return transformedData;
+
+    return Array.from(uniqueMap.values());
   } catch (error) {
     console.error('Failed to search exercises_full:', error);
     throw error;
