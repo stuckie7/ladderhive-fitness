@@ -1,4 +1,14 @@
+const isValidYouTubeUrl = (url?: string): boolean => {
+  if (!url) return false;
 
+  const lowerUrl = url.toLowerCase();
+
+  return (
+    (lowerUrl.includes('youtube.com/watch') || lowerUrl.includes('youtu.be/')) &&
+    !lowerUrl.includes('lovableproject.com') &&
+    !lowerUrl.includes('/video demonstration')
+  );
+};
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { ExerciseFull } from '@/types/exercise';
