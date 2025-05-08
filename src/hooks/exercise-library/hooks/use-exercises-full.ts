@@ -117,19 +117,26 @@ const deduplicateExercises = (exercises: ExerciseFull[]): ExerciseFull[] => {
   return Array.from(uniqueMap.values());
 };
 
-  const handleFetchExercisesFull = async (limit = 50, offset = 0): Promise<ExerciseFull[]> => {
-    setIsLoading(true);
-    try {
-      // Check if table exists first
-      const exists = await checkTableExists();
-      if (!exists) {
-        toast({
-          title: 'Missing Table',
-          description: "The exercises_full table doesn't exist in your Supabase database. Please create it first.",
-          variant: 'destructive',
-        });
-        return [];
-      }
+const uniqueMap = new Map<string, ExerciseFull>();
+
+rawData.forEach(item => {
+  const name = item.name?.toLowerCase().trim() || '';
+  const existingItem = uniqueMap.get(name);
+
+  const itemUrl = item.short_youtube_demo || item.video_demonstration_url;
+  const existingUrl = existingItem?.short_youtube_demo || existingItem?.video_demonstration_url;
+
+  const currentIsValid = isValidYouTubeUrl(itemUrl);
+  const existingIsValid = isValidYouTubeUrl(existingUrl);
+
+  if (
+    !existingItem || // no item saved yet
+    (currentIsValid && !existingIsValid) || // prefer valid YouTube over invalid
+    (!existingIsValid && !currentIsValid) // fallback: first encountered if both are bad
+  ) {
+    uniqueMap.set(name, item);
+  }
+});
       
       const rawData = await fetchExercisesFull(limit, offset);
       
@@ -145,24 +152,26 @@ const deduplicateExercises = (exercises: ExerciseFull[]): ExerciseFull[] => {
     }
   };
 
-  const handleSearchExercisesFull = async (
-    searchTerm: string, 
-    filters = {}, 
-    limit = 20, 
-    offset = 0
-  ): Promise<ExerciseFull[]> => {
-    setIsLoading(true);
-    try {
-      // Check if table exists first
-      const exists = await checkTableExists();
-      if (!exists) {
-        toast({
-          title: 'Missing Table',
-          description: "The exercises_full table doesn't exist in your Supabase database. Please create it first.",
-          variant: 'destructive',
-        });
-        return [];
-      }
+  const uniqueMap = new Map<string, ExerciseFull>();
+
+rawData.forEach(item => {
+  const name = item.name?.toLowerCase().trim() || '';
+  const existingItem = uniqueMap.get(name);
+
+  const itemUrl = item.short_youtube_demo || item.video_demonstration_url;
+  const existingUrl = existingItem?.short_youtube_demo || existingItem?.video_demonstration_url;
+
+  const currentIsValid = isValidYouTubeUrl(itemUrl);
+  const existingIsValid = isValidYouTubeUrl(existingUrl);
+
+  if (
+    !existingItem || // no item saved yet
+    (currentIsValid && !existingIsValid) || // prefer valid YouTube over invalid
+    (!existingIsValid && !currentIsValid) // fallback: first encountered if both are bad
+  ) {
+    uniqueMap.set(name, item);
+  }
+});
       
       if (typeof searchTerm !== 'string') {
         searchTerm = '';
