@@ -62,7 +62,11 @@ export const useExercisesFull = () => {
       });
     }
   };
-
+const filteredExercises = rawData.filter(ex => {
+  const url = ex.short_youtube_demo || ex.video_demonstration_url;
+  return !url || isValidYouTubeUrl(url);
+});
+const uniqueExercises = deduplicateExercises(filteredExercises);
   // Helper function for deduplication with video priority
 const isValidYouTubeUrl = (url?: string): boolean => {
   if (!url) return false;
