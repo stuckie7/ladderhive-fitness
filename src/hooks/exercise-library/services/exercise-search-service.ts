@@ -23,10 +23,23 @@ export const searchExercisesFull = async (
     
     console.log(`Found ${data?.length || 0} exercises matching search term "${searchTerm}"`);
     
-    // Deduplicate results by name before transforming
-    const uniqueData = Array.from(
-      new Map((data || []).map(item => [item.name, item])).values()
-    );
+    // Enhanced deduplication that prioritizes entries with video links
+    const uniqueMap = new Map<string, ExerciseFull>();
+    
+    (data || []).forEach(item => {
+      const name = item.name?.toLowerCase().trim() || '';
+      const existingItem = uniqueMap.get(name);
+      const hasVideo = Boolean(item.short_youtube_demo);
+      
+      // Add item if name doesn't exist yet in the map
+      // OR if current item has video but existing one doesn't
+      if (!existingItem || 
+          (hasVideo && !existingItem.short_youtube_demo)) {
+        uniqueMap.set(name, item as ExerciseFull);
+      }
+    });
+    
+    const uniqueData = Array.from(uniqueMap.values());
     
     // Transform the data to match our ExerciseFull type
     const transformedData: ExerciseFull[] = uniqueData.map(item => ({

@@ -79,10 +79,23 @@ export const useExercisesFull = () => {
       
       const rawData = await fetchExercisesFull(limit, offset);
 
-      // Deduplicate exercises by name
-      const uniqueExercises = Array.from(
-        new Map(rawData.map((ex) => [ex.name, ex])).values()
-      );
+      // Enhanced deduplication that prioritizes entries with video links
+      const uniqueMap = new Map<string, ExerciseFull>();
+      
+      rawData.forEach(item => {
+        const name = item.name?.toLowerCase().trim() || '';
+        const existingItem = uniqueMap.get(name);
+        const hasVideo = Boolean(item.video_demonstration_url || item.short_youtube_demo);
+        
+        // Add item if name doesn't exist yet in the map
+        // OR if current item has video but existing one doesn't
+        if (!existingItem || 
+            (hasVideo && !Boolean(existingItem.video_demonstration_url || existingItem.short_youtube_demo))) {
+          uniqueMap.set(name, item);
+        }
+      });
+      
+      const uniqueExercises = Array.from(uniqueMap.values());
 
       return uniqueExercises;
     } catch (error) {
@@ -118,10 +131,23 @@ export const useExercisesFull = () => {
       
       const results = await searchExercisesFull(searchTerm, limit);
       
-      // Deduplicate exercises by name
-      const uniqueExercises = Array.from(
-        new Map(results.map((ex) => [ex.name, ex])).values()
-      );
+      // Enhanced deduplication that prioritizes entries with video links
+      const uniqueMap = new Map<string, ExerciseFull>();
+      
+      results.forEach(item => {
+        const name = item.name?.toLowerCase().trim() || '';
+        const existingItem = uniqueMap.get(name);
+        const hasVideo = Boolean(item.video_demonstration_url || item.short_youtube_demo);
+        
+        // Add item if name doesn't exist yet in the map
+        // OR if current item has video but existing one doesn't
+        if (!existingItem || 
+            (hasVideo && !Boolean(existingItem.video_demonstration_url || existingItem.short_youtube_demo))) {
+          uniqueMap.set(name, item);
+        }
+      });
+      
+      const uniqueExercises = Array.from(uniqueMap.values());
       
       return uniqueExercises;
     } catch (error) {
