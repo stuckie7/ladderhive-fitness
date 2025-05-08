@@ -63,6 +63,39 @@ export const useExercisesFull = () => {
     }
   };
 
+  // Helper function for deduplication with video priority
+  const deduplicateExercises = (exercises: ExerciseFull[]): ExerciseFull[] => {
+    const uniqueMap = new Map<string, ExerciseFull>();
+    
+    exercises.forEach(item => {
+      // Normalize the name for case-insensitive comparison
+      const name = item.name?.toLowerCase().trim() || '';
+      if (!name) return; // Skip items with empty names
+      
+      const existingItem = uniqueMap.get(name);
+      
+      // Check if the current item has a video URL
+      const hasVideo = Boolean(
+        item.short_youtube_demo || 
+        item.video_demonstration_url
+      );
+      
+      // Check if existing item has a video URL
+      const existingHasVideo = existingItem && Boolean(
+        existingItem.short_youtube_demo || 
+        existingItem.video_demonstration_url
+      );
+      
+      // Add item if name doesn't exist yet in the map
+      // OR if current item has video but existing one doesn't
+      if (!existingItem || (hasVideo && !existingHasVideo)) {
+        uniqueMap.set(name, item);
+      }
+    });
+    
+    return Array.from(uniqueMap.values());
+  };
+
   const handleFetchExercisesFull = async (limit = 50, offset = 0): Promise<ExerciseFull[]> => {
     setIsLoading(true);
     try {
@@ -78,24 +111,9 @@ export const useExercisesFull = () => {
       }
       
       const rawData = await fetchExercisesFull(limit, offset);
-
-      // Enhanced deduplication that prioritizes entries with video links
-      const uniqueMap = new Map<string, ExerciseFull>();
       
-      rawData.forEach(item => {
-        const name = item.name?.toLowerCase().trim() || '';
-        const existingItem = uniqueMap.get(name);
-        const hasVideo = Boolean(item.video_demonstration_url || item.short_youtube_demo);
-        
-        // Add item if name doesn't exist yet in the map
-        // OR if current item has video but existing one doesn't
-        if (!existingItem || 
-            (hasVideo && !Boolean(existingItem.video_demonstration_url || existingItem.short_youtube_demo))) {
-          uniqueMap.set(name, item);
-        }
-      });
-      
-      const uniqueExercises = Array.from(uniqueMap.values());
+      // Use the helper function to deduplicate exercises
+      const uniqueExercises = deduplicateExercises(rawData);
 
       return uniqueExercises;
     } catch (error) {
@@ -131,23 +149,8 @@ export const useExercisesFull = () => {
       
       const results = await searchExercisesFull(searchTerm, limit);
       
-      // Enhanced deduplication that prioritizes entries with video links
-      const uniqueMap = new Map<string, ExerciseFull>();
-      
-      results.forEach(item => {
-        const name = item.name?.toLowerCase().trim() || '';
-        const existingItem = uniqueMap.get(name);
-        const hasVideo = Boolean(item.video_demonstration_url || item.short_youtube_demo);
-        
-        // Add item if name doesn't exist yet in the map
-        // OR if current item has video but existing one doesn't
-        if (!existingItem || 
-            (hasVideo && !Boolean(existingItem.video_demonstration_url || existingItem.short_youtube_demo))) {
-          uniqueMap.set(name, item);
-        }
-      });
-      
-      const uniqueExercises = Array.from(uniqueMap.values());
+      // Use the helper function to deduplicate exercises
+      const uniqueExercises = deduplicateExercises(results);
       
       return uniqueExercises;
     } catch (error) {

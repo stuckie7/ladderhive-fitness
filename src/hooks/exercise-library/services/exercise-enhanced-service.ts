@@ -4,6 +4,42 @@ import { ExerciseFull } from "@/types/exercise";
 import { checkExercisesFullTableExists } from "./exercise-fetch-service";
 
 /**
+ * Helper function to deduplicate exercises with a preference for those with video links
+ */
+export const deduplicateExercises = (data: ExerciseFull[]): ExerciseFull[] => {
+  // Enhanced deduplication that prioritizes entries with video links
+  const uniqueMap = new Map<string, ExerciseFull>();
+  
+  data.forEach(item => {
+    // Normalize the name for case-insensitive comparison
+    const name = item.name?.toLowerCase().trim() || '';
+    if (!name) return; // Skip items with empty names
+    
+    const existingItem = uniqueMap.get(name);
+    
+    // Check if the current item has a video URL
+    const hasVideo = Boolean(
+      item.short_youtube_demo || 
+      item.video_demonstration_url
+    );
+    
+    // Check if existing item has a video URL
+    const existingHasVideo = existingItem && Boolean(
+      existingItem.short_youtube_demo || 
+      existingItem.video_demonstration_url
+    );
+    
+    // Add item if name doesn't exist yet in the map
+    // OR if current item has video but existing one doesn't
+    if (!existingItem || (hasVideo && !existingHasVideo)) {
+      uniqueMap.set(name, item);
+    }
+  });
+  
+  return Array.from(uniqueMap.values());
+};
+
+/**
  * Loads exercise data with filters applied
  */
 export const loadExerciseData = async (
@@ -13,7 +49,7 @@ export const loadExerciseData = async (
   searchQuery: string,
   currentPage: number,
   itemsPerPage: number
-) => {
+): Promise<ExerciseFull[]> => {
   // Check if the table exists first
   const exists = await checkExercisesFullTableExists();
   if (!exists) {
@@ -52,20 +88,8 @@ export const loadExerciseData = async (
   
   // Deduplicate and transform the data
   if (data) {
-    // Deduplicate by name with video priority
-    const uniqueMap = new Map<string, ExerciseFull>();
-    
-    data.forEach(item => {
-      const name = item.name?.toLowerCase().trim() || '';
-      const existingItem = uniqueMap.get(name);
-      const hasVideo = Boolean(item.short_youtube_demo);
-      
-      if (!existingItem || (hasVideo && !existingItem.short_youtube_demo)) {
-        uniqueMap.set(name, item as ExerciseFull);
-      }
-    });
-    
-    const uniqueData = Array.from(uniqueMap.values());
+    // Use the shared deduplication function
+    const uniqueData = deduplicateExercises(data as ExerciseFull[]);
     
     // Map to ensure all required fields exist
     const mappedData: ExerciseFull[] = uniqueData.map(item => ({

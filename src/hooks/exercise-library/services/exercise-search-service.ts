@@ -27,14 +27,27 @@ export const searchExercisesFull = async (
     const uniqueMap = new Map<string, ExerciseFull>();
     
     (data || []).forEach(item => {
+      // Normalize the name for case-insensitive comparison
       const name = item.name?.toLowerCase().trim() || '';
+      if (!name) return; // Skip items with empty names
+      
       const existingItem = uniqueMap.get(name);
-      const hasVideo = Boolean(item.short_youtube_demo);
+      
+      // Check if the current item has a video URL
+      const hasVideo = Boolean(
+        item.short_youtube_demo || 
+        item.video_demonstration_url
+      );
+      
+      // Check if existing item has a video URL
+      const existingHasVideo = existingItem && Boolean(
+        existingItem.short_youtube_demo || 
+        existingItem.video_demonstration_url
+      );
       
       // Add item if name doesn't exist yet in the map
       // OR if current item has video but existing one doesn't
-      if (!existingItem || 
-          (hasVideo && !existingItem.short_youtube_demo)) {
+      if (!existingItem || (hasVideo && !existingHasVideo)) {
         uniqueMap.set(name, item as ExerciseFull);
       }
     });
