@@ -23,9 +23,9 @@ export const searchExercisesFull = async (
     
     console.log(`Found ${data?.length || 0} exercises matching search term "${searchTerm}"`);
     
-    // Deduplicate results by ID before transforming
+    // Deduplicate results by name before transforming
     const uniqueData = Array.from(
-      new Map((data || []).map(item => [item.id, item])).values()
+      new Map((data || []).map(item => [item.name, item])).values()
     );
     
     // Transform the data to match our ExerciseFull type

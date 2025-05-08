@@ -87,9 +87,9 @@ export const useExerciseLibraryEnhanced = () => {
       
       // Map the data to include the required fields for ExerciseFull
       if (data) {
-        // Deduplicate by ID before mapping
+        // Deduplicate by name before mapping
         const uniqueData = Array.from(
-          new Map(data.map(item => [item.id, item])).values()
+          new Map(data.map(item => [item.name, item])).values()
         );
         
         const mappedData: ExerciseFull[] = uniqueData.map(item => ({

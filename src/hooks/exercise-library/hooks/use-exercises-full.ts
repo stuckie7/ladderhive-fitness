@@ -79,9 +79,9 @@ export const useExercisesFull = () => {
       
       const rawData = await fetchExercisesFull(limit, offset);
 
-      // Deduplicate exercises by ID
+      // Deduplicate exercises by name
       const uniqueExercises = Array.from(
-        new Map(rawData.map((ex) => [ex.id, ex])).values()
+        new Map(rawData.map((ex) => [ex.name, ex])).values()
       );
 
       return uniqueExercises;
@@ -118,9 +118,9 @@ export const useExercisesFull = () => {
       
       const results = await searchExercisesFull(searchTerm, limit);
       
-      // Deduplicate exercises by ID
+      // Deduplicate exercises by name
       const uniqueExercises = Array.from(
-        new Map(results.map((ex) => [ex.id, ex])).values()
+        new Map(results.map((ex) => [ex.name, ex])).values()
       );
       
       return uniqueExercises;
