@@ -1,3 +1,14 @@
+const getYouTubeThumbnail = (url: string | null): string | null => {
+  if (!url) return null;
+
+  try {
+    const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+    const videoId = videoIdMatch ? videoIdMatch[1] : null;
+    return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
+  } catch {
+    return null;
+  }
+};
 
 import { ExerciseFull } from "@/types/exercise";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,10 +96,13 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
             )}
           </div>
           
- <div className="aspect-video bg-muted rounded-md relative overflow-hidden">
-  {exercise.youtube_thumbnail_url ? (
+<div className="aspect-video bg-muted rounded-md relative overflow-hidden">
+  {exercise.youtube_thumbnail_url || exercise.short_youtube_demo ? (
     <img
-      src={exercise.youtube_thumbnail_url}
+      src={
+        exercise.youtube_thumbnail_url ||
+        getYouTubeThumbnail(exercise.short_youtube_demo)
+      }
       alt="Exercise Thumbnail"
       className="absolute inset-0 w-full h-full object-cover"
     />
@@ -97,6 +111,21 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
       <Dumbbell className="h-8 w-8 opacity-30" />
     </div>
   )}
+
+  {exercise.short_youtube_demo && (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+      <Button 
+        variant="outline" 
+        size="icon" 
+        className="rounded-full bg-white text-black border-0"
+        onClick={() => window.open(exercise.short_youtube_demo!, '_blank')}
+      >
+        <Video className="h-6 w-6" />
+      </Button>
+    </div>
+  )}
+</div>
+
 
   {exercise.short_youtube_demo && (
     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
