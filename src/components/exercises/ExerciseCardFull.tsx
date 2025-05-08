@@ -85,18 +85,33 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
             )}
           </div>
           
-         <div className="aspect-video bg-muted rounded-md relative overflow-hidden">
+ <div className="aspect-video bg-muted rounded-md relative overflow-hidden">
   {exercise.youtube_thumbnail_url ? (
     <img
       src={exercise.youtube_thumbnail_url}
-      alt={`${exercise.name} thumbnail`}
-      className="w-full h-full object-cover"
+      alt="Exercise Thumbnail"
+      className="absolute inset-0 w-full h-full object-cover"
     />
   ) : (
     <div className="flex items-center justify-center h-full text-muted-foreground">
       <Dumbbell className="h-8 w-8 opacity-30" />
     </div>
   )}
+
+  {exercise.short_youtube_demo && (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+      <Button 
+        variant="outline" 
+        size="icon" 
+        className="rounded-full bg-white text-black border-0"
+        onClick={() => window.open(exercise.short_youtube_demo!, '_blank')}
+      >
+        <Video className="h-6 w-6" />
+      </Button>
+    </div>
+  )}
+</div>
+
 
   {exercise.short_youtube_demo && (
     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
