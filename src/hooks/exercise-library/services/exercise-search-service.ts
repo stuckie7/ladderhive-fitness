@@ -36,12 +36,24 @@ export const searchExercisesFull = async (
     // Enhanced deduplication that prioritizes entries with video links
     const uniqueMap = new Map<string, ExerciseFull>();
     
-    (data || []).forEach(item => {
-      // Normalize the name for case-insensitive comparison
-      const name = item.name?.toLowerCase().trim() || '';
-      if (!name) return; // Skip items with empty names
-      
-      const existingItem = uniqueMap.get(name);
+(data || []).forEach(item => {
+  const name = item.name?.toLowerCase().trim() || '';
+  const existingItem = uniqueMap.get(name);
+
+  const itemUrl = item.short_youtube_demo || item.video_demonstration_url;
+  const existingUrl = existingItem?.short_youtube_demo || existingItem?.video_demonstration_url;
+
+  const currentIsValid = isValidYouTubeUrl(itemUrl);
+  const existingIsValid = isValidYouTubeUrl(existingUrl);
+
+  if (
+    !existingItem ||
+    (currentIsValid && !existingIsValid) ||
+    (!existingIsValid && !currentIsValid)
+  ) {
+    uniqueMap.set(name, item as ExerciseFull);
+  }
+});
       
       // Check if the current item has a video URL
       const hasVideo = Boolean(
