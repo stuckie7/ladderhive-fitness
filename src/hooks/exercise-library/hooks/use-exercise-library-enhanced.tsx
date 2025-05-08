@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ExerciseFull } from "@/types/exercise";
@@ -88,7 +87,12 @@ export const useExerciseLibraryEnhanced = () => {
       
       // Map the data to include the required fields for ExerciseFull
       if (data) {
-        const mappedData: ExerciseFull[] = data.map(item => ({
+        // Deduplicate by ID before mapping
+        const uniqueData = Array.from(
+          new Map(data.map(item => [item.id, item])).values()
+        );
+        
+        const mappedData: ExerciseFull[] = uniqueData.map(item => ({
           ...item,
           // Add the required fields that might be missing
           target_muscle_group: item.prime_mover_muscle,

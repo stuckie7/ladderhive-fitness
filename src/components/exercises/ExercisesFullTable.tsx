@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -62,15 +61,10 @@ const ExercisesFullTable = () => {
         });
         
         if (data && data.length > 0) {
-  // Deduplicate by exercise ID
-  const uniqueExercises = Array.from(
-    new Map(data.map((ex) => [ex.id, ex])).values()
-  );
-
-  setExercises(uniqueExercises);
-} else {
-  setFetchError("No exercises found in the database. The exercises_full table may be empty.");
-}
+          setExercises(data);
+        } else {
+          setFetchError("No exercises found in the database. The exercises_full table may be empty.");
+        }
       } catch (error: any) {
         console.error("Error loading exercises:", error);
         setFetchError(`Failed to load exercise data: ${error.message || 'Unknown error'}`);

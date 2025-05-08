@@ -77,14 +77,14 @@ export const useExercisesFull = () => {
         return [];
       }
       
-    const rawData = await fetchExercisesFull(limit, offset);
+      const rawData = await fetchExercisesFull(limit, offset);
 
-// Deduplicate exercises by ID
-const uniqueExercises = Array.from(
-  new Map(rawData.map((ex) => [ex.id, ex])).values()
-);
+      // Deduplicate exercises by ID
+      const uniqueExercises = Array.from(
+        new Map(rawData.map((ex) => [ex.id, ex])).values()
+      );
 
-return uniqueExercises;
+      return uniqueExercises;
     } catch (error) {
       handleApiError(error, 'Failed to fetch exercises data');
       return [];
@@ -116,7 +116,14 @@ return uniqueExercises;
         searchTerm = '';
       }
       
-      return await searchExercisesFull(searchTerm, limit);
+      const results = await searchExercisesFull(searchTerm, limit);
+      
+      // Deduplicate exercises by ID
+      const uniqueExercises = Array.from(
+        new Map(results.map((ex) => [ex.id, ex])).values()
+      );
+      
+      return uniqueExercises;
     } catch (error) {
       handleApiError(error, 'Failed to search exercises');
       return [];

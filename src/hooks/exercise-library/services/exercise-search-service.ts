@@ -23,8 +23,13 @@ export const searchExercisesFull = async (
     
     console.log(`Found ${data?.length || 0} exercises matching search term "${searchTerm}"`);
     
+    // Deduplicate results by ID before transforming
+    const uniqueData = Array.from(
+      new Map((data || []).map(item => [item.id, item])).values()
+    );
+    
     // Transform the data to match our ExerciseFull type
-    const transformedData: ExerciseFull[] = (data || []).map(item => ({
+    const transformedData: ExerciseFull[] = uniqueData.map(item => ({
       ...item,
       // Map properties correctly
       target_muscle_group: item.prime_mover_muscle || null,
