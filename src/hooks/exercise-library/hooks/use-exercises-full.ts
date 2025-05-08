@@ -11,7 +11,14 @@ import {
 } from '../services';
 
 const getBestVideoUrl = (exercise: ExerciseFull): string | null => {
-  return exercise.short_youtube_demo || exercise.in_depth_youtube_exp || null;
+  const validateYoutubeUrl = (url: string | null): string | null => {
+    if (!url) return null;
+    return url.startsWith('https://youtu.be') ? url : null;
+  };
+  
+  return validateYoutubeUrl(exercise.short_youtube_demo) || 
+         validateYoutubeUrl(exercise.in_depth_youtube_exp) || 
+         null;
 };
 
 export const useExercisesFull = () => {
