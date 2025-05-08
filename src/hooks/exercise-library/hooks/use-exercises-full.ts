@@ -66,7 +66,14 @@ export const useExercisesFull = () => {
   // Helper function for deduplication with video priority
 const isValidYouTubeUrl = (url?: string): boolean => {
   if (!url) return false;
-  return url.includes('youtube.com/watch') || url.includes('youtu.be/');
+
+  const lowerUrl = url.toLowerCase();
+
+  return (
+    (lowerUrl.includes('youtube.com/watch') || lowerUrl.includes('youtu.be/')) &&
+    !lowerUrl.includes('lovableproject.com') &&
+    !lowerUrl.includes('/video demonstration')
+  );
 };
 
 const deduplicateExercises = (exercises: ExerciseFull[]): ExerciseFull[] => {
