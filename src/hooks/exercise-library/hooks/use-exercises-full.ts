@@ -64,37 +64,37 @@ export const useExercisesFull = () => {
   };
 
   // Helper function for deduplication with video priority
-  const deduplicateExercises = (exercises: ExerciseFull[]): ExerciseFull[] => {
-    const uniqueMap = new Map<string, ExerciseFull>();
-    
-    exercises.forEach(item => {
-      // Normalize the name for case-insensitive comparison
-      const name = item.name?.toLowerCase().trim() || '';
-      if (!name) return; // Skip items with empty names
-      
-      const existingItem = uniqueMap.get(name);
-      
-      // Check if the current item has a video URL
-      const hasVideo = Boolean(
-        item.short_youtube_demo || 
-        item.video_demonstration_url
-      );
-      
-      // Check if existing item has a video URL
-      const existingHasVideo = existingItem && Boolean(
-        existingItem.short_youtube_demo || 
-        existingItem.video_demonstration_url
-      );
-      
-      // Add item if name doesn't exist yet in the map
-      // OR if current item has video but existing one doesn't
-      if (!existingItem || (hasVideo && !existingHasVideo)) {
-        uniqueMap.set(name, item);
-      }
-    });
-    
-    return Array.from(uniqueMap.values());
-  };
+const isValidYouTubeUrl = (url?: string): boolean => {
+  if (!url) return false;
+  return url.includes('youtube.com/watch') || url.includes('youtu.be/');
+};
+
+const deduplicateExercises = (exercises: ExerciseFull[]): ExerciseFull[] => {
+  const uniqueMap = new Map<string, ExerciseFull>();
+
+  exercises.forEach(item => {
+    const name = item.name?.toLowerCase().trim() || '';
+    if (!name) return;
+
+    const existingItem = uniqueMap.get(name);
+
+    const currentVideoUrl = item.short_youtube_demo || item.video_demonstration_url;
+    const currentHasValidYouTube = isValidYouTubeUrl(currentVideoUrl);
+
+    const existingVideoUrl = existingItem?.short_youtube_demo || existingItem?.video_demonstration_url;
+    const existingHasValidYouTube = isValidYouTubeUrl(existingVideoUrl);
+
+    // Add or replace logic
+    if (!existingItem) {
+      uniqueMap.set(name, item);
+    } else if (!existingHasValidYouTube && currentHasValidYouTube) {
+      uniqueMap.set(name, item); // prefer item with working YouTube link
+    }
+    // else: keep the existing one
+  });
+
+  return Array.from(uniqueMap.values());
+};
 
   const handleFetchExercisesFull = async (limit = 50, offset = 0): Promise<ExerciseFull[]> => {
     setIsLoading(true);
