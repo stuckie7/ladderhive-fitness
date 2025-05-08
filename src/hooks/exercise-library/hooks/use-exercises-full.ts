@@ -1,18 +1,7 @@
-const isValidYouTubeUrl = (url?: string): boolean => {
-  if (!url) return false;
-
-  const lowerUrl = url.toLowerCase();
-
-  return (
-    (lowerUrl.includes('youtube.com/watch') || lowerUrl.includes('youtu.be/')) &&
-    !lowerUrl.includes('lovableproject.com') &&
-    !lowerUrl.includes('/video demonstration')
-  );
-};
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { ExerciseFull } from '@/types/exercise';
-import { 
+import {
   fetchExercisesFull,
   checkExercisesFullTableExists,
   searchExercisesFull,
@@ -20,6 +9,10 @@ import {
   getMuscleGroups,
   getEquipmentTypes
 } from '../services';
+
+const getBestVideoUrl = (exercise: ExerciseFull): string | null => {
+  return exercise.short_youtube_demo || exercise.in_depth_youtube_exp || null;
+};
 
 export const useExercisesFull = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -40,20 +33,19 @@ export const useExercisesFull = () => {
 
   const handleApiError = (error: any, errorMessage: string) => {
     console.error(errorMessage, error);
-    
-    // Format the error message based on the type of error
+
     let displayMessage = errorMessage;
-    
+
     if (error && error.code) {
       switch (error.code) {
-        case '42P01': // Undefined table
+        case '42P01':
           displayMessage = "The exercises_full table doesn't exist in your database. Please create it first.";
           break;
-        case '28000': // Invalid authorization
-        case '28P01': // Invalid password
+        case '28000':
+        case '28P01':
           displayMessage = "Authorization failed. Check your Supabase API key and URL.";
           break;
-        case '3D000': // Invalid schema
+        case '3D000':
           displayMessage = "Invalid schema specified. Check your database configuration.";
           break;
         default:
@@ -62,8 +54,7 @@ export const useExercisesFull = () => {
           }
       }
     }
-    
-    // Don't show toast for network errors as they're common during development
+
     if (error.message !== "Failed to fetch") {
       toast({
         title: 'Error',
@@ -72,78 +63,43 @@ export const useExercisesFull = () => {
       });
     }
   };
-const filteredExercises = rawData.filter(ex => {
-  const url = ex.short_youtube_demo || ex.video_demonstration_url;
-  return !url || isValidYouTubeUrl(url);
-});
-const uniqueExercises = deduplicateExercises(filteredExercises);
-  // Helper function for deduplication with video priority
-const isValidYouTubeUrl = (url?: string): boolean => {
-  if (!url) return false;
 
-  const lowerUrl = url.toLowerCase();
+  const handleFetchExercisesFull = async (limit = 50, offset = 0): Promise<ExerciseFull[]> => {
+    setIsLoading(true);
+    try {
+      const exists = await checkTableExists();
+      if (!exists) {
+        toast({
+          title: 'Missing Table',
+          description: "The exercises_full table doesn't exist in your Supabase database. Please create it first.",
+          variant: 'destructive',
+        });
+        return [];
+      }
 
-  return (
-    (lowerUrl.includes('youtube.com/watch') || lowerUrl.includes('youtu.be/')) &&
-    !lowerUrl.includes('lovableproject.com') &&
-    !lowerUrl.includes('/video demonstration')
-  );
-};
-
-const deduplicateExercises = (exercises: ExerciseFull[]): ExerciseFull[] => {
-  const uniqueMap = new Map<string, ExerciseFull>();
-
-  exercises.forEach(item => {
-    const name = item.name?.toLowerCase().trim() || '';
-    if (!name) return;
-
-    const existingItem = uniqueMap.get(name);
-
-    const currentVideoUrl = item.short_youtube_demo || item.video_demonstration_url;
-    const currentHasValidYouTube = isValidYouTubeUrl(currentVideoUrl);
-
-    const existingVideoUrl = existingItem?.short_youtube_demo || existingItem?.video_demonstration_url;
-    const existingHasValidYouTube = isValidYouTubeUrl(existingVideoUrl);
-
-    // Add or replace logic
-    if (!existingItem) {
-      uniqueMap.set(name, item);
-    } else if (!existingHasValidYouTube && currentHasValidYouTube) {
-      uniqueMap.set(name, item); // prefer item with working YouTube link
-    }
-    // else: keep the existing one
-  });
-
-  return Array.from(uniqueMap.values());
-};
-
-const uniqueMap = new Map<string, ExerciseFull>();
-
-rawData.forEach(item => {
-  const name = item.name?.toLowerCase().trim() || '';
-  const existingItem = uniqueMap.get(name);
-
-  const itemUrl = item.short_youtube_demo || item.video_demonstration_url;
-  const existingUrl = existingItem?.short_youtube_demo || existingItem?.video_demonstration_url;
-
-  const currentIsValid = isValidYouTubeUrl(itemUrl);
-  const existingIsValid = isValidYouTubeUrl(existingUrl);
-
-  if (
-    !existingItem || // no item saved yet
-    (currentIsValid && !existingIsValid) || // prefer valid YouTube over invalid
-    (!existingIsValid && !currentIsValid) // fallback: first encountered if both are bad
-  ) {
-    uniqueMap.set(name, item);
-  }
-});
-      
       const rawData = await fetchExercisesFull(limit, offset);
-      
-      // Use the helper function to deduplicate exercises
-      const uniqueExercises = deduplicateExercises(rawData);
 
-      return uniqueExercises;
+      const uniqueMap = new Map<string, ExerciseFull>();
+      
+      rawData.forEach(item => {
+        const name = item.name?.toLowerCase().trim() || '';
+        const existingItem = uniqueMap.get(name);
+        const currentHasVideo = Boolean(getBestVideoUrl(item));
+        const existingHasVideo = existingItem ? Boolean(getBestVideoUrl(existingItem)) : false;
+        
+        if (!existingItem || 
+            (currentHasVideo && !existingHasVideo) ||
+            (currentHasVideo && existingHasVideo && 
+             (item.in_depth_youtube_exp && !existingItem.in_depth_youtube_exp))) {
+          uniqueMap.set(name, {
+            ...item,
+            video_demonstration_url: getBestVideoUrl(item),
+            video_explanation_url: item.in_depth_youtube_exp || null
+          });
+        }
+      });
+      
+      return Array.from(uniqueMap.values());
     } catch (error) {
       handleApiError(error, 'Failed to fetch exercises data');
       return [];
@@ -152,37 +108,51 @@ rawData.forEach(item => {
     }
   };
 
-  const uniqueMap = new Map<string, ExerciseFull>();
+  const handleSearchExercisesFull = async (
+    searchTerm: string,
+    filters = {},
+    limit = 20,
+    offset = 0
+  ): Promise<ExerciseFull[]> => {
+    setIsLoading(true);
+    try {
+      const exists = await checkTableExists();
+      if (!exists) {
+        toast({
+          title: 'Missing Table',
+          description: "The exercises_full table doesn't exist in your Supabase database. Please create it first.",
+          variant: 'destructive',
+        });
+        return [];
+      }
 
-rawData.forEach(item => {
-  const name = item.name?.toLowerCase().trim() || '';
-  const existingItem = uniqueMap.get(name);
-
-  const itemUrl = item.short_youtube_demo || item.video_demonstration_url;
-  const existingUrl = existingItem?.short_youtube_demo || existingItem?.video_demonstration_url;
-
-  const currentIsValid = isValidYouTubeUrl(itemUrl);
-  const existingIsValid = isValidYouTubeUrl(existingUrl);
-
-  if (
-    !existingItem || // no item saved yet
-    (currentIsValid && !existingIsValid) || // prefer valid YouTube over invalid
-    (!existingIsValid && !currentIsValid) // fallback: first encountered if both are bad
-  ) {
-    uniqueMap.set(name, item);
-  }
-});
-      
       if (typeof searchTerm !== 'string') {
         searchTerm = '';
       }
       
       const results = await searchExercisesFull(searchTerm, limit);
       
-      // Use the helper function to deduplicate exercises
-      const uniqueExercises = deduplicateExercises(results);
+      const uniqueMap = new Map<string, ExerciseFull>();
       
-      return uniqueExercises;
+      results.forEach(item => {
+        const name = item.name?.toLowerCase().trim() || '';
+        const existingItem = uniqueMap.get(name);
+        const currentHasVideo = Boolean(getBestVideoUrl(item));
+        const existingHasVideo = existingItem ? Boolean(getBestVideoUrl(existingItem)) : false;
+        
+        if (!existingItem || 
+            (currentHasVideo && !existingHasVideo) ||
+            (currentHasVideo && existingHasVideo && 
+             (item.in_depth_youtube_exp && !existingItem.in_depth_youtube_exp))) {
+          uniqueMap.set(name, {
+            ...item,
+            video_demonstration_url: getBestVideoUrl(item),
+            video_explanation_url: item.in_depth_youtube_exp || null
+          });
+        }
+      });
+      
+      return Array.from(uniqueMap.values());
     } catch (error) {
       handleApiError(error, 'Failed to search exercises');
       return [];
