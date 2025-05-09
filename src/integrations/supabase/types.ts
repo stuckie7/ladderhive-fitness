@@ -149,6 +149,7 @@ export type Database = {
           single_or_double_arm: string | null
           tertiary_muscle: string | null
           updated_at: string | null
+          youtube_thumbnail_url: string | null
         }
         Insert: {
           arm_movement_pattern?: string | null
@@ -184,6 +185,7 @@ export type Database = {
           single_or_double_arm?: string | null
           tertiary_muscle?: string | null
           updated_at?: string | null
+          youtube_thumbnail_url?: string | null
         }
         Update: {
           arm_movement_pattern?: string | null
@@ -219,6 +221,7 @@ export type Database = {
           single_or_double_arm?: string | null
           tertiary_muscle?: string | null
           updated_at?: string | null
+          youtube_thumbnail_url?: string | null
         }
         Relationships: []
       }
@@ -724,6 +727,10 @@ export type Database = {
       }
       dmetaphone_alt: {
         Args: { "": string }
+        Returns: string
+      }
+      extract_youtube_id: {
+        Args: { url: string }
         Returns: string
       }
       gtrgm_compress: {

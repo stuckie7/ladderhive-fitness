@@ -1,3 +1,4 @@
+
 const getYouTubeThumbnail = (url: string | null): string | null => {
   if (!url) return null;
 
@@ -10,6 +11,20 @@ const getYouTubeThumbnail = (url: string | null): string | null => {
   }
 };
 
+// Helper function to extract YouTube video ID from URL
+const getYouTubeVideoId = (url: string | null): string | null => {
+  if (!url) return null;
+  
+  try {
+    // Match patterns like youtube.com/watch?v=VIDEO_ID or youtu.be/VIDEO_ID
+    const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})(?:&|$|\/)/);
+    return videoIdMatch ? videoIdMatch[1] : null;
+  } catch {
+    return null;
+  }
+};
+
+import { useState } from "react";
 import { ExerciseFull } from "@/types/exercise";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +40,8 @@ interface ExerciseCardFullProps {
 
 const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps) => {
   const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
+  const videoId = getYouTubeVideoId(exercise.short_youtube_demo);
   
   // Helper function to determine difficulty badge class
   const getDifficultyBadgeClass = (difficulty: string | null) => {
@@ -96,66 +113,50 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
             )}
           </div>
           
-<div className="aspect-video bg-muted rounded-md relative overflow-hidden">
-  {exercise.youtube_thumbnail_url || exercise.short_youtube_demo ? (
-    <img
-      src={
-        exercise.youtube_thumbnail_url ||
-        getYouTubeThumbnail(exercise.short_youtube_demo)
-      }
-      alt="Exercise Thumbnail"
-      className="absolute inset-0 w-full h-full object-cover"
-    />
-  ) : (
-    <div className="flex items-center justify-center h-full text-muted-foreground">
-      <Dumbbell className="h-8 w-8 opacity-30" />
-    </div>
-  )}
-
-  {exercise.short_youtube_demo && (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-      <Button 
-        variant="outline" 
-        size="icon" 
-        className="rounded-full bg-white text-black border-0"
-        onClick={() => window.open(exercise.short_youtube_demo!, '_blank')}
-      >
-        <Video className="h-6 w-6" />
-      </Button>
-    </div>
-  )}
-</div>
-
-
-  {exercise.short_youtube_demo && (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-      <Button 
-        variant="outline" 
-        size="icon" 
-        className="rounded-full bg-white text-black border-0"
-        onClick={() => window.open(exercise.short_youtube_demo!, '_blank')}
-      >
-        <Video className="h-6 w-6" />
-      </Button>
-    </div>
-  )}
-</div>
-
-
-  {exercise.short_youtube_demo && (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-      <Button 
-        variant="outline" 
-        size="icon" 
-        className="rounded-full bg-white text-black border-0"
-        onClick={() => window.open(exercise.short_youtube_demo!, '_blank')}
-      >
-        <Video className="h-6 w-6" />
-      </Button>
-    </div>
-  )}
-</div>
-
+          <div 
+            className="aspect-video bg-muted rounded-md relative overflow-hidden" 
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            {videoId && isHovered ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${videoId}`}
+                title={exercise.name || "Exercise Video"}
+                className="absolute inset-0 w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <>
+                {exercise.youtube_thumbnail_url || exercise.short_youtube_demo ? (
+                  <div className="relative w-full h-full">
+                    <img
+                      src={
+                        exercise.youtube_thumbnail_url ||
+                        getYouTubeThumbnail(exercise.short_youtube_demo)
+                      }
+                      alt="Exercise Thumbnail"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="rounded-full bg-white/80 text-black border-0 hover:bg-white"
+                        onClick={() => window.open(exercise.short_youtube_demo!, '_blank')}
+                      >
+                        <Video className="h-6 w-6" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <Dumbbell className="h-8 w-8 opacity-30" />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
           
           <div className="text-sm">
             {exercise.prime_mover_muscle && (
