@@ -83,7 +83,12 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
       const exercises = data.map(item => {
         // Safely type check the exercise property before mapping
         let exerciseData: Exercise | undefined;
-        if (item.exercise && typeof item.exercise === 'object' && !('error' in item.exercise)) {
+        
+        // Check if item.exercise exists, is an object, and doesn't contain an error
+        if (item.exercise && 
+            typeof item.exercise === 'object' && 
+            !('error' in item.exercise)) {
+          // Now TypeScript knows this is safe to cast
           exerciseData = mapExerciseFullToExercise(item.exercise as ExerciseFull);
         }
         
