@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -20,7 +21,8 @@ import {
   Settings, 
   Calendar,
   LogOut,
-  Menu
+  Menu,
+  Flame
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -110,12 +112,12 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   };
   
   const navItems = [
-    { path: "/dashboard", label: "Dashboard", icon: Home },
-    { path: "/workouts", label: "Workouts", icon: Dumbbell },
-    { path: "/progress", label: "Progress", icon: BarChart3 },
-    { path: "/schedule", label: "Schedule", icon: Calendar },
-    { path: "/profile", label: "Profile", icon: User },
-    { path: "/settings", label: "Settings", icon: Settings },
+    { path: "/dashboard", label: "Dashboard", icon: Home, color: "text-fitness-primary" },
+    { path: "/workouts", label: "Workouts", icon: Dumbbell, color: "text-fitness-secondary" },
+    { path: "/progress", label: "Progress", icon: BarChart3, color: "text-fitness-accent" },
+    { path: "/schedule", label: "Schedule", icon: Calendar, color: "text-fitness-orange" },
+    { path: "/profile", label: "Profile", icon: User, color: "text-fitness-primary" },
+    { path: "/settings", label: "Settings", icon: Settings, color: "text-fitness-secondary" },
   ];
   
   const isActive = (path: string) => {
@@ -123,19 +125,25 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   };
   
   if (!userData) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="animate-pulse-soft">
+          <Flame size={48} className="text-fitness-primary animate-glow" />
+        </div>
+      </div>
+    );
   }
   
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <Sidebar className="border-r border-gray-200 dark:border-gray-800">
+      <div className="min-h-screen flex w-full bg-fitness-dark">
+        <Sidebar className="border-r border-gray-800/50 bg-gray-900/95 backdrop-blur-md">
           <div className="p-4 flex items-center gap-2">
             <div className="flex-1 flex items-center gap-2 ml-1">
-              <div className="h-8 w-8 bg-fitness-primary rounded-md flex items-center justify-center">
-                <span className="text-white font-bold">LH</span>
+              <div className="h-9 w-9 bg-gradient-to-br from-fitness-primary to-fitness-secondary rounded-md flex items-center justify-center">
+                <span className="text-gray-900 font-bold">LH</span>
               </div>
-              <span className="font-bold text-lg">LadderHive</span>
+              <span className="font-bold text-lg gradient-heading">LadderHive</span>
             </div>
           </div>
           
@@ -145,13 +153,15 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton 
                     asChild
-                    className={isActive(item.path) ? "bg-fitness-primary/10 text-fitness-primary" : ""}
+                    className={isActive(item.path) 
+                      ? `bg-gray-800/50 ${item.color}`
+                      : "text-gray-400 hover:text-white"}
                   >
                     <button
                       onClick={() => navigate(item.path)}
-                      className="flex items-center gap-2 w-full"
+                      className="flex items-center gap-2 w-full group"
                     >
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className={`h-5 w-5 ${isActive(item.path) ? item.color : "text-gray-400 group-hover:text-white"}`} />
                       <span>{item.label}</span>
                     </button>
                   </SidebarMenuButton>
@@ -160,22 +170,23 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             </SidebarMenu>
           </SidebarContent>
           
-          <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="mt-auto p-4 border-t border-gray-800/50">
             <div className="flex items-center gap-3">
               <Avatar>
                 <AvatarImage src="" alt={userData.name || ""} />
-                <AvatarFallback className="bg-fitness-primary text-white">
+                <AvatarFallback className="bg-gradient-to-br from-fitness-primary to-fitness-secondary text-gray-900 font-medium">
                   {getInitials(userData.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{userData.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{userData.email}</p>
+                <p className="font-medium truncate text-white">{userData.name}</p>
+                <p className="text-xs text-gray-400 truncate">{userData.email}</p>
               </div>
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={handleLogout}
+                className="text-gray-400 hover:text-white hover:bg-gray-800/50"
               >
                 <LogOut className="h-5 w-5" />
               </Button>
@@ -183,17 +194,17 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           </div>
         </Sidebar>
         
-        <div className="flex-1 flex flex-col min-h-screen max-h-screen overflow-hidden">
-          <header className="h-16 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 lg:px-6">
+        <div className="flex-1 flex flex-col min-h-screen max-h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-black">
+          <header className="h-16 border-b border-gray-800/50 bg-gray-900/70 backdrop-blur-sm flex items-center px-4 lg:px-6">
             {isMobile && (
               <SidebarTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-gray-800/50">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SidebarTrigger>
             )}
             <div className="flex-1">
-              <h1 className="text-lg font-semibold">
+              <h1 className="text-xl font-semibold text-white">
                 {navItems.find(item => isActive(item.path))?.label || "Dashboard"}
               </h1>
             </div>

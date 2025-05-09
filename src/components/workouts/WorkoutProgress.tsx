@@ -1,83 +1,67 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Clock, Dumbbell, CheckCircle2 } from "lucide-react";
+import { Clock, Dumbbell } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface WorkoutProgressProps {
   totalExercises: number;
   completedExercises: number;
   duration: number;
-  elapsedTime?: number;
   isLoading?: boolean;
+  className?: string;
 }
 
-const WorkoutProgress = ({ 
-  totalExercises, 
-  completedExercises, 
-  duration, 
-  elapsedTime = 0,
-  isLoading = false
+const WorkoutProgress = ({
+  totalExercises,
+  completedExercises,
+  duration,
+  isLoading = false,
+  className
 }: WorkoutProgressProps) => {
-  const progressPercentage = Math.round((completedExercises / totalExercises) * 100) || 0;
+  const percentage = totalExercises > 0 
+    ? Math.min(100, Math.round((completedExercises / totalExercises) * 100)) 
+    : 0;
   
-  const formatTime = (timeInSeconds: number) => {
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = timeInSeconds % 60;
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
+  if (isLoading) {
+    return (
+      <div className={cn("space-y-4 p-2", className)}>
+        <Skeleton className="h-6 w-32 bg-gray-800" />
+        <Skeleton className="h-4 w-full bg-gray-800" />
+        <div className="flex justify-between items-center pt-2">
+          <Skeleton className="h-8 w-20 bg-gray-800" />
+          <Skeleton className="h-8 w-20 bg-gray-800" />
+        </div>
+      </div>
+    );
+  }
   
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-semibold">Workout Progress</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-fitness-primary" />
-              <span className="text-sm font-medium">Completion</span>
-            </div>
-            <span className="text-sm font-medium">{progressPercentage}%</span>
-          </div>
-          <Progress value={progressPercentage} className="h-2 bg-gray-100 dark:bg-gray-800" />
-          <p className="text-xs text-muted-foreground">
-            {completedExercises} of {totalExercises} exercises completed
-          </p>
+    <div className={cn("space-y-4 p-1", className)}>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium text-white">Workout Progress</h3>
+        <span className="text-sm font-semibold text-fitness-primary">{percentage}%</span>
+      </div>
+      
+      <Progress 
+        value={percentage} 
+        className="h-2 bg-gray-800"
+        indicatorClassName="bg-gradient-to-r from-fitness-primary to-fitness-secondary"
+      />
+      
+      <div className="flex justify-between items-center mt-3 text-sm">
+        <div className="flex items-center gap-1.5">
+          <Dumbbell className="h-4 w-4 text-fitness-primary" />
+          <span className="text-gray-300">
+            {completedExercises}/{totalExercises} exercises
+          </span>
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="stat-card flex items-center gap-3">
-            <Dumbbell className="h-5 w-5 text-fitness-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Exercises</p>
-              <p className="text-lg font-semibold">{totalExercises}</p>
-            </div>
-          </div>
-          
-          <div className="stat-card flex items-center gap-3">
-            <Clock className="h-5 w-5 text-fitness-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Duration</p>
-              <p className="text-lg font-semibold">{duration} min</p>
-            </div>
-          </div>
+        <div className="flex items-center gap-1.5">
+          <Clock className="h-4 w-4 text-fitness-secondary" />
+          <span className="text-gray-300">{duration} min</span>
         </div>
-        
-        {elapsedTime > 0 && (
-          <div className="pt-2">
-            <div className="flex justify-between items-center">
-              <p className="text-sm font-medium">Elapsed Time</p>
-              <p className="text-sm font-medium">{formatTime(elapsedTime)}</p>
-            </div>
-            <Progress 
-              value={(elapsedTime / (duration * 60)) * 100} 
-              className="h-2 mt-2 bg-gray-100 dark:bg-gray-800" 
-            />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

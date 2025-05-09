@@ -5,83 +5,45 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Dark theme by default */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 160 64% 40%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 160 100% 50%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 199 95% 48%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 199 100% 50%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 5% 25%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --accent: 262 60% 63%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 300 100% 50%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 240 5% 84.9%;
+    --sidebar-primary: 160 100% 50%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 163 94% 39%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 199 89% 48%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 263 70% 71%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 160 100% 50%;
   }
 }
 
@@ -98,34 +60,93 @@
 
 @layer components {
   .workout-card {
-    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700;
+    @apply bg-gray-900/80 dark:bg-gray-800/80 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-800/50;
   }
   
   .exercise-item {
-    @apply p-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex justify-between items-center;
+    @apply p-4 border-b border-gray-800/50 last:border-b-0 hover:bg-gray-800/50 transition-colors flex justify-between items-center;
   }
   
   .stat-card {
-    @apply bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700;
+    @apply bg-gray-900/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-md border border-gray-800/50;
   }
   
   .nav-link {
-    @apply flex items-center gap-2 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors;
+    @apply flex items-center gap-2 px-3 py-2 rounded-md text-gray-300 hover:bg-gray-800/70 transition-colors;
   }
   
   .nav-link.active {
-    @apply bg-fitness-primary/10 text-fitness-primary dark:bg-fitness-primary/20 dark:text-fitness-primary;
+    @apply bg-fitness-primary/20 text-fitness-primary;
   }
   
   .btn-fitness-primary {
-    @apply bg-fitness-primary text-white hover:bg-fitness-primary/90 rounded-md px-4 py-2 font-medium transition-colors;
+    @apply bg-fitness-primary text-gray-900 hover:bg-fitness-primary/90 rounded-md px-4 py-2 font-medium transition-colors shadow-lg hover:shadow-fitness-primary/20;
   }
   
   .btn-fitness-secondary {
-    @apply bg-fitness-secondary text-white hover:bg-fitness-secondary/90 rounded-md px-4 py-2 font-medium transition-colors;
+    @apply bg-fitness-secondary text-gray-900 hover:bg-fitness-secondary/90 rounded-md px-4 py-2 font-medium transition-colors shadow-lg hover:shadow-fitness-secondary/20;
+  }
+  
+  .btn-fitness-accent {
+    @apply bg-fitness-accent text-gray-900 hover:bg-fitness-accent/90 rounded-md px-4 py-2 font-medium transition-colors shadow-lg hover:shadow-fitness-accent/20;
   }
   
   .btn-fitness-outline {
     @apply border border-fitness-primary text-fitness-primary hover:bg-fitness-primary/10 rounded-md px-4 py-2 font-medium transition-colors;
   }
+  
+  .neon-border {
+    @apply border border-transparent bg-gradient-to-r from-fitness-primary via-fitness-secondary to-fitness-accent p-[1px] rounded-xl;
+  }
+  
+  .neon-card {
+    @apply bg-gray-900/90 rounded-xl backdrop-blur-sm;
+  }
+  
+  .glass-panel {
+    @apply bg-gray-900/30 backdrop-blur-md border border-gray-800/50 rounded-xl;
+  }
+  
+  .gradient-heading {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-fitness-primary via-fitness-secondary to-fitness-accent;
+  }
+  
+  .glow-effect {
+    @apply animate-glow;
+  }
+  
+  .animated-gradient {
+    @apply bg-neon-gradient bg-size-200 animate-gradient-shift;
+  }
+}
+
+/* New custom styles */
+.bg-size-200 {
+  background-size: 200% 200%;
+}
+
+.text-shadow {
+  text-shadow: 0 0 8px rgba(0, 255, 187, 0.5);
+}
+
+.neon-glow-primary {
+  box-shadow: 0 0 8px 2px rgba(0, 255, 187, 0.3);
+}
+
+.neon-glow-secondary {
+  box-shadow: 0 0 8px 2px rgba(0, 204, 255, 0.3);
+}
+
+.neon-glow-accent {
+  box-shadow: 0 0 8px 2px rgba(255, 0, 255, 0.3);
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
 }

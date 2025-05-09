@@ -67,14 +67,16 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
         },
-        // Fitness app specific colors
+        // Fitness app specific colors with new neon palette
         fitness: {
-          primary: '#10b981',   // Emerald green for primary actions
-          secondary: '#0ea5e9', // Bright blue for secondary elements
-          accent: '#8b5cf6',    // Purple for accents
-          muted: '#d1d5db',     // Light gray for muted elements
-          dark: '#1f2937',      // Dark background
-          light: '#f9fafb',     // Light background
+          primary: '#00FFBB',   // Neon teal/green
+          secondary: '#00CCFF', // Electric blue
+          accent: '#FF00FF',    // Hot pink
+          orange: '#FF7700',    // Bright orange
+          muted: '#555555',     // Dark gray
+          dark: '#121212',      // Near black
+          darker: '#0A0A0A',    // Darkest black
+          light: '#FFFFFF',     // Pure white
         }
       },
       borderRadius: {
@@ -116,13 +118,33 @@ export default {
             opacity: '1',
             transform: 'translateY(0)'
           }
-        }
+        },
+        'glow': {
+          '0%, 100%': {
+            boxShadow: '0 0 8px 2px rgba(0, 255, 187, 0.3)'
+          },
+          '50%': {
+            boxShadow: '0 0 16px 4px rgba(0, 255, 187, 0.6)'
+          }
+        },
+        'gradient-shift': {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' }
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
-        'fade-in': 'fade-in 0.5s ease-out'
+        'fade-in': 'fade-in 0.5s ease-out',
+        'glow': 'glow 2s ease-in-out infinite',
+        'gradient-shift': 'gradient-shift 3s ease infinite',
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'neon-gradient': 'linear-gradient(90deg, #00FFBB, #00CCFF, #FF00FF, #FF7700)',
       }
     }
   },

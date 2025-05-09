@@ -84,10 +84,10 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
         // Safely type check the exercise property before mapping
         let exerciseData: Exercise | undefined = undefined;
         
-        if (item.exercise != null) {
+        if (item.exercise) {
           if (typeof item.exercise === 'object') {
             // Ensure it's not an error object before proceeding
-            const exerciseObj = item.exercise as object;
+            const exerciseObj = item.exercise;
             if (exerciseObj && !('error' in exerciseObj)) {
               try {
                 // Safe type conversion
