@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Exercise } from "@/types/exercise";
-import { useExerciseLibrary } from "@/hooks/exercise-library";
+import { useExerciseLibrary } from "@/hooks/use-exercise-library";
 
 interface ExerciseSearchProps {
   onSelectExercise?: (exercise: Exercise) => void;

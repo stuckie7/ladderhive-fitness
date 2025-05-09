@@ -40,7 +40,7 @@ export const searchExercisesFull = async (
            (item.in_depth_youtube_exp && !existingItem.in_depth_youtube_exp))) {
         // Map the data to match ExerciseFull type
         const mappedItem: ExerciseFull = {
-          ...item,
+          ...item as any,
           video_demonstration_url: getBestVideoUrl(item),
           video_explanation_url: item.in_depth_youtube_exp || null,
           target_muscle_group: item.prime_mover_muscle || null
