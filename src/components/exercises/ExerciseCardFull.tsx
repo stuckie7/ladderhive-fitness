@@ -64,6 +64,11 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
     navigate(`/exercises/${exercise.id}`);
   };
 
+  // Get thumbnail from video URL
+  const thumbnailUrl = exercise.video_demonstration_url ? 
+    getYouTubeThumbnail(exercise.video_demonstration_url) : 
+    getYouTubeThumbnail(exercise.short_youtube_demo);
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2">
@@ -128,13 +133,10 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
               />
             ) : (
               <>
-                {exercise.youtube_thumbnail_url || exercise.short_youtube_demo ? (
+                {exercise.short_youtube_demo || thumbnailUrl ? (
                   <div className="relative w-full h-full">
                     <img
-                      src={
-                        exercise.youtube_thumbnail_url ||
-                        getYouTubeThumbnail(exercise.short_youtube_demo)
-                      }
+                      src={thumbnailUrl || `https://img.youtube.com/vi/${getYouTubeVideoId(exercise.short_youtube_demo)}/hqdefault.jpg`}
                       alt="Exercise Thumbnail"
                       className="absolute inset-0 w-full h-full object-cover"
                     />

@@ -1,7 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ExerciseFull } from '@/types/exercise';
 
-const getBestVideoUrl = (exercise: ExerciseFull): string | null => {
+const getBestVideoUrl = (exercise: any): string | null => {
   return exercise.short_youtube_demo || exercise.in_depth_youtube_exp || null;
 };
 
@@ -37,11 +38,15 @@ export const searchExercisesFull = async (
           (currentHasVideo && !existingHasVideo) ||
           (currentHasVideo && existingHasVideo && 
            (item.in_depth_youtube_exp && !existingItem.in_depth_youtube_exp))) {
-        uniqueMap.set(name, {
+        // Map the data to match ExerciseFull type
+        const mappedItem: ExerciseFull = {
           ...item,
           video_demonstration_url: getBestVideoUrl(item),
-          video_explanation_url: item.in_depth_youtube_exp || null
-        } as ExerciseFull);
+          video_explanation_url: item.in_depth_youtube_exp || null,
+          target_muscle_group: item.prime_mover_muscle || null
+        } as ExerciseFull;
+        
+        uniqueMap.set(name, mappedItem);
       }
     });
 

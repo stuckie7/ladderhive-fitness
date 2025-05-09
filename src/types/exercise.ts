@@ -89,4 +89,5 @@ export interface ExerciseFull {
   exercise_classification: string | null;
   created_at: string | null;
   updated_at: string | null;
+  youtube_thumbnail_url?: string | null;  // Add this property
 }

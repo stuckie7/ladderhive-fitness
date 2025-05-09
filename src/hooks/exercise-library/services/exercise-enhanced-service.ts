@@ -2,14 +2,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { ExerciseFull } from "@/types/exercise";
 import { checkExercisesFullTableExists } from "./exercise-fetch-service";
 
-const getBestVideoUrl = (exercise: ExerciseFull): string | null => {
+const getBestVideoUrl = (exercise: any): string | null => {
   return exercise.short_youtube_demo || exercise.in_depth_youtube_exp || null;
 };
 
 /**
  * Helper function to deduplicate exercises with a preference for those with video links
  */
-export const deduplicateExercises = (data: ExerciseFull[]): ExerciseFull[] => {
+export const deduplicateExercises = (data: any[]): ExerciseFull[] => {
   const uniqueMap = new Map<string, ExerciseFull>();
   
   data.forEach(item => {
@@ -24,11 +24,16 @@ export const deduplicateExercises = (data: ExerciseFull[]): ExerciseFull[] => {
         (currentHasVideo && !existingHasVideo) ||
         (currentHasVideo && existingHasVideo && 
          (item.in_depth_youtube_exp && !existingItem.in_depth_youtube_exp))) {
-      uniqueMap.set(name, {
+      
+      // Map the data to match ExerciseFull type
+      const mappedItem: ExerciseFull = {
         ...item,
         video_demonstration_url: getBestVideoUrl(item),
-        video_explanation_url: item.in_depth_youtube_exp || null
-      });
+        video_explanation_url: item.in_depth_youtube_exp || null,
+        target_muscle_group: item.prime_mover_muscle || null
+      } as ExerciseFull;
+      
+      uniqueMap.set(name, mappedItem);
     }
   });
   
@@ -75,18 +80,9 @@ export const loadExerciseData = async (
   
   if (error) throw error;
   
-  if (data) {
-    const uniqueData = deduplicateExercises(data as ExerciseFull[]);
-    
-    return uniqueData.map(item => ({
-      ...item,
-      target_muscle_group: item.prime_mover_muscle,
-      video_demonstration_url: getBestVideoUrl(item),
-      video_explanation_url: item.in_depth_youtube_exp || null
-    }));
-  }
+  if (!data) return [];
   
-  return [];
+  return deduplicateExercises(data);
 };
 
 /**
