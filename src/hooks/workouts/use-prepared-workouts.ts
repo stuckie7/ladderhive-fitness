@@ -80,10 +80,18 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
       if (error) throw error;
       
       // Map the response to include the exercise data
-      const exercises = data.map(item => ({
-        ...item,
-        exercise: item.exercise ? mapExerciseFullToExercise(item.exercise as ExerciseFull) : undefined
-      }));
+      const exercises = data.map(item => {
+        // Safely type check the exercise property before mapping
+        let exerciseData: Exercise | undefined;
+        if (item.exercise && typeof item.exercise === 'object' && !('error' in item.exercise)) {
+          exerciseData = mapExerciseFullToExercise(item.exercise as ExerciseFull);
+        }
+        
+        return {
+          ...item,
+          exercise: exerciseData
+        };
+      });
       
       setWorkoutExercises(prev => ({
         ...prev,
