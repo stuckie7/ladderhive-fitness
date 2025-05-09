@@ -88,8 +88,9 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
         if (item.exercise && 
             typeof item.exercise === 'object' && 
             !('error' in item.exercise)) {
-          // Now TypeScript knows this is safe to cast
-          exerciseData = mapExerciseFullToExercise(item.exercise as ExerciseFull);
+          // Use type assertion only after verifying the type
+          const exerciseFull = item.exercise as ExerciseFull;
+          exerciseData = mapExerciseFullToExercise(exerciseFull);
         }
         
         return {
