@@ -84,21 +84,18 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
         // Safely type check the exercise property before mapping
         let exerciseData: Exercise | undefined = undefined;
         
-        if (item.exercise) {
-          if (typeof item.exercise === 'object') {
-            // Ensure it's not an error object before proceeding
-            const exerciseObj = item.exercise;
-            if (exerciseObj && !('error' in exerciseObj)) {
-              try {
-                // Safe type conversion
-                const exerciseFull = exerciseObj as ExerciseFull;
-                exerciseData = mapExerciseFullToExercise(exerciseFull);
-              } catch (err) {
-                console.error("Error mapping exercise data:", err);
-              }
-            }
-          }
-        }
+ let exerciseData: Exercise | undefined = undefined;
+
+const exerciseFull = item.exercise as ExerciseFull | null;
+
+if (exerciseFull && typeof exerciseFull === 'object' && !('error' in exerciseFull)) {
+  try {
+    exerciseData = mapExerciseFullToExercise(exerciseFull);
+  } catch (err) {
+    console.error("Error mapping exercise data:", err);
+  }
+}
+
         
         return {
           ...item,
