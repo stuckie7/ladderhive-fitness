@@ -87,13 +87,17 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
         // Check if item.exercise exists and is not null before proceeding
         if (item.exercise != null) {
           // Further check if it's an object (not a string, number, etc)
-          if (typeof item.exercise === 'object' && !('error' in item.exercise)) {
-            try {
-              // Cast to unknown first for safe type conversion
-              const exerciseFull = item.exercise as unknown as ExerciseFull;
-              exerciseData = mapExerciseFullToExercise(exerciseFull);
-            } catch (err) {
-              console.error("Error mapping exercise data:", err);
+          if (typeof item.exercise === 'object') {
+            // Check that it's not an error object
+            if (!('error' in item.exercise)) {
+              try {
+                // Cast to unknown first for safe type conversion
+                const exerciseObj = item.exercise as object;
+                const exerciseFull = exerciseObj as ExerciseFull;
+                exerciseData = mapExerciseFullToExercise(exerciseFull);
+              } catch (err) {
+                console.error("Error mapping exercise data:", err);
+              }
             }
           }
         }
