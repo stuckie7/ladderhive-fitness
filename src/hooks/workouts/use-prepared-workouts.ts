@@ -82,20 +82,19 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
       // Map the response to include the exercise data
       const exercises = data.map(item => {
         // Safely type check the exercise property before mapping
-        let exerciseData: Exercise | undefined;
+        let exerciseData: Exercise | undefined = undefined;
         
-        // Check if item.exercise exists, is an object, and doesn't contain an error
-        if (item.exercise && 
-            typeof item.exercise === 'object' && 
-            !('error' in item.exercise)) {
-          // Use type assertion with safeguards
-          try {
-            // First cast to unknown, then to ExerciseFull to avoid direct cast
-            const exerciseFull = item.exercise as unknown as ExerciseFull;
-            exerciseData = mapExerciseFullToExercise(exerciseFull);
-          } catch (err) {
-            console.error("Error mapping exercise data:", err);
-            exerciseData = undefined;
+        // Check if item.exercise exists and is not null before proceeding
+        if (item.exercise != null) {
+          // Further check if it's an object (not a string, number, etc)
+          if (typeof item.exercise === 'object' && !('error' in item.exercise)) {
+            try {
+              // Cast to unknown first for safe type conversion
+              const exerciseFull = item.exercise as unknown as ExerciseFull;
+              exerciseData = mapExerciseFullToExercise(exerciseFull);
+            } catch (err) {
+              console.error("Error mapping exercise data:", err);
+            }
           }
         }
         
