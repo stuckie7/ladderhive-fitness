@@ -88,9 +88,15 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
         if (item.exercise && 
             typeof item.exercise === 'object' && 
             !('error' in item.exercise)) {
-          // Use type assertion only after verifying the type
-          const exerciseFull = item.exercise as ExerciseFull;
-          exerciseData = mapExerciseFullToExercise(exerciseFull);
+          // Use type assertion with safeguards
+          try {
+            // First cast to unknown, then to ExerciseFull to avoid direct cast
+            const exerciseFull = item.exercise as unknown as ExerciseFull;
+            exerciseData = mapExerciseFullToExercise(exerciseFull);
+          } catch (err) {
+            console.error("Error mapping exercise data:", err);
+            exerciseData = undefined;
+          }
         }
         
         return {
