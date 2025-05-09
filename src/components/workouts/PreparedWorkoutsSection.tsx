@@ -4,7 +4,7 @@ import PreparedWorkoutsList from "./prepared-workouts/PreparedWorkoutsList";
 import { useToast } from "@/components/ui/use-toast";
 
 interface PreparedWorkoutsProps {
-  currentWorkoutId: string | null;
+  currentWorkoutId?: string;
   onAddExercise: (exercise: Exercise) => Promise<void>;
 }
 
@@ -34,8 +34,11 @@ const PreparedWorkoutsSection = ({ currentWorkoutId, onAddExercise }: PreparedWo
   return (
     <div className="mt-8 space-y-4">
       <h3 className="text-xl font-semibold text-foreground">Prepared Workouts</h3>
+      <p className="text-muted-foreground">
+        Browse through our curated collection of workouts designed for different fitness goals and experience levels.
+      </p>
       <PreparedWorkoutsList 
-        currentWorkoutId={currentWorkoutId || null}
+        currentWorkoutId={currentWorkoutId}
         onAddExercise={handleAddExercise}
       />
     </div>

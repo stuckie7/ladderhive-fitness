@@ -4,14 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp, Dumbbell, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Exercise } from "@/types/exercise";
-import { Workout } from "@/types/workout";
-import { WorkoutExercise } from "@/hooks/workout-exercises/utils";
+import { PreparedWorkout as PreparedWorkoutType, PreparedWorkoutExercise } from "@/types/workout";
 
 interface PreparedWorkoutProps {
-  workout: Workout;
+  workout: PreparedWorkoutType;
   isExpanded: boolean;
   toggleExpand: (workoutId: string) => void;
-  workoutExercises: WorkoutExercise[];
+  workoutExercises: PreparedWorkoutExercise[];
   isLoading: boolean;
   onAddExercise: (exercise: Exercise) => Promise<void>;
 }
@@ -40,6 +39,8 @@ const PreparedWorkout = ({
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
       case 'expert':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      case 'all levels':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
@@ -57,8 +58,11 @@ const PreparedWorkout = ({
             >
               {workout.difficulty}
             </Badge>
+            <Badge variant="secondary">
+              {workout.category}
+            </Badge>
             <span className="text-sm text-muted-foreground">
-              {workout.duration} min • {workout.exercises} exercises
+              {workout.duration_minutes} min • {workout.exercises || workoutExercises.length || 5} exercises
             </span>
           </div>
         </div>
@@ -88,6 +92,7 @@ const PreparedWorkout = ({
                   {workout.description}
                 </p>
               )}
+              <div className="font-medium text-sm text-muted-foreground mb-2">Goal: {workout.goal}</div>
               {workoutExercises.map((item) => (
                 <div 
                   key={item.id} 
@@ -96,8 +101,13 @@ const PreparedWorkout = ({
                   <div>
                     <p className="font-medium text-foreground">{item.exercise?.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {item.sets} sets × {item.reps} reps
+                      {item.sets} sets × {item.reps} • {item.rest_seconds}s rest
                     </p>
+                    {item.notes && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        {item.notes}
+                      </p>
+                    )}
                   </div>
                   <Button
                     size="sm"

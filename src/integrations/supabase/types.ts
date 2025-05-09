@@ -492,6 +492,92 @@ export type Database = {
         }
         Relationships: []
       }
+      prepared_workout_exercises: {
+        Row: {
+          created_at: string | null
+          exercise_id: number
+          id: string
+          notes: string | null
+          order_index: number
+          reps: string
+          rest_seconds: number
+          sets: number
+          updated_at: string | null
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          exercise_id: number
+          id?: string
+          notes?: string | null
+          order_index: number
+          reps: string
+          rest_seconds: number
+          sets: number
+          updated_at?: string | null
+          workout_id: string
+        }
+        Update: {
+          created_at?: string | null
+          exercise_id?: number
+          id?: string
+          notes?: string | null
+          order_index?: number
+          reps?: string
+          rest_seconds?: number
+          sets?: number
+          updated_at?: string | null
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prepared_workout_exercises_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "prepared_workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prepared_workouts: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          difficulty: string
+          duration_minutes: number
+          goal: string
+          id: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          difficulty: string
+          duration_minutes: number
+          goal: string
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string
+          duration_minutes?: number
+          goal?: string
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number | null
@@ -721,6 +807,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_exercises_to_prepared_workouts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       dmetaphone: {
         Args: { "": string }
         Returns: string
