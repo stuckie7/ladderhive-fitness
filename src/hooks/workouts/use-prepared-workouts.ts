@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -84,18 +83,15 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
         // Safely type check the exercise property before mapping
         let exerciseData: Exercise | undefined = undefined;
         
- let exerciseData: Exercise | undefined = undefined;
+        const exerciseFull = item.exercise as ExerciseFull | null;
 
-const exerciseFull = item.exercise as ExerciseFull | null;
-
-if (exerciseFull && typeof exerciseFull === 'object' && !('error' in exerciseFull)) {
-  try {
-    exerciseData = mapExerciseFullToExercise(exerciseFull);
-  } catch (err) {
-    console.error("Error mapping exercise data:", err);
-  }
-}
-
+        if (exerciseFull && typeof exerciseFull === 'object' && !('error' in exerciseFull)) {
+          try {
+            exerciseData = mapExerciseFullToExercise(exerciseFull);
+          } catch (err) {
+            console.error("Error mapping exercise data:", err);
+          }
+        }
         
         return {
           ...item,
