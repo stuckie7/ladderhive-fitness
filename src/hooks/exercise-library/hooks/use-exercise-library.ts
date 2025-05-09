@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { ExerciseFull, Exercise, ExerciseFilters } from '@/types/exercise';
 import { searchExercisesFull } from '../services/exercise-search-service';
 import { useToast } from '@/components/ui/use-toast';
+import { mapExerciseFullToExercise } from '../mappers';
 
 export interface UseExerciseLibraryReturn {
   exercises: ExerciseFull[];
@@ -95,7 +96,8 @@ export const useExerciseLibraryImpl = (): UseExerciseLibraryReturn => {
     setIsLoading(true);
     try {
       const results = await searchExercisesFull(searchTerm);
-      return results;
+      // Convert ExerciseFull[] to Exercise[] using the mapper
+      return results.map(mapExerciseFullToExercise);
     } catch (error) {
       console.error('Error searching exercises:', error);
       toast({

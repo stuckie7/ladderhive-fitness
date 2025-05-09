@@ -1,5 +1,5 @@
 
-import React, { Suspense, lazy, useEffect } from "react";
+import React, { Suspense, lazy, useEffect, ChangeEvent } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Badge } from "@/components/ui/badge";
 import { useExerciseLibrary } from "@/hooks/exercise-library";
@@ -7,6 +7,8 @@ import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { mapExerciseFullToExercise } from "@/hooks/exercise-library/mappers";
+import { Exercise, ExerciseFull } from "@/types/exercise";
 
 const ExerciseLibraryHeader = lazy(() => import("@/components/exercises/ExerciseLibraryHeader"));
 const SearchBar = lazy(() => import("@/components/exercises/SearchBar"));
@@ -43,6 +45,19 @@ const ExerciseLibrary = () => {
     navigate("/exercise-library");
   };
 
+  // Adapter function to convert ExerciseFull[] to Exercise[]
+  const convertedExercises = exercises.map(mapExerciseFullToExercise);
+  
+  // Event handler adapter for SearchBar
+  const handleSearchChangeAdapter = (e: ChangeEvent<HTMLInputElement>) => {
+    handleSearchChange(e.target.value);
+  };
+  
+  // Adapter function for getFilteredExercises
+  const getFilteredExercisesAdapter = (muscleGroup: string): Exercise[] => {
+    return getFilteredExercises(muscleGroup).map(mapExerciseFullToExercise);
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
@@ -68,7 +83,7 @@ const ExerciseLibrary = () => {
         <Suspense fallback={<Skeleton className="h-10 w-full mb-4" />}>
           <SearchBar 
             searchQuery={searchQuery}
-            handleSearchChange={handleSearchChange}
+            handleSearchChange={handleSearchChangeAdapter}
           />
         </Suspense>
         
@@ -88,9 +103,9 @@ const ExerciseLibrary = () => {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             muscleGroups={availableMuscleGroups}
-            exercises={exercises}
+            exercises={convertedExercises}
             isLoading={isLoading}
-            getFilteredExercises={getFilteredExercises}
+            getFilteredExercises={getFilteredExercisesAdapter}
             resetFilters={resetFilters}
           />
         </Suspense>

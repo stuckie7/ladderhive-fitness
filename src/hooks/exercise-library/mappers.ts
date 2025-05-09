@@ -3,7 +3,7 @@ import { Exercise, ExerciseFull } from "@/types/exercise";
 
 export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise => {
   return {
-    id: exerciseFull.id.toString(),
+    id: exerciseFull.id.toString(), // Convert number id to string
     name: exerciseFull.name || '',
     bodyPart: exerciseFull.body_region || '',
     target: exerciseFull.prime_mover_muscle || '',
@@ -36,6 +36,7 @@ export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise 
     force_type: exerciseFull.force_type,
     mechanics: exerciseFull.mechanics,
     laterality: exerciseFull.laterality,
+    youtube_thumbnail_url: exerciseFull.youtube_thumbnail_url || null,
     
     // Map the compatibility fields
     target_muscle_group: exerciseFull.prime_mover_muscle,

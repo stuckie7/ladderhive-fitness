@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, ChangeEvent } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Exercise } from "@/types/exercise";
@@ -27,6 +28,10 @@ export const ExerciseSearch = ({ onSelectExercise, className = "" }: ExerciseSea
     return () => clearTimeout(timer);
   }, [localQuery, handleSearch]);
 
+  const handleLocalQueryChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setLocalQuery(e.target.value);
+  };
+
   const handleSelectExercise = (exercise: Exercise) => {
     if (onSelectExercise) {
       onSelectExercise(exercise);
@@ -41,7 +46,7 @@ export const ExerciseSearch = ({ onSelectExercise, className = "" }: ExerciseSea
         <Input
           type="text"
           value={localQuery}
-          onChange={(e) => setLocalQuery(e.target.value)}
+          onChange={handleLocalQueryChange}
           placeholder="Search all exercises..."
           className="w-full pl-10"
         />

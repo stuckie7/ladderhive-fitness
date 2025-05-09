@@ -1,3 +1,4 @@
+
 export interface Exercise {
   id: string;
   name: string;
@@ -20,6 +21,7 @@ export interface Exercise {
   force_type?: string | null;
   mechanics?: string | null;
   laterality?: string | null;
+  youtube_thumbnail_url?: string | null;
   
   // Compatibility fields for UI components
   bodyPart?: string;
@@ -69,6 +71,7 @@ export interface ExerciseFull {
   force_type: string | null;
   mechanics: string | null;
   laterality: string | null;
+  youtube_thumbnail_url?: string | null;
   
   // Mapped fields for backward compatibility
   target_muscle_group: string | null;
@@ -88,5 +91,4 @@ export interface ExerciseFull {
   exercise_classification: string | null;
   created_at: string | null;
   updated_at: string | null;
-  youtube_thumbnail_url?: string | null;
 }
