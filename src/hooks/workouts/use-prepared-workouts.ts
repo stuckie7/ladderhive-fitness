@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -83,10 +84,14 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
         // Safely type check the exercise property before mapping
         let exerciseData: Exercise | undefined = undefined;
         
-        const exerciseFull = item.exercise as ExerciseFull | null;
-
-        if (exerciseFull && typeof exerciseFull === 'object' && !('error' in exerciseFull)) {
+        // Check if exercise is a valid object and not an error
+        if (item.exercise && 
+            typeof item.exercise === 'object' && 
+            item.exercise !== null && 
+            !('error' in item.exercise)) {
           try {
+            // Cast to ExerciseFull only after validation
+            const exerciseFull = item.exercise as ExerciseFull;
             exerciseData = mapExerciseFullToExercise(exerciseFull);
           } catch (err) {
             console.error("Error mapping exercise data:", err);
