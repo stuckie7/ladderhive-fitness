@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { importWorkoutsFromGithub, previewWorkoutsFromGithub } from "@/services/workoutDataImporter";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Download, Database, FolderOpen } from "lucide-react";
+import { Loader2, Download, Database, FolderOpen, GitBranch } from "lucide-react";
 import { 
   loadLocalWorkoutCategories, 
   loadLocalTestCategories, 
@@ -17,6 +16,7 @@ import {
   loadLocalTestExerciseImages,
   loadLocalTestExerciseVideos
 } from "@/utils/localDataLoader";
+import WgerImporter from "./WgerImporter";
 
 const WorkoutImporter = () => {
   const [activeTab, setActiveTab] = useState("github");
@@ -154,7 +154,7 @@ const WorkoutImporter = () => {
       <CardHeader>
         <CardTitle>Import Workout Data</CardTitle>
         <CardDescription>
-          Transfer workout data from GitHub or use local JSON files
+          Transfer workout data from various sources
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -162,6 +162,7 @@ const WorkoutImporter = () => {
           <TabsList className="w-full">
             <TabsTrigger value="github" className="flex-1">GitHub Repository</TabsTrigger>
             <TabsTrigger value="local" className="flex-1">Local JSON Files</TabsTrigger>
+            <TabsTrigger value="wger" className="flex-1">WGER Project</TabsTrigger>
           </TabsList>
           
           <TabsContent value="github" className="pt-4 space-y-4">
@@ -247,6 +248,10 @@ const WorkoutImporter = () => {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="wger" className="pt-4 space-y-4">
+            <WgerImporter />
+          </TabsContent>
         </Tabs>
 
         {isLoading && (
@@ -286,7 +291,7 @@ const WorkoutImporter = () => {
               Import Data
             </Button>
           </>
-        ) : (
+        ) : activeTab === "local" ? (
           <Button 
             onClick={previewLocalData}
             disabled={isLoading}
@@ -299,7 +304,7 @@ const WorkoutImporter = () => {
             )}
             Load Local Data
           </Button>
-        )}
+        ) : null}
       </CardFooter>
     </Card>
   );
