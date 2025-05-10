@@ -47,12 +47,15 @@ export const useTemplateCrud = (
   }, [setTemplates, setCurrentTemplate]);
 
   const duplicateTemplate = useCallback((template: WorkoutTemplate) => {
-    const newTemplate = {
+    // Create a deep copy to avoid reference issues
+    const newTemplate: WorkoutTemplate = {
       ...template,
       id: `${template.id}-copy-${Date.now()}`,
       name: `${template.name} (Copy)`,
-      title: `${template.title || template.name} (Copy)`
+      title: `${template.title || template.name} (Copy)`,
+      exercises: [...template.exercises]
     };
+    
     addTemplate(newTemplate);
   }, [addTemplate]);
 

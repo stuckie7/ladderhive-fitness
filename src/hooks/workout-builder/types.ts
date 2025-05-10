@@ -8,7 +8,7 @@ export interface WorkoutExerciseDetail {
   rest_seconds?: number;
   notes?: string;
   order_index: number;
-  exercise_id: string;
+  exercise_id: string | number;
   exercise?: any; // Add this field to support exercise details
 }
 
@@ -17,12 +17,13 @@ export interface WorkoutDetail {
   title: string;
   description?: string;
   difficulty: string;
-  duration_minutes: number;
-  exercises: number;
+  duration: number;  // Use this for backwards compatibility
+  duration_minutes?: number;  // Add this for new code
+  exercises: WorkoutExerciseDetail[]; // Changed from number to array
   category?: string;
   created_at?: string;
   updated_at?: string;
-  is_template?: boolean; // Add this field to match Supabase table
+  is_template?: boolean; 
 }
 
 // Updated WorkoutTemplate to align with prepared_workouts table
@@ -44,8 +45,10 @@ export interface TemplateExercise {
   id: string;
   exerciseId: string;
   name?: string;
-  sets: TemplateSet[];
-  restSeconds?: number;
+  sets: number;
+  reps?: string | number;
+  rest_seconds?: number;
+  notes?: string;
 }
 
 export interface TemplateSet {

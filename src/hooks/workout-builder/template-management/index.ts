@@ -67,6 +67,7 @@ export const useTemplateManagement = () => {
     deleteTemplate,
     duplicateTemplate,
     saveAsTemplate,
+    loadTemplate,
     loadTemplateFromWod,
     loadTemplateFromPreparedWorkout,
     loadTemplates: fetchTemplates

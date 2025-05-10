@@ -74,7 +74,7 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
         .from('prepared_workout_exercises')
         .select(`
           id, sets, reps, rest_seconds, notes, order_index, exercise_id,
-          exercises_full!prepared_workout_exercises_exercise_id_fkey(id, name, description, short_youtube_demo, video_demonstration_url, youtube_thumbnail_url)
+          exercise:exercises_full(id, name, description, short_youtube_demo, video_demonstration_url, youtube_thumbnail_url)
         `)
         .eq('workout_id', workoutId)
         .order('order_index');
@@ -85,20 +85,25 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       }
 
       // Transform the nested exercise data to the format we need
-      const transformedExercises = exercisesData.map(item => ({
-        id: item.id,
-        sets: item.sets,
-        reps: item.reps,
-        rest_seconds: item.rest_seconds,
-        notes: item.notes,
-        order_index: item.order_index,
-        exercise: item.exercises_full || {
+      const transformedExercises = exercisesData.map(item => {
+        // Provide a fallback for the exercise object
+        const exerciseInfo = item.exercise || {
           id: item.exercise_id,
           name: "Unknown Exercise",
           description: "Details not available"
-        },
-        modifications: ""
-      }));
+        };
+        
+        return {
+          id: item.id,
+          sets: item.sets,
+          reps: item.reps,
+          rest_seconds: item.rest_seconds,
+          notes: item.notes,
+          order_index: item.order_index,
+          exercise: exerciseInfo,
+          modifications: ""
+        };
+      });
 
       const detailedWorkout: DetailedWorkout = {
         ...workoutData,

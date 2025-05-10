@@ -39,12 +39,12 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
       
       console.log("Loaded prepared workout:", workoutData);
       
-      // Fetch exercises for this template
+      // Fetch exercises for this template with proper join
       const { data: exercisesData, error: exercisesError } = await supabase
         .from('prepared_workout_exercises')
         .select(`
           *,
-          exercise:exercises_full(*)
+          exercises_full(*)
         `)
         .eq('workout_id', templateId)
         .order('order_index');
@@ -70,21 +70,23 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
       
       // Map exercises to the format expected by WorkoutDetail
       const mappedExercises: WorkoutExerciseDetail[] = exercisesData.map((exercise: any) => {
+        const exerciseData = exercise.exercises_full || { 
+          id: exercise.exercise_id,
+          name: "Unknown Exercise",
+          description: ""
+        };
+        
         return {
           id: exercise.id,
-          exercise_id: exercise.exercise_id || exercise.exercise?.id,
-          name: exercise.exercise?.name || "Unknown Exercise",
+          exercise_id: exercise.exercise_id || exerciseData.id,
+          name: exerciseData.name || "Unknown Exercise",
           sets: exercise.sets,
           reps: exercise.reps,
           weight: exercise.weight || "",
           rest_seconds: exercise.rest_seconds || 60,
           notes: exercise.notes || "",
           order_index: exercise.order_index,
-          exercise: exercise.exercise || {
-            id: exercise.exercise_id,
-            name: "Unknown Exercise",
-            description: ""
-          }
+          exercise: exerciseData
         };
       });
       
@@ -95,6 +97,7 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
         description: workoutData.description || "",
         difficulty: workoutData.difficulty || "intermediate",
         duration: workoutData.duration_minutes || 45,
+        duration_minutes: workoutData.duration_minutes || 45,
         exercises: mappedExercises
       };
       
@@ -192,11 +195,12 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
         return null;
       }
 
+      // Fetch exercises for this template with proper join
       const { data: exercisesData, error: exercisesError } = await supabase
         .from('prepared_workout_exercises')
         .select(`
           *,
-          exercise:exercises_full(*)
+          exercises_full(*)
         `)
         .eq('workout_id', templateId)
         .order('order_index');
@@ -213,24 +217,26 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
 
       // Map exercises to the format expected by WorkoutDetail
       const mappedExercises: WorkoutExerciseDetail[] = exercisesData.map((exercise: any) => {
+        const exerciseData = exercise.exercises_full || { 
+          id: exercise.exercise_id,
+          name: "Unknown Exercise",
+          description: ""
+        };
+
         return {
           id: exercise.id,
-          exercise_id: exercise.exercise_id || exercise.exercise?.id,
-          name: exercise.exercise?.name || "Unknown Exercise",
+          exercise_id: exercise.exercise_id || exerciseData.id,
+          name: exerciseData.name || "Unknown Exercise",
           sets: exercise.sets,
           reps: exercise.reps,
           weight: exercise.weight || "",
           rest_seconds: exercise.rest_seconds || 60,
           notes: exercise.notes || "",
           order_index: exercise.order_index,
-          exercise: exercise.exercise || {
-            id: exercise.exercise_id,
-            name: "Unknown Exercise",
-            description: ""
-          }
+          exercise: exerciseData
         };
       });
-
+      
       // Create the workout detail object
       const workoutDetail: WorkoutDetail = {
         id: workoutData.id,
@@ -238,6 +244,7 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
         description: workoutData.description || "",
         difficulty: workoutData.difficulty || "intermediate",
         duration: workoutData.duration_minutes || 45,
+        duration_minutes: workoutData.duration_minutes || 45,
         exercises: mappedExercises
       };
 

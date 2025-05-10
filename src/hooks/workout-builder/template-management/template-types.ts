@@ -1,5 +1,5 @@
 
-import { WorkoutTemplate as BaseWorkoutTemplate } from "../types";
+import { WorkoutDetail } from "../types";
 
 // Define a simplified type for workout input to avoid recursive type issues
 export interface WorkoutInput {
@@ -16,8 +16,18 @@ export interface WorkoutInput {
   }>;
 }
 
-// Export the WorkoutTemplate type from the base types
-export type { BaseWorkoutTemplate as WorkoutTemplate };
+// Define the WorkoutTemplate type
+export interface WorkoutTemplate {
+  id: string;
+  name: string;
+  title: string;
+  description?: string;
+  category?: string;
+  difficulty?: string;
+  created_at?: string;
+  exercises: TemplateExercise[];
+  source_wod_id?: string;
+}
 
 // Define the TemplateSet type
 export interface TemplateSet {
@@ -31,7 +41,7 @@ export interface TemplateSet {
 export interface ExerciseTemplate {
   id: string;
   name: string;
-  exerciseId: string; // Required property
+  exerciseId?: string;
   category?: string;
   equipment?: string;
   primaryMuscle?: string;
@@ -49,8 +59,16 @@ export interface ExerciseTemplate {
   exercise_id?: string | number;
 }
 
-// Explicitly define TemplateExercise to match ExerciseTemplate structure
-export type TemplateExercise = ExerciseTemplate;
+// Define TemplateExercise as a distinct type with the required exerciseId field
+export interface TemplateExercise {
+  id: string;
+  exerciseId: string;
+  name?: string;
+  sets: number;
+  reps?: string | number;
+  rest_seconds?: number;
+  notes?: string;
+}
 
 // Explicitly define types to avoid deep instantiation issues
-export type TemplateFilter = (templates: BaseWorkoutTemplate[]) => BaseWorkoutTemplate[];
+export type TemplateFilter = (templates: WorkoutTemplate[]) => WorkoutTemplate[];
