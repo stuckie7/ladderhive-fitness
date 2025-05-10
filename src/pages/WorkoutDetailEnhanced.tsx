@@ -12,7 +12,7 @@ import WorkoutCircuit from '@/components/workouts/detail/WorkoutCircuit';
 import ExerciseList from '@/components/workouts/detail/ExerciseList';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Define the specific exercise shape needed for WorkoutCircuit
+// Define the specific exercise shape needed for WorkoutCircuit and make it compatible with ExerciseList
 interface CircuitExercise {
   id: string;
   name: string;
@@ -20,14 +20,14 @@ interface CircuitExercise {
   reps: string | number;
   rest_seconds?: number;
   notes?: string;
-  exercise?: {
-    name?: string;
+  modifications?: string;
+  exercise: {
+    name: string; // Make this required to match WorkoutExercise
+    description?: string;
     video_demonstration_url?: string;
     short_youtube_demo?: string;
     youtube_thumbnail_url?: string;
-    description?: string;
   };
-  modifications?: string;
 }
 
 const WorkoutDetailEnhanced: React.FC = () => {
@@ -104,14 +104,14 @@ const WorkoutDetailEnhanced: React.FC = () => {
     reps: ex.reps,
     rest_seconds: ex.rest_seconds,
     notes: ex.notes,
+    modifications: ex.modifications,
     exercise: {
-      name: ex.exercise?.name,
+      name: ex.exercise?.name || "Unknown Exercise", // Ensure name is always defined
       description: ex.exercise?.description,
       video_demonstration_url: ex.exercise?.video_demonstration_url,
       short_youtube_demo: ex.exercise?.short_youtube_demo,
       youtube_thumbnail_url: ex.exercise?.youtube_thumbnail_url
-    },
-    modifications: ex.modifications
+    }
   }));
 
   return (
