@@ -32,12 +32,14 @@ export const useTemplateManagement = (
     setIsLoadingTemplates(true);
     try {
       // Query prepared_workouts for templates
-      // Using a type assertion to address the recursive type issue
       const { data, error } = await supabase
         .from('prepared_workouts')
         .select('id, title, description, category, difficulty, created_at')
         .eq('is_template', true)
-        .order('created_at', { ascending: false }) as any;
+        .order('created_at', { ascending: false }) as unknown as { 
+          data: WorkoutTemplate[] | null; 
+          error: any 
+        };
       
       if (error) throw error;
       

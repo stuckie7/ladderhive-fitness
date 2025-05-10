@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { WorkoutDetail, WorkoutExerciseDetail } from "./types";
+import { WorkoutDetail, WorkoutExerciseDetail, WorkoutTemplate } from "./types";
 import { ExerciseFull } from "@/types/exercise";
 
 export const useWorkoutState = () => {
