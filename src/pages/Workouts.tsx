@@ -7,6 +7,7 @@ import PreparedWorkoutsSection from "@/components/workouts/PreparedWorkoutsSecti
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
+import PreparedWorkoutsList from "@/components/workouts/PreparedWorkoutsList";
 
 const Workouts = () => {
   const {
@@ -60,11 +61,13 @@ const Workouts = () => {
         plannedWorkouts={plannedWorkouts}
       />
       
-      {/* Add the PreparedWorkouts section */}
+      {/* Add the Prepared Workouts section */}
       <div className="container mx-auto px-4 py-6">
-        <PreparedWorkoutsSection 
-          onAddExercise={handleAddExercise} 
-        />
+        <h2 className="text-2xl font-semibold mb-4">Prepared Workouts</h2>
+        <p className="text-muted-foreground mb-6">
+          Ready-made workout plans designed by fitness experts. Choose one to start working out right away.
+        </p>
+        <PreparedWorkoutsList />
       </div>
     </AppLayout>
   );

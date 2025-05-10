@@ -541,40 +541,61 @@ export type Database = {
       }
       prepared_workouts: {
         Row: {
+          benefits: string | null
           category: string
           created_at: string | null
           description: string | null
           difficulty: string
           duration_minutes: number
+          equipment_needed: string | null
           goal: string
           id: string
+          instructions: string | null
+          long_description: string | null
+          modifications: string | null
+          short_description: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string | null
+          video_url: string | null
         }
         Insert: {
+          benefits?: string | null
           category: string
           created_at?: string | null
           description?: string | null
           difficulty: string
           duration_minutes: number
+          equipment_needed?: string | null
           goal: string
           id?: string
+          instructions?: string | null
+          long_description?: string | null
+          modifications?: string | null
+          short_description?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string | null
+          video_url?: string | null
         }
         Update: {
+          benefits?: string | null
           category?: string
           created_at?: string | null
           description?: string | null
           difficulty?: string
           duration_minutes?: number
+          equipment_needed?: string | null
           goal?: string
           id?: string
+          instructions?: string | null
+          long_description?: string | null
+          modifications?: string | null
+          short_description?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string | null
+          video_url?: string | null
         }
         Relationships: []
       }

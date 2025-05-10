@@ -25,9 +25,9 @@ export const useTemplateCrud = (
     setCurrentTemplate(updatedTemplate);
   }, [setTemplates, setCurrentTemplate]);
 
-  // Fix: Explicitly specify the type to avoid excessive type instantiation
-  const deleteTemplate = useCallback(async (templateId: string) => {
-    setTemplates((prevTemplates: WorkoutTemplate[]) => 
+  // Fix: Explicitly define the return type to avoid excessive type instantiation
+  const deleteTemplate = useCallback(async (templateId: string): Promise<void> => {
+    setTemplates((prevTemplates) => 
       prevTemplates.filter(template => template.id !== templateId)
     );
     

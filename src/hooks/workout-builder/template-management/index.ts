@@ -42,7 +42,12 @@ export const useTemplateManagement = () => {
     setCurrentTemplate
   );
 
-  const { loadTemplateFromWod } = useTemplateLoading(setCurrentTemplate);
+  const { 
+    loadTemplateFromWod,
+    loadTemplateFromPreparedWorkout 
+  } = useTemplateLoading({
+    setCurrentTemplate
+  });
 
   return {
     templates,
@@ -59,6 +64,7 @@ export const useTemplateManagement = () => {
     duplicateTemplate,
     saveAsTemplate,
     loadTemplateFromWod,
+    loadTemplateFromPreparedWorkout,
     loadTemplates
   };
 };
