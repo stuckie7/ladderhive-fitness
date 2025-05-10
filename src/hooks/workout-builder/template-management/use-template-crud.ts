@@ -4,11 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { WorkoutTemplate } from "./template-types";
 
+type TemplatesState = WorkoutTemplate[];
+type SetTemplatesAction = React.Dispatch<React.SetStateAction<WorkoutTemplate[]>>;
+type CurrentTemplateState = WorkoutTemplate | null;
+type SetCurrentTemplateAction = React.Dispatch<React.SetStateAction<WorkoutTemplate | null>>;
+
 export const useTemplateCrud = (
-  templates: WorkoutTemplate[],
-  setTemplates: React.Dispatch<React.SetStateAction<WorkoutTemplate[]>>,
-  currentTemplate: WorkoutTemplate | null,
-  setCurrentTemplate: React.Dispatch<React.SetStateAction<WorkoutTemplate | null>>
+  templates: TemplatesState,
+  setTemplates: SetTemplatesAction,
+  currentTemplate: CurrentTemplateState,
+  setCurrentTemplate: SetCurrentTemplateAction
 ) => {
   const { toast } = useToast();
 
@@ -25,7 +30,6 @@ export const useTemplateCrud = (
     setCurrentTemplate(updatedTemplate);
   }, [setTemplates, setCurrentTemplate]);
 
-  // Fix: Explicitly define the return type to avoid excessive type instantiation
   const deleteTemplate = useCallback(async (templateId: string): Promise<void> => {
     setTemplates((prevTemplates) => 
       prevTemplates.filter(template => template.id !== templateId)

@@ -31,12 +31,16 @@ export interface ExerciseTemplate {
   secondaryMuscles?: string[];
   description?: string;
   sets: number;
-  reps: number;
+  reps: number | string;
   weight?: number;
   restTime?: number;
+  rest_seconds?: number;
   duration?: number;
   notes?: string;
+  order_index?: number;
   order?: number;
+  exerciseId?: string;
+  exercise_id?: string | number;
 }
 
 // Explicitly define types to avoid deep instantiation issues

@@ -2,10 +2,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { WorkoutTemplate } from "@/hooks/use-workout-builder";
 import { ArrowLeft, BookOpen, Copy, Save } from "lucide-react";
 
-interface WorkoutBuilderHeaderProps {
+export interface WorkoutBuilderHeaderProps {
   id?: string;
   isSaving: boolean;
   handleSave: () => Promise<void>;

@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { WorkoutTemplate } from './template-types';
+import { WorkoutTemplate, ExerciseTemplate } from './template-types';
 
 export interface UseTemplateLoadingProps {
   setCurrentTemplate: (template: WorkoutTemplate | null) => void;
@@ -66,6 +66,18 @@ export const useTemplateLoading = ({ setCurrentTemplate }: UseTemplateLoadingPro
       if (exercisesError) throw exercisesError;
       
       // Create a new template based on the prepared workout
+      const mappedExercises: ExerciseTemplate[] = exercises.map(ex => ({
+        id: ex.id,
+        name: ex.exercise?.name || 'Unknown Exercise',
+        exerciseId: ex.exercise_id?.toString(),
+        exercise_id: ex.exercise_id,
+        sets: ex.sets,
+        reps: ex.reps,
+        rest_seconds: ex.rest_seconds,
+        order_index: ex.order_index,
+        notes: ex.notes || ''
+      }));
+      
       const template: WorkoutTemplate = {
         id: `prepared-${workoutId}`,
         title: workout.title,
@@ -73,15 +85,7 @@ export const useTemplateLoading = ({ setCurrentTemplate }: UseTemplateLoadingPro
         description: workout.description || '',
         category: workout.category || 'General',
         difficulty: workout.difficulty || 'Intermediate',
-        exercises: exercises.map(ex => ({
-          id: ex.id,
-          name: ex.exercise?.name || 'Unknown Exercise',
-          sets: ex.sets,
-          reps: ex.reps,
-          rest_seconds: ex.rest_seconds,
-          order_index: ex.order_index,
-          notes: ex.notes
-        })),
+        exercises: mappedExercises,
       };
       
       setCurrentTemplate(template);
