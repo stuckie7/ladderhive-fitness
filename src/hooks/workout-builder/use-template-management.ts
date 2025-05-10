@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { WorkoutTemplate } from "./types";
 
 // Define the template management state type separately to avoid deep nesting
+// Using explicit types rather than referencing other complex types
 type TemplateManagementProps = {
   workout: {
     id?: string;
@@ -16,7 +17,14 @@ type TemplateManagementProps = {
     is_template?: boolean;
   };
   setWorkout: (workout: any) => void;
-  exercises: any[];
+  exercises: Array<{
+    exercise_id: number;
+    sets: number;
+    reps: string;
+    rest_seconds: number;
+    notes?: string;
+    order_index: number;
+  }>;
   templates: WorkoutTemplate[];
   setTemplates: (templates: WorkoutTemplate[]) => void;
   setIsLoadingTemplates: (isLoading: boolean) => void;
