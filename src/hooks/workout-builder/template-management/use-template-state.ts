@@ -1,82 +1,63 @@
 
-import { useState, useCallback } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { WorkoutTemplate } from "../types";
-import { useToast } from "@/components/ui/use-toast";
+import { create } from "zustand";
+import { ExerciseTemplate, WorkoutTemplate } from "./template-types";
 
-// Define an explicit interface for the database response to avoid deep type instantiation
-interface PreparedWorkoutRecord {
-  id: string;
-  title: string;
-  description: string | null;
-  difficulty: string | null;
-  category: string | null;
-  created_at: string;
-  is_template: boolean;
-  duration_minutes?: number;
-  goal?: string;
-  thumbnail_url?: string;
-  updated_at?: string;
+// Define the interface explicitly to avoid deep type instantiation
+interface TemplateState {
+  // Current workout template state
+  currentTemplate: WorkoutTemplate | null;
+  currentExercises: ExerciseTemplate[];
+  
+  // Actions
+  setCurrentTemplate: (template: WorkoutTemplate | null) => void;
+  setCurrentExercises: (exercises: ExerciseTemplate[]) => void;
+  addExercise: (exercise: ExerciseTemplate) => void;
+  updateExercise: (index: number, exercise: Partial<ExerciseTemplate>) => void;
+  removeExercise: (index: number) => void;
+  moveExercise: (fromIndex: number, toIndex: number) => void;
+  clearTemplate: () => void;
 }
 
-export const useTemplateState = () => {
-  const [currentTemplate, setCurrentTemplate] = useState<WorkoutTemplate | null>(null);
-  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  // Add loadTemplates function
-  const loadTemplates = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      
-      const { data, error } = await supabase
-        .from('prepared_workouts')
-        .select('*')
-        .eq('is_template', true)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      console.log('Fetched templates:', data);
-      
-      // Type assertion with explicit interface to avoid deep instantiation
-      const preparedWorkouts = data as PreparedWorkoutRecord[];
-      
-      // Map database results to WorkoutTemplate format
-      const loadedTemplates: WorkoutTemplate[] = (preparedWorkouts || []).map((template) => ({
-        id: template.id,
-        name: template.title, // For backward compatibility
-        title: template.title,
-        description: template.description || "",
-        difficulty: template.difficulty || "",
-        category: template.category || "",
-        created_at: template.created_at,
-        exercises: [] // We'll load these separately if needed
-      }));
-      
-      setTemplates(loadedTemplates);
-      return loadedTemplates;
-    } catch (error) {
-      console.error("Error loading templates:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load workout templates",
-        variant: "destructive"
-      });
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  return {
-    currentTemplate,
-    setCurrentTemplate,
-    templates,
-    setTemplates,
-    isLoading,
-    setIsLoading,
-    loadTemplates
-  };
-};
+// Create the store
+export const useTemplateState = create<TemplateState>((set) => ({
+  // Initial state
+  currentTemplate: null,
+  currentExercises: [],
+  
+  // Template actions
+  setCurrentTemplate: (template) => 
+    set(() => ({ currentTemplate: template })),
+    
+  setCurrentExercises: (exercises) => 
+    set(() => ({ currentExercises: exercises })),
+  
+  addExercise: (exercise) => 
+    set((state) => ({ 
+      currentExercises: [...state.currentExercises, exercise] 
+    })),
+    
+  updateExercise: (index, updatedExercise) => 
+    set((state) => {
+      const exercises = [...state.currentExercises];
+      exercises[index] = { ...exercises[index], ...updatedExercise };
+      return { currentExercises: exercises };
+    }),
+    
+  removeExercise: (index) => 
+    set((state) => {
+      const exercises = [...state.currentExercises];
+      exercises.splice(index, 1);
+      return { currentExercises: exercises };
+    }),
+    
+  moveExercise: (fromIndex, toIndex) => 
+    set((state) => {
+      const exercises = [...state.currentExercises];
+      const [removed] = exercises.splice(fromIndex, 1);
+      exercises.splice(toIndex, 0, removed);
+      return { currentExercises: exercises };
+    }),
+    
+  clearTemplate: () => 
+    set(() => ({ currentTemplate: null, currentExercises: [] })),
+}));

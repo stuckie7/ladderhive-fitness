@@ -89,14 +89,17 @@ export const importWgerCategories = async () => {
   try {
     const categories = await fetchWgerCategories();
     
+    // Transform categories into our format with required fields
     const mappedCategories = categories.map(category => ({
       id: category.pk.toString(),
-      name: category.fields.name
+      name: category.fields.name,
+      category: 'Exercise', // Adding the required category field
+      created_at: new Date().toISOString()
     }));
     
     // Insert categories into database
     const { data, error } = await supabase
-      .from('equipment') // Assuming you have a categories table
+      .from('equipment') // This should probably be 'categories' instead of 'equipment'
       .upsert(mappedCategories, { onConflict: 'id' });
       
     if (error) throw error;
