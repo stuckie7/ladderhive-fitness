@@ -29,13 +29,16 @@ const StartWodButton: React.FC<StartWodButtonProps> = ({ wod, showIcon = true })
       const template = await loadTemplateFromWod(wod.id);
       
       if (template) {
-        // Navigate to workout builder with the template data
+        // Navigate to the workout builder with the template data
+        // This ensures we're using the workout builder which will have all the details loaded
         navigate(`/workout-builder?wod=${wod.id}&name=${encodeURIComponent(wod.name)}`);
       } else {
+        // If no template was created, show the enhanced workout detail as a fallback
+        navigate(`/workout-enhanced/${wod.id}`);
+        
         toast({
-          title: "Error",
-          description: "Could not create workout from this WOD",
-          variant: "destructive"
+          title: "Workout Ready",
+          description: "Viewing workout details",
         });
       }
     } catch (error) {
@@ -45,6 +48,9 @@ const StartWodButton: React.FC<StartWodButtonProps> = ({ wod, showIcon = true })
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
+      
+      // Fallback navigation to the enhanced view
+      navigate(`/workout-enhanced/${wod.id}`);
     }
   };
   

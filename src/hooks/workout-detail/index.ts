@@ -34,12 +34,13 @@ export const useWorkoutDetail = (workoutId?: string) => {
     if (!initialFetchDone.current && workoutId) {
       const loadWorkout = async () => {
         await fetchWorkout();
+        await fetchWorkoutExercises(workoutId);
         initialFetchDone.current = true;
       };
       
       loadWorkout();
     }
-  }, [workoutId, fetchWorkout]);
+  }, [workoutId, fetchWorkout, fetchWorkoutExercises]);
 
   const handleAddExercise = async (exercise: Exercise) => {
     if (!workoutId) return;
