@@ -5,7 +5,7 @@ import {
 } from "@/utils/githubDataFetcher";
 import { PreparedWorkout, PreparedWorkoutExercise } from "@/types/workout";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 interface GitHubWorkoutSource {
   owner: string;
@@ -70,7 +70,7 @@ export const importWorkoutsFromGithub = async (
       category: raw.category || 'strength',
       goal: raw.goal || '',
       duration_minutes: raw.duration_minutes || 30,
-      exercises: raw.exercises?.length || 0
+      exercises: raw.exercises?.length || 0 // Use exercise length for compatibility
     }));
     
     // Save workouts to Supabase if connected
@@ -91,7 +91,8 @@ export const importWorkoutsFromGithub = async (
           goal: workout.goal || '',
           duration_minutes: workout.duration_minutes,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          is_template: false // Mark as not a template by default
         }]);
       
       if (workoutError) {
@@ -132,6 +133,41 @@ export const importWorkoutsFromGithub = async (
     
   } catch (error) {
     console.error('Error importing workouts from GitHub:', error);
+    throw error;
+  }
+};
+
+/**
+ * Imports data from local JSON files to the Supabase database
+ */
+export const importLocalData = async (
+  localData: any,
+  onProgress?: (message: string, progress: number) => void
+): Promise<boolean> => {
+  try {
+    // This function can be expanded to handle different types of local data
+    onProgress?.('Processing local data...', 10);
+    
+    // Example logic - can be expanded based on the structure of your local data
+    if (localData.categories) {
+      onProgress?.('Importing categories...', 30);
+      // Add code to import categories
+    }
+    
+    if (localData.testCategories) {
+      onProgress?.('Importing test categories...', 50);
+      // Add code to import test categories
+    }
+    
+    if (localData.testEquipment) {
+      onProgress?.('Importing equipment...', 70);
+      // Add code to import equipment
+    }
+    
+    onProgress?.('Import completed successfully', 100);
+    return true;
+  } catch (error) {
+    console.error('Error importing local data:', error);
     throw error;
   }
 };

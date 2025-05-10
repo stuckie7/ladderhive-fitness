@@ -38,7 +38,9 @@ export const useTemplateState = () => {
         
       if (error) throw error;
       
-      // Type assertion without complex inference
+      console.log('Fetched templates:', data);
+      
+      // Type assertion with explicit interface to avoid deep instantiation
       const preparedWorkouts = data as PreparedWorkoutRecord[];
       
       // Map database results to WorkoutTemplate format
