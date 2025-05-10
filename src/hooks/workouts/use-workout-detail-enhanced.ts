@@ -18,9 +18,9 @@ export interface DetailedWorkout {
   modifications?: string;
   category: string;
   goal: string;
-  short_description?: string; // Added missing property
-  created_at?: string; // Added missing property
-  updated_at?: string; // Added for completeness
+  short_description?: string;
+  created_at?: string;
+  updated_at?: string;
   exercises: {
     id: string;
     sets: number;
@@ -57,6 +57,7 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       const safeExercise = {
         id: exerciseDetail?.id || item.exercise_id,
         name: exerciseDetail?.name || 'Unknown Exercise',
+        description: exerciseDetail?.description || '',
         // We need to handle video and thumbnail fields carefully
         ...(exerciseDetail?.short_youtube_demo ? { short_youtube_demo: exerciseDetail.short_youtube_demo } : {}),
         ...(exerciseDetail?.youtube_thumbnail_url ? { youtube_thumbnail_url: exerciseDetail.youtube_thumbnail_url } : {}),
@@ -73,7 +74,7 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
         exercise: safeExercise,
         modifications: item.modifications || ''
       };
-    });
+    }).sort((a, b) => a.order_index - b.order_index); // Ensure exercises are sorted by order
   };
 
   const fetchWorkoutDetail = useCallback(async () => {
@@ -89,7 +90,7 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
     try {
       console.log("Fetching workout with ID:", workoutId);
       
-      // Fetch the workout details
+      // Fetch the workout details with all fields explicitly selected
       const { data: workoutData, error: workoutError } = await supabase
         .from('prepared_workouts')
         .select(`
@@ -136,13 +137,15 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
         throw new Error(exercisesError.message);
       }
 
+      console.log("Fetched workout exercises:", exercisesData);
+
       // Fetch all exercises data separately
       const exerciseIds = exercisesData.map(item => item.exercise_id);
       
       // Use exercises_full table but select only the fields we need
       const { data: exercisesDetails, error: exerciseDetailsError } = await supabase
         .from('exercises_full')
-        .select('id, name, short_youtube_demo, youtube_thumbnail_url, video_demonstration_url')
+        .select('id, name, description, short_youtube_demo, youtube_thumbnail_url, video_demonstration_url')
         .in('id', exerciseIds);
 
       if (exerciseDetailsError) {
@@ -154,12 +157,14 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
 
       // Transform the exercises data by using our fetched exercise details
       const transformedExercises = transformWorkoutExercises(exercisesData, exercisesDetails);
+      console.log('Transformed exercises:', transformedExercises);
 
       const detailedWorkout: DetailedWorkout = {
         ...workoutData,
         exercises: transformedExercises
       };
 
+      console.log("Final detailed workout:", detailedWorkout);
       setWorkout(detailedWorkout);
     } catch (err: any) {
       console.error("Error in fetchWorkoutDetail:", err);

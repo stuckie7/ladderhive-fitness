@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Target, Clock, Calendar } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { formatDistanceToNow } from 'date-fns';
 
 interface WorkoutAdditionalInfoProps {
   goal?: string;
@@ -18,125 +17,83 @@ const WorkoutAdditionalInfo: React.FC<WorkoutAdditionalInfoProps> = ({
   goal,
   category,
   equipment_needed,
-  benefits,
   instructions,
   modifications,
   created_at
 }) => {
-  // Format created_at date if available
-  const formattedDate = created_at ? new Date(created_at).toLocaleDateString() : null;
+  // Check if we have any data to display
+  const hasData = goal || category || equipment_needed || instructions || modifications;
   
-  // Process benefits into an array if it's a string
-  const benefitsArray = benefits?.split(',') || [];
+  if (!hasData) return null;
   
-  // Format equipment items
-  const equipmentItems = equipment_needed?.split(',') || [];
+  // Parse equipment into array if it exists
+  const equipmentArray = equipment_needed?.split(',').map(item => item.trim()).filter(Boolean) || [];
+  
+  // Format created_at date if it exists
+  const formattedDate = created_at 
+    ? formatDistanceToNow(new Date(created_at), { addSuffix: true })
+    : null;
 
   return (
-    <div className="space-y-6">
-      {/* Workout Metadata */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {(goal || category) && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Workout Focus</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {goal && (
-                <div className="flex items-start gap-2">
-                  <Target className="h-5 w-5 text-fitness-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium">Goal</p>
-                    <p className="text-muted-foreground">{goal}</p>
-                  </div>
-                </div>
-              )}
-              
-              {category && (
-                <div className="flex items-start gap-2">
-                  <Dumbbell className="h-5 w-5 text-fitness-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium">Category</p>
-                    <p className="text-muted-foreground">{category}</p>
-                  </div>
-                </div>
-              )}
-              
-              {formattedDate && (
-                <div className="flex items-start gap-2">
-                  <Calendar className="h-5 w-5 text-fitness-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium">Added</p>
-                    <p className="text-muted-foreground">{formattedDate}</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Additional Information</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {(goal || category) && (
+            <div>
+              <h3 className="font-medium mb-2">Workout Details</h3>
+              <ul className="space-y-1">
+                {goal && (
+                  <li className="flex items-start">
+                    <span className="font-medium mr-2 text-muted-foreground">Goal:</span> 
+                    <span>{goal}</span>
+                  </li>
+                )}
+                {category && (
+                  <li className="flex items-start">
+                    <span className="font-medium mr-2 text-muted-foreground">Category:</span> 
+                    <span>{category}</span>
+                  </li>
+                )}
+                {formattedDate && (
+                  <li className="flex items-start">
+                    <span className="font-medium mr-2 text-muted-foreground">Added:</span> 
+                    <span>{formattedDate}</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+          
+          {equipmentArray.length > 0 && (
+            <div>
+              <h3 className="font-medium mb-2">Equipment Needed</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {equipmentArray.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+        
+        {instructions && (
+          <div>
+            <h3 className="font-medium mb-2">Instructions</h3>
+            <p className="text-muted-foreground whitespace-pre-line">{instructions}</p>
+          </div>
         )}
         
-        {equipment_needed && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Equipment Needed</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {equipmentItems.map((item, index) => (
-                  <Badge key={index} variant="outline" className="bg-muted">
-                    {item.trim()}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {modifications && (
+          <div>
+            <h3 className="font-medium mb-2">Modifications</h3>
+            <p className="text-muted-foreground whitespace-pre-line">{modifications}</p>
+          </div>
         )}
-      </div>
-      
-      {/* Benefits Section */}
-      {benefits && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Benefits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc pl-5 space-y-1">
-              {benefitsArray.map((benefit, index) => (
-                <li key={index} className="text-muted-foreground">{benefit.trim()}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Instructions Section */}
-      {instructions && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">How To Perform</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-muted-foreground whitespace-pre-line">{instructions}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Modifications Section */}
-      {modifications && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Modifications</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-muted-foreground whitespace-pre-line">{modifications}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
