@@ -4,10 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { WorkoutStateType } from "./use-workout-state";
-import { WorkoutDetail, WorkoutExerciseDetail, WorkoutTemplate } from "./types";
+import { WorkoutTemplate } from "./types";
 
-export const useTemplateManagement = (
-  { 
+// Define the slice of WorkoutStateType needed for template management
+type TemplateManagementState = Pick<WorkoutStateType, 
+  'workout' | 'setWorkout' | 
+  'exercises' | 'templates' | 
+  'setTemplates' | 'setIsLoadingTemplates' | 
+  'setIsSaving'
+>;
+
+export const useTemplateManagement = (state: TemplateManagementState) => {
+  const { 
     workout,
     setWorkout,
     exercises,
@@ -15,13 +23,8 @@ export const useTemplateManagement = (
     setTemplates,
     setIsLoadingTemplates,
     setIsSaving
-  }: Pick<WorkoutStateType, 
-    'workout' | 'setWorkout' | 
-    'exercises' | 'templates' | 
-    'setTemplates' | 'setIsLoadingTemplates' | 
-    'setIsSaving'
-  >
-) => {
+  } = state;
+
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -36,14 +39,11 @@ export const useTemplateManagement = (
         .from('prepared_workouts')
         .select('id, title, description, category, difficulty, created_at')
         .eq('is_template', true)
-        .order('created_at', { ascending: false }) as unknown as { 
-          data: WorkoutTemplate[] | null; 
-          error: any 
-        };
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      setTemplates(data || []);
+      setTemplates(data as WorkoutTemplate[] || []);
     } catch (error) {
       console.error("Error loading templates:", error);
       toast({
