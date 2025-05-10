@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -6,98 +6,131 @@ const RawExercisesData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Use useCallback to memoize the fetch function
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null); // Clear previous errors
-      console.info("Fetching exercises with limit 10 and offset 0");
-      
-      // Check if supabase client is properly initialized
-      if (!supabase) {
-        throw new Error("Supabase client is not initialized");
-      }
-      
-      // Log supabase connection status for debugging
-      console.log("Supabase client:", supabase);
-      
-      // Try a basic query first to test connection
-      const { error: pingError } = await supabase.from('exercises_full').select('count', { count: 'exact', head: true });
-      
-      if (pingError) {
-        console.error("Connection test failed:", pingError);
-        throw new Error(`Database connection error: ${pingError.message || pingError.details}`);
-      }
-      
-      // Main data query with timeout protection
-      const fetchPromise = new Promise(async (resolve, reject) => {
-        try {
-          const result = await supabase
-            .from('exercises_full')
-            .select('*')
-            .limit(10);
-          resolve(result);
-        } catch (e) {
-          reject(e);
-        }
-      });
-      
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Request timed out after 8 seconds")), 8000)
-      );
-      
-      // Race the fetch against the timeout
-      const result = await Promise.race([fetchPromise, timeoutPromise]);
-      const { data: exercisesData, error: queryError } = result;
-      
-      if (queryError) {
-        console.error("Query error details:", queryError);
-        throw queryError;
-      }
-      
-      console.info(`Fetched ${exercisesData?.length || 0} exercises from exercises_full`);
-      
-      // Validate the data structure
-      if (!exercisesData) {
-        throw new Error("No data returned from query");
-      }
-      
-      setData(exercisesData);
-    } catch (err) {
-      console.error("Error fetching raw exercises data:", err);
-      
-      // Handle different error types
-      let errorMessage = "Failed to fetch exercises data";
-      
-      if (err.code === "PGRST301") {
-        errorMessage = "Database permission error. Check RLS policies.";
-      } else if (err.code === "PGRST116") {
-        errorMessage = "The table 'exercises_full' does not exist.";
-      } else if (err.code === "20") {
-        errorMessage = "Database connection error. Check your API keys.";
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      setError(errorMessage);
-      setData([]);
-    } finally {
+  
+  // Use refs to track component mount state and prevent race conditions
+  const isMounted = useRef(true);
+  const fetchInProgress = useRef(false);
+  const retryCount = useRef(0);
+  const MAX_RETRIES = 3;
+  
+  // Debounce loading state changes to prevent flickering
+  const setLoadingDebounced = (isLoading) => {
+    if (!isLoading) {
+      // When turning off loading, do it immediately
       setLoading(false);
+    } else if (isLoading && !loading) {
+      // When turning on loading, delay slightly to prevent quick flickers
+      setTimeout(() => {
+        if (isMounted.current) {
+          setLoading(true);
+        }
+      }, 200);
     }
-  }, []);
+  };
 
-  // Only fetch data once when the component mounts
+  // Safer state updates that check component is still mounted
+  const safeSetState = (stateSetter, newValue) => {
+    if (isMounted.current) {
+      stateSetter(newValue);
+    }
+  };
+
+  const fetchData = async () => {
+    // Prevent concurrent fetches
+    if (fetchInProgress.current) {
+      return;
+    }
+    
+    fetchInProgress.current = true;
+    
+    try {
+      // Only show loading if it will take some time
+      // Don't change loading state if we already have data (to prevent flickering)
+      if (data.length === 0) {
+        setLoadingDebounced(true);
+      }
+      
+      console.info(`Fetching exercises (attempt ${retryCount.current + 1}/${MAX_RETRIES + 1})`);
+      
+      const { data: exercisesData, error: fetchError } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .limit(10);
+      
+      // Handle possible race condition - check if component still mounted
+      if (!isMounted.current) return;
+      
+      if (fetchError) {
+        console.error("Fetch error:", fetchError);
+        throw fetchError;
+      }
+      
+      // Only update state if we got new data
+      if (exercisesData && Array.isArray(exercisesData)) {
+        console.info(`Successfully fetched ${exercisesData.length} exercises`);
+        safeSetState(setData, exercisesData);
+        safeSetState(setError, null);
+        retryCount.current = 0; // Reset retry counter on success
+      } else {
+        throw new Error("No data received from database");
+      }
+    } catch (err) {
+      console.error("Error in fetch:", err);
+      
+      // Only update error state if component is mounted
+      if (isMounted.current) {
+        const errorMessage = err.message || "Failed to fetch data";
+        safeSetState(setError, errorMessage);
+        
+        // Auto-retry logic for certain errors (but not too many times)
+        if (retryCount.current < MAX_RETRIES && 
+            !errorMessage.includes("permission") && 
+            !errorMessage.includes("does not exist")) {
+          retryCount.current += 1;
+          console.log(`Auto-retrying in 2 seconds... (${retryCount.current}/${MAX_RETRIES})`);
+          
+          setTimeout(() => {
+            if (isMounted.current) {
+              fetchInProgress.current = false;
+              fetchData();
+            }
+          }, 2000);
+        }
+      }
+    } finally {
+      // Only update loading state if component is still mounted
+      if (isMounted.current) {
+        fetchInProgress.current = false;
+        
+        // If we have data, don't flash loading state for auto-retries
+        if (!(retryCount.current > 0 && data.length > 0)) {
+          setLoadingDebounced(false);
+        }
+      }
+    }
+  };
+
+  // Effect for initial data fetch and cleanup
   useEffect(() => {
+    // Set up mounted ref
+    isMounted.current = true;
+    
+    // Initial fetch
     fetchData();
-  }, [fetchData]); // fetchData is memoized so this won't cause re-renders
+    
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted.current = false;
+    };
+  }, []); // Empty dependency array means this only runs once on mount
 
   const handleRetry = () => {
+    retryCount.current = 0; // Reset retry counter for manual retry
     fetchData();
   };
 
-  if (loading) {
+  // Conditional rendering based on state
+  if (loading && data.length === 0) {
     return (
       <div className="p-4 border rounded-md bg-muted/20">
         <div className="flex items-center justify-center p-8">
@@ -110,7 +143,7 @@ const RawExercisesData = () => {
     );
   }
 
-  if (error) {
+  if (error && data.length === 0) {
     return (
       <div className="p-4 border rounded-md bg-red-50 text-red-800">
         <h3 className="font-medium">Error loading data</h3>
