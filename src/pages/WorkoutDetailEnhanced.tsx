@@ -9,6 +9,7 @@ import WorkoutDetailHeader from '@/components/workouts/detail/WorkoutDetailHeade
 import VideoEmbed from '@/components/workouts/detail/VideoEmbed';
 import DescriptionCard from '@/components/workouts/detail/DescriptionCard';
 import WorkoutCircuit from '@/components/workouts/detail/WorkoutCircuit';
+import ExerciseList from '@/components/workouts/detail/ExerciseList';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Define the specific exercise shape needed for WorkoutCircuit
@@ -142,18 +143,30 @@ const WorkoutDetailEnhanced: React.FC = () => {
           />
         )}
         
-        <DescriptionCard 
-          description={workout.long_description || workout.description} 
-          benefits={workout.benefits}
-        />
-        
-        <WorkoutCircuit exercises={circuitExercises} />
-        
-        <div className="mt-6">
-          <Button className="w-full sm:w-auto bg-fitness-primary hover:bg-fitness-primary/90">
-            <PlayCircle className="mr-2 h-5 w-5" />
-            Start Workout
-          </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <DescriptionCard 
+              description={workout.long_description || workout.description} 
+              benefits={workout.benefits}
+            />
+            
+            <div className="mb-6">
+              <WorkoutCircuit exercises={circuitExercises} />
+            </div>
+          </div>
+          
+          <div>
+            <div className="sticky top-6">
+              <ExerciseList exercises={circuitExercises} />
+              
+              <div className="mt-6">
+                <Button className="w-full bg-fitness-primary hover:bg-fitness-primary/90">
+                  <PlayCircle className="mr-2 h-5 w-5" />
+                  Start Workout
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </AppLayout>
