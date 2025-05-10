@@ -13,6 +13,23 @@ interface ExerciseSet {
   duration?: number;
 }
 
+// Define a simplified type for workout input to avoid recursive type issues
+interface WorkoutInput {
+  id?: string;
+  title: string;
+  description?: string; 
+  exercises?: Array<{
+    id: string;
+    name?: string;
+    sets?: Array<{
+      id: string;
+      reps: number;
+      weight?: number;
+      duration?: number;
+    }>;
+  }>;
+}
+
 export const useTemplateManagement = () => {
   const [currentTemplate, setCurrentTemplate] = useState<WorkoutTemplate | null>(null);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
@@ -134,13 +151,8 @@ export const useTemplateManagement = () => {
     }
   }, [toast]);
 
-  // The saveAsTemplate function - using WorkoutDetail type to avoid recursive type issue
-  const saveAsTemplate = useCallback(async (workout?: { 
-    id?: string;
-    title: string;
-    description?: string; 
-    exercises?: any[]; 
-  }) => {
+  // The saveAsTemplate function with a fixed type to avoid the recursive type issue
+  const saveAsTemplate = useCallback(async (workout?: WorkoutInput) => {
     try {
       if (!workout && !currentTemplate) {
         toast({
