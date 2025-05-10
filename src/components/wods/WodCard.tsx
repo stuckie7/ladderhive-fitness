@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Bookmark, BookmarkCheck, Video, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Wod } from '@/types/wod';
+import { getYouTubeThumbnail, createDescriptionSnippet } from '@/utils/wodHelpers';
 
 interface WodCardProps {
   wod: Wod;
@@ -14,6 +15,9 @@ interface WodCardProps {
 
 const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
   const navigate = useNavigate();
+  const thumbnailUrl = getYouTubeThumbnail(wod.video_url);
+  const descriptionSnippet = createDescriptionSnippet(wod.description, 60);
+  const hasVideo = !!wod.video_url;
 
   const getDifficultyColor = (difficulty: string | undefined) => {
     switch (difficulty?.toLowerCase()) {
@@ -48,7 +52,6 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
   };
 
   const handleStartWorkout = () => {
-    // TODO: Implement starting the workout with this WOD
     navigate(`/workout-builder?wod=${wod.id}`);
   };
 
@@ -58,15 +61,32 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
   };
 
   return (
-    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
-      <CardHeader className="pb-2">
+    <Card 
+      className="h-full flex flex-col hover:shadow-md transition-shadow transform hover:scale-[1.01] overflow-hidden relative"
+      onClick={handleViewDetails}
+    >
+      {thumbnailUrl && (
+        <div className="absolute inset-0 z-0">
+          <div 
+            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"
+            aria-hidden="true"
+          />
+          <img 
+            src={thumbnailUrl} 
+            alt={`${wod.name} thumbnail`}
+            className="w-full h-full object-cover opacity-70"
+          />
+        </div>
+      )}
+      
+      <CardHeader className={`pb-2 relative z-10 ${thumbnailUrl ? 'text-white' : ''}`}>
         <div className="flex justify-between">
           <CardTitle className="text-xl">{wod.name}</CardTitle>
           <Button
             variant="ghost"
             size="icon"
             onClick={handleToggleFavorite}
-            className={wod.is_favorite ? "text-amber-500" : ""}
+            className={wod.is_favorite ? "text-amber-500" : thumbnailUrl ? "text-white" : ""}
           >
             {wod.is_favorite ? (
               <BookmarkCheck className="h-5 w-5" />
@@ -89,12 +109,12 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
         </div>
       </CardHeader>
       
-      <CardContent className="flex-grow">
-        <p className="text-muted-foreground text-sm mb-4">
-          {wod.description || "No description available."}
+      <CardContent className={`flex-grow relative z-10 ${thumbnailUrl ? 'text-white' : ''}`}>
+        <p className={`text-sm mb-4 ${thumbnailUrl ? 'text-white/80' : 'text-muted-foreground'}`}>
+          {descriptionSnippet}
         </p>
         
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className={`flex items-center gap-2 text-sm ${thumbnailUrl ? 'text-white/70' : 'text-muted-foreground'}`}>
           {wod.avg_duration_minutes && (
             <div className="flex items-center">
               <Clock className="h-4 w-4 mr-1" />
@@ -102,7 +122,7 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
             </div>
           )}
           
-          {wod.video_url && (
+          {hasVideo && (
             <div className="flex items-center">
               <Video className="h-4 w-4 mr-1" />
               <span>Video demo</span>
@@ -111,24 +131,33 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
         </div>
       </CardContent>
       
-      <CardFooter className="pt-4">
+      <CardFooter className="pt-4 relative z-10">
         <div className="flex gap-2 w-full">
           <Button 
-            variant="outline" 
-            onClick={handleViewDetails}
+            variant={thumbnailUrl ? "secondary" : "outline"}
+            onClick={(e) => { e.stopPropagation(); handleViewDetails(); }}
             className="flex-1"
           >
             View Details
           </Button>
           <Button 
             className="flex-1 bg-fitness-primary hover:bg-fitness-primary/90"
-            onClick={handleStartWorkout}
+            onClick={(e) => { e.stopPropagation(); handleStartWorkout(); }}
           >
             <Play className="mr-2 h-4 w-4" /> 
             Start
           </Button>
         </div>
       </CardFooter>
+      
+      {hasVideo && (
+        <div 
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+                    bg-fitness-primary/80 rounded-full p-3 z-10 opacity-80 hover:opacity-100"
+        >
+          <Play className="h-6 w-6 text-white" />
+        </div>
+      )}
     </Card>
   );
 };

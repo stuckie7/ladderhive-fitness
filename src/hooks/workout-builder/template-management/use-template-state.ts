@@ -4,6 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { WorkoutTemplate } from "../types";
 import { useToast } from "@/components/ui/use-toast";
 
+// Define the database result type to avoid excessive type instantiation
+type PreparedWorkoutDB = {
+  id: string;
+  title: string;
+  description?: string;
+  difficulty?: string;
+  category?: string;
+  created_at: string;
+  source_wod_id?: string;
+};
+
 export const useTemplateState = () => {
   const [currentTemplate, setCurrentTemplate] = useState<WorkoutTemplate | null>(null);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
@@ -24,7 +35,7 @@ export const useTemplateState = () => {
       if (error) throw error;
       
       // Map database results to WorkoutTemplate format
-      const loadedTemplates: WorkoutTemplate[] = (data || []).map(template => ({
+      const loadedTemplates: WorkoutTemplate[] = (data || []).map((template: PreparedWorkoutDB) => ({
         id: template.id,
         name: template.title, // For backward compatibility
         title: template.title,
@@ -32,7 +43,6 @@ export const useTemplateState = () => {
         difficulty: template.difficulty || "",
         category: template.category || "",
         created_at: template.created_at,
-        source_wod_id: template.source_wod_id,
         exercises: [] // We'll load these separately if needed
       }));
       

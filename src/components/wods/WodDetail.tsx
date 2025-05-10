@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Bookmark, BookmarkCheck, Clock, Video } from 'lucide-react';
 import { Wod } from '@/types/wod';
 import StartWodButton from './StartWodButton';
+import { getYouTubeEmbedUrl } from '@/utils/wodHelpers';
 
 interface WodDetailProps {
   wod: Wod;
@@ -13,6 +14,8 @@ interface WodDetailProps {
 }
 
 const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
+  const embedUrl = getYouTubeEmbedUrl(wod.video_url);
+
   const getDifficultyColor = (difficulty: string | undefined) => {
     switch (difficulty?.toLowerCase()) {
       case 'beginner':
@@ -92,55 +95,56 @@ const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
       
       {/* Description */}
       {wod.description && (
-        <div className="text-muted-foreground">
+        <div className="text-muted-foreground whitespace-pre-line">
           {wod.description}
         </div>
       )}
       
       {/* Video */}
-      {wod.video_url && (
-        <div className="aspect-video rounded-lg overflow-hidden">
+      {embedUrl ? (
+        <div className="aspect-video rounded-lg overflow-hidden border">
           <iframe 
             width="100%" 
             height="100%" 
-            src={convertYouTubeUrlToEmbed(wod.video_url)}
+            src={embedUrl}
             title={`${wod.name} Demo`}
             frameBorder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
             allowFullScreen
           ></iframe>
         </div>
-      )}
+      ) : wod.video_url ? (
+        <div className="rounded-lg bg-muted p-4 text-center">
+          <Video className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+          <p>Could not embed video. <a href={wod.video_url} target="_blank" rel="noopener noreferrer" className="underline text-primary">Open video in new tab</a></p>
+        </div>
+      ) : null}
       
       {/* Components */}
       <Card>
         <CardContent className="pt-6">
           <h2 className="text-xl font-semibold mb-4">Workout Components</h2>
           <div className="space-y-4">
-            {wod.components.sort((a, b) => a.order - b.order).map((component) => (
-              <div key={component.order} className="py-2 border-b last:border-b-0">
-                <p className="whitespace-pre-line">{component.description}</p>
-              </div>
-            ))}
+            {wod.components.length > 0 ? (
+              <ul className="list-disc pl-5 space-y-3">
+                {wod.components
+                  .sort((a, b) => a.order - b.order)
+                  .map((component) => (
+                    <li key={component.order} className="py-1">
+                      <p className="whitespace-pre-line">{component.description}</p>
+                    </li>
+                  ))}
+              </ul>
+            ) : wod.description ? (
+              <p className="text-muted-foreground">See description above for workout details.</p>
+            ) : (
+              <p className="text-muted-foreground">No workout components available.</p>
+            )}
           </div>
         </CardContent>
       </Card>
     </div>
   );
-};
-
-// Helper function to convert YouTube URLs to embed format
-const convertYouTubeUrlToEmbed = (url: string): string => {
-  // Extract YouTube video ID
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  
-  if (match && match[2].length === 11) {
-    return `https://www.youtube.com/embed/${match[2]}`;
-  }
-  
-  // Return the original URL if it doesn't match the pattern
-  return url;
 };
 
 export default WodDetail;

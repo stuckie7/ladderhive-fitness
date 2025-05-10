@@ -1,3 +1,4 @@
+
 import { WodComponent } from '@/types/wod';
 
 /**
@@ -63,4 +64,52 @@ export const parseWodComponents = (componentsData: any): WodComponent[] => {
     console.error("Error parsing WOD components:", error);
     return [];
   }
+};
+
+/**
+ * Extracts YouTube video ID from various YouTube URL formats
+ */
+export const getYouTubeVideoId = (url: string | null | undefined): string | null => {
+  if (!url) return null;
+  
+  try {
+    // Match patterns like youtube.com/watch?v=VIDEO_ID or youtu.be/VIDEO_ID
+    const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})(?:&|$|\/)/);
+    return videoIdMatch ? videoIdMatch[1] : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Gets YouTube thumbnail URL from video URL
+ */
+export const getYouTubeThumbnail = (url: string | null | undefined): string | null => {
+  const videoId = getYouTubeVideoId(url);
+  if (!videoId) return null;
+  
+  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+};
+
+/**
+ * Convert YouTube URL to embed format
+ */
+export const getYouTubeEmbedUrl = (url: string | null | undefined): string | null => {
+  const videoId = getYouTubeVideoId(url);
+  if (!videoId) return null;
+  
+  return `https://www.youtube.com/embed/${videoId}`;
+};
+
+/**
+ * Creates a truncated description snippet with ellipsis
+ */
+export const createDescriptionSnippet = (description: string | undefined, maxLength: number = 50): string => {
+  if (!description) return "No description available";
+  
+  if (description.length <= maxLength) {
+    return description;
+  }
+  
+  return `${description.substring(0, maxLength).trim()}...`;
 };
