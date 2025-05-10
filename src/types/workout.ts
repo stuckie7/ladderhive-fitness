@@ -1,4 +1,3 @@
-
 // Define types for workout data
 export interface Workout {
   id: string;
@@ -34,6 +33,7 @@ export interface PreparedWorkout {
   thumbnail_url?: string;
   created_at?: string;
   updated_at?: string;
+  is_template?: boolean;
   exercises?: number; // For compatibility with Workout interface
 }
 

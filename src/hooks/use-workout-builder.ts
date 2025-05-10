@@ -87,8 +87,9 @@ export const useWorkoutBuilder = (workoutId?: string) => {
       if (workoutError) throw workoutError;
       
       if (workoutData) {
-        // Check if workoutData has the is_template field, if not default to false
-        const isTemplate = workoutData.is_template !== undefined ? Boolean(workoutData.is_template) : false;
+        // Check if is_template field exists in database response
+        const workoutWithTemplate = workoutData as unknown as (typeof workoutData & { is_template?: boolean });
+        const isTemplate = workoutWithTemplate.is_template !== undefined ? Boolean(workoutWithTemplate.is_template) : false;
         
         setWorkout({
           id: workoutData.id,
@@ -161,7 +162,7 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     
     setIsLoadingTemplates(true);
     try {
-      // Fix: Query from prepared_workouts
+      // Query from prepared_workouts with explicit is_template field
       const { data, error } = await supabase
         .from('prepared_workouts')
         .select('id, title, description, category, difficulty, created_at')
