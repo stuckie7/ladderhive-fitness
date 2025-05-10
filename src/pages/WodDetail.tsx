@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -6,7 +5,7 @@ import WodDetailComponent from '@/components/wods/WodDetail';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useWods } from '@/hooks/use-wods';
+import { useWods } from '@/hooks/wods';
 
 const WodDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

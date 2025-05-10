@@ -1,16 +1,13 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { Wod, WodFilters } from '@/types/wod';
 import { parseWodComponents } from '@/utils/wodHelpers';
 
-export const useWods = () => {
-  const [wods, setWods] = useState<Wod[]>([]);
+export const useWodFetch = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedWod, setSelectedWod] = useState<Wod | null>(null);
-  const [filters, setFilters] = useState<WodFilters>({});
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -56,7 +53,7 @@ export const useWods = () => {
         is_favorite: userFavorites.includes(wod.id)
       })) || [];
       
-      setWods(mappedWods);
+      return mappedWods;
       
     } catch (error: any) {
       console.error("Error fetching wods:", error);
@@ -65,6 +62,7 @@ export const useWods = () => {
         description: "Failed to load workouts of the day",
         variant: "destructive"
       });
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -100,8 +98,6 @@ export const useWods = () => {
         is_favorite: isFavorite
       };
       
-      setSelectedWod(wodWithTypedComponents);
-      
       return wodWithTypedComponents;
     } catch (error: any) {
       console.error("Error fetching wod:", error);
@@ -116,87 +112,9 @@ export const useWods = () => {
     }
   }, [user, toast]);
 
-  const toggleFavorite = useCallback(async (wodId: string) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to save favorites",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      // Check if it's already a favorite
-      const { data: existingFav, error: checkError } = await supabase
-        .from('user_favorite_wods')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('wod_id', wodId)
-        .single();
-      
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows found" error
-        throw checkError;
-      }
-      
-      // If it's a favorite, remove it; otherwise, add it
-      if (existingFav) {
-        const { error: removeError } = await supabase
-          .from('user_favorite_wods')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('wod_id', wodId);
-        
-        if (removeError) throw removeError;
-        
-        toast({
-          title: "Removed from Favorites",
-          description: "Workout has been removed from your favorites",
-        });
-        
-        // Update local state
-        setWods(prev => prev.map(wod => 
-          wod.id === wodId ? { ...wod, is_favorite: false } : wod
-        ));
-        
-        if (selectedWod?.id === wodId) {
-          setSelectedWod(prev => prev ? { ...prev, is_favorite: false } : null);
-        }
-      } else {
-        const { error: addError } = await supabase
-          .from('user_favorite_wods')
-          .insert({ user_id: user.id, wod_id: wodId });
-        
-        if (addError) throw addError;
-        
-        toast({
-          title: "Added to Favorites",
-          description: "Workout has been added to your favorites",
-        });
-        
-        // Update local state
-        setWods(prev => prev.map(wod => 
-          wod.id === wodId ? { ...wod, is_favorite: true } : wod
-        ));
-        
-        if (selectedWod?.id === wodId) {
-          setSelectedWod(prev => prev ? { ...prev, is_favorite: true } : null);
-        }
-      }
-    } catch (error: any) {
-      console.error("Error toggling favorite:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update favorites",
-        variant: "destructive"
-      });
-    }
-  }, [user, toast, selectedWod]);
-
   const getFavoriteWods = useCallback(async () => {
     if (!user) {
-      setWods([]);
-      return;
+      return [];
     }
     
     setIsLoading(true);
@@ -217,7 +135,7 @@ export const useWods = () => {
           is_favorite: true
         }));
       
-      setWods(favoriteWods);
+      return favoriteWods;
     } catch (error: any) {
       console.error("Error fetching favorite wods:", error);
       toast({
@@ -225,25 +143,16 @@ export const useWods = () => {
         description: "Failed to load favorite workouts",
         variant: "destructive"
       });
+      return [];
     } finally {
       setIsLoading(false);
     }
   }, [user, toast]);
 
-  // Fetch WODs on initial load
-  useEffect(() => {
-    fetchWods(filters);
-  }, [fetchWods, filters]);
-
   return {
-    wods,
     isLoading,
-    selectedWod,
-    filters,
-    setFilters,
     fetchWods,
     fetchWodById,
-    toggleFavorite,
     getFavoriteWods
   };
 };

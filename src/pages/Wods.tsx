@@ -4,7 +4,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WodList from '@/components/wods/WodList';
 import WodFilters from '@/components/wods/WodFilters';
-import { useWods } from '@/hooks/use-wods';
+import { useWods } from '@/hooks/wods';
 import { WodFilters as FiltersType } from '@/types/wod';
 
 const Wods: React.FC = () => {
