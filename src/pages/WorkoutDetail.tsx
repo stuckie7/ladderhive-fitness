@@ -22,6 +22,7 @@ const WorkoutDetail: React.FC = () => {
     workoutExercises,
     exercisesLoading,
     workoutActionLoading,
+    handleAddExercise,
     handleSaveWorkout,
     handleCompleteWorkout
   } = useWorkoutDetail(id);
@@ -107,13 +108,15 @@ const WorkoutDetail: React.FC = () => {
               duration={workout.duration}
               exercises={workout.exercises}
               difficulty={workout.difficulty}
-              category={workout.category || undefined}
+              category={workout.difficulty} // Fallback to using difficulty as category
             />
           }
           content={
             <WorkoutExerciseSection
               exercises={workoutExercises}
               isLoading={exercisesLoading}
+              onAddExercise={handleAddExercise}
+              workoutId={id}
             />
           }
         />

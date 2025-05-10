@@ -1,18 +1,26 @@
 
+import React from "react";
 import { Badge } from "@/components/ui/badge";
-
-interface Workout {
-  id: string;
-  title: string;
-  description: string;
-  difficulty: string;
-}
+import { Button } from "@/components/ui/button";
+import { Bookmark, BookmarkCheck, Play } from "lucide-react";
 
 interface WorkoutDetailHeaderProps {
-  workout: Workout;
+  title: string;
+  description?: string;
+  isSaved: boolean;
+  isLoading: boolean;
+  onToggleSave: () => Promise<void>;
+  onStartWorkout: () => Promise<void>;
 }
 
-const WorkoutDetailHeader = ({ workout }: WorkoutDetailHeaderProps) => {
+const WorkoutDetailHeader = ({ 
+  title, 
+  description, 
+  isSaved,
+  isLoading,
+  onToggleSave,
+  onStartWorkout
+}: WorkoutDetailHeaderProps) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty?.toLowerCase()) {
       case 'beginner':
@@ -31,15 +39,37 @@ const WorkoutDetailHeader = ({ workout }: WorkoutDetailHeaderProps) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
       <div>
-        <h1 className="text-3xl font-bold">{workout.title}</h1>
-        <p className="text-muted-foreground mt-1">{workout.description}</p>
+        <h1 className="text-3xl font-bold">{title}</h1>
+        {description && <p className="text-muted-foreground mt-1">{description}</p>}
       </div>
-      <div className="mt-4 md:mt-0 flex items-center">
-        <Badge 
-          className={`text-sm px-3 py-1 ${getDifficultyColor(workout.difficulty)}`}
+      <div className="mt-4 md:mt-0 flex items-center gap-2">
+        <Button
+          variant="outline"
+          onClick={onToggleSave}
+          disabled={isLoading}
+          className={isSaved ? "text-amber-500" : ""}
         >
-          {workout.difficulty}
-        </Badge>
+          {isSaved ? (
+            <>
+              <BookmarkCheck className="mr-2 h-4 w-4" />
+              Saved
+            </>
+          ) : (
+            <>
+              <Bookmark className="mr-2 h-4 w-4" />
+              Save
+            </>
+          )}
+        </Button>
+        
+        <Button 
+          className="bg-fitness-primary hover:bg-fitness-primary/90"
+          onClick={onStartWorkout}
+          disabled={isLoading}
+        >
+          <Play className="mr-2 h-4 w-4" />
+          Start Workout
+        </Button>
       </div>
     </div>
   );

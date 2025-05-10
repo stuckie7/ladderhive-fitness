@@ -8,7 +8,6 @@ import ExerciseSearchModal from "@/components/exercises/ExerciseSearchModal";
 import WorkoutExerciseSkeleton from "@/components/workouts/WorkoutExerciseSkeleton";
 import { Exercise } from "@/types/exercise";
 import { WorkoutExercise } from "@/hooks/workout-exercises/utils";
-import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 
 interface ExerciseListItem {
   id: string;
