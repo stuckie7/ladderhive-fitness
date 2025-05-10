@@ -23,6 +23,8 @@ import ExerciseDetailEnhanced from "@/pages/ExerciseDetailEnhanced";
 import ExerciseLibrarySimple from "@/pages/ExerciseLibrarySimple";
 import ExerciseLibraryEnhanced from "@/pages/ExerciseLibraryEnhanced";
 import WorkoutBuilder from "@/pages/WorkoutBuilder";
+import Wods from "@/pages/Wods";
+import WodDetail from "@/pages/WodDetail";
 
 function App() {
   return (
@@ -77,6 +79,9 @@ function App() {
               <WorkoutDetail />
             </ProtectedRoute>
           } />
+          {/* New WOD Routes */}
+          <Route path="/wods" element={<Wods />} />
+          <Route path="/wods/:id" element={<WodDetail />} />
           <Route path="/progress" element={
             <ProtectedRoute>
               <Progress />

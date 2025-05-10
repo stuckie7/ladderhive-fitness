@@ -626,6 +626,32 @@ export type Database = {
         }
         Relationships: []
       }
+      user_favorite_wods: {
+        Row: {
+          created_at: string | null
+          user_id: string
+          wod_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          user_id: string
+          wod_id: string
+        }
+        Update: {
+          created_at?: string | null
+          user_id?: string
+          wod_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorite_wods_wod_id_fkey"
+            columns: ["wod_id"]
+            isOneToOne: false
+            referencedRelation: "wods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_workout_exercises: {
         Row: {
           created_at: string | null
@@ -717,6 +743,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wods: {
+        Row: {
+          avg_duration_minutes: number | null
+          category: string | null
+          components: Json
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          id: string
+          name: string
+          video_url: string | null
+        }
+        Insert: {
+          avg_duration_minutes?: number | null
+          category?: string | null
+          components: Json
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          name: string
+          video_url?: string | null
+        }
+        Update: {
+          avg_duration_minutes?: number | null
+          category?: string | null
+          components?: Json
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          name?: string
+          video_url?: string | null
+        }
+        Relationships: []
       }
       workout_exercises: {
         Row: {
