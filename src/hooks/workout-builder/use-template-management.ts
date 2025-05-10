@@ -3,28 +3,14 @@ import { useState, useCallback } from 'react';
 import { useWodFetch } from '../wods/use-wod-fetch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { WorkoutTemplate, TemplateExercise } from './types';
 
-// Simplified interfaces to avoid recursive type definitions
-export interface ExerciseSet {
+// Simplified internal interface for exercise sets
+interface ExerciseSet {
   id: string;
   reps: number;
   weight?: number;
   duration?: number;
-}
-
-export interface TemplateExercise {
-  id: string;
-  exerciseId: string;
-  name?: string;
-  sets: ExerciseSet[];
-  restSeconds?: number;
-}
-
-export interface WorkoutTemplate {
-  id: string;
-  name: string;
-  exercises: TemplateExercise[];
-  isCircuit?: boolean;
 }
 
 export const useTemplateManagement = () => {
@@ -92,13 +78,14 @@ export const useTemplateManagement = () => {
       
       const template: WorkoutTemplate = {
         id: wodId,
-        name: wod.name,
+        title: wod.name,  // Using title instead of name to match types
+        name: wod.name,   // Keep name for backward compatibility
         exercises: templateExercises,
+        category: wod.category || 'General',
+        difficulty: wod.difficulty || 'Intermediate',
+        created_at: new Date().toISOString(),
         isCircuit: wod.components.length > 3,
       };
-      
-      // Set the template as current
-      // setCurrentTemplate(template);
       
       return template;
     } catch (error) {
@@ -122,7 +109,11 @@ export const useTemplateManagement = () => {
       if (data) {
         const loadedTemplates = data.map(template => ({
           id: template.id,
-          name: template.title,
+          title: template.title,
+          name: template.title, // For backward compatibility
+          category: template.category || 'General',
+          difficulty: template.difficulty || 'Intermediate',
+          created_at: template.created_at || new Date().toISOString(),
           exercises: [], // We'll load these on demand when a template is selected
           isCircuit: false
         }));
@@ -142,22 +133,43 @@ export const useTemplateManagement = () => {
   }, [toast]);
 
   // Add the missing saveAsTemplate function
-  const saveAsTemplate = useCallback(async () => {
+  const saveAsTemplate = useCallback(async (workout?: WorkoutTemplate) => {
     // Implementation would depend on your current workout state
-    // This is a placeholder that would be implemented based on your app's requirements
-    toast({
-      title: "Template Saved",
-      description: "Your workout has been saved as a template"
-    });
-    
-    return true;
-  }, [toast]);
+    try {
+      const templateToSave = workout || currentTemplate;
+      
+      if (!templateToSave) {
+        toast({
+          title: "Error",
+          description: "No workout to save as template",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      toast({
+        title: "Template Saved",
+        description: "Your workout has been saved as a template"
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save workout as template",
+        variant: "destructive"
+      });
+      return false;
+    }
+  }, [currentTemplate, toast]);
 
   const duplicateTemplate = useCallback((template: WorkoutTemplate) => {
     const newTemplate = {
       ...template,
       id: `${template.id}-copy-${Date.now()}`,
-      name: `${template.name} (Copy)`
+      name: `${template.name} (Copy)`,
+      title: `${template.title || template.name} (Copy)`
     };
     addTemplate(newTemplate);
   }, [addTemplate]);
