@@ -1,155 +1,243 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
+import { Exercise } from "@/types/exercise";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/context/AuthContext';
-import { format, subDays } from 'date-fns';
-import { Exercise } from '@/types/exercise';
+// This function will simulate fetching dashboard data from various data sources
+// In a full implementation, this would call the Supabase client to get the actual data
+const fetchDashboardData = async (userId: string) => {
+  // In a real implementation, this would fetch data from Supabase tables
+  // For now, we'll return mock data that matches your expected structure
 
-export interface DashboardData {
-  recentWorkouts: any[];
-  upcomingWorkouts: any[];
-  favoriteExercises: Exercise[];
-  achievements: any[];
-  metrics: {
-    totalWorkouts: number;
-    totalMinutes: number;
-    workoutsThisWeek: number;
-    completionRate: number;
-    currentStreak: number;
-    totalWeight: number;
+  // Mock favorite exercises
+  const favoriteExercises = [
+    {
+      id: "ex-1",
+      name: "Barbell Bench Press",
+      muscle_group: "Chest",
+      bodyPart: "Chest",
+      description: "A compound chest exercise focusing on pectoral development",
+      difficulty: "Intermediate",
+      video_url: null,
+      image_url: "https://example.com/bench-press.webp",
+    },
+    {
+      id: "ex-2",
+      name: "Squat",
+      muscle_group: "Legs",
+      bodyPart: "Quadriceps",
+      description: "A fundamental lower body compound exercise",
+      difficulty: "Intermediate",
+      video_url: null,
+      image_url: "https://example.com/squat.webp",
+    },
+    {
+      id: "ex-3",
+      name: "Deadlift",
+      muscle_group: "Back",
+      bodyPart: "Lower Back",
+      description: "A compound exercise that works multiple major muscle groups",
+      difficulty: "Advanced",
+      video_url: null,
+      image_url: "https://example.com/deadlift.webp",
+    },
+    {
+      id: "ex-4",
+      name: "Pull-up",
+      muscle_group: "Back",
+      bodyPart: "Lats",
+      description: "A bodyweight back exercise focusing on lat development",
+      difficulty: "Intermediate",
+      video_url: null,
+      image_url: "https://example.com/pull-up.webp",
+    },
+  ];
+
+  // Mock recent workouts for workout history
+  const recentWorkouts = [
+    {
+      id: "w-1",
+      date: new Date().toISOString(),
+      title: "Morning Push Workout",
+      duration: 45,
+      exercises: 4,
+      completed: true,
+    },
+    {
+      id: "w-2",
+      date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Yesterday
+      title: "Pull Day",
+      duration: 55,
+      exercises: 5,
+      completed: true,
+    },
+    {
+      id: "w-3",
+      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+      title: "Leg Day",
+      duration: 60,
+      exercises: 6,
+      completed: true,
+    },
+    {
+      id: "w-4",
+      date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
+      title: "Full Body Workout",
+      duration: 75,
+      exercises: 8,
+      completed: true,
+    },
+    {
+      id: "w-5",
+      date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+      title: "Planned Push Workout",
+      duration: 45,
+      exercises: 5,
+      completed: false,
+    },
+  ];
+
+  // Mock upcoming workouts
+  const upcomingWorkouts = [
+    {
+      id: "w-5",
+      title: "Push Workout",
+      date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+      duration: 45,
+      difficulty: "Intermediate"
+    },
+    {
+      id: "w-6",
+      title: "Pull Workout",
+      date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // In 3 days
+      duration: 50,
+      difficulty: "Intermediate"
+    },
+    {
+      id: "w-7",
+      title: "Leg Day",
+      date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // In 5 days
+      duration: 55,
+      difficulty: "Advanced"
+    },
+    {
+      id: "w-8",
+      title: "Recovery & Mobility",
+      date: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(), // In 6 days
+      duration: 30,
+      difficulty: "Beginner"
+    }
+  ];
+
+  // Mock achievements
+  const achievements = [
+    {
+      id: "a-1",
+      title: "First Workout",
+      description: "Completed your first workout",
+      date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 1 month ago
+      icon: "Trophy",
+      completed: true
+    },
+    {
+      id: "a-2",
+      title: "Consistent Athlete",
+      description: "Workout 3 days in a row",
+      date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
+      icon: "Award",
+      completed: true
+    },
+    {
+      id: "a-3",
+      title: "Strength Milestone",
+      description: "Bench press bodyweight",
+      date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+      icon: "Dumbbell",
+      completed: true
+    },
+    {
+      id: "a-4",
+      title: "Century Club",
+      description: "Complete 100 total workouts",
+      progress: 45,
+      icon: "Hundred",
+      completed: false
+    }
+  ];
+
+  // Mock metrics data for charts and stats
+  const metrics = {
+    totalWorkouts: 45,
+    workoutsThisWeek: 3,
+    completionRate: 92,
+    totalMinutes: 2430,
+    currentStreak: 3,
+    totalWeight: 18240,
   };
-  weeklyChartData: any[];
-}
+
+  // Mock weekly chart data
+  const weeklyChartData = [
+    { name: 'Mon', minutes: 45, weight: 3200 },
+    { name: 'Tue', minutes: 0, weight: 0 },
+    { name: 'Wed', minutes: 60, weight: 4100 },
+    { name: 'Thu', minutes: 30, weight: 2100 },
+    { name: 'Fri', minutes: 0, weight: 0 },
+    { name: 'Sat', minutes: 75, weight: 5300 },
+    { name: 'Sun', minutes: 0, weight: 0 },
+  ];
+
+  return {
+    favoriteExercises,
+    recentWorkouts,
+    upcomingWorkouts,
+    achievements,
+    metrics,
+    weeklyChartData
+  };
+};
 
 export const useDashboardData = () => {
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    recentWorkouts: [],
-    upcomingWorkouts: [],
-    favoriteExercises: [],
-    achievements: [],
-    metrics: {
-      totalWorkouts: 0,
-      totalMinutes: 0,
-      workoutsThisWeek: 0,
-      completionRate: 0,
-      currentStreak: 0,
-      totalWeight: 0
-    },
-    weeklyChartData: []
-  });
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const [favoriteExercises, setFavoriteExercises] = useState<Exercise[]>([]);
+  const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
+  const [upcomingWorkouts, setUpcomingWorkouts] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<any>({
+    totalWorkouts: 0,
+    workoutsThisWeek: 0,
+    completionRate: 0,
+    totalMinutes: 0,
+    currentStreak: 0,
+    totalWeight: 0,
+  });
+  const [weeklyChartData, setWeeklyChartData] = useState<any[]>([]);
+  
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+    const loadDashboardData = async () => {
+      setIsLoading(true);
       
       try {
-        setIsLoading(true);
+        // If user is not logged in, we can still show demo data
+        const userId = user?.id || 'demo-user';
         
-        // For demo purposes, we'll generate some mock data
-        // In a real app, you would fetch this from Supabase
+        // Fetch dashboard data (this would normally come from Supabase)
+        const data = await fetchDashboardData(userId);
         
-        // Mock recent workouts (last 7 days)
-        const recentWorkouts = Array.from({ length: 5 }, (_, i) => ({
-          id: `workout-${i}`,
-          title: `Workout ${['A', 'B', 'C', 'D', 'E'][i]}`,
-          date: format(subDays(new Date(), i), 'yyyy-MM-dd'),
-          duration: 30 + Math.floor(Math.random() * 30),
-          exercises: 5 + Math.floor(Math.random() * 5),
-          completed: i !== 0
-        }));
-        
-        // Mock upcoming workouts (next 7 days)
-        const upcomingWorkouts = Array.from({ length: 3 }, (_, i) => ({
-          id: `upcoming-${i}`,
-          title: `${['Upper Body', 'Lower Body', 'Full Body'][i]} Workout`,
-          date: format(subDays(new Date(), -i - 1), 'yyyy-MM-dd'),
-          duration: 45 + Math.floor(Math.random() * 15),
-          difficulty: ['Beginner', 'Intermediate', 'Advanced'][Math.floor(Math.random() * 3)]
-        }));
-        
-        // Mock favorite exercises (would come from user preferences)
-        const favoriteExercises = Array.from({ length: 4 }, (_, i) => ({
-          id: `exercise-${i}`,
-          name: [`Bench Press`, `Squats`, `Deadlift`, `Pull-ups`][i],
-          muscle_group: ['Chest', 'Legs', 'Back', 'Back'][i],
-          equipment: ['Barbell', 'Barbell', 'Barbell', 'Bodyweight'][i]
-        })) as Exercise[];
-        
-        // Mock achievements
-        const achievements = [
-          {
-            id: 'achievement-1',
-            title: 'First Workout',
-            description: 'Complete your first workout',
-            icon: 'award' as const,
-            unlockedAt: '2023-05-01'
-          },
-          {
-            id: 'achievement-2',
-            title: '5 Workouts',
-            description: 'Complete 5 workouts',
-            icon: 'award' as const,
-            unlockedAt: '2023-05-10'
-          },
-          {
-            id: 'achievement-3',
-            title: '10,000 lbs Lifted',
-            description: 'Lift a total of 10,000 lbs',
-            icon: 'trophy' as const,
-            progress: 7500,
-            maxProgress: 10000
-          },
-          {
-            id: 'achievement-4',
-            title: '7-Day Streak',
-            description: 'Work out for 7 days in a row',
-            icon: 'medal' as const,
-            progress: 4,
-            maxProgress: 7
-          }
-        ];
-        
-        // Mock metrics
-        const metrics = {
-          totalWorkouts: 24,
-          totalMinutes: 1250,
-          workoutsThisWeek: 3,
-          completionRate: 85,
-          currentStreak: 4,
-          totalWeight: 7500
-        };
-        
-        // Mock weekly chart data
-        const weeklyChartData = Array.from({ length: 7 }, (_, i) => {
-          const day = format(subDays(new Date(), 6 - i), 'EEE');
-          return {
-            day,
-            weight: Math.floor(Math.random() * 2000) + 1000,
-            duration: Math.floor(Math.random() * 60) + 15
-          };
-        });
-        
-        setDashboardData({
-          recentWorkouts,
-          upcomingWorkouts,
-          favoriteExercises,
-          achievements,
-          metrics,
-          weeklyChartData
-        });
-        
-      } catch (error: any) {
-        console.error("Error fetching dashboard data:", error);
+        // Update state with fetched data
+        setFavoriteExercises(data.favoriteExercises);
+        setRecentWorkouts(data.recentWorkouts);
+        setUpcomingWorkouts(data.upcomingWorkouts);
+        setAchievements(data.achievements);
+        setMetrics(data.metrics);
+        setWeeklyChartData(data.weeklyChartData);
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
         toast({
-          title: "Error",
-          description: "Failed to load dashboard data",
+          title: "Error loading dashboard",
+          description: "Failed to load your dashboard data. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -157,11 +245,89 @@ export const useDashboardData = () => {
       }
     };
     
-    fetchDashboardData();
+    loadDashboardData();
   }, [user, toast]);
 
+  const addFavoriteExercise = async (exerciseId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save favorite exercises",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // In a real implementation, we would call Supabase here
+      // await supabase.from('user_favorites').insert({ user_id: user.id, exercise_id: exerciseId });
+      
+      toast({
+        title: "Success",
+        description: "Exercise added to favorites",
+      });
+      
+      // Refresh dashboard data
+      const data = await fetchDashboardData(user.id);
+      setFavoriteExercises(data.favoriteExercises);
+    } catch (error) {
+      console.error("Error adding favorite exercise:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add exercise to favorites",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeFavoriteExercise = async (exerciseId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to manage favorite exercises",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // In a real implementation, we would call Supabase here
+      // await supabase
+      //   .from('user_favorites')
+      //   .delete()
+      //   .eq('user_id', user.id)
+      //   .eq('exercise_id', exerciseId);
+      
+      // Update state optimistically
+      setFavoriteExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+      
+      toast({
+        title: "Success",
+        description: "Exercise removed from favorites",
+      });
+    } catch (error) {
+      console.error("Error removing favorite exercise:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove exercise from favorites",
+        variant: "destructive",
+      });
+      
+      // Refresh data to ensure consistency
+      const data = await fetchDashboardData(user.id);
+      setFavoriteExercises(data.favoriteExercises);
+    }
+  };
+
   return {
-    ...dashboardData,
-    isLoading
+    isLoading,
+    favoriteExercises,
+    recentWorkouts,
+    upcomingWorkouts,
+    achievements,
+    metrics,
+    weeklyChartData,
+    addFavoriteExercise,
+    removeFavoriteExercise
   };
 };

@@ -1,18 +1,67 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Star, Plus, Dumbbell } from "lucide-react";
+import { Star, Plus, Dumbbell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { Exercise } from "@/types/exercise";
+import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface FavoriteExercisesProps {
   exercises: Exercise[];
   isLoading: boolean;
   onAddExercise?: () => void;
+  onRemoveFavorite?: (id: string) => Promise<void>;
 }
 
-const FavoriteExercises = ({ exercises, isLoading, onAddExercise }: FavoriteExercisesProps) => {
+const FavoriteExercises = ({ 
+  exercises, 
+  isLoading, 
+  onAddExercise,
+  onRemoveFavorite
+}: FavoriteExercisesProps) => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const handleRemoveFavorite = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to manage favorite exercises",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setRemovingId(id);
+      
+      if (onRemoveFavorite) {
+        await onRemoveFavorite(id);
+        toast({
+          title: "Success",
+          description: "Exercise removed from favorites",
+        });
+      }
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove exercise from favorites",
+        variant: "destructive",
+      });
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   return (
     <Card className="glass-panel h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -43,7 +92,7 @@ const FavoriteExercises = ({ exercises, isLoading, onAddExercise }: FavoriteExer
               <Link 
                 key={exercise.id} 
                 to={`/exercises/${exercise.id}`}
-                className="p-3 border border-gray-800/50 rounded-lg hover:border-fitness-accent/50 hover:bg-gray-900/30 transition-all group"
+                className="p-3 border border-gray-800/50 rounded-lg hover:border-fitness-accent/50 hover:bg-gray-900/30 transition-all group relative"
               >
                 <div className="flex items-center gap-3">
                   <div className="bg-fitness-accent/10 p-2 rounded-full">
@@ -56,6 +105,15 @@ const FavoriteExercises = ({ exercises, isLoading, onAddExercise }: FavoriteExer
                     </p>
                   </div>
                 </div>
+                {onRemoveFavorite && (
+                  <button 
+                    className="absolute top-1 right-1 p-1 rounded-full bg-gray-800/50 hover:bg-red-500/30 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => handleRemoveFavorite(e, exercise.id)}
+                    disabled={removingId === exercise.id}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </Link>
             ))}
           </div>

@@ -1,8 +1,9 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import AppLayout from "@/components/layout/AppLayout";
-import { Activity, Calendar, Dumbbell, Plus, Zap } from "lucide-react";
+import { Activity, Award, Calendar, Dumbbell, Plus, Zap } from "lucide-react";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 
 // Import dashboard components
@@ -13,8 +14,9 @@ import AchievementCard from "@/components/dashboard/AchievementCard";
 import UpcomingWorkouts from "@/components/dashboard/UpcomingWorkouts";
 import DailyProgressCard from "@/components/progress/DailyProgressCard";
 import { useDailyProgress } from "@/hooks/use-daily-progress";
-import PreparedWorkoutsSection from "@/components/workouts/PreparedWorkoutsSection";
 import { Exercise } from "@/types/exercise";
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 const Dashboard = () => {
   const { 
@@ -24,10 +26,13 @@ const Dashboard = () => {
     achievements,
     metrics,
     weeklyChartData, 
-    isLoading 
+    isLoading,
+    removeFavoriteExercise
   } = useDashboardData();
   
   const { progress, isLoading: progressLoading } = useDailyProgress();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { toast } = useToast();
   
   // Prepare metrics for the metrics card
   const metricsData = [
@@ -38,6 +43,26 @@ const Dashboard = () => {
     { name: 'Current Streak', value: metrics.currentStreak, unit: 'days', change: 10 },
     { name: 'Weight Lifted', value: Math.round(metrics.totalWeight/1000), unit: 'k lbs', change: 15 },
   ];
+
+  const handleAddFavorite = () => {
+    toast({
+      title: "Coming soon",
+      description: "Adding favorites will be available shortly",
+    });
+  };
+
+  const handleSelectWorkout = (id: string) => {
+    toast({
+      description: `Selected workout: ${id}`,
+    });
+  };
+
+  const handleScheduleWorkout = () => {
+    toast({
+      title: "Quick Schedule",
+      description: "Workout scheduling feature coming soon",
+    });
+  };
 
   return (
     <AppLayout>
@@ -70,7 +95,9 @@ const Dashboard = () => {
           <div>
             <WorkoutHistory 
               workouts={recentWorkouts} 
-              isLoading={isLoading} 
+              isLoading={isLoading}
+              onSelectDate={setSelectedDate}
+              onSelectWorkout={handleSelectWorkout}
             />
           </div>
         </div>
@@ -105,7 +132,8 @@ const Dashboard = () => {
           <div className="col-span-2">
             <UpcomingWorkouts 
               workouts={upcomingWorkouts} 
-              isLoading={isLoading} 
+              isLoading={isLoading}
+              onScheduleWorkout={handleScheduleWorkout}
             />
           </div>
         </div>
@@ -114,24 +142,14 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <FavoriteExercises 
             exercises={favoriteExercises} 
-            isLoading={isLoading} 
+            isLoading={isLoading}
+            onAddExercise={handleAddFavorite}
+            onRemoveFavorite={removeFavoriteExercise}
           />
           <AchievementCard 
             achievements={achievements} 
             isLoading={isLoading} 
           />
-        </div>
-        
-        {/* PreparedWorkoutsSection remains unchanged */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 gradient-heading">Suggested Workouts</h2>
-          <PreparedWorkoutsSection 
-              currentWorkoutId={null}
-              onAddExercise={async (exercise: Exercise) => {
-                console.log("Adding exercise:", exercise);
-                return Promise.resolve();
-              }} 
-            />
         </div>
       </div>
     </AppLayout>
