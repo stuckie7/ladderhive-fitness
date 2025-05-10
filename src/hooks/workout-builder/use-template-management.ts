@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useWodFetch } from '../wods/use-wod-fetch';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,9 +49,11 @@ export const useTemplateManagement = () => {
   }, []);
 
   const deleteTemplate = useCallback(async (templateId: string) => {
-    setTemplates(prevTemplates =>
-      prevTemplates.filter(template => template.id !== templateId)
-    );
+    // Using a separate type for callback to avoid recursive type issues
+    type TemplatePred = (template: WorkoutTemplate) => boolean;
+    const filterPredicate: TemplatePred = template => template.id !== templateId;
+    
+    setTemplates(prevTemplates => prevTemplates.filter(filterPredicate));
     setCurrentTemplate(prev => prev?.id === templateId ? null : prev);
     
     try {
@@ -112,7 +113,6 @@ export const useTemplateManagement = () => {
     }
   }, [fetchWodById]);
 
-  // The loadTemplates function
   const loadTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -151,7 +151,6 @@ export const useTemplateManagement = () => {
     }
   }, [toast]);
 
-  // The saveAsTemplate function with a fixed type to avoid the recursive type issue
   const saveAsTemplate = useCallback(async (workout?: WorkoutInput) => {
     try {
       if (!workout && !currentTemplate) {

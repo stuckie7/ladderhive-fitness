@@ -748,7 +748,7 @@ export type Database = {
         Row: {
           avg_duration_minutes: number | null
           category: string | null
-          components: Json
+          components: Json | null
           created_at: string | null
           description: string | null
           difficulty: string | null
@@ -769,7 +769,7 @@ export type Database = {
         Insert: {
           avg_duration_minutes?: number | null
           category?: string | null
-          components: Json
+          components?: Json | null
           created_at?: string | null
           description?: string | null
           difficulty?: string | null
@@ -790,7 +790,7 @@ export type Database = {
         Update: {
           avg_duration_minutes?: number | null
           category?: string | null
-          components?: Json
+          components?: Json | null
           created_at?: string | null
           description?: string | null
           difficulty?: string | null
