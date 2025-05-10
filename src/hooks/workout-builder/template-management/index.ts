@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useTemplateState } from './use-template-state';
 import { useTemplateCrud } from './use-template-crud';
 import { useTemplateLoading } from './use-template-loading';
-import { WorkoutTemplate } from "./template-types";
+import { WorkoutTemplate } from "../types";
 import { WorkoutDetail } from '../types';
 
 export const useTemplateManagement = () => {
@@ -30,18 +30,8 @@ export const useTemplateManagement = () => {
     }
   }, []);
 
-  const {
-    addTemplate,
-    updateTemplate,
-    deleteTemplate,
-    duplicateTemplate,
-    saveAsTemplate
-  } = useTemplateCrud(
-    templates,
-    setTemplates,
-    currentTemplate,
-    setCurrentTemplate
-  );
+  // Get CRUD operations from the hook
+  const templateCrudOps = useTemplateCrud();
 
   const { 
     loadTemplate,
@@ -62,11 +52,11 @@ export const useTemplateManagement = () => {
     setCurrentExercises,
     isLoading: isLoading || templateLoading,
     setIsLoading,
-    addTemplate,
-    updateTemplate,
-    deleteTemplate,
-    duplicateTemplate,
-    saveAsTemplate,
+    addTemplate: templateCrudOps.createTemplate,
+    updateTemplate: templateCrudOps.updateTemplate,
+    deleteTemplate: templateCrudOps.deleteTemplate,
+    duplicateTemplate: templateCrudOps.duplicateTemplate,
+    saveAsTemplate: templateCrudOps.saveAsTemplate,
     loadTemplate,
     loadTemplateFromWod,
     loadTemplateFromPreparedWorkout,
