@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +13,10 @@ interface WodDetailProps {
 }
 
 const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
+  // Add logging to debug video embedding
+  console.log("WOD detail video URL:", wod.video_url);
   const embedUrl = getYouTubeEmbedUrl(wod.video_url);
+  console.log("Embed URL:", embedUrl);
 
   const getDifficultyColor = (difficulty: string | undefined) => {
     switch (difficulty?.toLowerCase()) {

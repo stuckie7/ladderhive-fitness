@@ -14,6 +14,7 @@ export const useWodFetch = () => {
   const fetchWods = useCallback(async (filterOptions?: WodFilters) => {
     setIsLoading(true);
     try {
+      console.log("Fetching WODs with filters:", filterOptions);
       let query = supabase.from('wods').select('*');
       
       // Apply filters
@@ -33,6 +34,8 @@ export const useWodFetch = () => {
       
       if (error) throw error;
       
+      console.log("Raw WOD data:", data);
+      
       // If user is logged in, fetch their favorites
       let userFavorites: string[] = [];
       if (user) {
@@ -51,10 +54,15 @@ export const useWodFetch = () => {
         // Safely parse components based on type
         const components = wod.components ? parseWodComponents(wod.components) : [];
         
+        // Ensure video_url is properly extracted
+        const videoUrl = wod.video_url || null;
+        console.log(`WOD ${wod.id} video URL:`, videoUrl);
+        
         return {
           ...wod,
           components,
-          is_favorite: userFavorites.includes(wod.id)
+          is_favorite: userFavorites.includes(wod.id),
+          video_url: videoUrl
         };
       }) || [];
       
@@ -76,6 +84,7 @@ export const useWodFetch = () => {
   const fetchWodById = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
+      console.log("Fetching WOD by ID:", id);
       const { data, error } = await supabase
         .from('wods')
         .select('*')
@@ -83,6 +92,8 @@ export const useWodFetch = () => {
         .single();
       
       if (error) throw error;
+      
+      console.log("Raw WOD data by ID:", data);
       
       // Check if user has favorited this WOD
       let isFavorite = false;
@@ -100,10 +111,15 @@ export const useWodFetch = () => {
       // Safely parse components based on type
       const components = data.components ? parseWodComponents(data.components) : [];
       
+      // Ensure video_url is properly extracted
+      const videoUrl = data.video_url || null;
+      console.log("WOD video URL:", videoUrl);
+      
       const wodWithTypedComponents: Wod = {
         ...data,
         components,
-        is_favorite: isFavorite
+        is_favorite: isFavorite,
+        video_url: videoUrl
       };
       
       return wodWithTypedComponents;

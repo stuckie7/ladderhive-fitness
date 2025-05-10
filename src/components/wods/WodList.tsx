@@ -11,6 +11,9 @@ interface WodListProps {
 }
 
 const WodList: React.FC<WodListProps> = ({ wods, isLoading, onToggleFavorite }) => {
+  // Add logging to debug wod data
+  console.log("WODs in WodList:", wods);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

@@ -1,44 +1,27 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { WodFilters as FiltersType } from '@/types/wod';
-import { Label } from '@/components/ui/label';
+import { RefreshCcw } from 'lucide-react';
 
 interface WodFiltersProps {
   filters: FiltersType;
   onChange: (filters: FiltersType) => void;
 }
 
-const difficultyOptions = [
-  { value: 'all', label: 'All Difficulties' },
-  { value: 'Beginner', label: 'Beginner' },
-  { value: 'Intermediate', label: 'Intermediate' },
-  { value: 'Advanced', label: 'Advanced' },
-  { value: 'Elite', label: 'Elite' },
-];
-
-const categoryOptions = [
-  { value: 'all', label: 'All Categories' },
-  { value: 'Girl', label: 'Girl' },
-  { value: 'Hero', label: 'Hero' },
-  { value: 'Benchmark', label: 'Benchmark' },
-];
-
 const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
   const handleDifficultyChange = (value: string) => {
-    onChange({ ...filters, difficulty: value === 'all' ? undefined : value });
+    const newValue = value === 'all' ? undefined : value;
+    onChange({ ...filters, difficulty: newValue });
   };
 
   const handleCategoryChange = (value: string) => {
-    onChange({ ...filters, category: value === 'all' ? undefined : value });
+    const newValue = value === 'all' ? undefined : value;
+    onChange({ ...filters, category: newValue });
   };
 
   const handleDurationChange = (value: number[]) => {
@@ -50,72 +33,74 @@ const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
   };
 
   return (
-    <div className="space-y-4 p-4 bg-background rounded-lg border">
-      <h3 className="font-medium">Filter Workouts</h3>
-      
-      <div className="space-y-2">
-        <Label htmlFor="difficulty-filter">Difficulty</Label>
-        <Select 
-          value={filters.difficulty || 'all'} 
-          onValueChange={handleDifficultyChange}
-        >
-          <SelectTrigger id="difficulty-filter" className="w-full">
-            <SelectValue placeholder="Filter by difficulty" />
-          </SelectTrigger>
-          <SelectContent>
-            {difficultyOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="category-filter">Category</Label>
-        <Select 
-          value={filters.category || 'all'} 
-          onValueChange={handleCategoryChange}
-        >
-          <SelectTrigger id="category-filter" className="w-full">
-            <SelectValue placeholder="Filter by category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categoryOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <div className="flex justify-between">
-          <Label htmlFor="duration-filter">Max Duration (minutes)</Label>
-          <span className="text-sm text-muted-foreground">
-            {filters.duration || 60} min
-          </span>
+    <Card className="sticky top-24">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl">Filters</CardTitle>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleReset}
+          >
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Reset
+          </Button>
         </div>
-        <Slider
-          id="duration-filter"
-          defaultValue={[filters.duration || 60]}
-          max={60}
-          min={5}
-          step={5}
-          onValueChange={handleDurationChange}
-        />
-      </div>
-      
-      <Button 
-        variant="outline" 
-        onClick={handleReset}
-        className="w-full"
-      >
-        Reset Filters
-      </Button>
-    </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="difficulty">Difficulty</Label>
+          <Select 
+            value={filters.difficulty || 'all'} 
+            onValueChange={handleDifficultyChange}
+          >
+            <SelectTrigger id="difficulty">
+              <SelectValue placeholder="All difficulties" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All difficulties</SelectItem>
+              <SelectItem value="beginner">Beginner</SelectItem>
+              <SelectItem value="intermediate">Intermediate</SelectItem>
+              <SelectItem value="advanced">Advanced</SelectItem>
+              <SelectItem value="elite">Elite</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select 
+            value={filters.category || 'all'} 
+            onValueChange={handleCategoryChange}
+          >
+            <SelectTrigger id="category">
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="girl">Girl WODs</SelectItem>
+              <SelectItem value="hero">Hero WODs</SelectItem>
+              <SelectItem value="benchmark">Benchmark WODs</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="flex justify-between">
+            <Label htmlFor="duration">Max Duration</Label>
+            <span className="text-sm">{filters.duration || 60} min</span>
+          </div>
+          <Slider
+            id="duration"
+            min={5}
+            max={60}
+            step={5}
+            value={[filters.duration || 60]}
+            onValueChange={handleDurationChange}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

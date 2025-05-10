@@ -73,10 +73,14 @@ export const getYouTubeVideoId = (url: string | null | undefined): string | null
   if (!url) return null;
   
   try {
+    console.log("Parsing YouTube URL:", url);
     // Match patterns like youtube.com/watch?v=VIDEO_ID or youtu.be/VIDEO_ID
     const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})(?:&|$|\/)/);
-    return videoIdMatch ? videoIdMatch[1] : null;
-  } catch {
+    const videoId = videoIdMatch ? videoIdMatch[1] : null;
+    console.log("Extracted video ID:", videoId);
+    return videoId;
+  } catch (error) {
+    console.error("Error extracting YouTube video ID:", error);
     return null;
   }
 };
@@ -86,7 +90,10 @@ export const getYouTubeVideoId = (url: string | null | undefined): string | null
  */
 export const getYouTubeThumbnail = (url: string | null | undefined): string | null => {
   const videoId = getYouTubeVideoId(url);
-  if (!videoId) return null;
+  if (!videoId) {
+    console.log("No video ID found for URL:", url);
+    return null;
+  }
   
   return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 };

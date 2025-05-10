@@ -15,7 +15,10 @@ interface WodCardProps {
 
 const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
   const navigate = useNavigate();
+  // Add logging to debug video URL and thumbnail generation
+  console.log(`WOD ${wod.id} video URL:`, wod.video_url);
   const thumbnailUrl = getYouTubeThumbnail(wod.video_url);
+  console.log(`WOD ${wod.id} thumbnail URL:`, thumbnailUrl);
   const descriptionSnippet = createDescriptionSnippet(wod.description, 60);
   const hasVideo = !!wod.video_url;
 
@@ -75,6 +78,11 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
             src={thumbnailUrl} 
             alt={`${wod.name} thumbnail`}
             className="w-full h-full object-cover opacity-70"
+            onError={(e) => {
+              // Handle image loading errors by adding a class to hide the broken image
+              e.currentTarget.classList.add('hidden');
+              console.error(`Failed to load thumbnail for WOD ${wod.id}`);
+            }}
           />
         </div>
       )}

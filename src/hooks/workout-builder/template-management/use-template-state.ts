@@ -34,7 +34,7 @@ export const useTemplateState = () => {
         
       if (error) throw error;
       
-      // Map database results to WorkoutTemplate format
+      // Map database results to WorkoutTemplate format - Fixing type instantiation issue
       const loadedTemplates: WorkoutTemplate[] = (data || []).map((template: PreparedWorkoutDB) => ({
         id: template.id,
         name: template.title, // For backward compatibility
