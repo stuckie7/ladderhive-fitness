@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { ExerciseFull } from "@/types/exercise";
 import { searchExercisesFull } from "@/hooks/exercise-library/services/exercise-search-service";
+import { PreparedWorkout } from "@/types/workout";
 
 export interface WorkoutExerciseDetail {
   id: string;
@@ -162,12 +163,13 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     
     setIsLoadingTemplates(true);
     try {
-      // Query from prepared_workouts with explicit is_template field
+      // Query prepared_workouts for templates
+      // Using a type assertion to address the recursive type issue
       const { data, error } = await supabase
         .from('prepared_workouts')
         .select('id, title, description, category, difficulty, created_at')
         .eq('is_template', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any;
       
       if (error) throw error;
       
