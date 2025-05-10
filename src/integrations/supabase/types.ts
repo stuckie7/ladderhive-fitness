@@ -754,7 +754,17 @@ export type Database = {
           difficulty: string | null
           id: string
           name: string
-          video_url: string | null
+          part_1: string | null
+          part_10: string | null
+          part_2: string | null
+          part_3: string | null
+          part_4: string | null
+          part_5: string | null
+          part_6: string | null
+          part_7: string | null
+          part_8: string | null
+          part_9: string | null
+          video_demo: string | null
         }
         Insert: {
           avg_duration_minutes?: number | null
@@ -765,7 +775,17 @@ export type Database = {
           difficulty?: string | null
           id?: string
           name: string
-          video_url?: string | null
+          part_1?: string | null
+          part_10?: string | null
+          part_2?: string | null
+          part_3?: string | null
+          part_4?: string | null
+          part_5?: string | null
+          part_6?: string | null
+          part_7?: string | null
+          part_8?: string | null
+          part_9?: string | null
+          video_demo?: string | null
         }
         Update: {
           avg_duration_minutes?: number | null
@@ -776,7 +796,17 @@ export type Database = {
           difficulty?: string | null
           id?: string
           name?: string
-          video_url?: string | null
+          part_1?: string | null
+          part_10?: string | null
+          part_2?: string | null
+          part_3?: string | null
+          part_4?: string | null
+          part_5?: string | null
+          part_6?: string | null
+          part_7?: string | null
+          part_8?: string | null
+          part_9?: string | null
+          video_demo?: string | null
         }
         Relationships: []
       }

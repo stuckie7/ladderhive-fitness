@@ -134,9 +134,13 @@ export const useTemplateManagement = () => {
     }
   }, [toast]);
 
-  // The saveAsTemplate function
-  const saveAsTemplate = useCallback(async (workout?: any) => {
-    // Implementation would depend on your current workout state
+  // The saveAsTemplate function - using WorkoutDetail type to avoid recursive type issue
+  const saveAsTemplate = useCallback(async (workout?: { 
+    id?: string;
+    title: string;
+    description?: string; 
+    exercises?: any[]; 
+  }) => {
     try {
       if (!workout && !currentTemplate) {
         toast({
