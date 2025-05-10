@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { WorkoutTemplate } from "./types";
 
-// Define workout type separately to avoid nesting
+// Define simplified types for the template management hook
 interface WorkoutType {
   id?: string;
   title: string;
@@ -26,7 +26,7 @@ interface ExerciseType {
   rest_seconds: number;
   notes?: string;
   order_index: number;
-  exercise?: any; // Use any to avoid recursive type issues
+  exercise?: Record<string, any>; // Using Record instead of recursive type
 }
 
 // Define the template management props explicitly to avoid circular references

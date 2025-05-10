@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { Wod, WodFilters } from '@/types/wod';
+import { parseWodComponents } from '@/utils/wodHelpers';
 
 export const useWods = () => {
   const [wods, setWods] = useState<Wod[]>([]);
@@ -48,10 +49,10 @@ export const useWods = () => {
         }
       }
       
-      // Map results and mark favorites
-      const mappedWods = data?.map(wod => ({
+      // Map results and mark favorites, ensuring proper component type conversion
+      const mappedWods: Wod[] = data?.map(wod => ({
         ...wod,
-        components: wod.components || [],
+        components: parseWodComponents(wod.components),
         is_favorite: userFavorites.includes(wod.id)
       })) || [];
       
@@ -93,12 +94,15 @@ export const useWods = () => {
         isFavorite = !favoriteError && !!favoriteData;
       }
       
-      setSelectedWod({
+      const wodWithTypedComponents: Wod = {
         ...data,
+        components: parseWodComponents(data.components),
         is_favorite: isFavorite
-      });
+      };
       
-      return data;
+      setSelectedWod(wodWithTypedComponents);
+      
+      return wodWithTypedComponents;
     } catch (error: any) {
       console.error("Error fetching wod:", error);
       toast({
@@ -204,10 +208,12 @@ export const useWods = () => {
       
       if (error) throw error;
       
-      const favoriteWods = data
+      // Convert data structure and ensure proper component types
+      const favoriteWods: Wod[] = data
         .filter(item => item.wods)
         .map(item => ({
           ...item.wods,
+          components: parseWodComponents(item.wods.components),
           is_favorite: true
         }));
       
