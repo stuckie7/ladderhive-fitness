@@ -2,9 +2,9 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { WorkoutTemplate, ExerciseTemplate } from "./template-types";
+import { WorkoutTemplate } from "./template-types";
 
-// Define specific types to avoid deep instantiation issues
+// Use simplified version without excessive nesting
 export const useTemplateCrud = (
   templates: WorkoutTemplate[],
   setTemplates: React.Dispatch<React.SetStateAction<WorkoutTemplate[]>>,
@@ -27,14 +27,14 @@ export const useTemplateCrud = (
   }, [setTemplates, setCurrentTemplate]);
 
   const deleteTemplate = useCallback(async (templateId: string): Promise<void> => {
-    setTemplates((prevTemplates) => 
-      prevTemplates.filter(template => template.id !== templateId)
-    );
-    
-    // Update current template if needed
-    setCurrentTemplate(prev => prev?.id === templateId ? null : prev);
-    
     try {
+      setTemplates(prevTemplates => 
+        prevTemplates.filter(template => template.id !== templateId)
+      );
+      
+      // Update current template if needed
+      setCurrentTemplate(prev => prev?.id === templateId ? null : prev);
+      
       // If the template is stored in the database, delete it
       await supabase
         .from('prepared_workouts')

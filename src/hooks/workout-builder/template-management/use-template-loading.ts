@@ -1,12 +1,16 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutTemplate } from './template-types';
-import { ExerciseTemplate, TemplateExercise } from './template-types';
 import { WorkoutDetail, WorkoutExerciseDetail } from '../types';
 import { useToast } from '@/components/ui/use-toast';
 
+interface UseTemplateLoadingProps {
+  setCurrentTemplate?: React.Dispatch<React.SetStateAction<WorkoutTemplate | null>>;
+}
+
 // Export for use in WorkoutBuilder
-export const useTemplateLoading = () => {
+export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
 
@@ -69,13 +73,18 @@ export const useTemplateLoading = () => {
         return {
           id: exercise.id,
           exercise_id: exercise.exercise_id || exercise.exercise?.id,
+          name: exercise.exercise?.name || "Unknown Exercise",
           sets: exercise.sets,
           reps: exercise.reps,
           weight: exercise.weight || "",
           rest_seconds: exercise.rest_seconds || 60,
           notes: exercise.notes || "",
           order_index: exercise.order_index,
-          exercise: exercise.exercise
+          exercise: exercise.exercise || {
+            id: exercise.exercise_id,
+            name: "Unknown Exercise",
+            description: ""
+          }
         };
       });
       
@@ -97,6 +106,23 @@ export const useTemplateLoading = () => {
         description: "An unexpected error occurred loading the template",
         variant: "destructive"
       });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add a placeholder loadTemplateFromWod function to satisfy the interface
+  const loadTemplateFromWod = async (wodId: string): Promise<WorkoutDetail | null> => {
+    try {
+      setIsLoading(true);
+      toast({
+        title: "Info",
+        description: "Loading template from WOD is not yet implemented"
+      });
+      return null;
+    } catch (error) {
+      console.error("Error in loadTemplateFromWod:", error);
       return null;
     } finally {
       setIsLoading(false);
@@ -127,6 +153,9 @@ export const useTemplateLoading = () => {
         name: template.title, // Use title as name
         title: template.title,
         description: template.description,
+        category: template.category || "General",
+        difficulty: template.difficulty || "intermediate",
+        created_at: template.created_at,
         exercises: [] // Initialize exercises as an empty array
       })) || [];
 
@@ -187,13 +216,18 @@ export const useTemplateLoading = () => {
         return {
           id: exercise.id,
           exercise_id: exercise.exercise_id || exercise.exercise?.id,
+          name: exercise.exercise?.name || "Unknown Exercise",
           sets: exercise.sets,
           reps: exercise.reps,
           weight: exercise.weight || "",
           rest_seconds: exercise.rest_seconds || 60,
           notes: exercise.notes || "",
           order_index: exercise.order_index,
-          exercise: exercise.exercise
+          exercise: exercise.exercise || {
+            id: exercise.exercise_id,
+            name: "Unknown Exercise",
+            description: ""
+          }
         };
       });
 
@@ -225,6 +259,7 @@ export const useTemplateLoading = () => {
     isLoading,
     loadTemplate,
     loadTemplates,
-    loadTemplateFromPreparedWorkout
+    loadTemplateFromPreparedWorkout,
+    loadTemplateFromWod
   };
 };

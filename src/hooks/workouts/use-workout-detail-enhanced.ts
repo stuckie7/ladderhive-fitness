@@ -69,23 +69,40 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
         throw new Error("Workout not found");
       }
 
-      // Fetch workout exercises
+      // Fetch workout exercises with a proper join
       const { data: exercisesData, error: exercisesError } = await supabase
         .from('prepared_workout_exercises')
         .select(`
-          *,
-          exercise:exercises_full(*)
+          id, sets, reps, rest_seconds, notes, order_index, exercise_id,
+          exercises_full!prepared_workout_exercises_exercise_id_fkey(id, name, description, short_youtube_demo, video_demonstration_url, youtube_thumbnail_url)
         `)
         .eq('workout_id', workoutId)
         .order('order_index');
 
       if (exercisesError) {
+        console.error("Exercise fetch error:", exercisesError);
         throw new Error(exercisesError.message);
       }
 
+      // Transform the nested exercise data to the format we need
+      const transformedExercises = exercisesData.map(item => ({
+        id: item.id,
+        sets: item.sets,
+        reps: item.reps,
+        rest_seconds: item.rest_seconds,
+        notes: item.notes,
+        order_index: item.order_index,
+        exercise: item.exercises_full || {
+          id: item.exercise_id,
+          name: "Unknown Exercise",
+          description: "Details not available"
+        },
+        modifications: ""
+      }));
+
       const detailedWorkout: DetailedWorkout = {
         ...workoutData,
-        exercises: exercisesData || []
+        exercises: transformedExercises
       };
 
       setWorkout(detailedWorkout);

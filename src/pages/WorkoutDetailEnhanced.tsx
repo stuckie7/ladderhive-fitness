@@ -11,6 +11,24 @@ import DescriptionCard from '@/components/workouts/detail/DescriptionCard';
 import WorkoutCircuit from '@/components/workouts/detail/WorkoutCircuit';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// Define the specific exercise shape needed for WorkoutCircuit
+interface CircuitExercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: string | number;
+  rest_seconds?: number;
+  notes?: string;
+  exercise?: {
+    name?: string;
+    video_demonstration_url?: string;
+    short_youtube_demo?: string;
+    youtube_thumbnail_url?: string;
+    description?: string;
+  };
+  modifications?: string;
+}
+
 const WorkoutDetailEnhanced: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -77,6 +95,24 @@ const WorkoutDetailEnhanced: React.FC = () => {
     );
   }
 
+  // Transform workout exercises to match CircuitExercise interface
+  const circuitExercises: CircuitExercise[] = workout.exercises.map(ex => ({
+    id: ex.id,
+    name: ex.exercise?.name || "Unknown Exercise",
+    sets: ex.sets,
+    reps: ex.reps,
+    rest_seconds: ex.rest_seconds,
+    notes: ex.notes,
+    exercise: {
+      name: ex.exercise?.name,
+      description: ex.exercise?.description,
+      video_demonstration_url: ex.exercise?.video_demonstration_url,
+      short_youtube_demo: ex.exercise?.short_youtube_demo,
+      youtube_thumbnail_url: ex.exercise?.youtube_thumbnail_url
+    },
+    modifications: ex.modifications
+  }));
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
@@ -111,7 +147,7 @@ const WorkoutDetailEnhanced: React.FC = () => {
           benefits={workout.benefits}
         />
         
-        <WorkoutCircuit exercises={workout.exercises} />
+        <WorkoutCircuit exercises={circuitExercises} />
         
         <div className="mt-6">
           <Button className="w-full sm:w-auto bg-fitness-primary hover:bg-fitness-primary/90">

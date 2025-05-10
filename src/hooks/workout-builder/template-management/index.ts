@@ -4,6 +4,7 @@ import { useTemplateState } from './use-template-state';
 import { useTemplateCrud } from './use-template-crud';
 import { useTemplateLoading } from './use-template-loading';
 import { WorkoutTemplate } from "./template-types";
+import { WorkoutDetail } from '../types';
 
 export const useTemplateManagement = () => {
   const {
@@ -43,8 +44,11 @@ export const useTemplateManagement = () => {
   );
 
   const { 
+    loadTemplate,
+    loadTemplates: fetchTemplates,
+    loadTemplateFromPreparedWorkout,
     loadTemplateFromWod,
-    loadTemplateFromPreparedWorkout 
+    isLoading: templateLoading
   } = useTemplateLoading({
     setCurrentTemplate
   });
@@ -56,7 +60,7 @@ export const useTemplateManagement = () => {
     setCurrentTemplate,
     currentExercises,
     setCurrentExercises,
-    isLoading,
+    isLoading: isLoading || templateLoading,
     setIsLoading,
     addTemplate,
     updateTemplate,
@@ -65,7 +69,7 @@ export const useTemplateManagement = () => {
     saveAsTemplate,
     loadTemplateFromWod,
     loadTemplateFromPreparedWorkout,
-    loadTemplates
+    loadTemplates: fetchTemplates
   };
 };
 
