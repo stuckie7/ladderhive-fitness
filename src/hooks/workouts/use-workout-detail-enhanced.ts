@@ -92,7 +92,25 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       // Fetch the workout details
       const { data: workoutData, error: workoutError } = await supabase
         .from('prepared_workouts')
-        .select('*')
+        .select(`
+          id,
+          title,
+          description,
+          short_description,
+          difficulty,
+          duration_minutes,
+          category,
+          goal,
+          thumbnail_url,
+          video_url,
+          long_description,
+          equipment_needed,
+          benefits,
+          instructions,
+          modifications,
+          created_at,
+          updated_at
+        `)
         .eq('id', workoutId)
         .single();
 
@@ -103,6 +121,8 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       if (!workoutData) {
         throw new Error("Workout not found");
       }
+
+      console.log("Fetched workout data:", workoutData);
 
       // Fetch workout exercises separately
       const { data: exercisesData, error: exercisesError } = await supabase

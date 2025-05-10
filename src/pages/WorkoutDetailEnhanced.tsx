@@ -97,6 +97,8 @@ const WorkoutDetailEnhanced: React.FC = () => {
     );
   }
 
+  console.log("Rendering workout details:", workout);
+
   // Transform workout exercises to match CircuitExercise interface
   const circuitExercises: CircuitExercise[] = workout.exercises.map(ex => ({
     id: ex.id,
