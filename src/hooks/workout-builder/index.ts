@@ -2,8 +2,8 @@
 import { useWorkoutState } from "./use-workout-state";
 import { useWorkoutInfo } from "./use-workout-info";
 import { useExerciseManagement } from "./use-exercise-management";
-import { useTemplateManagement } from "./use-template-management";
-import { useWorkoutPersistence } from "./use-workout-persistence";
+import { useTemplateManagement } from "./template-management";
+import { useWorkoutPersistence } from "./persistence";
 import { useEffect } from "react";
 
 export const useWorkoutBuilder = (workoutId?: string) => {
