@@ -87,6 +87,9 @@ export const useWorkoutBuilder = (workoutId?: string) => {
       if (workoutError) throw workoutError;
       
       if (workoutData) {
+        // Check if workoutData has the is_template field, if not default to false
+        const isTemplate = workoutData.is_template !== undefined ? Boolean(workoutData.is_template) : false;
+        
         setWorkout({
           id: workoutData.id,
           title: workoutData.title,
@@ -96,7 +99,7 @@ export const useWorkoutBuilder = (workoutId?: string) => {
           duration_minutes: workoutData.duration_minutes,
           created_at: workoutData.created_at,
           updated_at: workoutData.updated_at,
-          is_template: Boolean(workoutData.is_template)
+          is_template: isTemplate
         });
         
         // Fetch the workout exercises
@@ -158,6 +161,7 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     
     setIsLoadingTemplates(true);
     try {
+      // Fix: Query from prepared_workouts
       const { data, error } = await supabase
         .from('prepared_workouts')
         .select('id, title, description, category, difficulty, created_at')
@@ -375,6 +379,13 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     setIsSaving(true);
     
     try {
+      // Calculate estimated duration based on sets, reps and rest time
+      const totalSets = exercises.reduce((acc, ex) => acc + ex.sets, 0);
+      const avgRestSeconds = exercises.length > 0
+        ? exercises.reduce((acc, ex) => acc + ex.rest_seconds, 0) / exercises.length
+        : 60;
+      const estimatedDuration = Math.ceil((totalSets * 45 + (totalSets - exercises.length) * avgRestSeconds) / 60);
+      
       // Create a copy of the current workout as a template
       const workoutCopy = {
         title: `${workout.title || 'Workout'} (Template)`,
@@ -382,7 +393,8 @@ export const useWorkoutBuilder = (workoutId?: string) => {
         difficulty: workout.difficulty,
         category: workout.category,
         is_template: true,
-        goal: workout.category // Using category as goal for now
+        goal: workout.category, // Using category as goal for now
+        duration_minutes: estimatedDuration || 30, // Adding missing duration_minutes
       };
       
       const { data: templateData, error: templateError } = await supabase

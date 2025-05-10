@@ -47,7 +47,8 @@ const WorkoutBuilder = () => {
     resetWorkout,
     loadWorkout,
     saveAsTemplate,
-    loadTemplate
+    loadTemplate,
+    deleteTemplate
   } = useWorkoutBuilder(id);
   
   useEffect(() => {
@@ -154,6 +155,7 @@ const WorkoutBuilder = () => {
           onOpenChange={setIsTemplateDialogOpen}
           templates={templates} 
           onSelectTemplate={loadTemplate}
+          onDeleteTemplate={deleteTemplate}
         />
         
         {/* Workout details form */}
