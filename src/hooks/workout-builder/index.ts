@@ -80,6 +80,7 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     // Template management
     saveAsTemplate: templateManagement.saveAsTemplate,
     loadTemplate: workoutPersistence.loadTemplate,
+    loadTemplateFromWod: templateManagement.loadTemplateFromWod,  // Add this export
     deleteTemplate: templateManagement.deleteTemplate,
     loadTemplates: templateManagement.loadTemplates,
     

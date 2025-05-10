@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bookmark, BookmarkCheck, Play, Clock, Video } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Clock, Video } from 'lucide-react';
 import { Wod } from '@/types/wod';
-import { useNavigate } from 'react-router-dom';
+import StartWodButton from './StartWodButton';
 
 interface WodDetailProps {
   wod: Wod;
@@ -13,8 +12,6 @@ interface WodDetailProps {
 }
 
 const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
-  const navigate = useNavigate();
-
   const getDifficultyColor = (difficulty: string | undefined) => {
     switch (difficulty?.toLowerCase()) {
       case 'beginner':
@@ -41,11 +38,6 @@ const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
-  };
-
-  const handleStartWorkout = () => {
-    // TODO: Implement starting a workout with this WOD
-    navigate(`/workout-builder?wod=${wod.id}`);
   };
 
   return (
@@ -93,13 +85,7 @@ const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
             )}
           </Button>
           
-          <Button 
-            className="bg-fitness-primary hover:bg-fitness-primary/90"
-            onClick={handleStartWorkout}
-          >
-            <Play className="mr-2 h-4 w-4" />
-            Start Workout
-          </Button>
+          <StartWodButton wod={wod} />
         </div>
       </div>
       

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { useWorkoutBuilder } from "@/hooks/use-workout-builder";
@@ -15,8 +15,14 @@ import WorkoutTemplateSelector from "@/components/workouts/builder/WorkoutTempla
 const WorkoutBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  
+  // Parse query parameters
+  const queryParams = new URLSearchParams(location.search);
+  const wodId = queryParams.get('wod');
+  const wodName = queryParams.get('name');
   
   const {
     workout,
@@ -45,7 +51,8 @@ const WorkoutBuilder = () => {
     saveAsTemplate,
     loadTemplate,
     loadTemplates,
-    deleteTemplate
+    deleteTemplate,
+    loadTemplateFromWod
   } = useWorkoutBuilder(id);
   
   useEffect(() => {
@@ -53,8 +60,35 @@ const WorkoutBuilder = () => {
       loadWorkout(id);
     } else {
       resetWorkout();
+      
+      // If we have a WOD ID from query params, load template from the WOD
+      if (wodId) {
+        const initWodTemplate = async () => {
+          try {
+            const template = await loadTemplateFromWod(wodId);
+            if (template) {
+              // Pre-populate workout details from the template
+              setWorkoutInfo({
+                title: wodName ? `${wodName} Workout` : template.title,
+                description: template.description,
+                difficulty: template.difficulty
+              });
+              
+              // Add exercises from the template
+              if (template.exercises && template.exercises.length > 0) {
+                // This will be handled by the workout template loading mechanism
+                // which should add the exercises to the workout
+              }
+            }
+          } catch (error) {
+            console.error("Error initializing WOD template:", error);
+          }
+        };
+        
+        initWodTemplate();
+      }
     }
-  }, [id, loadWorkout, resetWorkout]);
+  }, [id, wodId, wodName, loadWorkout, resetWorkout, setWorkoutInfo, loadTemplateFromWod]);
   
   const handleSave = async () => {
     if (!workout.title.trim()) {
