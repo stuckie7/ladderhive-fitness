@@ -91,6 +91,7 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
             !('error' in item.exercise)) {
           try {
             // Cast to ExerciseFull only after validation
+            // Fix: Make sure item.exercise is not null before casting
             const exerciseFull = item.exercise as ExerciseFull;
             exerciseData = mapExerciseFullToExercise(exerciseFull);
           } catch (err) {
