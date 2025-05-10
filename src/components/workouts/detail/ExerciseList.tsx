@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Dumbbell } from "lucide-react";
+import ExerciseVideoHandler from '@/components/exercises/ExerciseVideoHandler';
 
 interface WorkoutExercise {
   id: string;
@@ -12,7 +13,11 @@ interface WorkoutExercise {
   exercise?: {
     name?: string;
     description?: string;
+    video_demonstration_url?: string;
+    short_youtube_demo?: string;
+    youtube_thumbnail_url?: string;
   };
+  modifications?: string;
 }
 
 interface ExerciseListProps {
@@ -46,16 +51,36 @@ const ExerciseList: React.FC<ExerciseListProps> = ({ exercises }) => {
                 <h3 className="text-base font-medium">
                   {index + 1}. {exercise.exercise?.name || exercise.name}
                 </h3>
+                
+                {/* Add video button if video URL is available */}
+                {(exercise.exercise?.short_youtube_demo || exercise.exercise?.video_demonstration_url) && (
+                  <ExerciseVideoHandler 
+                    url={exercise.exercise?.short_youtube_demo || exercise.exercise?.video_demonstration_url} 
+                    title={exercise.exercise?.name || exercise.name}
+                    thumbnailUrl={exercise.exercise?.youtube_thumbnail_url}
+                  />
+                )}
+              </div>
+              
+              <div className="flex justify-between items-center mb-1 mt-1">
                 <span className="text-sm text-muted-foreground">
                   {exercise.sets} sets × {exercise.reps}
                 </span>
+                {exercise.rest_seconds && (
+                  <span className="text-sm text-muted-foreground">
+                    Rest: {exercise.rest_seconds} sec
+                  </span>
+                )}
               </div>
+              
               {exercise.exercise?.description && (
-                <p className="text-sm text-muted-foreground">{exercise.exercise.description}</p>
+                <p className="text-sm text-muted-foreground mt-2">{exercise.exercise.description}</p>
               )}
-              {exercise.rest_seconds && (
-                <div className="mt-1 text-sm text-muted-foreground">
-                  Rest: {exercise.rest_seconds} seconds
+              
+              {exercise.modifications && (
+                <div className="mt-2 text-sm">
+                  <span className="font-medium">Modifications:</span> 
+                  <span className="text-muted-foreground"> {exercise.modifications}</span>
                 </div>
               )}
             </div>
