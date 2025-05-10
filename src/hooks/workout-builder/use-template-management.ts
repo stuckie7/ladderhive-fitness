@@ -5,31 +5,36 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { WorkoutTemplate } from "./types";
 
-// Define the template management state type separately to avoid deep nesting
-// Using explicit types rather than referencing other complex types
-type TemplateManagementProps = {
-  workout: {
-    id?: string;
-    title: string;
-    description?: string;
-    difficulty: string;
-    category: string;
-    is_template?: boolean;
-  };
-  setWorkout: (workout: any) => void;
-  exercises: Array<{
-    exercise_id: number;
-    sets: number;
-    reps: string;
-    rest_seconds: number;
-    notes?: string;
-    order_index: number;
-  }>;
+// Define workout type separately to avoid nesting
+interface WorkoutType {
+  id?: string;
+  title: string;
+  description?: string;
+  difficulty: string;
+  category: string;
+  is_template?: boolean;
+}
+
+// Define exercise type separately
+interface ExerciseType {
+  exercise_id: number;
+  sets: number;
+  reps: string;
+  rest_seconds: number;
+  notes?: string;
+  order_index: number;
+}
+
+// Define the template management state type with explicit types
+interface TemplateManagementProps {
+  workout: WorkoutType;
+  setWorkout: (workout: WorkoutType) => void;
+  exercises: ExerciseType[];
   templates: WorkoutTemplate[];
   setTemplates: (templates: WorkoutTemplate[]) => void;
   setIsLoadingTemplates: (isLoading: boolean) => void;
   setIsSaving: (isSaving: boolean) => void;
-};
+}
 
 export const useTemplateManagement = (state: TemplateManagementProps) => {
   const { 
