@@ -42,10 +42,7 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
       // Fetch exercises for this template with proper join
       const { data: exercisesData, error: exercisesError } = await supabase
         .from('prepared_workout_exercises')
-        .select(`
-          *,
-          exercises_full(*)
-        `)
+        .select('*')
         .eq('workout_id', templateId)
         .order('order_index');
       
@@ -65,12 +62,29 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
         });
         return null;
       }
+
+      // Now fetch the exercise details separately
+      const exerciseIds = exercisesData.map(ex => ex.exercise_id);
+      const { data: exerciseDetails, error: exerciseDetailsError } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .in('id', exerciseIds);
+      
+      if (exerciseDetailsError) {
+        console.error("Error loading exercise details:", exerciseDetailsError);
+        toast({
+          title: "Error",
+          description: "Failed to load exercise details",
+          variant: "destructive"
+        });
+        return null;
+      }
       
       console.log("Loaded prepared workout exercises:", exercisesData);
       
       // Map exercises to the format expected by WorkoutDetail
       const mappedExercises: WorkoutExerciseDetail[] = exercisesData.map((exercise: any) => {
-        const exerciseData = exercise.exercises_full || { 
+        const exerciseData = exerciseDetails?.find(e => e.id === exercise.exercise_id) || { 
           id: exercise.exercise_id,
           name: "Unknown Exercise",
           description: ""
@@ -78,7 +92,7 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
         
         return {
           id: exercise.id,
-          exercise_id: exercise.exercise_id || exerciseData.id,
+          exercise_id: exercise.exercise_id,
           name: exerciseData.name || "Unknown Exercise",
           sets: exercise.sets,
           reps: exercise.reps,
@@ -115,17 +129,53 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
     }
   };
 
-  // Add a placeholder loadTemplateFromWod function to satisfy the interface
+  // Implement the loadTemplateFromWod function to satisfy the interface
   const loadTemplateFromWod = async (wodId: string): Promise<WorkoutDetail | null> => {
     try {
       setIsLoading(true);
+      console.log("Loading template from WOD:", wodId);
+      
+      // Fetch the WOD data
+      const { data: wodData, error: wodError } = await supabase
+        .from('wods')
+        .select('*')
+        .eq('id', wodId)
+        .single();
+      
+      if (wodError) {
+        console.error("Error loading WOD:", wodError);
+        toast({
+          title: "Error",
+          description: "Failed to load workout of the day",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      // For now, create a simple workout from the WOD data
+      // In a real implementation, you would parse the WOD components and create exercises
+      const workoutDetail: WorkoutDetail = {
+        title: wodData.name || "WOD Workout",
+        description: wodData.description || "",
+        difficulty: wodData.difficulty || "intermediate",
+        duration_minutes: wodData.avg_duration_minutes || 30,
+        category: wodData.category || "WOD",
+        exercises: [] // Initialize with empty array
+      };
+      
       toast({
         title: "Info",
-        description: "Loading template from WOD is not yet implemented"
+        description: "Loading template from WOD is not yet fully implemented"
       });
-      return null;
+      
+      return workoutDetail;
     } catch (error) {
       console.error("Error in loadTemplateFromWod:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred loading the WOD",
+        variant: "destructive"
+      });
       return null;
     } finally {
       setIsLoading(false);
@@ -195,13 +245,10 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
         return null;
       }
 
-      // Fetch exercises for this template with proper join
+      // Fetch exercises for this template
       const { data: exercisesData, error: exercisesError } = await supabase
         .from('prepared_workout_exercises')
-        .select(`
-          *,
-          exercises_full(*)
-        `)
+        .select('*')
         .eq('workout_id', templateId)
         .order('order_index');
 
@@ -215,17 +262,34 @@ export const useTemplateLoading = (props?: UseTemplateLoadingProps) => {
         return null;
       }
 
+      // Now fetch the exercise details separately
+      const exerciseIds = exercisesData.map(ex => ex.exercise_id);
+      const { data: exerciseDetails, error: exerciseDetailsError } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .in('id', exerciseIds);
+      
+      if (exerciseDetailsError) {
+        console.error("Error loading exercise details:", exerciseDetailsError);
+        toast({
+          title: "Error",
+          description: "Failed to load exercise details",
+          variant: "destructive"
+        });
+        return null;
+      }
+
       // Map exercises to the format expected by WorkoutDetail
       const mappedExercises: WorkoutExerciseDetail[] = exercisesData.map((exercise: any) => {
-        const exerciseData = exercise.exercises_full || { 
+        const exerciseData = exerciseDetails?.find(e => e.id === exercise.exercise_id) || { 
           id: exercise.exercise_id,
           name: "Unknown Exercise",
           description: ""
         };
-
+        
         return {
           id: exercise.id,
-          exercise_id: exercise.exercise_id || exerciseData.id,
+          exercise_id: exercise.exercise_id,
           name: exerciseData.name || "Unknown Exercise",
           sets: exercise.sets,
           reps: exercise.reps,

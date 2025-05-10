@@ -101,7 +101,7 @@ export const useWorkoutSaver = (
       // Insert exercise entries
       const exercisesToInsert = exercises.map((ex, index) => ({
         workout_id: workoutId,
-        exercise_id: parseInt(ex.exercise_id), // Convert string to number
+        exercise_id: typeof ex.exercise_id === 'string' ? parseInt(ex.exercise_id, 10) : ex.exercise_id, // Ensure it's a number
         sets: ex.sets,
         reps: ex.reps,
         rest_seconds: ex.rest_seconds || 60,
@@ -119,7 +119,7 @@ export const useWorkoutSaver = (
       return {
         ...workout,
         id: workoutId,
-        exercises: exercises.length
+        exercises: exercises // Return actual exercises array instead of count
       };
       
     } catch (error) {

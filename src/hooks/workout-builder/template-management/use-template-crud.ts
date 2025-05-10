@@ -26,8 +26,10 @@ export const useTemplateCrud = (
     setCurrentTemplate(updatedTemplate);
   }, [setTemplates, setCurrentTemplate]);
 
-  const deleteTemplate = useCallback(async (templateId: string): Promise<void> => {
+  // Fix infinite type instantiation by using async/await and proper type annotation
+  const deleteTemplate = useCallback(async (templateId: string) => {
     try {
+      // Update the templates state
       setTemplates(prevTemplates => 
         prevTemplates.filter(template => template.id !== templateId)
       );

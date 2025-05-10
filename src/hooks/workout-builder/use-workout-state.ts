@@ -32,7 +32,7 @@ export const useWorkoutState = () => {
     difficulty: 'Beginner',
     category: 'General',
     duration_minutes: 30,
-    exercises: 0,
+    exercises: [], // Initialize with empty array instead of 0
     is_template: false
   });
   

@@ -69,13 +69,10 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
         throw new Error("Workout not found");
       }
 
-      // Fetch workout exercises with a proper join
+      // Fetch workout exercises separately without the join due to the error
       const { data: exercisesData, error: exercisesError } = await supabase
         .from('prepared_workout_exercises')
-        .select(`
-          id, sets, reps, rest_seconds, notes, order_index, exercise_id,
-          exercise:exercises_full(id, name, description, short_youtube_demo, video_demonstration_url, youtube_thumbnail_url)
-        `)
+        .select('*')
         .eq('workout_id', workoutId)
         .order('order_index');
 
@@ -84,10 +81,22 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
         throw new Error(exercisesError.message);
       }
 
-      // Transform the nested exercise data to the format we need
+      // Fetch all exercises data separately
+      const exerciseIds = exercisesData.map(item => item.exercise_id);
+      const { data: exercisesDetails, error: exerciseDetailsError } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .in('id', exerciseIds);
+
+      if (exerciseDetailsError) {
+        console.error("Exercise details fetch error:", exerciseDetailsError);
+        throw new Error(exerciseDetailsError.message);
+      }
+
+      // Transform the exercises data by manually joining with exercise details
       const transformedExercises = exercisesData.map(item => {
-        // Provide a fallback for the exercise object
-        const exerciseInfo = item.exercise || {
+        // Find the corresponding exercise details
+        const exerciseInfo = exercisesDetails?.find(ex => ex.id === item.exercise_id) || {
           id: item.exercise_id,
           name: "Unknown Exercise",
           description: "Details not available"
@@ -100,7 +109,14 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
           rest_seconds: item.rest_seconds,
           notes: item.notes,
           order_index: item.order_index,
-          exercise: exerciseInfo,
+          exercise: {
+            id: exerciseInfo.id,
+            name: exerciseInfo.name || "Unknown Exercise",
+            description: exerciseInfo.description || "",
+            video_demonstration_url: exerciseInfo.video_demonstration_url,
+            short_youtube_demo: exerciseInfo.short_youtube_demo,
+            youtube_thumbnail_url: exerciseInfo.youtube_thumbnail_url
+          },
           modifications: ""
         };
       });
