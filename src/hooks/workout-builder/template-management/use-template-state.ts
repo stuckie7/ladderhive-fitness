@@ -4,6 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { WorkoutTemplate } from "../types";
 import { useToast } from "@/components/ui/use-toast";
 
+// Define an explicit interface for the database response to avoid deep type instantiation
+interface PreparedWorkoutRecord {
+  id: string;
+  title: string;
+  description: string | null;
+  difficulty: string | null;
+  category: string | null;
+  created_at: string;
+  is_template: boolean;
+}
+
 export const useTemplateState = () => {
   const [currentTemplate, setCurrentTemplate] = useState<WorkoutTemplate | null>(null);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
@@ -23,8 +34,11 @@ export const useTemplateState = () => {
         
       if (error) throw error;
       
+      // Explicitly type the data to avoid deep instantiation
+      const preparedWorkouts = data as PreparedWorkoutRecord[];
+      
       // Map database results to WorkoutTemplate format
-      const loadedTemplates: WorkoutTemplate[] = (data || []).map((template) => ({
+      const loadedTemplates: WorkoutTemplate[] = (preparedWorkouts || []).map((template) => ({
         id: template.id,
         name: template.title, // For backward compatibility
         title: template.title,
