@@ -3,18 +3,27 @@ import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { WorkoutStateType } from "./use-workout-state";
 import { WorkoutTemplate } from "./types";
 
-// Define the slice of WorkoutStateType needed for template management
-type TemplateManagementState = Pick<WorkoutStateType, 
-  'workout' | 'setWorkout' | 
-  'exercises' | 'templates' | 
-  'setTemplates' | 'setIsLoadingTemplates' | 
-  'setIsSaving'
->;
+// Define the template management state type separately to avoid deep nesting
+type TemplateManagementProps = {
+  workout: {
+    id?: string;
+    title: string;
+    description?: string;
+    difficulty: string;
+    category: string;
+    is_template?: boolean;
+  };
+  setWorkout: (workout: any) => void;
+  exercises: any[];
+  templates: WorkoutTemplate[];
+  setTemplates: (templates: WorkoutTemplate[]) => void;
+  setIsLoadingTemplates: (isLoading: boolean) => void;
+  setIsSaving: (isSaving: boolean) => void;
+};
 
-export const useTemplateManagement = (state: TemplateManagementState) => {
+export const useTemplateManagement = (state: TemplateManagementProps) => {
   const { 
     workout,
     setWorkout,
