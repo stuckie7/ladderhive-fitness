@@ -1,3 +1,4 @@
+
 // Update the WorkoutTemplate interface to align with Supabase table structure
 export interface WorkoutExerciseDetail {
   id: string;
@@ -13,7 +14,7 @@ export interface WorkoutExerciseDetail {
 }
 
 export interface WorkoutDetail {
-  id: string;
+  id?: string;
   title: string;
   description?: string;
   difficulty: string;

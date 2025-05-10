@@ -135,12 +135,10 @@ export const useTemplateManagement = () => {
   }, [toast]);
 
   // The saveAsTemplate function
-  const saveAsTemplate = useCallback(async (workout?: WorkoutTemplate) => {
+  const saveAsTemplate = useCallback(async (workout?: any) => {
     // Implementation would depend on your current workout state
     try {
-      const templateToSave = workout || currentTemplate;
-      
-      if (!templateToSave) {
+      if (!workout && !currentTemplate) {
         toast({
           title: "Error",
           description: "No workout to save as template",

@@ -86,7 +86,7 @@ export const useWorkoutLoader = (
             const detail: WorkoutExerciseDetail = {
               id: ex.id,
               name: exerciseDetail?.name || "Unknown Exercise",
-              exercise_id: ex.exercise_id,
+              exercise_id: String(ex.exercise_id), // Convert to string to match the expected type
               sets: ex.sets,
               reps: ex.reps,
               rest_seconds: ex.rest_seconds,
