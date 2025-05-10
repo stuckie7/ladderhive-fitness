@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -22,6 +23,11 @@ const WodDetail: React.FC = () => {
     navigate(-1);
   };
   
+  // Create a wrapper for toggleFavorite that returns void
+  const handleToggleFavorite = async (wodId: string) => {
+    await toggleFavorite(wodId);
+  };
+  
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
@@ -40,7 +46,7 @@ const WodDetail: React.FC = () => {
         ) : selectedWod ? (
           <WodDetailComponent 
             wod={selectedWod} 
-            onToggleFavorite={toggleFavorite} 
+            onToggleFavorite={handleToggleFavorite} 
           />
         ) : (
           <div className="text-center py-12">

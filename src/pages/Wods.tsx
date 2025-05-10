@@ -25,15 +25,20 @@ const Wods: React.FC = () => {
     if (value === 'favorites') {
       getFavoriteWods();
     } else {
-      fetchWods(filters);
+      fetchWods();
     }
   };
 
   const handleFiltersChange = (newFilters: FiltersType) => {
     setFilters(newFilters);
     if (activeTab === 'all') {
-      fetchWods(newFilters);
+      fetchWods();
     }
+  };
+  
+  // Create a wrapper for toggleFavorite that returns void
+  const handleToggleFavorite = async (wodId: string) => {
+    await toggleFavorite(wodId);
   };
 
   return (
@@ -61,7 +66,7 @@ const Wods: React.FC = () => {
                 <WodList
                   wods={wods}
                   isLoading={isLoading}
-                  onToggleFavorite={toggleFavorite}
+                  onToggleFavorite={handleToggleFavorite}
                 />
               </TabsContent>
               
@@ -69,7 +74,7 @@ const Wods: React.FC = () => {
                 <WodList
                   wods={wods}
                   isLoading={isLoading}
-                  onToggleFavorite={toggleFavorite}
+                  onToggleFavorite={handleToggleFavorite}
                 />
               </TabsContent>
             </Tabs>

@@ -1,216 +1,117 @@
+import { useState, useCallback } from 'react';
+import { useWodFetch } from '../wods/use-wod-fetch';
 
-import { useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/context/AuthContext";
-import { WorkoutTemplate } from "./types";
-
-// Define simplified types for the template management hook
-interface WorkoutType {
-  id?: string;
-  title: string;
-  description?: string;
-  difficulty: string;
-  category: string;
-  is_template?: boolean;
-  duration_minutes?: number;
-  created_at?: string;
-  updated_at?: string;
+// Simplified interfaces to avoid recursive type definitions
+export interface ExerciseSet {
+  id: string;
+  reps: number;
+  weight?: number;
+  duration?: number;
 }
 
-// Define exercise type separately
-interface ExerciseType {
-  exercise_id: number;
-  sets: number;
-  reps: string;
-  rest_seconds: number;
-  notes?: string;
-  order_index: number;
-  exercise?: Record<string, any>; // Using Record instead of recursive type
+export interface TemplateExercise {
+  id: string;
+  exerciseId: string;
+  name?: string;
+  sets: ExerciseSet[];
+  restSeconds?: number;
 }
 
-// Define the template management props explicitly to avoid circular references
-interface TemplateManagementProps {
-  workout: WorkoutType;
-  setWorkout: (workout: WorkoutType) => void;
-  exercises: ExerciseType[];
-  templates: WorkoutTemplate[];
-  setTemplates: (templates: WorkoutTemplate[]) => void;
-  setIsLoadingTemplates: (isLoading: boolean) => void;
-  setIsSaving: (isSaving: boolean) => void;
+export interface WorkoutTemplate {
+  id: string;
+  name: string;
+  exercises: TemplateExercise[];
+  isCircuit?: boolean;
 }
 
-export const useTemplateManagement = (state: TemplateManagementProps) => {
-  const { 
-    workout,
-    setWorkout,
-    exercises,
-    templates,
-    setTemplates,
-    setIsLoadingTemplates,
-    setIsSaving
-  } = state;
+export const useTemplateManagement = () => {
+  const [currentTemplate, setCurrentTemplate] = useState<WorkoutTemplate | null>(null);
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const addTemplate = useCallback((template: WorkoutTemplate) => {
+    setTemplates(prevTemplates => [...prevTemplates, template]);
+  }, []);
 
-  // Load available templates
-  const loadTemplates = useCallback(async () => {
-    if (!user) return;
-    
-    setIsLoadingTemplates(true);
+  const updateTemplate = useCallback((updatedTemplate: WorkoutTemplate) => {
+    setTemplates(prevTemplates =>
+      prevTemplates.map(template =>
+        template.id === updatedTemplate.id ? updatedTemplate : template
+      )
+    );
+    setCurrentTemplate(updatedTemplate);
+  }, []);
+
+  const deleteTemplate = useCallback((templateId: string) => {
+    setTemplates(prevTemplates =>
+      prevTemplates.filter(template => template.id !== templateId)
+    );
+    setCurrentTemplate(prev => prev?.id === templateId ? null : prev);
+  }, []);
+  
+  const { fetchWodById } = useWodFetch();
+  
+  const loadTemplateFromWod = useCallback(async (wodId: string) => {
     try {
-      // Query prepared_workouts for templates
-      const { data, error } = await supabase
-        .from('prepared_workouts')
-        .select('id, title, description, category, difficulty, created_at')
-        .eq('is_template', true)
-        .order('created_at', { ascending: false });
+      const wod = await fetchWodById(wodId);
       
-      if (error) throw error;
+      if (!wod) return null;
       
-      setTemplates(data as WorkoutTemplate[] || []);
-    } catch (error) {
-      console.error("Error loading templates:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load workout templates. Please try again.",
-        variant: "destructive"
+      // Convert WOD components to template format
+      const templateExercises: TemplateExercise[] = wod.components.map((component, index) => {
+        // Extract reps from description if possible
+        const repsMatch = component.description.match(/(\d+) reps/i);
+        const defaultReps = repsMatch ? parseInt(repsMatch[1], 10) : 10;
+        
+        return {
+          id: `template-ex-${index}`,
+          exerciseId: `wod-component-${index}`,
+          name: component.description,
+          sets: [{
+            id: `set-${index}-1`,
+            reps: defaultReps,
+          }],
+          restSeconds: 60,
+        };
       });
-    } finally {
-      setIsLoadingTemplates(false);
-    }
-  }, [user, toast, setTemplates, setIsLoadingTemplates]);
-
-  // Save workout as template
-  const saveAsTemplate = useCallback(async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to save templates.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (exercises.length === 0) {
-      toast({
-        title: "No Exercises",
-        description: "Please add at least one exercise to your template.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsSaving(true);
-    
-    try {
-      // Calculate estimated duration based on sets, reps and rest time
-      const totalSets = exercises.reduce((acc, ex) => acc + ex.sets, 0);
-      const avgRestSeconds = exercises.length > 0
-        ? exercises.reduce((acc, ex) => acc + ex.rest_seconds, 0) / exercises.length
-        : 60;
-      const estimatedDuration = Math.ceil((totalSets * 45 + (totalSets - exercises.length) * avgRestSeconds) / 60);
       
-      // Create a copy of the current workout as a template
-      const workoutCopy = {
-        title: `${workout.title || 'Workout'} (Template)`,
-        description: workout.description,
-        difficulty: workout.difficulty,
-        category: workout.category,
-        is_template: true,
-        goal: workout.category, // Using category as goal for now
-        duration_minutes: estimatedDuration || 30, // Adding missing duration_minutes
+      const template: WorkoutTemplate = {
+        id: wodId,
+        name: wod.name,
+        exercises: templateExercises,
+        isCircuit: wod.components.length > 3,
       };
       
-      const { data: templateData, error: templateError } = await supabase
-        .from('prepared_workouts')
-        .insert(workoutCopy)
-        .select();
+      // Set the template as current
+      // setCurrentTemplate(template);
       
-      if (templateError) throw templateError;
-      const templateId = templateData?.[0]?.id;
-      
-      if (!templateId) throw new Error("Failed to create template");
-      
-      // Save the exercises to the template
-      const exercisesToInsert = exercises.map((ex, index) => ({
-        workout_id: templateId,
-        exercise_id: ex.exercise_id,
-        sets: ex.sets,
-        reps: ex.reps,
-        rest_seconds: ex.rest_seconds,
-        notes: ex.notes,
-        order_index: index
-      }));
-      
-      const { error: exerciseError } = await supabase
-        .from('prepared_workout_exercises')
-        .insert(exercisesToInsert);
-      
-      if (exerciseError) throw exerciseError;
-      
-      // Refresh templates
-      await loadTemplates();
-      
-      toast({
-        title: "Template Saved",
-        description: "Your workout template has been saved successfully.",
-      });
-      
+      return template;
     } catch (error) {
-      console.error("Error saving template:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save workout template. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
+      console.error("Error loading template from WOD:", error);
+      return null;
     }
-  }, [workout, exercises, user, toast, loadTemplates, setIsSaving]);
+  }, [fetchWodById]);
 
-  // Delete a template
-  const deleteTemplate = useCallback(async (templateId: string) => {
-    if (!user) return;
-    
-    try {
-      // First delete the template exercises
-      const { error: exerciseError } = await supabase
-        .from('prepared_workout_exercises')
-        .delete()
-        .eq('workout_id', templateId);
-      
-      if (exerciseError) throw exerciseError;
-      
-      // Then delete the template itself
-      const { error: templateError } = await supabase
-        .from('prepared_workouts')
-        .delete()
-        .eq('id', templateId);
-      
-      if (templateError) throw templateError;
-      
-      // Refresh templates
-      await loadTemplates();
-      
-      toast({
-        title: "Template Deleted",
-        description: "Your workout template has been deleted successfully.",
-      });
-    } catch (error) {
-      console.error("Error deleting template:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete workout template. Please try again.",
-        variant: "destructive"
-      });
-    }
-  }, [user, toast, loadTemplates]);
-
+  const duplicateTemplate = useCallback((template: WorkoutTemplate) => {
+    const newTemplate = {
+      ...template,
+      id: `${template.id}-copy-${Date.now()}`,
+      name: `${template.name} (Copy)`
+    };
+    addTemplate(newTemplate);
+  }, [addTemplate]);
+  
   return {
-    loadTemplates,
-    saveAsTemplate,
-    deleteTemplate
+    currentTemplate,
+    setCurrentTemplate,
+    templates,
+    setTemplates,
+    isLoading,
+    setIsLoading,
+    addTemplate,
+    updateTemplate,
+    deleteTemplate,
+    duplicateTemplate,
+    loadTemplateFromWod,
   };
 };
