@@ -156,9 +156,9 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
                     <div className="mt-3">
                       <ExerciseVideoHandler
                         className="w-full max-w-[200px] h-[120px] mx-auto"
-                        videoUrl={exercise.exercise?.video_demonstration_url || 
-                                exercise.exercise?.short_youtube_demo || 
-                                exercise.exercise?.in_depth_youtube_exp || ""}
+                        url={exercise.exercise?.video_demonstration_url || 
+                             exercise.exercise?.short_youtube_demo || 
+                             exercise.exercise?.in_depth_youtube_exp || ""}
                         thumbnailUrl={exercise.exercise?.youtube_thumbnail_url}
                       />
                     </div>

@@ -10,15 +10,18 @@ const ExerciseVideoHandler = ({
   url,
   title,
   className = "rounded-full bg-white text-black border-0",
-  showPlaceholder = true
+  showPlaceholder = true,
+  thumbnailUrl
 }: {
   url?: string | null;
   title?: string;
   className?: string;
   showPlaceholder?: boolean;
+  thumbnailUrl?: string | null;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   
+  // Handle both url and videoUrl for backward compatibility
   if (!url) {
     return showPlaceholder ? (
       <p className="text-gray-500 italic">No video available</p>
