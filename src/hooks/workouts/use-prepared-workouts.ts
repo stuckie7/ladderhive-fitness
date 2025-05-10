@@ -84,23 +84,13 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
         // Safely type check the exercise property before mapping
         let exerciseData: Exercise | undefined = undefined;
         
-        // Rewriting the null check to ensure TypeScript properly narrows the type
-        if (item.exercise) {
-          // First ensure it's an object and not null
-          const exerciseObj = item.exercise;
-          
-          if (
-            typeof exerciseObj === 'object' && 
-            exerciseObj !== null && 
-            !('error' in exerciseObj)
-          ) {
-            try {
-              // Now TypeScript knows exerciseObj is not null at this point
-              const exerciseFull = exerciseObj as ExerciseFull;
-              exerciseData = mapExerciseFullToExercise(exerciseFull);
-            } catch (err) {
-              console.error("Error mapping exercise data:", err);
-            }
+        if (item.exercise !== null && typeof item.exercise === 'object') {
+          try {
+            // Now TypeScript knows item.exercise is not null at this point
+            const exerciseFull = item.exercise as ExerciseFull;
+            exerciseData = mapExerciseFullToExercise(exerciseFull);
+          } catch (err) {
+            console.error("Error mapping exercise data:", err);
           }
         }
         
