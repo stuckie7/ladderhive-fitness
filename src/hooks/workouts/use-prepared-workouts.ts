@@ -38,7 +38,7 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
       const mappedWorkouts: PreparedWorkout[] = data?.map(workout => ({
         ...workout,
         // Add 'exercises' field to match Workout interface
-        exercises: workout.exercises || 5, // Default assumption that each workout has around 5 exercises
+        exercises: 5, // Default assumption that each workout has around 5 exercises
       })) || [];
       
       setPreparedWorkouts(mappedWorkouts);
