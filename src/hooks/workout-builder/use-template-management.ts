@@ -13,6 +13,9 @@ interface WorkoutType {
   difficulty: string;
   category: string;
   is_template?: boolean;
+  duration_minutes?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Define exercise type separately
@@ -23,9 +26,10 @@ interface ExerciseType {
   rest_seconds: number;
   notes?: string;
   order_index: number;
+  exercise?: any; // Use any to avoid recursive type issues
 }
 
-// Define the template management state type with explicit types
+// Define the template management props explicitly to avoid circular references
 interface TemplateManagementProps {
   workout: WorkoutType;
   setWorkout: (workout: WorkoutType) => void;

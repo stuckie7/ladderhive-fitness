@@ -72,7 +72,7 @@ function App() {
               <Workouts />
             </ProtectedRoute>
           } />
-          <Route path="/workouts/:id" element={
+          <Route path="/workout/:id" element={
             <ProtectedRoute>
               <WorkoutDetail />
             </ProtectedRoute>
