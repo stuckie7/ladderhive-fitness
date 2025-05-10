@@ -54,7 +54,8 @@ export const useWodFetch = () => {
         // Safely parse components based on type
         const components = wod.components ? parseWodComponents(wod.components) : [];
         
-        // Ensure video_url is properly extracted
+        // Ensure video URLs are properly extracted
+        // Use video_demo for compatibility with existing data
         const videoUrl = wod.video_demo || null;
         console.log(`WOD ${wod.id} video URL:`, videoUrl);
         
@@ -62,7 +63,7 @@ export const useWodFetch = () => {
           ...wod,
           components,
           is_favorite: userFavorites.includes(wod.id),
-          video_url: videoUrl
+          video_url: videoUrl // Set video_url to the value from video_demo for compatibility
         };
       }) || [];
       
@@ -111,7 +112,8 @@ export const useWodFetch = () => {
       // Safely parse components based on type
       const components = data.components ? parseWodComponents(data.components) : [];
       
-      // Ensure video_url is properly extracted
+      // Ensure video URLs are properly extracted
+      // Use video_demo for compatibility with existing data
       const videoUrl = data.video_demo || null;
       console.log("WOD video URL:", videoUrl);
       
@@ -119,7 +121,7 @@ export const useWodFetch = () => {
         ...data,
         components,
         is_favorite: isFavorite,
-        video_url: videoUrl
+        video_url: videoUrl // Set video_url to the value from video_demo for compatibility
       };
       
       return wodWithTypedComponents;

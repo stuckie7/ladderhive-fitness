@@ -13,6 +13,10 @@ interface PreparedWorkoutRecord {
   category: string | null;
   created_at: string;
   is_template: boolean;
+  duration_minutes?: number;
+  goal?: string;
+  thumbnail_url?: string;
+  updated_at?: string;
 }
 
 export const useTemplateState = () => {
@@ -34,8 +38,8 @@ export const useTemplateState = () => {
         
       if (error) throw error;
       
-      // Explicitly type the data to avoid deep instantiation
-      const preparedWorkouts = data as PreparedWorkoutRecord[];
+      // Cast the data to unknown first, then to our expected type to avoid type errors
+      const preparedWorkouts = (data as unknown) as PreparedWorkoutRecord[];
       
       // Map database results to WorkoutTemplate format
       const loadedTemplates: WorkoutTemplate[] = (preparedWorkouts || []).map((template) => ({

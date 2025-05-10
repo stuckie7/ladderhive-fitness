@@ -74,11 +74,27 @@ export const getYouTubeVideoId = (url: string | null | undefined): string | null
   
   try {
     console.log("Parsing YouTube URL:", url);
-    // Match patterns like youtube.com/watch?v=VIDEO_ID or youtu.be/VIDEO_ID
-    const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})(?:&|$|\/)/);
-    const videoId = videoIdMatch ? videoIdMatch[1] : null;
-    console.log("Extracted video ID:", videoId);
-    return videoId;
+    
+    // Clean the URL if it has quotes
+    const cleanUrl = url.replace(/^["']|["']$/g, '');
+    
+    // Enhanced regex to handle more YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/, // Standard formats
+      /(?:youtube\.com\/v\/|youtube\.com\/watch\?.*v=)([a-zA-Z0-9_-]{11})/, // Other formats
+      /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/ // YouTube Shorts
+    ];
+    
+    for (const pattern of patterns) {
+      const match = cleanUrl.match(pattern);
+      if (match && match[1]) {
+        console.log("Extracted video ID:", match[1]);
+        return match[1];
+      }
+    }
+    
+    console.log("No video ID found in URL:", cleanUrl);
+    return null;
   } catch (error) {
     console.error("Error extracting YouTube video ID:", error);
     return null;

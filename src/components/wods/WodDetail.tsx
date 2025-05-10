@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bookmark, BookmarkCheck, Clock, Video } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Clock, Video, ExternalLink } from 'lucide-react';
 import { Wod } from '@/types/wod';
 import StartWodButton from './StartWodButton';
 import { getYouTubeEmbedUrl } from '@/utils/wodHelpers';
@@ -15,7 +16,9 @@ interface WodDetailProps {
 const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
   // Add logging to debug video embedding
   console.log("WOD detail video URL:", wod.video_url);
-  const embedUrl = getYouTubeEmbedUrl(wod.video_url);
+  console.log("WOD detail video_demo:", wod.video_demo);
+  const videoUrl = wod.video_url || wod.video_demo;
+  const embedUrl = getYouTubeEmbedUrl(videoUrl);
   console.log("Embed URL:", embedUrl);
 
   const getDifficultyColor = (difficulty: string | undefined) => {
@@ -103,24 +106,28 @@ const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
       )}
       
       {/* Video */}
-      {embedUrl ? (
-        <div className="aspect-video rounded-lg overflow-hidden border">
-          <iframe 
-            width="100%" 
-            height="100%" 
-            src={embedUrl}
-            title={`${wod.name} Demo`}
-            frameBorder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowFullScreen
-          ></iframe>
-        </div>
-      ) : wod.video_url ? (
-        <div className="rounded-lg bg-muted p-4 text-center">
-          <Video className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
-          <p>Could not embed video. <a href={wod.video_url} target="_blank" rel="noopener noreferrer" className="underline text-primary">Open video in new tab</a></p>
-        </div>
-      ) : null}
+      {videoUrl && (
+        embedUrl ? (
+          <div className="aspect-video rounded-lg overflow-hidden border">
+            <iframe 
+              width="100%" 
+              height="100%" 
+              src={embedUrl}
+              title={`${wod.name} Demo`}
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowFullScreen
+            ></iframe>
+          </div>
+        ) : (
+          <div className="rounded-lg bg-muted p-4 text-center">
+            <Video className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+            <p>Could not embed video. <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="underline text-primary flex items-center justify-center gap-1 hover:text-primary/80">
+              Open video in new tab <ExternalLink className="h-4 w-4" />
+            </a></p>
+          </div>
+        )
+      )}
       
       {/* Components */}
       <Card>
