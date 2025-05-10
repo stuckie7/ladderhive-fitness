@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -23,6 +24,7 @@ export interface DetailedWorkout {
     reps: string | number;
     rest_seconds?: number;
     notes?: string;
+    modifications?: string;
     order_index: number;
     exercise: {
       id: number | string;
@@ -32,7 +34,6 @@ export interface DetailedWorkout {
       short_youtube_demo?: string;
       youtube_thumbnail_url?: string;
     };
-    modifications?: string;
   }[];
 }
 
@@ -42,22 +43,25 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const transformWorkoutExercises = (exercisesData: any[]) => {
+  const transformWorkoutExercises = (exercisesData: any[], exerciseDetails: any[]) => {
     if (!exercisesData || !Array.isArray(exercisesData)) return [];
 
     return exercisesData.map(item => {
-      // Create a safe exercise object with fallback values
+      // Find the matching exercise details for this exercise
+      const exerciseDetail = exerciseDetails.find(detail => detail.id === item.exercise_id) || {};
+      
+      // Create a safe exercise object with all video and description fields
       const safeExercise = {
-        id: item.exercise?.id || 0,
-        name: item.exercise?.name || 'Unknown Exercise',
+        id: exerciseDetail?.id || item.exercise_id,
+        name: exerciseDetail?.name || 'Unknown Exercise',
         // Only include these properties if they exist
-        ...(item.exercise && 'description' in item.exercise ? { description: item.exercise.description } : {}),
-        ...(item.exercise && 'video_demonstration_url' in item.exercise ? 
-          { video_demonstration_url: item.exercise.video_demonstration_url } : {}),
-        ...(item.exercise && 'short_youtube_demo' in item.exercise ? 
-          { short_youtube_demo: item.exercise.short_youtube_demo } : {}),
-        ...(item.exercise && 'youtube_thumbnail_url' in item.exercise ? 
-          { youtube_thumbnail_url: item.exercise.youtube_thumbnail_url } : {}),
+        ...(exerciseDetail?.description ? { description: exerciseDetail.description } : {}),
+        ...(exerciseDetail?.video_demonstration_url ? 
+          { video_demonstration_url: exerciseDetail.video_demonstration_url } : {}),
+        ...(exerciseDetail?.short_youtube_demo ? 
+          { short_youtube_demo: exerciseDetail.short_youtube_demo } : {}),
+        ...(exerciseDetail?.youtube_thumbnail_url ? 
+          { youtube_thumbnail_url: exerciseDetail.youtube_thumbnail_url } : {}),
       };
 
       return {
@@ -113,9 +117,11 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
 
       // Fetch all exercises data separately
       const exerciseIds = exercisesData.map(item => item.exercise_id);
+      
+      // Use exercises_full table which contains all the video fields
       const { data: exercisesDetails, error: exerciseDetailsError } = await supabase
         .from('exercises_full')
-        .select('*')
+        .select('*, id, name, description, short_youtube_demo, in_depth_youtube_exp, youtube_thumbnail_url, video_demonstration_url')
         .in('id', exerciseIds);
 
       if (exerciseDetailsError) {
@@ -123,8 +129,10 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
         throw new Error(exerciseDetailsError.message);
       }
 
-      // Transform the exercises data by manually joining with exercise details
-      const transformedExercises = transformWorkoutExercises(exercisesData);
+      console.log('Fetched exercise details:', exercisesDetails);
+
+      // Transform the exercises data by using our fetched exercise details
+      const transformedExercises = transformWorkoutExercises(exercisesData, exercisesDetails);
 
       const detailedWorkout: DetailedWorkout = {
         ...workoutData,
