@@ -14,7 +14,8 @@ const PreparedWorkoutsList = () => {
   const navigate = useNavigate();
   
   const handleStartWorkout = (workout: PreparedWorkout) => {
-    navigate(`/workout-builder?template=${workout.id}`);
+    // Navigate to the enhanced workout detail page
+    navigate(`/workout-enhanced/${workout.id}`);
   };
   
   // Group workouts by category
@@ -100,7 +101,7 @@ const PreparedWorkoutsList = () => {
                     className="whitespace-nowrap"
                   >
                     <Play className="h-4 w-4 mr-1" />
-                    Start Workout
+                    View Workout
                   </Button>
                 </div>
               </div>

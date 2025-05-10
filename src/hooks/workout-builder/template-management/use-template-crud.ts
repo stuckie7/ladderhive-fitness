@@ -4,17 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { WorkoutTemplate, ExerciseTemplate } from "./template-types";
 
-// Define specific types for state and actions to avoid deep instantiation
-type TemplatesState = WorkoutTemplate[];
-type SetTemplatesAction = React.Dispatch<React.SetStateAction<WorkoutTemplate[]>>;
-type CurrentTemplateState = WorkoutTemplate | null;
-type SetCurrentTemplateAction = React.Dispatch<React.SetStateAction<WorkoutTemplate | null>>;
-
+// Define specific types to avoid deep instantiation issues
 export const useTemplateCrud = (
-  templates: TemplatesState,
-  setTemplates: SetTemplatesAction,
-  currentTemplate: CurrentTemplateState,
-  setCurrentTemplate: SetCurrentTemplateAction
+  templates: WorkoutTemplate[],
+  setTemplates: React.Dispatch<React.SetStateAction<WorkoutTemplate[]>>,
+  currentTemplate: WorkoutTemplate | null,
+  setCurrentTemplate: React.Dispatch<React.SetStateAction<WorkoutTemplate | null>>
 ) => {
   const { toast } = useToast();
 

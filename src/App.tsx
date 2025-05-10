@@ -15,6 +15,7 @@ import ExerciseDetail from "@/pages/ExerciseDetail";
 import AdvancedExercises from "@/pages/AdvancedExercises";
 import Workouts from "@/pages/Workouts";
 import WorkoutDetail from "@/pages/WorkoutDetail";
+import WorkoutDetailEnhanced from "@/pages/WorkoutDetailEnhanced";
 import Progress from "@/pages/Progress";
 import Schedule from "@/pages/Schedule";
 import NotFound from "@/pages/NotFound";
@@ -78,6 +79,9 @@ function App() {
             <ProtectedRoute>
               <WorkoutDetail />
             </ProtectedRoute>
+          } />
+          <Route path="/workout-enhanced/:id" element={
+            <WorkoutDetailEnhanced />
           } />
           {/* New WOD Routes */}
           <Route path="/wods" element={<Wods />} />
