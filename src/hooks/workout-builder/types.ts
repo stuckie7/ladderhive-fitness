@@ -1,4 +1,5 @@
 
+
 // Update the WorkoutTemplate interface to align with Supabase table structure
 export interface WorkoutExerciseDetail {
   id: string;
@@ -20,7 +21,7 @@ export interface WorkoutDetail {
   difficulty: string;
   duration?: number;  // Use this for backwards compatibility
   duration_minutes?: number;  // Add this for new code
-  exercises: WorkoutExerciseDetail[] | number; // Allow both array of exercises or count
+  exercises: WorkoutExerciseDetail[]; // Always use array of exercises, not number
   category?: string;
   created_at?: string;
   updated_at?: string;
@@ -63,3 +64,4 @@ export interface TemplateSet {
 export interface WorkoutTemplateWithWod extends WorkoutTemplate {
   source_wod_id?: string;
 }
+

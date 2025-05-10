@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { WorkoutTemplate } from "./template-types";
+import { WorkoutTemplate } from "../types";
 
 // Use simplified version without excessive nesting
 export const useTemplateCrud = (
@@ -26,8 +26,8 @@ export const useTemplateCrud = (
     setCurrentTemplate(updatedTemplate);
   }, [setTemplates, setCurrentTemplate]);
 
-  // Fix infinite type instantiation by using async/await and proper type annotation
-  const deleteTemplate = useCallback(async (templateId: string) => {
+  // Fix infinite type instantiation by specifying return type explicitly
+  const deleteTemplate = useCallback(async (templateId: string): Promise<void> => {
     try {
       // Update the templates state
       setTemplates(prevTemplates => 

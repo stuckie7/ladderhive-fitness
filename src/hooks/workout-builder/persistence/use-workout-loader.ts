@@ -47,7 +47,7 @@ export const useWorkoutLoader = (
           duration_minutes: workoutData.duration_minutes,
           created_at: workoutData.created_at,
           is_template: isTemplate,
-          exercises: [] // Initialize with empty array instead of 0
+          exercises: [] // Initialize with empty array
         });
         
         // Fetch the workout exercises

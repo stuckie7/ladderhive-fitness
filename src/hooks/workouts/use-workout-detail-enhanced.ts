@@ -112,10 +112,12 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
           exercise: {
             id: exerciseInfo.id,
             name: exerciseInfo.name || "Unknown Exercise",
+            // Handle potential missing properties safely
             description: exerciseInfo.description || "",
-            video_demonstration_url: exerciseInfo.video_demonstration_url,
-            short_youtube_demo: exerciseInfo.short_youtube_demo,
-            youtube_thumbnail_url: exerciseInfo.youtube_thumbnail_url
+            // Map fields correctly from exercises_full table
+            video_demonstration_url: exerciseInfo.short_youtube_demo || "",
+            short_youtube_demo: exerciseInfo.short_youtube_demo || "",
+            youtube_thumbnail_url: exerciseInfo.youtube_thumbnail_url || ""
           },
           modifications: ""
         };
