@@ -28,6 +28,16 @@ export interface WorkoutDetail {
   created_at?: string;
   updated_at?: string;
   user_id?: string;
+  is_template?: boolean;
+}
+
+export interface WorkoutTemplate {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  difficulty: string;
+  created_at: string;
 }
 
 export const useWorkoutBuilder = (workoutId?: string) => {
@@ -39,11 +49,16 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     title: "",
     difficulty: "beginner",
     category: "strength",
-    description: ""
+    description: "",
+    is_template: false
   });
   
   // Workout exercises state
   const [exercises, setExercises] = useState<WorkoutExerciseDetail[]>([]);
+  
+  // Templates state
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,7 +95,8 @@ export const useWorkoutBuilder = (workoutId?: string) => {
           category: workoutData.category,
           duration_minutes: workoutData.duration_minutes,
           created_at: workoutData.created_at,
-          updated_at: workoutData.updated_at
+          updated_at: workoutData.updated_at,
+          is_template: Boolean(workoutData.is_template)
         });
         
         // Fetch the workout exercises
@@ -136,13 +152,46 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     }
   }, [user, toast]);
   
+  // Load available templates
+  const loadTemplates = useCallback(async () => {
+    if (!user) return;
+    
+    setIsLoadingTemplates(true);
+    try {
+      const { data, error } = await supabase
+        .from('prepared_workouts')
+        .select('id, title, description, category, difficulty, created_at')
+        .eq('is_template', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setTemplates(data || []);
+    } catch (error) {
+      console.error("Error loading templates:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load workout templates. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  }, [user, toast]);
+  
+  // Load templates on initial render
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
+  
   // Reset workout to default values
   const resetWorkout = useCallback(() => {
     setWorkout({
       title: "",
       difficulty: "beginner",
       category: "strength",
-      description: ""
+      description: "",
+      is_template: false
     });
     setExercises([]);
   }, []);
@@ -288,6 +337,170 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     });
   }, []);
   
+  // Reorder exercises with drag and drop
+  const reorderExercises = useCallback((startIndex: number, endIndex: number) => {
+    setExercises(prev => {
+      const result = Array.from(prev);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      
+      // Update order_index for all exercises
+      return result.map((ex, i) => ({
+        ...ex,
+        order_index: i
+      }));
+    });
+  }, []);
+  
+  // Save workout as template
+  const saveAsTemplate = useCallback(async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save templates.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (exercises.length === 0) {
+      toast({
+        title: "No Exercises",
+        description: "Please add at least one exercise to your template.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      // Create a copy of the current workout as a template
+      const workoutCopy = {
+        title: `${workout.title || 'Workout'} (Template)`,
+        description: workout.description,
+        difficulty: workout.difficulty,
+        category: workout.category,
+        is_template: true,
+        goal: workout.category // Using category as goal for now
+      };
+      
+      const { data: templateData, error: templateError } = await supabase
+        .from('prepared_workouts')
+        .insert(workoutCopy)
+        .select();
+      
+      if (templateError) throw templateError;
+      const templateId = templateData?.[0]?.id;
+      
+      if (!templateId) throw new Error("Failed to create template");
+      
+      // Save the exercises to the template
+      const exercisesToInsert = exercises.map((ex, index) => ({
+        workout_id: templateId,
+        exercise_id: ex.exercise_id,
+        sets: ex.sets,
+        reps: ex.reps,
+        rest_seconds: ex.rest_seconds,
+        notes: ex.notes,
+        order_index: index
+      }));
+      
+      const { error: exerciseError } = await supabase
+        .from('prepared_workout_exercises')
+        .insert(exercisesToInsert);
+      
+      if (exerciseError) throw exerciseError;
+      
+      // Refresh templates
+      await loadTemplates();
+      
+      toast({
+        title: "Template Saved",
+        description: "Your workout template has been saved successfully.",
+      });
+      
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save workout template. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [workout, exercises, user, toast, loadTemplates]);
+  
+  // Load a template
+  const loadTemplate = useCallback(async (templateId: string) => {
+    setIsLoading(true);
+    try {
+      // Load the template workout
+      await loadWorkout(templateId);
+      
+      // Update the title to remove "(Template)" if present
+      setWorkout(prev => ({
+        ...prev,
+        id: undefined, // Create a new workout instead of updating the template
+        title: prev.title?.replace(' (Template)', '') || 'New Workout',
+        is_template: false
+      }));
+      
+      toast({
+        title: "Template Loaded",
+        description: "The workout template has been loaded successfully.",
+      });
+    } catch (error) {
+      console.error("Error loading template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load workout template. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadWorkout, toast]);
+  
+  // Delete a template
+  const deleteTemplate = useCallback(async (templateId: string) => {
+    if (!user) return;
+    
+    try {
+      // First delete the template exercises
+      const { error: exerciseError } = await supabase
+        .from('prepared_workout_exercises')
+        .delete()
+        .eq('workout_id', templateId);
+      
+      if (exerciseError) throw exerciseError;
+      
+      // Then delete the template itself
+      const { error: templateError } = await supabase
+        .from('prepared_workouts')
+        .delete()
+        .eq('id', templateId);
+      
+      if (templateError) throw templateError;
+      
+      // Refresh templates
+      await loadTemplates();
+      
+      toast({
+        title: "Template Deleted",
+        description: "Your workout template has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete workout template. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [user, toast, loadTemplates]);
+  
   // Save workout
   const saveWorkout = useCallback(async () => {
     if (!user) {
@@ -316,7 +529,9 @@ export const useWorkoutBuilder = (workoutId?: string) => {
       
       // Calculate estimated duration based on sets, reps and rest time
       const totalSets = exercises.reduce((acc, ex) => acc + ex.sets, 0);
-      const avgRestSeconds = exercises.reduce((acc, ex) => acc + ex.rest_seconds, 0) / exercises.length;
+      const avgRestSeconds = exercises.length > 0
+        ? exercises.reduce((acc, ex) => acc + ex.rest_seconds, 0) / exercises.length
+        : 60;
       const estimatedDuration = Math.ceil((totalSets * 45 + (totalSets - exercises.length) * avgRestSeconds) / 60);
       
       // Save or update workout info
@@ -330,6 +545,7 @@ export const useWorkoutBuilder = (workoutId?: string) => {
             category: workout.category,
             goal: workout.category, // Using category as goal for now
             duration_minutes: estimatedDuration || 30,
+            is_template: workout.is_template || false
           })
           .select();
         
@@ -345,6 +561,7 @@ export const useWorkoutBuilder = (workoutId?: string) => {
             category: workout.category,
             goal: workout.category, // Using category as goal for now
             duration_minutes: estimatedDuration || 30,
+            is_template: workout.is_template || false,
             updated_at: new Date().toISOString()
           })
           .eq('id', workoutId);
@@ -403,6 +620,8 @@ export const useWorkoutBuilder = (workoutId?: string) => {
   return {
     workout,
     exercises,
+    templates,
+    isLoadingTemplates,
     searchResults,
     searchQuery,
     selectedMuscleGroup,
@@ -419,8 +638,13 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     updateExerciseDetails,
     moveExerciseUp,
     moveExerciseDown,
+    reorderExercises,
     saveWorkout,
     resetWorkout,
     loadWorkout,
+    saveAsTemplate,
+    loadTemplate,
+    deleteTemplate,
+    loadTemplates
   };
 };

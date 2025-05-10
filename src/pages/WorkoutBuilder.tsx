@@ -8,17 +8,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dumbbell, Save, ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { Dumbbell, Save, ArrowLeft, Plus, Trash2, Copy, BookOpen } from "lucide-react";
 import WorkoutBuilderExerciseList from "@/components/workouts/builder/WorkoutBuilderExerciseList";
 import ExerciseSearchPanel from "@/components/workouts/builder/ExerciseSearchPanel";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkoutBuilder } from "@/hooks/use-workout-builder";
+import WorkoutTemplateSelector from "@/components/workouts/builder/WorkoutTemplateSelector";
 
 const WorkoutBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   
   const {
     workout,
@@ -30,6 +32,7 @@ const WorkoutBuilder = () => {
     selectedDifficulty,
     isLoading,
     isSaving,
+    templates,
     
     setWorkoutInfo,
     handleSearchChange,
@@ -39,9 +42,12 @@ const WorkoutBuilder = () => {
     updateExerciseDetails,
     moveExerciseUp,
     moveExerciseDown,
+    reorderExercises,
     saveWorkout,
     resetWorkout,
     loadWorkout,
+    saveAsTemplate,
+    loadTemplate
   } = useWorkoutBuilder(id);
   
   useEffect(() => {
@@ -50,7 +56,7 @@ const WorkoutBuilder = () => {
     } else {
       resetWorkout();
     }
-  }, [id]);
+  }, [id, loadWorkout, resetWorkout]);
   
   const handleSave = async () => {
     if (!workout.title.trim()) {
@@ -90,6 +96,10 @@ const WorkoutBuilder = () => {
     }
   };
   
+  const handleCreateTemplate = async () => {
+    await saveAsTemplate();
+  };
+  
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
@@ -108,6 +118,22 @@ const WorkoutBuilder = () => {
             </h1>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsTemplateDialogOpen(true)}
+              className="flex items-center gap-1"
+            >
+              <BookOpen className="h-4 w-4" />
+              Templates
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleCreateTemplate}
+              className="flex items-center gap-1"
+            >
+              <Copy className="h-4 w-4" />
+              Save as Template
+            </Button>
             <Button variant="outline" onClick={resetWorkout}>
               Reset
             </Button>
@@ -121,6 +147,14 @@ const WorkoutBuilder = () => {
             </Button>
           </div>
         </div>
+        
+        {/* Workout Template Selector Dialog */}
+        <WorkoutTemplateSelector 
+          open={isTemplateDialogOpen}
+          onOpenChange={setIsTemplateDialogOpen}
+          templates={templates} 
+          onSelectTemplate={loadTemplate}
+        />
         
         {/* Workout details form */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -218,6 +252,7 @@ const WorkoutBuilder = () => {
               onUpdate={updateExerciseDetails}
               onMoveUp={moveExerciseUp}
               onMoveDown={moveExerciseDown}
+              onReorder={reorderExercises}
             />
           </div>
         </div>
