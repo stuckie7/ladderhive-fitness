@@ -1,3 +1,4 @@
+
 // Define types for workout data
 export interface Workout {
   id: string;
