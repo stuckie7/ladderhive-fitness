@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Exercise } from "@/types/exercise";
 import PreparedWorkout from "./PreparedWorkout";
 import { usePreparedWorkouts } from "@/hooks/workouts/use-prepared-workouts";
+import { useEffect } from "react";
 
 interface PreparedWorkoutsListProps {
   currentWorkoutId?: string;
@@ -23,6 +24,12 @@ const PreparedWorkoutsList = ({
     loadingExercises,
     toggleExpand,
   } = usePreparedWorkouts(currentWorkoutId);
+
+  // Add debugging logs
+  useEffect(() => {
+    console.log("PreparedWorkoutsList - preparedWorkouts:", preparedWorkouts);
+    console.log("PreparedWorkoutsList - isLoading:", isLoading);
+  }, [preparedWorkouts, isLoading]);
 
   if (isLoading) {
     return (
@@ -66,6 +73,8 @@ const PreparedWorkoutsList = ({
     acc[category].push(workout);
     return acc;
   }, {} as Record<string, typeof preparedWorkouts>);
+
+  console.log("Workouts by category:", workoutsByCategory);
 
   return (
     <Card className="border border-border overflow-hidden">
