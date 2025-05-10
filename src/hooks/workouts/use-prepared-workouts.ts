@@ -84,14 +84,13 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
         // Safely type check the exercise property before mapping
         let exerciseData: Exercise | undefined = undefined;
         
-        // Check if exercise is a valid object and not an error
+        // Check if exercise is a valid object and not null before using
         if (item.exercise && 
             typeof item.exercise === 'object' && 
             item.exercise !== null && 
             !('error' in item.exercise)) {
           try {
             // Cast to ExerciseFull only after validation
-            // Fix: Make sure item.exercise is not null before casting
             const exerciseFull = item.exercise as ExerciseFull;
             exerciseData = mapExerciseFullToExercise(exerciseFull);
           } catch (err) {
