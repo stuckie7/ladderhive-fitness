@@ -2,8 +2,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { WorkoutTemplate } from "../types";
-import { TemplateFilter } from './template-types';
+import { WorkoutTemplate } from "./template-types";
 
 export const useTemplateCrud = (
   templates: WorkoutTemplate[],
@@ -26,10 +25,9 @@ export const useTemplateCrud = (
     setCurrentTemplate(updatedTemplate);
   }, [setTemplates, setCurrentTemplate]);
 
-  // Fix: Avoid excessive type instantiation by using explicit types and simplifying the approach
+  // Fix: Explicitly specify the type to avoid excessive type instantiation
   const deleteTemplate = useCallback(async (templateId: string) => {
-    // Directly filter inside the setTemplates callback to avoid deep type instantiation
-    setTemplates(prevTemplates => 
+    setTemplates((prevTemplates: WorkoutTemplate[]) => 
       prevTemplates.filter(template => template.id !== templateId)
     );
     

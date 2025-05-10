@@ -40,4 +40,4 @@ export interface ExerciseTemplate {
 }
 
 // Explicitly define types to avoid deep instantiation issues
-export type TemplateFilter = (templates: WorkoutTemplate[]) => WorkoutTemplate[];
+export type TemplateFilter = (templates: BaseWorkoutTemplate[]) => BaseWorkoutTemplate[];
