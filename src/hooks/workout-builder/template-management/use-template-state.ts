@@ -15,27 +15,31 @@ export const useTemplateState = () => {
     try {
       setIsLoading(true);
       
-      // Fetch templates from database - prepared_workouts table with is_template=true
-      const { data, error } = await supabase
-        .from('prepared_workouts')
-        .select('*')
-        .eq('is_template', true)
-        .order('created_at', { ascending: false });
+      // Fix excessive type instantiation by adding explicit type annotation
+      const fetchTemplates = async (): Promise<WorkoutTemplate[]> => {
+        // Fetch templates from database - prepared_workouts table with is_template=true
+        const { data, error } = await supabase
+          .from('prepared_workouts')
+          .select('*')
+          .eq('is_template', true)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
         
-      if (error) throw error;
+        // Map database results to WorkoutTemplate format
+        return data?.map(template => ({
+          id: template.id,
+          name: template.title, // For backward compatibility
+          title: template.title,
+          description: template.description,
+          difficulty: template.difficulty,
+          category: template.category,
+          created_at: template.created_at,
+          exercises: [] // We'll load these separately if needed
+        })) || [];
+      };
       
-      // Map database results to WorkoutTemplate format
-      const loadedTemplates = data?.map(template => ({
-        id: template.id,
-        name: template.title, // For backward compatibility
-        title: template.title,
-        description: template.description,
-        difficulty: template.difficulty,
-        category: template.category,
-        created_at: template.created_at,
-        exercises: [] // We'll load these separately if needed
-      })) || [];
-      
+      const loadedTemplates = await fetchTemplates();
       setTemplates(loadedTemplates);
     } catch (error) {
       console.error("Error loading templates:", error);

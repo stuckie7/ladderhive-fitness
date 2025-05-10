@@ -47,11 +47,16 @@ export const useWodFetch = () => {
       }
       
       // Map results and mark favorites, ensuring proper component type conversion
-      const mappedWods: Wod[] = data?.map(wod => ({
-        ...wod,
-        components: parseWodComponents(wod.components),
-        is_favorite: userFavorites.includes(wod.id)
-      })) || [];
+      const mappedWods: Wod[] = data?.map(wod => {
+        // Safely parse components based on type
+        const components = wod.components ? parseWodComponents(wod.components) : [];
+        
+        return {
+          ...wod,
+          components,
+          is_favorite: userFavorites.includes(wod.id)
+        };
+      }) || [];
       
       return mappedWods;
       
@@ -92,9 +97,12 @@ export const useWodFetch = () => {
         isFavorite = !favoriteError && !!favoriteData;
       }
       
+      // Safely parse components based on type
+      const components = data.components ? parseWodComponents(data.components) : [];
+      
       const wodWithTypedComponents: Wod = {
         ...data,
-        components: parseWodComponents(data.components),
+        components,
         is_favorite: isFavorite
       };
       
@@ -129,11 +137,16 @@ export const useWodFetch = () => {
       // Convert data structure and ensure proper component types
       const favoriteWods: Wod[] = data
         .filter(item => item.wods)
-        .map(item => ({
-          ...item.wods,
-          components: parseWodComponents(item.wods.components),
-          is_favorite: true
-        }));
+        .map(item => {
+          // Safely parse components based on type
+          const components = item.wods.components ? parseWodComponents(item.wods.components) : [];
+          
+          return {
+            ...item.wods,
+            components,
+            is_favorite: true
+          };
+        });
       
       return favoriteWods;
     } catch (error: any) {

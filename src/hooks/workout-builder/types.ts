@@ -36,6 +36,7 @@ export interface WorkoutTemplate {
   difficulty?: string;  // Added to match prepared_workouts
   created_at?: string;  // Added to match prepared_workouts
   description?: string; // Add this field to match the table and fix errors
+  source_wod_id?: string; // Add this field for WOD references
 }
 
 // Keep TemplateExercise as is since it's a simplified view for the UI
