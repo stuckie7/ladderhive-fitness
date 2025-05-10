@@ -1,8 +1,9 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SimplifiedWorkoutTemplate, TemplateExercise, WorkoutTemplate } from '../types';
 
-// Use a simplified type to avoid infinite recursion
+// Simplified state to avoid infinite recursion
 interface TemplateCrudState {
   templates: SimplifiedWorkoutTemplate[];
   current: WorkoutTemplate | null;
@@ -10,7 +11,7 @@ interface TemplateCrudState {
 }
 
 export const useTemplateCrud = () => {
-  // Initialize state with a simplified template type to avoid infinite recursion
+  // Initialize state with a simplified template type
   const [state, setState] = useState<TemplateCrudState>({
     templates: [],
     current: null,
@@ -20,18 +21,28 @@ export const useTemplateCrud = () => {
   const fetchTemplates = useCallback(async () => {
     setState(prevState => ({ ...prevState, status: 'loading' }));
     try {
-      // Use a more direct approach to avoid template issues
-      // Since workout_templates might not exist in the DB yet, let's use prepared_workouts as a fallback
-      const { data, error } = await supabase
-        .from('prepared_workouts')
+      // First try to get workout_templates
+      let { data, error } = await supabase
+        .from('workout_templates')
         .select('*');
 
-      if (error) {
+      // If table doesn't exist, fall back to prepared_workouts
+      if (error && error.code === '42P01') { // Table doesn't exist error
+        const { data: preparedData, error: preparedError } = await supabase
+          .from('prepared_workouts')
+          .select('*');
+        
+        if (preparedError) {
+          throw preparedError;
+        }
+        
+        data = preparedData;
+      } else if (error) {
         throw error;
       }
 
       // Transform the data to match our template structure
-      const templates: SimplifiedWorkoutTemplate[] = data.map(workout => ({
+      const templates: SimplifiedWorkoutTemplate[] = (data || []).map(workout => ({
         id: workout.id,
         name: workout.title,
         title: workout.title,
@@ -47,9 +58,12 @@ export const useTemplateCrud = () => {
         templates: templates,
         status: 'idle'
       }));
+      
+      return templates;
     } catch (error: any) {
       console.error("Error fetching templates:", error);
       setState(prevState => ({ ...prevState, status: 'error' }));
+      return [];
     }
   }, []);
 
@@ -116,7 +130,6 @@ export const useTemplateCrud = () => {
   }, []);
 
   // Placeholder implementations for CRUD operations
-  // These won't actually work without proper tables, but they'll satisfy TypeScript
   const createTemplate = useCallback(async (template: Omit<WorkoutTemplate, 'id' | 'created_at'>) => {
     console.log("Creating template:", template);
     return null; // Placeholder

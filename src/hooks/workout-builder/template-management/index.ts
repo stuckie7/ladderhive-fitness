@@ -4,7 +4,6 @@ import { useTemplateState } from './use-template-state';
 import { useTemplateCrud } from './use-template-crud';
 import { useTemplateLoading } from './use-template-loading';
 import { WorkoutTemplate } from "../types";
-import { WorkoutDetail } from '../types';
 
 export const useTemplateManagement = () => {
   const {
@@ -20,9 +19,10 @@ export const useTemplateManagement = () => {
   const loadTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Implement template loading logic here
-      // This is a placeholder - actual implementation would load from your data source
-      setTemplates([]);
+      // Fetch templates from the useTemplateCrud hook
+      const templateCrudOps = useTemplateCrud();
+      const fetchedTemplates = await templateCrudOps.fetchTemplates();
+      setTemplates(fetchedTemplates as WorkoutTemplate[]);
     } catch (error) {
       console.error("Error loading templates:", error);
     } finally {
@@ -64,7 +64,7 @@ export const useTemplateManagement = () => {
   };
 };
 
-export type { ExerciseTemplate, WorkoutTemplate } from './template-types';
+export type { WorkoutTemplate } from './template-types';
 export { useTemplateState } from './use-template-state';
 export { useTemplateCrud } from './use-template-crud';
 export { useTemplateLoading } from './use-template-loading';
