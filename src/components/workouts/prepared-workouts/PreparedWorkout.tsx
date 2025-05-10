@@ -30,7 +30,7 @@ const PreparedWorkout = ({
 
   // Function to determine difficulty color
   const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
+    switch (difficulty?.toLowerCase()) {
       case 'beginner':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
       case 'intermediate':
@@ -52,15 +52,19 @@ const PreparedWorkout = ({
         <div>
           <h4 className="font-medium text-foreground">{workout.title}</h4>
           <div className="flex flex-wrap gap-2 mt-1 items-center">
-            <Badge 
-              variant="outline" 
-              className={`${getDifficultyColor(workout.difficulty)}`}
-            >
-              {workout.difficulty}
-            </Badge>
-            <Badge variant="secondary">
-              {workout.category}
-            </Badge>
+            {workout.difficulty && (
+              <Badge 
+                variant="outline" 
+                className={`${getDifficultyColor(workout.difficulty)}`}
+              >
+                {workout.difficulty}
+              </Badge>
+            )}
+            {workout.category && (
+              <Badge variant="secondary">
+                {workout.category}
+              </Badge>
+            )}
             <span className="text-sm text-muted-foreground">
               {workout.duration_minutes} min • {workout.exercises || workoutExercises.length || 5} exercises
             </span>
@@ -92,7 +96,9 @@ const PreparedWorkout = ({
                   {workout.description}
                 </p>
               )}
-              <div className="font-medium text-sm text-muted-foreground mb-2">Goal: {workout.goal}</div>
+              {workout.goal && (
+                <div className="font-medium text-sm text-muted-foreground mb-2">Goal: {workout.goal}</div>
+              )}
               {workoutExercises.map((item) => (
                 <div 
                   key={item.id} 

@@ -59,7 +59,7 @@ const PreparedWorkoutsList = ({
 
   // Group workouts by category for better organization
   const workoutsByCategory = preparedWorkouts.reduce((acc, workout) => {
-    const category = workout.category;
+    const category = workout.category || "Uncategorized";
     if (!acc[category]) {
       acc[category] = [];
     }

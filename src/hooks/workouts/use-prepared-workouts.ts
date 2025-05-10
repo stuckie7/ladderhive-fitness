@@ -32,11 +32,13 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
       
       if (error) throw error;
       
+      console.log('Fetched prepared workouts:', data);
+      
       // Map the database results to our PreparedWorkout type
       const mappedWorkouts: PreparedWorkout[] = data?.map(workout => ({
         ...workout,
         // Add 'exercises' field to match Workout interface
-        exercises: 5, // Default assumption that each workout has around 5 exercises
+        exercises: workout.exercises || 5, // Default assumption that each workout has around 5 exercises
       })) || [];
       
       setPreparedWorkouts(mappedWorkouts);
@@ -68,16 +70,19 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
     setLoadingExercises(prev => ({ ...prev, [workoutId]: true }));
     
     try {
+      console.log('Fetching exercises for workout:', workoutId);
       const { data, error } = await supabase
         .from('prepared_workout_exercises')
         .select(`
           *,
-          exercise:exercises_full(*)
+          exercise:exercise_id(*)
         `)
         .eq('workout_id', workoutId)
         .order('order_index');
         
       if (error) throw error;
+      
+      console.log('Fetched workout exercises:', data);
       
       // Map the response to include the exercise data
       const exercises = data.map(item => {
@@ -120,14 +125,14 @@ export const usePreparedWorkouts = (currentWorkoutId?: string) => {
   };
 
   // Toggle expanded state for a workout
-  const toggleExpand = (workoutId: string) => {
+  const toggleExpand = useCallback((workoutId: string) => {
     if (expandedWorkout === workoutId) {
       setExpandedWorkout(null);
     } else {
       setExpandedWorkout(workoutId);
       fetchWorkoutExercises(workoutId);
     }
-  };
+  }, [expandedWorkout]);
   
   // Add an exercise from a prepared workout to user's current workout
   const addExerciseToWorkout = async (exercise: Exercise) => {
