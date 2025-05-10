@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useWodFetch } from '../wods/use-wod-fetch';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,12 +49,10 @@ export const useTemplateManagement = () => {
   }, []);
 
   const deleteTemplate = useCallback(async (templateId: string) => {
-    // Fix: Using an inline function expression with explicit type annotation
-    // to avoid recursive type inference issues
-    setTemplates(prevTemplates => {
-      return prevTemplates.filter((template: WorkoutTemplate) => template.id !== templateId);
-    });
+    // Use a type assertion for the entire callback function to avoid recursive type issues
+    const filterFn = (template: WorkoutTemplate) => template.id !== templateId;
     
+    setTemplates(prevTemplates => prevTemplates.filter(filterFn));
     setCurrentTemplate(prev => prev?.id === templateId ? null : prev);
     
     try {
