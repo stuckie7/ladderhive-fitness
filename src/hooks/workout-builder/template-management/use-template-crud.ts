@@ -26,13 +26,14 @@ export const useTemplateCrud = (
     setCurrentTemplate(updatedTemplate);
   }, [setTemplates, setCurrentTemplate]);
 
+  // Fix: Avoid excessive type instantiation by using explicit types and simplifying the approach
   const deleteTemplate = useCallback(async (templateId: string) => {
-    // Use the explicit TemplateFilter type to avoid deep instantiation issues
-    const filterTemplates: TemplateFilter = (templatesArray) => {
-      return templatesArray.filter(template => template.id !== templateId);
-    };
+    // Directly filter inside the setTemplates callback to avoid deep type instantiation
+    setTemplates(prevTemplates => 
+      prevTemplates.filter(template => template.id !== templateId)
+    );
     
-    setTemplates(prevTemplates => filterTemplates(prevTemplates));
+    // Update current template if needed
     setCurrentTemplate(prev => prev?.id === templateId ? null : prev);
     
     try {
