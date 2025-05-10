@@ -1,5 +1,3 @@
-
-
 // Update the WorkoutTemplate interface to align with Supabase table structure
 export interface WorkoutExerciseDetail {
   id: string;
@@ -26,6 +24,11 @@ export interface WorkoutDetail {
   created_at?: string;
   updated_at?: string;
   is_template?: boolean; 
+  thumbnail_url?: string;
+  trainer?: string;
+  is_new?: boolean;
+  is_popular?: boolean;
+  is_featured?: boolean;
 }
 
 // Updated WorkoutTemplate to align with prepared_workouts table
@@ -41,6 +44,18 @@ export interface WorkoutTemplate {
   description?: string; // Add this field to match the table and fix errors
   source_wod_id?: string; // Add this field for WOD references
 }
+
+// Break recursive dependency to fix infinite type instantiation error
+export type SimplifiedWorkoutTemplate = {
+  id: string;
+  name: string;
+  title: string;
+  category?: string;
+  difficulty?: string;
+  created_at?: string;
+  description?: string;
+  source_wod_id?: string;
+};
 
 // Keep TemplateExercise as is since it's a simplified view for the UI
 export interface TemplateExercise {
@@ -64,4 +79,3 @@ export interface TemplateSet {
 export interface WorkoutTemplateWithWod extends WorkoutTemplate {
   source_wod_id?: string;
 }
-

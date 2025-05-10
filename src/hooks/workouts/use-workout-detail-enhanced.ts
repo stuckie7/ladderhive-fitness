@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -42,6 +41,37 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const transformWorkoutExercises = (exercisesData: any[]) => {
+    if (!exercisesData || !Array.isArray(exercisesData)) return [];
+
+    return exercisesData.map(item => {
+      // Create a safe exercise object with fallback values
+      const safeExercise = {
+        id: item.exercise?.id || 0,
+        name: item.exercise?.name || 'Unknown Exercise',
+        // Only include these properties if they exist
+        ...(item.exercise && 'description' in item.exercise ? { description: item.exercise.description } : {}),
+        ...(item.exercise && 'video_demonstration_url' in item.exercise ? 
+          { video_demonstration_url: item.exercise.video_demonstration_url } : {}),
+        ...(item.exercise && 'short_youtube_demo' in item.exercise ? 
+          { short_youtube_demo: item.exercise.short_youtube_demo } : {}),
+        ...(item.exercise && 'youtube_thumbnail_url' in item.exercise ? 
+          { youtube_thumbnail_url: item.exercise.youtube_thumbnail_url } : {}),
+      };
+
+      return {
+        id: item.id,
+        sets: item.sets,
+        reps: item.reps,
+        rest_seconds: item.rest_seconds || 0,
+        notes: item.notes || '',
+        order_index: item.order_index,
+        exercise: safeExercise,
+        modifications: item.modifications || ''
+      };
+    });
+  };
 
   const fetchWorkoutDetail = useCallback(async () => {
     if (!workoutId) {
@@ -94,34 +124,7 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       }
 
       // Transform the exercises data by manually joining with exercise details
-      const transformedExercises = exercisesData.map(item => {
-        // Find the corresponding exercise details
-        const exerciseInfo = exercisesDetails?.find(ex => ex.id === item.exercise_id) || {
-          id: item.exercise_id,
-          name: "Unknown Exercise",
-          description: "Details not available"
-        };
-        
-        return {
-          id: item.id,
-          sets: item.sets,
-          reps: item.reps,
-          rest_seconds: item.rest_seconds,
-          notes: item.notes,
-          order_index: item.order_index,
-          exercise: {
-            id: exerciseInfo.id,
-            name: exerciseInfo.name || "Unknown Exercise",
-            // Handle potential missing properties safely
-            description: exerciseInfo.description || "",
-            // Map fields correctly from exercises_full table
-            video_demonstration_url: exerciseInfo.short_youtube_demo || "",
-            short_youtube_demo: exerciseInfo.short_youtube_demo || "",
-            youtube_thumbnail_url: exerciseInfo.youtube_thumbnail_url || ""
-          },
-          modifications: ""
-        };
-      });
+      const transformedExercises = transformWorkoutExercises(exercisesData);
 
       const detailedWorkout: DetailedWorkout = {
         ...workoutData,

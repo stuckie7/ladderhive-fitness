@@ -1,99 +1,275 @@
-
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-import { WorkoutTemplate } from "../types";
+import { SimplifiedWorkoutTemplate, TemplateExercise, WorkoutTemplate } from '../types';
 
-// Use simplified version without excessive nesting
-export const useTemplateCrud = (
-  templates: WorkoutTemplate[],
-  setTemplates: React.Dispatch<React.SetStateAction<WorkoutTemplate[]>>,
-  currentTemplate: WorkoutTemplate | null,
-  setCurrentTemplate: React.Dispatch<React.SetStateAction<WorkoutTemplate | null>>
-) => {
-  const { toast } = useToast();
+// Use a simplified type to avoid infinite recursion
+interface TemplateCrudState {
+  templates: SimplifiedWorkoutTemplate[];
+  current: WorkoutTemplate | null;
+  status: 'idle' | 'loading' | 'error';
+}
 
-  const addTemplate = useCallback((template: WorkoutTemplate) => {
-    setTemplates(prevTemplates => [...prevTemplates, template]);
-  }, [setTemplates]);
+export const useTemplateCrud = () => {
+  // Initialize state with a simplified template type to avoid infinite recursion
+  const [state, setState] = useState<TemplateCrudState>({
+    templates: [],
+    current: null,
+    status: 'idle'
+  });
 
-  const updateTemplate = useCallback((updatedTemplate: WorkoutTemplate) => {
-    setTemplates(prevTemplates =>
-      prevTemplates.map(template =>
-        template.id === updatedTemplate.id ? updatedTemplate : template
-      )
-    );
-    setCurrentTemplate(updatedTemplate);
-  }, [setTemplates, setCurrentTemplate]);
-
-  // Fix infinite type instantiation by specifying return type explicitly
-  const deleteTemplate = useCallback(async (templateId: string): Promise<void> => {
+  const fetchTemplates = useCallback(async () => {
+    setState(prevState => ({ ...prevState, status: 'loading' }));
     try {
-      // Update the templates state
-      setTemplates(prevTemplates => 
-        prevTemplates.filter(template => template.id !== templateId)
-      );
-      
-      // Update current template if needed
-      setCurrentTemplate(prev => prev?.id === templateId ? null : prev);
-      
-      // If the template is stored in the database, delete it
-      await supabase
-        .from('prepared_workouts')
-        .delete()
-        .eq('id', templateId)
-        .eq('is_template', true);
-    } catch (error) {
-      console.error("Error deleting template:", error);
-    }
-  }, [setTemplates, setCurrentTemplate]);
+      const { data, error } = await supabase
+        .from('workout_templates')
+        .select('*');
 
-  const duplicateTemplate = useCallback((template: WorkoutTemplate) => {
-    // Create a deep copy to avoid reference issues
-    const newTemplate: WorkoutTemplate = {
-      ...template,
-      id: `${template.id}-copy-${Date.now()}`,
-      name: `${template.name} (Copy)`,
-      title: `${template.title || template.name} (Copy)`,
-      exercises: [...template.exercises]
-    };
-    
-    addTemplate(newTemplate);
-  }, [addTemplate]);
-
-  const saveAsTemplate = useCallback(async (workout?: any): Promise<boolean> => {
-    try {
-      if (!workout && !currentTemplate) {
-        toast({
-          title: "Error",
-          description: "No workout to save as template",
-          variant: "destructive"
-        });
-        return false;
+      if (error) {
+        throw error;
       }
-      
-      toast({
-        title: "Template Saved",
-        description: "Your workout has been saved as a template"
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Error saving template:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save workout as template",
-        variant: "destructive"
-      });
-      return false;
+
+      setState(prevState => ({
+        ...prevState,
+        templates: data as SimplifiedWorkoutTemplate[],
+        status: 'idle'
+      }));
+    } catch (error: any) {
+      console.error("Error fetching templates:", error);
+      setState(prevState => ({ ...prevState, status: 'error' }));
     }
-  }, [currentTemplate, toast]);
+  }, []);
+
+  const getTemplate = useCallback(async (id: string) => {
+    setState(prevState => ({ ...prevState, status: 'loading' }));
+    try {
+      const { data, error } = await supabase
+        .from('workout_templates')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      // Fetch exercises for the template
+      const { data: exercisesData, error: exercisesError } = await supabase
+        .from('template_exercises')
+        .select('*')
+        .eq('workout_template_id', id);
+
+      if (exercisesError) {
+        throw exercisesError;
+      }
+
+      setState(prevState => ({
+        ...prevState,
+        current: { ...data, exercises: exercisesData } as WorkoutTemplate,
+        status: 'idle'
+      }));
+    } catch (error: any) {
+      console.error("Error fetching template:", error);
+      setState(prevState => ({ ...prevState, status: 'error' }));
+    }
+  }, []);
+
+  const createTemplate = useCallback(async (template: Omit<WorkoutTemplate, 'id' | 'created_at'>) => {
+    setState(prevState => ({ ...prevState, status: 'loading' }));
+    try {
+      const { data, error } = await supabase
+        .from('workout_templates')
+        .insert(template)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setState(prevState => ({
+        ...prevState,
+        templates: [...prevState.templates, data as SimplifiedWorkoutTemplate],
+        status: 'idle'
+      }));
+
+      return data as WorkoutTemplate;
+    } catch (error: any) {
+      console.error("Error creating template:", error);
+      setState(prevState => ({ ...prevState, status: 'error' }));
+      return null;
+    }
+  }, []);
+
+  const updateTemplate = useCallback(async (id: string, updates: Partial<WorkoutTemplate>) => {
+    setState(prevState => ({ ...prevState, status: 'loading' }));
+    try {
+      const { data, error } = await supabase
+        .from('workout_templates')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setState(prevState => ({
+        ...prevState,
+        templates: prevState.templates.map(template =>
+          template.id === id ? { ...template, ...data } : template
+        ),
+        status: 'idle'
+      }));
+
+      return data as WorkoutTemplate;
+    } catch (error: any) {
+      console.error("Error updating template:", error);
+      setState(prevState => ({ ...prevState, status: 'error' }));
+      return null;
+    }
+  }, []);
+
+  const deleteTemplate = useCallback(async (id: string) => {
+    setState(prevState => ({ ...prevState, status: 'loading' }));
+    try {
+      const { error } = await supabase
+        .from('workout_templates')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setState(prevState => ({
+        ...prevState,
+        templates: prevState.templates.filter(template => template.id !== id),
+        status: 'idle'
+      }));
+    } catch (error: any) {
+      console.error("Error deleting template:", error);
+      setState(prevState => ({ ...prevState, status: 'error' }));
+    }
+  }, []);
+
+  const addExerciseToTemplate = useCallback(async (templateId: string, exercise: TemplateExercise) => {
+    setState(prevState => ({ ...prevState, status: 'loading' }));
+    try {
+      const { data, error } = await supabase
+        .from('template_exercises')
+        .insert({ ...exercise, workout_template_id: templateId })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      // Optionally update the current template in state
+      setState(prevState =>
+      {
+        if (prevState.current && prevState.current.id === templateId) {
+          return {
+            ...prevState,
+            current: {
+              ...prevState.current,
+              exercises: [...prevState.current.exercises, data]
+            },
+            status: 'idle'
+          };
+        }
+        return {...prevState, status: 'idle'};
+      });
+
+      return data as TemplateExercise;
+    } catch (error: any) {
+      console.error("Error adding exercise to template:", error);
+      setState(prevState => ({ ...prevState, status: 'error' }));
+      return null;
+    }
+  }, []);
+
+  const updateExerciseInTemplate = useCallback(async (exerciseId: string, updates: Partial<TemplateExercise>) => {
+    setState(prevState => ({ ...prevState, status: 'loading' }));
+    try {
+      const { data, error } = await supabase
+        .from('template_exercises')
+        .update(updates)
+        .eq('id', exerciseId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setState(prevState => {
+        if (prevState.current) {
+          return {
+            ...prevState,
+            current: {
+              ...prevState.current,
+              exercises: prevState.current.exercises.map(exercise =>
+                exercise.id === exerciseId ? { ...exercise, ...data } : exercise
+              )
+            },
+            status: 'idle'
+          };
+        }
+        return {...prevState, status: 'idle'};
+      });
+
+      return data as TemplateExercise;
+    } catch (error: any) {
+      console.error("Error updating exercise in template:", error);
+      setState(prevState => ({ ...prevState, status: 'error' }));
+      return null;
+    }
+  }, []);
+
+  const deleteExerciseFromTemplate = useCallback(async (exerciseId: string) => {
+    setState(prevState => ({ ...prevState, status: 'loading' }));
+    try {
+      const { error } = await supabase
+        .from('template_exercises')
+        .delete()
+        .eq('id', exerciseId);
+
+      if (error) {
+        throw error;
+      }
+
+      setState(prevState => {
+        if (prevState.current) {
+          return {
+            ...prevState,
+            current: {
+              ...prevState.current,
+              exercises: prevState.current.exercises.filter(exercise => exercise.id !== exerciseId)
+            },
+            status: 'idle'
+          };
+        }
+        return {...prevState, status: 'idle'};
+      });
+    } catch (error: any) {
+      console.error("Error deleting exercise from template:", error);
+      setState(prevState => ({ ...prevState, status: 'error' }));
+    }
+  }, []);
 
   return {
-    addTemplate,
+    templates: state.templates,
+    current: state.current,
+    status: state.status,
+    fetchTemplates,
+    getTemplate,
+    createTemplate,
     updateTemplate,
     deleteTemplate,
-    duplicateTemplate,
-    saveAsTemplate
+    addExerciseToTemplate,
+    updateExerciseInTemplate,
+    deleteExerciseFromTemplate
   };
 };

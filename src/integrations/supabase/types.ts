@@ -468,7 +468,7 @@ export type Database = {
           difficulty: string
           duration_minutes: number
           equipment_needed: string | null
-          focus_area: string
+          focus_area: string | null
           goal: string | null
           id: string
           instructions: string | null
@@ -488,7 +488,7 @@ export type Database = {
           difficulty: string
           duration_minutes: number
           equipment_needed?: string | null
-          focus_area: string
+          focus_area?: string | null
           goal?: string | null
           id?: string
           instructions?: string | null
@@ -508,7 +508,7 @@ export type Database = {
           difficulty?: string
           duration_minutes?: number
           equipment_needed?: string | null
-          focus_area?: string
+          focus_area?: string | null
           goal?: string | null
           id?: string
           instructions?: string | null
