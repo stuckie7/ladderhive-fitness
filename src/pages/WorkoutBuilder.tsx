@@ -96,6 +96,21 @@ const WorkoutBuilder = () => {
   const handleCreateTemplate = async () => {
     await saveAsTemplate();
   };
+
+  // Fix the onSelectTemplate to properly return a Promise
+  const handleSelectTemplate = async (templateId: string) => {
+    try {
+      await loadTemplate(templateId);
+      setIsTemplateDialogOpen(false);
+    } catch (error) {
+      console.error("Error loading template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load template. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
   
   return (
     <AppLayout>
@@ -115,7 +130,7 @@ const WorkoutBuilder = () => {
           open={isTemplateDialogOpen}
           onOpenChange={setIsTemplateDialogOpen}
           templates={templates} 
-          onSelectTemplate={loadTemplate}
+          onSelectTemplate={handleSelectTemplate}
           onDeleteTemplate={deleteTemplate}
         />
         
