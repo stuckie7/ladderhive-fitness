@@ -28,11 +28,10 @@ export const useTemplateLoading = (
         name: wod.name,
         description: wod.description || '',
         exercises: [],
-        type: 'wod',
+        isCircuit: false,
         difficulty: wod.difficulty || 'intermediate',
-        duration: wod.avg_duration_minutes || 30,
+        category: wod.category || 'wod',
         created_at: new Date().toISOString(),
-        is_template: true,
         source_wod_id: wodId
       };
       
@@ -57,3 +56,4 @@ export const useTemplateLoading = (
 
   return { loadTemplateFromWod };
 };
+

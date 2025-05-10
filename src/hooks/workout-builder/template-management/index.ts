@@ -12,7 +12,8 @@ export const useTemplateManagement = () => {
     templates,
     setTemplates,
     isLoading,
-    setIsLoading
+    setIsLoading,
+    loadTemplates
   } = useTemplateState();
 
   const {
@@ -42,7 +43,8 @@ export const useTemplateManagement = () => {
     deleteTemplate,
     duplicateTemplate,
     saveAsTemplate,
-    loadTemplateFromWod
+    loadTemplateFromWod,
+    loadTemplates
   };
 };
 
