@@ -15,32 +15,30 @@ export const useTemplateState = () => {
     try {
       setIsLoading(true);
       
-      // Fix excessive type instantiation by adding explicit type annotation
-      const fetchTemplates = async (): Promise<WorkoutTemplate[]> => {
-        // Fetch templates from database - prepared_workouts table with is_template=true
-        const { data, error } = await supabase
-          .from('prepared_workouts')
-          .select('*')
-          .eq('is_template', true)
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
+      // Use explicit type for the fetchTemplates function to avoid excessive type instantiation
+      const { data, error } = await supabase
+        .from('prepared_workouts')
+        .select('*')
+        .eq('is_template', true)
+        .order('created_at', { ascending: false });
         
-        // Map database results to WorkoutTemplate format
-        return data?.map(template => ({
-          id: template.id,
-          name: template.title, // For backward compatibility
-          title: template.title,
-          description: template.description,
-          difficulty: template.difficulty,
-          category: template.category,
-          created_at: template.created_at,
-          exercises: [] // We'll load these separately if needed
-        })) || [];
-      };
+      if (error) throw error;
       
-      const loadedTemplates = await fetchTemplates();
+      // Map database results to WorkoutTemplate format
+      const loadedTemplates: WorkoutTemplate[] = (data || []).map(template => ({
+        id: template.id,
+        name: template.title, // For backward compatibility
+        title: template.title,
+        description: template.description,
+        difficulty: template.difficulty,
+        category: template.category,
+        created_at: template.created_at,
+        source_wod_id: template.source_wod_id,
+        exercises: [] // We'll load these separately if needed
+      }));
+      
       setTemplates(loadedTemplates);
+      return loadedTemplates;
     } catch (error) {
       console.error("Error loading templates:", error);
       toast({
@@ -48,6 +46,7 @@ export const useTemplateState = () => {
         description: "Failed to load workout templates",
         variant: "destructive"
       });
+      return [];
     } finally {
       setIsLoading(false);
     }

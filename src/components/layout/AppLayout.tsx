@@ -22,7 +22,8 @@ import {
   Calendar,
   LogOut,
   Menu,
-  Flame
+  Flame,
+  Timer
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -114,6 +115,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const navItems = [
     { path: "/dashboard", label: "Dashboard", icon: Home, color: "text-fitness-primary" },
     { path: "/workouts", label: "Workouts", icon: Dumbbell, color: "text-fitness-secondary" },
+    { path: "/wods", label: "WODs", icon: Timer, color: "text-fitness-orange" }, // Added WODs navigation link
     { path: "/progress", label: "Progress", icon: BarChart3, color: "text-fitness-accent" },
     { path: "/schedule", label: "Schedule", icon: Calendar, color: "text-fitness-orange" },
     { path: "/profile", label: "Profile", icon: User, color: "text-fitness-primary" },

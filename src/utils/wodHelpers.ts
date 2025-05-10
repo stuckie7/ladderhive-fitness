@@ -1,4 +1,3 @@
-
 import { WodComponent } from '@/types/wod';
 
 /**
@@ -17,12 +16,20 @@ export const parseWodComponents = (componentsData: any): WodComponent[] => {
     
     // If it's a string, try to parse it
     if (typeof componentsData === 'string') {
-      const parsed = JSON.parse(componentsData);
-      if (Array.isArray(parsed)) {
-        return parsed.map((component, index) => ({
-          order: component.order || index + 1,
-          description: component.description || 'No description'
-        }));
+      try {
+        const parsed = JSON.parse(componentsData);
+        if (Array.isArray(parsed)) {
+          return parsed.map((component, index) => ({
+            order: component.order || index + 1,
+            description: component.description || 'No description'
+          }));
+        }
+      } catch (e) {
+        // If JSON parsing fails, treat as a single component
+        return [{
+          order: 1,
+          description: componentsData
+        }];
       }
     }
     
@@ -30,11 +37,22 @@ export const parseWodComponents = (componentsData: any): WodComponent[] => {
     if (componentsData && typeof componentsData === 'object') {
       // Try to convert it to array if possible
       const values = Object.values(componentsData);
-      if (Array.isArray(values)) {
-        return values.map((component: any, index) => ({
-          order: component.order || index + 1,
-          description: component.description || 'No description'
-        }));
+      if (values.length > 0) {
+        return values.map((component: any, index) => {
+          // If component is a string, create a simple component
+          if (typeof component === 'string') {
+            return {
+              order: index + 1,
+              description: component
+            };
+          }
+          
+          // Otherwise, use component object structure
+          return {
+            order: component.order || index + 1,
+            description: component.description || 'No description'
+          };
+        });
       }
     }
     
