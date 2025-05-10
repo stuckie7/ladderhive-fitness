@@ -58,18 +58,21 @@ export const useTemplateLoading = ({ setCurrentTemplate }: UseTemplateLoadingPro
         .from('prepared_workout_exercises')
         .select(`
           *,
-          exercise:exercise_id(*)
+          exercises_full(*)
         `)
         .eq('workout_id', workoutId)
         .order('order_index');
         
-      if (exercisesError) throw exercisesError;
+      if (exercisesError) {
+        console.error("Error fetching exercises:", exercisesError.message);
+        throw new Error("Failed to load workout exercises");
+      }
       
       // Create a new template based on the prepared workout
       const mappedExercises: ExerciseTemplate[] = exercises.map(ex => ({
         id: ex.id,
-        name: ex.exercise?.name || 'Unknown Exercise',
-        exerciseId: ex.exercise_id?.toString(),
+        name: ex.exercises_full?.name || 'Unknown Exercise',
+        exerciseId: ex.exercise_id?.toString() || '',
         exercise_id: ex.exercise_id,
         sets: ex.sets,
         reps: ex.reps,

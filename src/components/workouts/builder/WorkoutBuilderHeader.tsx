@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,8 +6,8 @@ import { ArrowLeft, BookOpen, Copy, Save } from "lucide-react";
 export interface WorkoutBuilderHeaderProps {
   id?: string;
   isSaving: boolean;
-  handleSave: () => Promise<void>;
-  handleCreateTemplate: () => Promise<void>;
+  handleSave: () => Promise<any>; // Change to accept any return type
+  handleCreateTemplate: () => Promise<any>; // Change to accept any return type
   setIsTemplateDialogOpen: (open: boolean) => void;
   resetWorkout: () => void;
 }

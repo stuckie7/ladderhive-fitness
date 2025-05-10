@@ -38,12 +38,14 @@ const WorkoutBuilder = () => {
     updateExerciseDetails,
     moveExerciseUp,
     moveExerciseDown,
+    reorderExercises,
     
     saveWorkout,
     loadWorkout,
     loadTemplateFromPreparedWorkout,
     loadTemplateFromWod,
     saveAsTemplate,
+    deleteTemplate,
   } = useWorkoutBuilder(id);
   
   useEffect(() => {
@@ -54,12 +56,19 @@ const WorkoutBuilder = () => {
     }
   }, [templateId, wodId, loadTemplateFromPreparedWorkout, loadTemplateFromWod]);
 
+  // Wrapper functions to match expected prop types
   const handleSave = async () => {
-    return await saveWorkout();
+    await saveWorkout();
   };
 
   const handleCreateTemplate = async () => {
-    return await saveAsTemplate(workout);
+    await saveAsTemplate(workout);
+  };
+  
+  const handleSelectTemplate = async (templateId: string) => {
+    if (loadTemplateFromPreparedWorkout) {
+      await loadTemplateFromPreparedWorkout(templateId);
+    }
   };
   
   return (
@@ -88,6 +97,7 @@ const WorkoutBuilder = () => {
               onUpdate={updateExerciseDetails}
               onMoveUp={moveExerciseUp}
               onMoveDown={moveExerciseDown}
+              onReorder={reorderExercises}
               isLoading={isLoading}
             />
           </div>
@@ -109,10 +119,9 @@ const WorkoutBuilder = () => {
 
         <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
           <WorkoutTemplateSelector 
-            templates={templates} 
-            onSelect={(templateId) => {
-              // Handle template selection
-            }}
+            templates={templates}
+            onSelectTemplate={handleSelectTemplate}
+            onDeleteTemplate={deleteTemplate}
             onClose={() => setIsTemplateDialogOpen(false)}
           />
         </Dialog>

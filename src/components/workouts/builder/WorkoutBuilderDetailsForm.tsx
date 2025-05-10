@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,12 +8,13 @@ import { WorkoutDetail } from "@/hooks/use-workout-builder";
 
 interface WorkoutBuilderDetailsFormProps {
   workout: WorkoutDetail;
-  setWorkoutInfo: (info: Partial<WorkoutDetail>) => void;
+  onUpdate: (info: Partial<WorkoutDetail>) => void; // Renamed from setWorkoutInfo
+  isLoading?: boolean; // Make isLoading optional
 }
 
 const WorkoutBuilderDetailsForm: React.FC<WorkoutBuilderDetailsFormProps> = ({ 
   workout, 
-  setWorkoutInfo 
+  onUpdate 
 }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -33,7 +33,7 @@ const WorkoutBuilderDetailsForm: React.FC<WorkoutBuilderDetailsFormProps> = ({
                 id="workout-title"
                 placeholder="My Awesome Workout"
                 value={workout.title}
-                onChange={(e) => setWorkoutInfo({ title: e.target.value })}
+                onChange={(e) => onUpdate({ title: e.target.value })}
                 className="bg-gray-950"
               />
             </div>
@@ -41,7 +41,7 @@ const WorkoutBuilderDetailsForm: React.FC<WorkoutBuilderDetailsFormProps> = ({
               <Label htmlFor="workout-difficulty">Difficulty</Label>
               <Select
                 value={workout.difficulty || "beginner"}
-                onValueChange={(value) => setWorkoutInfo({ difficulty: value })}
+                onValueChange={(value) => onUpdate({ difficulty: value })}
               >
                 <SelectTrigger id="workout-difficulty" className="bg-gray-950">
                   <SelectValue placeholder="Select difficulty" />
@@ -57,7 +57,7 @@ const WorkoutBuilderDetailsForm: React.FC<WorkoutBuilderDetailsFormProps> = ({
               <Label htmlFor="workout-category">Category</Label>
               <Select
                 value={workout.category || "strength"}
-                onValueChange={(value) => setWorkoutInfo({ category: value })}
+                onValueChange={(value) => onUpdate({ category: value })}
               >
                 <SelectTrigger id="workout-category" className="bg-gray-950">
                   <SelectValue placeholder="Select category" />
@@ -78,7 +78,7 @@ const WorkoutBuilderDetailsForm: React.FC<WorkoutBuilderDetailsFormProps> = ({
                 id="workout-description"
                 placeholder="A brief description of your workout"
                 value={workout.description || ""}
-                onChange={(e) => setWorkoutInfo({ description: e.target.value })}
+                onChange={(e) => onUpdate({ description: e.target.value })}
                 className="bg-gray-950"
               />
             </div>

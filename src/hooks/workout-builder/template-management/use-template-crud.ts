@@ -2,8 +2,9 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { WorkoutTemplate } from "./template-types";
+import { WorkoutTemplate, ExerciseTemplate } from "./template-types";
 
+// Define specific types for state and actions to avoid deep instantiation
 type TemplatesState = WorkoutTemplate[];
 type SetTemplatesAction = React.Dispatch<React.SetStateAction<WorkoutTemplate[]>>;
 type CurrentTemplateState = WorkoutTemplate | null;
@@ -60,7 +61,7 @@ export const useTemplateCrud = (
     addTemplate(newTemplate);
   }, [addTemplate]);
 
-  const saveAsTemplate = useCallback(async (workout?: any) => {
+  const saveAsTemplate = useCallback(async (workout?: any): Promise<boolean> => {
     try {
       if (!workout && !currentTemplate) {
         toast({

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,8 @@ interface WorkoutBuilderExerciseListProps {
   onUpdate: (exerciseId: string, updates: Partial<WorkoutExerciseDetail>) => void;
   onMoveUp: (exerciseId: string) => void;
   onMoveDown: (exerciseId: string) => void;
-  onReorder: (startIndex: number, endIndex: number) => void;
+  onReorder?: (startIndex: number, endIndex: number) => void;
+  isLoading?: boolean; // Add isLoading prop
 }
 
 const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
@@ -24,10 +24,11 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
   onUpdate,
   onMoveUp,
   onMoveDown,
-  onReorder
+  onReorder,
+  isLoading = false // Default to false
 }) => {
   const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+    if (!result.destination || !onReorder) return;
     
     const sourceIndex = result.source.index;
     const destinationIndex = result.destination.index;
@@ -36,6 +37,27 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
     
     onReorder(sourceIndex, destinationIndex);
   };
+  
+  // Show loading state if needed
+  if (isLoading) {
+    return (
+      <Card className="glass-panel h-full">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <ListChecks className="mr-2 h-5 w-5 text-fitness-primary" />
+            Loading Exercises...
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-4">
+            <div className="h-20 bg-gray-800/50 rounded-md"></div>
+            <div className="h-20 bg-gray-800/50 rounded-md"></div>
+            <div className="h-20 bg-gray-800/50 rounded-md"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card className="glass-panel h-full">

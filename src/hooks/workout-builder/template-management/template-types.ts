@@ -25,6 +25,7 @@ export type { BaseWorkoutTemplate as WorkoutTemplate };
 export interface ExerciseTemplate {
   id: string;
   name: string;
+  exerciseId: string; // Make this non-optional
   category?: string;
   equipment?: string;
   primaryMuscle?: string;
@@ -39,9 +40,11 @@ export interface ExerciseTemplate {
   notes?: string;
   order_index?: number;
   order?: number;
-  exerciseId?: string;
   exercise_id?: string | number;
 }
 
 // Explicitly define types to avoid deep instantiation issues
 export type TemplateFilter = (templates: BaseWorkoutTemplate[]) => BaseWorkoutTemplate[];
+
+// Alias for backward compatibility
+export type TemplateExercise = ExerciseTemplate;
