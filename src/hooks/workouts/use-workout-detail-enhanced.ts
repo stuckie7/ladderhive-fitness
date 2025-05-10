@@ -18,6 +18,9 @@ export interface DetailedWorkout {
   modifications?: string;
   category: string;
   goal: string;
+  short_description?: string; // Added missing property
+  created_at?: string; // Added missing property
+  updated_at?: string; // Added for completeness
   exercises: {
     id: string;
     sets: number;
