@@ -9,6 +9,7 @@ export interface WorkoutExerciseDetail {
   notes?: string;
   order_index: number;
   exercise_id: string;
+  exercise?: any; // Add this field to support exercise details
 }
 
 export interface WorkoutDetail {
@@ -20,6 +21,8 @@ export interface WorkoutDetail {
   exercises: number;
   category?: string;
   created_at?: string;
+  updated_at?: string;
+  is_template?: boolean; // Add this field to match Supabase table
 }
 
 // Updated WorkoutTemplate to align with prepared_workouts table
@@ -32,6 +35,7 @@ export interface WorkoutTemplate {
   category?: string;    // Added to match prepared_workouts
   difficulty?: string;  // Added to match prepared_workouts
   created_at?: string;  // Added to match prepared_workouts
+  description?: string; // Add this field to match the table and fix errors
 }
 
 // Keep TemplateExercise as is since it's a simplified view for the UI

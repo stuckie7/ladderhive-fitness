@@ -11,7 +11,11 @@ export const useWorkoutBuilder = (workoutId?: string) => {
   const workoutState = useWorkoutState();
   
   // Feature hooks
-  const workoutInfo = useWorkoutInfo({ workout: workoutState.workout, setWorkout: workoutState.setWorkout });
+  const workoutInfo = useWorkoutInfo({ 
+    workout: workoutState.workout, 
+    setWorkout: workoutState.setWorkout 
+  });
+  
   const exerciseManagement = useExerciseManagement({
     exercises: workoutState.exercises,
     setExercises: workoutState.setExercises,
@@ -21,7 +25,9 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     setSearchResults: workoutState.setSearchResults,
     setIsLoading: workoutState.setIsLoading
   });
+  
   const templateManagement = useTemplateManagement();
+  
   const workoutPersistence = useWorkoutPersistence({
     workout: workoutState.workout,
     setWorkout: workoutState.setWorkout,

@@ -47,7 +47,7 @@ export const useWorkoutSaver = (
       // Calculate estimated duration based on sets, reps and rest time
       const totalSets = exercises.reduce((acc, ex) => acc + ex.sets, 0);
       const avgRestSeconds = exercises.length > 0
-        ? exercises.reduce((acc, ex) => acc + ex.rest_seconds, 0) / exercises.length
+        ? exercises.reduce((acc, ex) => acc + (ex.rest_seconds || 60), 0) / exercises.length
         : 60;
       const estimatedDuration = Math.ceil((totalSets * 45 + (totalSets - exercises.length) * avgRestSeconds) / 60);
       
@@ -101,11 +101,11 @@ export const useWorkoutSaver = (
       // Insert exercise entries
       const exercisesToInsert = exercises.map((ex, index) => ({
         workout_id: workoutId,
-        exercise_id: ex.exercise_id,
+        exercise_id: parseInt(ex.exercise_id), // Convert string to number
         sets: ex.sets,
         reps: ex.reps,
-        rest_seconds: ex.rest_seconds,
-        notes: ex.notes,
+        rest_seconds: ex.rest_seconds || 60,
+        notes: ex.notes || null,
         order_index: index
       }));
       
@@ -118,7 +118,8 @@ export const useWorkoutSaver = (
       // Return updated workout with ID for navigation
       return {
         ...workout,
-        id: workoutId
+        id: workoutId,
+        exercises: exercises.length
       };
       
     } catch (error) {

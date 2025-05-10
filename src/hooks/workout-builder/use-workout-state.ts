@@ -1,45 +1,60 @@
 
 import { useState } from "react";
-import { WorkoutDetail, WorkoutExerciseDetail, WorkoutTemplate } from "./types";
-import { ExerciseFull } from "@/types/exercise";
+import { WorkoutDetail, WorkoutExerciseDetail } from "./types";
+
+export interface WorkoutStateType {
+  workout: WorkoutDetail;
+  setWorkout: React.Dispatch<React.SetStateAction<WorkoutDetail>>;
+  exercises: WorkoutExerciseDetail[];
+  setExercises: React.Dispatch<React.SetStateAction<WorkoutExerciseDetail[]>>;
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  searchResults: any[];
+  setSearchResults: React.Dispatch<React.SetStateAction<any[]>>;
+  selectedMuscleGroup: string | null;
+  setSelectedMuscleGroup: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedEquipment: string | null;
+  setSelectedEquipment: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedDifficulty: string | null;
+  setSelectedDifficulty: React.Dispatch<React.SetStateAction<string | null>>;
+  isLoading: boolean;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  isSaving: boolean;
+  setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
 export const useWorkoutState = () => {
-  // Workout info state
+  // Main workout data
   const [workout, setWorkout] = useState<WorkoutDetail>({
-    title: "",
-    difficulty: "beginner",
-    category: "strength",
-    description: "",
+    id: '',
+    title: 'New Workout',
+    description: '',
+    difficulty: 'Beginner',
+    category: 'General',
+    duration_minutes: 30,
+    exercises: 0,
     is_template: false
   });
   
-  // Workout exercises state
+  // Exercises in the workout
   const [exercises, setExercises] = useState<WorkoutExerciseDetail[]>([]);
   
-  // Templates state
-  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
-  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  // Search and filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
+  const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   
-  // Search and filter state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<ExerciseFull[]>([]);
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all_muscle_groups");
-  const [selectedEquipment, setSelectedEquipment] = useState("all_equipment");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("all_difficulties");
-  
-  // Loading states
+  // UI states
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
+  
   return {
     workout,
     setWorkout,
     exercises,
     setExercises,
-    templates,
-    setTemplates,
-    isLoadingTemplates,
-    setIsLoadingTemplates,
     searchQuery,
     setSearchQuery,
     searchResults,
@@ -56,5 +71,3 @@ export const useWorkoutState = () => {
     setIsSaving
   };
 };
-
-export type WorkoutStateType = ReturnType<typeof useWorkoutState>;

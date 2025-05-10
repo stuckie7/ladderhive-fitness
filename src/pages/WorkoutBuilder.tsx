@@ -44,6 +44,7 @@ const WorkoutBuilder = () => {
     loadWorkout,
     saveAsTemplate,
     loadTemplate,
+    loadTemplates,
     deleteTemplate
   } = useWorkoutBuilder(id);
   

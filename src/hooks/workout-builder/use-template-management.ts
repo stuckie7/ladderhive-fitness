@@ -85,6 +85,7 @@ export const useTemplateManagement = () => {
         difficulty: wod.difficulty || 'Intermediate',
         created_at: new Date().toISOString(),
         isCircuit: wod.components.length > 3,
+        description: wod.description || ''
       };
       
       return template;
@@ -94,7 +95,7 @@ export const useTemplateManagement = () => {
     }
   }, [fetchWodById]);
 
-  // Add the missing loadTemplates function
+  // The loadTemplates function
   const loadTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -114,6 +115,7 @@ export const useTemplateManagement = () => {
           category: template.category || 'General',
           difficulty: template.difficulty || 'Intermediate',
           created_at: template.created_at || new Date().toISOString(),
+          description: template.description || '',
           exercises: [], // We'll load these on demand when a template is selected
           isCircuit: false
         }));
@@ -132,7 +134,7 @@ export const useTemplateManagement = () => {
     }
   }, [toast]);
 
-  // Add the missing saveAsTemplate function
+  // The saveAsTemplate function
   const saveAsTemplate = useCallback(async (workout?: WorkoutTemplate) => {
     // Implementation would depend on your current workout state
     try {

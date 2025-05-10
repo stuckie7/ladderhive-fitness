@@ -1,181 +1,191 @@
 
-import { useCallback } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { ExerciseFull } from "@/types/exercise";
-import { WorkoutStateType } from "./use-workout-state";
-import { WorkoutExerciseDetail } from "./types";
-import { searchExercisesFull } from "@/hooks/exercise-library/services/exercise-search-service";
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { WorkoutExerciseDetail } from './types';
 
-export const useExerciseManagement = (
-  { 
-    exercises,
-    setExercises,
-    searchQuery,
-    setSearchQuery,
-    searchResults,
-    setSearchResults,
-    setIsLoading
-  }: Pick<WorkoutStateType, 
-    'exercises' | 'setExercises' | 
-    'searchQuery' | 'setSearchQuery' | 
-    'searchResults' | 'setSearchResults' |
-    'setIsLoading'
-  >
-) => {
-  const { toast } = useToast();
-  
+interface ExerciseManagementProps {
+  exercises: WorkoutExerciseDetail[];
+  setExercises: React.Dispatch<React.SetStateAction<WorkoutExerciseDetail[]>>;
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  searchResults: any[];
+  setSearchResults: React.Dispatch<React.SetStateAction<any[]>>;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export const useExerciseManagement = ({
+  exercises,
+  setExercises,
+  searchQuery,
+  setSearchQuery,
+  searchResults,
+  setSearchResults,
+  setIsLoading
+}: ExerciseManagementProps) => {
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
+  const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+
   // Handle search input change
   const handleSearchChange = useCallback(async (query: string) => {
     setSearchQuery(query);
     
-    if (query.length < 2) {
+    if (!query && !selectedMuscleGroup && !selectedEquipment && !selectedDifficulty) {
       setSearchResults([]);
       return;
     }
-    
+
     setIsLoading(true);
     try {
-      const results = await searchExercisesFull(query);
-      setSearchResults(results);
+      const { data, error } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .or(`name.ilike.%${query}%, prime_mover_muscle.ilike.%${query}%`)
+        .limit(20);
+        
+      if (error) throw error;
+      
+      setSearchResults(data || []);
     } catch (error) {
-      console.error("Search error:", error);
-      toast({
-        title: "Search Error",
-        description: "Failed to search exercises. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Error searching exercises:', error);
       setSearchResults([]);
     } finally {
       setIsLoading(false);
     }
-  }, [toast, setSearchQuery, setSearchResults, setIsLoading]);
-  
+  }, [setSearchQuery, selectedMuscleGroup, selectedEquipment, selectedDifficulty, setSearchResults, setIsLoading]);
+
   // Handle filter changes
-  const handleFilterChange = useCallback((filter: string, value: string) => {
-    switch (filter) {
+  const handleFilterChange = useCallback(async (type: string, value: string | null) => {
+    switch(type) {
       case 'muscleGroup':
-        // setSelectedMuscleGroup(value);
+        setSelectedMuscleGroup(value);
         break;
       case 'equipment':
-        // setSelectedEquipment(value);
+        setSelectedEquipment(value);
         break;
       case 'difficulty':
-        // setSelectedDifficulty(value);
+        setSelectedDifficulty(value);
         break;
+      default:
+        return;
     }
     
-    // Re-run search with filters
-    if (searchQuery.length >= 2) {
-      handleSearchChange(searchQuery);
-    }
-  }, [searchQuery, handleSearchChange]);
-  
-  // Add exercise to workout
-  const addExerciseToWorkout = useCallback((exercise: ExerciseFull) => {
-    setExercises(prev => {
-      // Check if the exercise is already in the workout
-      const exists = prev.some(ex => ex.exercise_id === exercise.id);
-      if (exists) {
-        toast({
-          title: "Already Added",
-          description: "This exercise is already in your workout.",
-        });
-        return prev;
+    setIsLoading(true);
+    try {
+      let query = supabase.from('exercises_full').select('*');
+      
+      if (searchQuery) {
+        query = query.or(`name.ilike.%${searchQuery}%, prime_mover_muscle.ilike.%${searchQuery}%`);
       }
       
-      // Add the new exercise
-      const newExercise: WorkoutExerciseDetail = {
-        id: `temp_${Date.now()}`, // Temporary ID until saved
-        exercise_id: exercise.id,
-        order_index: prev.length,
-        sets: 3,
-        reps: "10",
-        rest_seconds: 60,
-        exercise: exercise
-      };
+      if (type === 'muscleGroup' && value || type !== 'muscleGroup' && selectedMuscleGroup) {
+        const muscleGroup = type === 'muscleGroup' ? value : selectedMuscleGroup;
+        query = query.or(`prime_mover_muscle.ilike.%${muscleGroup}%, body_region.ilike.%${muscleGroup}%`);
+      }
       
-      return [...prev, newExercise];
-    });
-  }, [toast, setExercises]);
-  
+      if (type === 'equipment' && value || type !== 'equipment' && selectedEquipment) {
+        const equipment = type === 'equipment' ? value : selectedEquipment;
+        query = query.or(`primary_equipment.ilike.%${equipment}%, secondary_equipment.ilike.%${equipment}%`);
+      }
+      
+      if (type === 'difficulty' && value || type !== 'difficulty' && selectedDifficulty) {
+        const difficulty = type === 'difficulty' ? value : selectedDifficulty;
+        query = query.eq('difficulty', difficulty);
+      }
+      
+      const { data, error } = await query.limit(20);
+        
+      if (error) throw error;
+      
+      setSearchResults(data || []);
+    } catch (error) {
+      console.error('Error filtering exercises:', error);
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery, selectedMuscleGroup, selectedEquipment, selectedDifficulty, setSearchResults, setIsLoading]);
+
+  // Add exercise to workout
+  const addExerciseToWorkout = useCallback((exercise: any) => {
+    const newExercise: WorkoutExerciseDetail = {
+      id: `temp-${Date.now()}`,
+      exercise_id: exercise.id.toString(), // Convert to string
+      name: exercise.name,
+      sets: 3,
+      reps: "10",
+      rest_seconds: 60,
+      order_index: exercises.length,
+      exercise: exercise // Include the full exercise object
+    };
+    
+    setExercises([...exercises, newExercise]);
+  }, [exercises, setExercises]);
+
   // Remove exercise from workout
-  const removeExerciseFromWorkout = useCallback((exerciseId: string) => {
-    setExercises(prev => {
-      const filtered = prev.filter(ex => ex.id !== exerciseId);
-      
-      // Reorder the remaining exercises
-      return filtered.map((ex, index) => ({
-        ...ex,
-        order_index: index
-      }));
-    });
-  }, [setExercises]);
-  
+  const removeExerciseFromWorkout = useCallback((id: string) => {
+    const updatedExercises = exercises.filter(ex => ex.id !== id);
+    setExercises(updatedExercises);
+  }, [exercises, setExercises]);
+
   // Update exercise details
-  const updateExerciseDetails = useCallback((exerciseId: string, updates: Partial<WorkoutExerciseDetail>) => {
-    setExercises(prev => 
-      prev.map(ex => 
-        ex.id === exerciseId 
-          ? { ...ex, ...updates }
-          : ex
-      )
+  const updateExerciseDetails = useCallback((id: string, updates: Partial<WorkoutExerciseDetail>) => {
+    const updatedExercises = exercises.map(ex => 
+      ex.id === id ? { ...ex, ...updates } : ex
     );
-  }, [setExercises]);
-  
-  // Move exercise up in the order
-  const moveExerciseUp = useCallback((exerciseId: string) => {
-    setExercises(prev => {
-      const index = prev.findIndex(ex => ex.id === exerciseId);
-      if (index <= 0) return prev;
-      
-      const newExercises = [...prev];
-      const temp = newExercises[index];
-      newExercises[index] = newExercises[index - 1];
-      newExercises[index - 1] = temp;
-      
-      // Update order_index for all exercises
-      return newExercises.map((ex, i) => ({
-        ...ex,
-        order_index: i
-      }));
+    setExercises(updatedExercises);
+  }, [exercises, setExercises]);
+
+  // Move exercise up in list
+  const moveExerciseUp = useCallback((id: string) => {
+    const index = exercises.findIndex(ex => ex.id === id);
+    if (index <= 0) return;
+    
+    const updatedExercises = [...exercises];
+    [updatedExercises[index - 1], updatedExercises[index]] = [updatedExercises[index], updatedExercises[index - 1]];
+    
+    // Update order_index
+    updatedExercises.forEach((ex, i) => {
+      ex.order_index = i;
     });
-  }, [setExercises]);
-  
-  // Move exercise down in the order
-  const moveExerciseDown = useCallback((exerciseId: string) => {
-    setExercises(prev => {
-      const index = prev.findIndex(ex => ex.id === exerciseId);
-      if (index === -1 || index >= prev.length - 1) return prev;
-      
-      const newExercises = [...prev];
-      const temp = newExercises[index];
-      newExercises[index] = newExercises[index + 1];
-      newExercises[index + 1] = temp;
-      
-      // Update order_index for all exercises
-      return newExercises.map((ex, i) => ({
-        ...ex,
-        order_index: i
-      }));
+    
+    setExercises(updatedExercises);
+  }, [exercises, setExercises]);
+
+  // Move exercise down in list
+  const moveExerciseDown = useCallback((id: string) => {
+    const index = exercises.findIndex(ex => ex.id === id);
+    if (index === -1 || index === exercises.length - 1) return;
+    
+    const updatedExercises = [...exercises];
+    [updatedExercises[index], updatedExercises[index + 1]] = [updatedExercises[index + 1], updatedExercises[index]];
+    
+    // Update order_index
+    updatedExercises.forEach((ex, i) => {
+      ex.order_index = i;
     });
-  }, [setExercises]);
-  
-  // Reorder exercises with drag and drop
+    
+    setExercises(updatedExercises);
+  }, [exercises, setExercises]);
+
+  // Reorder exercise list (for drag and drop)
   const reorderExercises = useCallback((startIndex: number, endIndex: number) => {
-    setExercises(prev => {
-      const result = Array.from(prev);
-      const [removed] = result.splice(startIndex, 1);
-      result.splice(endIndex, 0, removed);
-      
-      // Update order_index for all exercises
-      return result.map((ex, i) => ({
-        ...ex,
-        order_index: i
-      }));
+    const result = Array.from(exercises);
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
+    
+    // Update order_index
+    result.forEach((ex, i) => {
+      ex.order_index = i;
     });
-  }, [setExercises]);
+    
+    setExercises(result);
+  }, [exercises, setExercises]);
 
   return {
+    selectedMuscleGroup,
+    selectedEquipment,
+    selectedDifficulty,
     handleSearchChange,
     handleFilterChange,
     addExerciseToWorkout,
@@ -183,6 +193,6 @@ export const useExerciseManagement = (
     updateExerciseDetails,
     moveExerciseUp,
     moveExerciseDown,
-    reorderExercises
+    reorderExercises,
   };
 };

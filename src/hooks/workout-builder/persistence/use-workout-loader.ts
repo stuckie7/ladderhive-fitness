@@ -46,8 +46,8 @@ export const useWorkoutLoader = (
           category: workoutData.category,
           duration_minutes: workoutData.duration_minutes,
           created_at: workoutData.created_at,
-          updated_at: workoutData.updated_at,
-          is_template: isTemplate
+          is_template: isTemplate,
+          exercises: 0 // Initialize with 0, will be updated based on exercises count
         });
         
         // Fetch the workout exercises
@@ -82,10 +82,19 @@ export const useWorkoutLoader = (
           // Map exercise details to workout exercises
           const workoutExercises = exercisesData.map(ex => {
             const exerciseDetail = exerciseDetails?.find(detail => detail.id === ex.exercise_id);
-            return {
-              ...ex,
-              exercise: exerciseDetail
-            } as WorkoutExerciseDetail;
+            // Create the WorkoutExerciseDetail with name from the exercise
+            const detail: WorkoutExerciseDetail = {
+              id: ex.id,
+              name: exerciseDetail?.name || "Unknown Exercise",
+              exercise_id: ex.exercise_id,
+              sets: ex.sets,
+              reps: ex.reps,
+              rest_seconds: ex.rest_seconds,
+              notes: ex.notes,
+              order_index: ex.order_index,
+              exercise: exerciseDetail // Add the full exercise details
+            };
+            return detail;
           });
           
           setExercises(workoutExercises);

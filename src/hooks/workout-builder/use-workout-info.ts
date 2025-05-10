@@ -1,24 +1,35 @@
 
 import { useCallback } from "react";
-import { WorkoutStateType } from "./use-workout-state";
+import { WorkoutDetail } from "./types";
 
-export const useWorkoutInfo = ({ workout, setWorkout }: Pick<WorkoutStateType, 'workout' | 'setWorkout'>) => {
-  // Reset workout to default values
+interface WorkoutInfoProps {
+  workout: WorkoutDetail;
+  setWorkout: React.Dispatch<React.SetStateAction<WorkoutDetail>>;
+}
+
+export const useWorkoutInfo = ({ workout, setWorkout }: WorkoutInfoProps) => {
+  // Update workout information
+  const setWorkoutInfo = useCallback((info: Partial<WorkoutDetail>) => {
+    setWorkout(prev => ({
+      ...prev,
+      ...info
+    }));
+  }, [setWorkout]);
+  
+  // Reset workout to default state
   const resetWorkout = useCallback(() => {
     setWorkout({
-      title: "",
-      difficulty: "beginner",
-      category: "strength",
-      description: "",
+      id: '',
+      title: 'New Workout',
+      description: '',
+      difficulty: 'Beginner',
+      category: 'General',
+      duration_minutes: 30,
+      exercises: 0,
       is_template: false
     });
   }, [setWorkout]);
   
-  // Update workout info
-  const setWorkoutInfo = useCallback((info: Partial<typeof workout>) => {
-    setWorkout(prev => ({ ...prev, ...info }));
-  }, [setWorkout]);
-
   return {
     setWorkoutInfo,
     resetWorkout
