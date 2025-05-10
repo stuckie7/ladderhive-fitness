@@ -28,8 +28,8 @@ export const useTemplateCrud = (
 
   const deleteTemplate = useCallback(async (templateId: string) => {
     // Use the explicit TemplateFilter type to avoid deep instantiation issues
-    const filterTemplates: TemplateFilter = (templates) => {
-      return templates.filter(template => template.id !== templateId);
+    const filterTemplates: TemplateFilter = (templatesArray) => {
+      return templatesArray.filter(template => template.id !== templateId);
     };
     
     setTemplates(prevTemplates => filterTemplates(prevTemplates));
