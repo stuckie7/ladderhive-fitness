@@ -4,6 +4,9 @@ import AppLayout from "@/components/layout/AppLayout";
 import WorkoutTabs from "@/components/workouts/WorkoutTabs";
 import { useWorkoutData } from "@/hooks/use-workout-data";
 import PreparedWorkoutsSection from "@/components/workouts/PreparedWorkoutsSection";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
 
 const Workouts = () => {
   const {
@@ -35,6 +38,18 @@ const Workouts = () => {
   
   return (
     <AppLayout>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold gradient-heading">Workouts</h1>
+          <Link to="/workout-builder">
+            <Button className="btn-fitness-primary">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Workout
+            </Button>
+          </Link>
+        </div>
+      </div>
+      
       <WorkoutTabs 
         activeTab={activeTab}
         setActiveTab={setActiveTab}

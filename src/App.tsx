@@ -22,6 +22,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ExerciseDetailEnhanced from "@/pages/ExerciseDetailEnhanced";
 import ExerciseLibrarySimple from "@/pages/ExerciseLibrarySimple";
 import ExerciseLibraryEnhanced from "@/pages/ExerciseLibraryEnhanced";
+import WorkoutBuilder from "@/pages/WorkoutBuilder";
 
 function App() {
   return (
@@ -56,6 +57,16 @@ function App() {
           <Route path="/exercises/:id" element={<ExerciseDetailEnhanced />} />
           <Route path="/exercise-detail/:id" element={<ExerciseDetail />} />
           <Route path="/advanced-exercises" element={<AdvancedExercises />} />
+          <Route path="/workout-builder" element={
+            <ProtectedRoute>
+              <WorkoutBuilder />
+            </ProtectedRoute>
+          } />
+          <Route path="/workout-builder/:id" element={
+            <ProtectedRoute>
+              <WorkoutBuilder />
+            </ProtectedRoute>
+          } />
           <Route path="/workouts" element={
             <ProtectedRoute>
               <Workouts />

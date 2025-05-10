@@ -8,7 +8,17 @@ export const useExerciseLibraryNavigation = () => {
     navigate("/exercise-library");
   };
   
+  const goToWorkoutBuilder = () => {
+    navigate("/workout-builder");
+  };
+  
+  const goToWorkoutDetail = (workoutId: string) => {
+    navigate(`/workouts/${workoutId}`);
+  };
+  
   return {
-    goToExerciseLibrary
+    goToExerciseLibrary,
+    goToWorkoutBuilder,
+    goToWorkoutDetail
   };
 };

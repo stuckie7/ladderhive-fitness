@@ -106,6 +106,11 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="col-span-1 glass-panel">
             <CardContent className="space-y-4 p-4">
+              <Link to="/workout-builder">
+                <Button variant="outline" className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-primary group">
+                  <Plus className="mr-2 h-5 w-5 text-fitness-primary group-hover:animate-pulse-soft" /> Create Workout
+                </Button>
+              </Link>
               <Link to="/workouts">
                 <Button variant="outline" className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-primary group">
                   <Dumbbell className="mr-2 h-5 w-5 text-fitness-primary group-hover:animate-pulse-soft" /> View Workouts
@@ -114,11 +119,6 @@ const Dashboard = () => {
               <Link to="/schedule">
                 <Button variant="outline" className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-secondary group">
                   <Calendar className="mr-2 h-5 w-5 text-fitness-secondary group-hover:animate-pulse-soft" /> Schedule
-                </Button>
-              </Link>
-              <Link to="/workouts">
-                <Button variant="outline" className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-accent group">
-                  <Plus className="mr-2 h-5 w-5 text-fitness-accent group-hover:animate-pulse-soft" /> Create Workout
                 </Button>
               </Link>
               <Link to="/exercise-library">
