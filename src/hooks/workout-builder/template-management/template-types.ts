@@ -7,7 +7,7 @@ export interface TemplateExercise {
   exerciseId: string;
   name?: string;
   sets: number;
-  reps: string | number;
+  reps: string | number; // Make sure it's required here to match the other definition
   rest_seconds?: number;
   notes?: string;
 }
@@ -28,3 +28,6 @@ export interface SimplifiedWorkoutTemplate {
 export interface WorkoutTemplate extends SimplifiedWorkoutTemplate {
   exercises: TemplateExercise[];
 }
+
+// Export this type explicitly to prevent import errors
+export type ExerciseTemplate = TemplateExercise;

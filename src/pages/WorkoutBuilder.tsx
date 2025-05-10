@@ -9,6 +9,8 @@ import WorkoutBuilderExerciseList from '@/components/workouts/builder/WorkoutBui
 import ExerciseSearchPanel from '@/components/workouts/builder/ExerciseSearchPanel';
 import { Dialog } from '@/components/ui/dialog';
 import WorkoutTemplateSelector from '@/components/workouts/builder/WorkoutTemplateSelector';
+// Import the correct WorkoutTemplate type
+import { WorkoutTemplate } from '@/hooks/workout-builder/template-management';
 
 const WorkoutBuilder = () => {
   const { id } = useParams();
@@ -119,7 +121,7 @@ const WorkoutBuilder = () => {
 
         <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
           <WorkoutTemplateSelector 
-            templates={templates}
+            templates={templates as WorkoutTemplate[]}
             onSelectTemplate={handleSelectTemplate}
             onDeleteTemplate={deleteTemplate}
             onClose={() => setIsTemplateDialogOpen(false)}

@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { SimplifiedWorkoutTemplate, TemplateExercise, WorkoutTemplate } from '../types';
+import { SimplifiedWorkoutTemplate, TemplateExercise, WorkoutTemplate } from './template-types';
 
 // Simplified state to avoid infinite recursion
 interface TemplateCrudState {
@@ -21,23 +21,12 @@ export const useTemplateCrud = () => {
   const fetchTemplates = useCallback(async () => {
     setState(prevState => ({ ...prevState, status: 'loading' }));
     try {
-      // First try to get workout_templates
-      let { data, error } = await supabase
-        .from('workout_templates')
+      // We know "prepared_workouts" exists, so use that directly
+      const { data, error } = await supabase
+        .from('prepared_workouts')
         .select('*');
-
-      // If table doesn't exist, fall back to prepared_workouts
-      if (error && error.code === '42P01') { // Table doesn't exist error
-        const { data: preparedData, error: preparedError } = await supabase
-          .from('prepared_workouts')
-          .select('*');
-        
-        if (preparedError) {
-          throw preparedError;
-        }
-        
-        data = preparedData;
-      } else if (error) {
+      
+      if (error) {
         throw error;
       }
 
@@ -97,7 +86,7 @@ export const useTemplateCrud = () => {
         exerciseId: String(ex.exercise_id),
         name: ex.notes || undefined, // We don't have the actual name here
         sets: ex.sets,
-        reps: ex.reps,
+        reps: ex.reps || '10', // Ensure reps is not undefined
         rest_seconds: ex.rest_seconds,
         notes: ex.notes
       }));

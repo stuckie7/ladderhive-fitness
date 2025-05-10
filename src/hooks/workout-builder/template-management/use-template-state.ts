@@ -1,18 +1,18 @@
 
 import { create } from "zustand";
-import { ExerciseTemplate, WorkoutTemplate } from "./template-types";
+import { TemplateExercise, WorkoutTemplate } from "./template-types";
 
 // Define the interface explicitly to avoid deep type instantiation
 interface TemplateState {
   // Current workout template state
   currentTemplate: WorkoutTemplate | null;
-  currentExercises: ExerciseTemplate[];
+  currentExercises: TemplateExercise[];
   
   // Actions
   setCurrentTemplate: (template: WorkoutTemplate | null) => void;
-  setCurrentExercises: (exercises: ExerciseTemplate[]) => void;
-  addExercise: (exercise: ExerciseTemplate) => void;
-  updateExercise: (index: number, exercise: Partial<ExerciseTemplate>) => void;
+  setCurrentExercises: (exercises: TemplateExercise[]) => void;
+  addExercise: (exercise: TemplateExercise) => void;
+  updateExercise: (index: number, exercise: Partial<TemplateExercise>) => void;
   removeExercise: (index: number) => void;
   moveExercise: (fromIndex: number, toIndex: number) => void;
   clearTemplate: () => void;

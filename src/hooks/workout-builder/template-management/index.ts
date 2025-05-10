@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useTemplateState } from './use-template-state';
 import { useTemplateCrud } from './use-template-crud';
 import { useTemplateLoading } from './use-template-loading';
-import { WorkoutTemplate } from "../types";
+import { WorkoutTemplate } from "./template-types";
 
 export const useTemplateManagement = () => {
   const {
@@ -16,11 +16,12 @@ export const useTemplateManagement = () => {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const templateCrudOps = useTemplateCrud();
+
   const loadTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
       // Fetch templates from the useTemplateCrud hook
-      const templateCrudOps = useTemplateCrud();
       const fetchedTemplates = await templateCrudOps.fetchTemplates();
       setTemplates(fetchedTemplates as WorkoutTemplate[]);
     } catch (error) {
@@ -28,10 +29,7 @@ export const useTemplateManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  // Get CRUD operations from the hook
-  const templateCrudOps = useTemplateCrud();
+  }, [templateCrudOps]);
 
   const { 
     loadTemplate,
@@ -64,7 +62,7 @@ export const useTemplateManagement = () => {
   };
 };
 
-export type { WorkoutTemplate } from './template-types';
+export type { WorkoutTemplate, TemplateExercise } from './template-types';
 export { useTemplateState } from './use-template-state';
 export { useTemplateCrud } from './use-template-crud';
 export { useTemplateLoading } from './use-template-loading';

@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { WorkoutTemplate } from '../types';
+import { WorkoutTemplate, TemplateExercise } from './template-types';
 
 // Interface for the hook props
 interface UseTemplateLoadingProps {
@@ -77,7 +77,7 @@ export const useTemplateLoading = ({
         }
 
         // Map exercise details to workout exercises
-        const templateExercises = exercisesData.map(ex => {
+        const templateExercises: TemplateExercise[] = exercisesData.map(ex => {
           const exerciseDetail = exerciseDetails?.find(detail => 
             detail.id === ex.exercise_id
           );
@@ -87,7 +87,7 @@ export const useTemplateLoading = ({
             exerciseId: String(ex.exercise_id),
             name: exerciseDetail?.name || 'Unknown Exercise',
             sets: ex.sets,
-            reps: ex.reps,
+            reps: ex.reps || '10', // Provide default value to avoid undefined
             rest_seconds: ex.rest_seconds,
             notes: ex.notes,
           };
