@@ -18,7 +18,7 @@ interface WodFiltersProps {
 }
 
 const difficultyOptions = [
-  { value: '', label: 'All Difficulties' },
+  { value: 'all', label: 'All Difficulties' },
   { value: 'Beginner', label: 'Beginner' },
   { value: 'Intermediate', label: 'Intermediate' },
   { value: 'Advanced', label: 'Advanced' },
@@ -26,7 +26,7 @@ const difficultyOptions = [
 ];
 
 const categoryOptions = [
-  { value: '', label: 'All Categories' },
+  { value: 'all', label: 'All Categories' },
   { value: 'Girl', label: 'Girl' },
   { value: 'Hero', label: 'Hero' },
   { value: 'Benchmark', label: 'Benchmark' },
@@ -34,11 +34,11 @@ const categoryOptions = [
 
 const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
   const handleDifficultyChange = (value: string) => {
-    onChange({ ...filters, difficulty: value || undefined });
+    onChange({ ...filters, difficulty: value === 'all' ? undefined : value });
   };
 
   const handleCategoryChange = (value: string) => {
-    onChange({ ...filters, category: value || undefined });
+    onChange({ ...filters, category: value === 'all' ? undefined : value });
   };
 
   const handleDurationChange = (value: number[]) => {
@@ -56,7 +56,7 @@ const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
       <div className="space-y-2">
         <Label htmlFor="difficulty-filter">Difficulty</Label>
         <Select 
-          value={filters.difficulty || ''} 
+          value={filters.difficulty || 'all'} 
           onValueChange={handleDifficultyChange}
         >
           <SelectTrigger id="difficulty-filter" className="w-full">
@@ -75,7 +75,7 @@ const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
       <div className="space-y-2">
         <Label htmlFor="category-filter">Category</Label>
         <Select 
-          value={filters.category || ''} 
+          value={filters.category || 'all'} 
           onValueChange={handleCategoryChange}
         >
           <SelectTrigger id="category-filter" className="w-full">

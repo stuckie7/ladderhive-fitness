@@ -15,7 +15,6 @@ export const useTemplateState = () => {
     try {
       setIsLoading(true);
       
-      // Use explicit type for the fetchTemplates function to avoid excessive type instantiation
       const { data, error } = await supabase
         .from('prepared_workouts')
         .select('*')
@@ -29,9 +28,9 @@ export const useTemplateState = () => {
         id: template.id,
         name: template.title, // For backward compatibility
         title: template.title,
-        description: template.description,
-        difficulty: template.difficulty,
-        category: template.category,
+        description: template.description || "",
+        difficulty: template.difficulty || "",
+        category: template.category || "",
         created_at: template.created_at,
         source_wod_id: template.source_wod_id,
         exercises: [] // We'll load these separately if needed
