@@ -10,6 +10,7 @@ export interface Wod {
   description?: string;
   components: WodComponent[];
   video_url?: string | null;
+  video_demo?: string | null; // Adding this to match the database schema
   category?: string | null;
   difficulty?: string | null;
   avg_duration_minutes?: number | null;
