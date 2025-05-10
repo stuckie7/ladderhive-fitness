@@ -9,6 +9,9 @@ interface DescriptionCardProps {
 
 const DescriptionCard: React.FC<DescriptionCardProps> = ({ description, benefits }) => {
   if (!description && !benefits) return null;
+  
+  // Convert benefits string to array if it exists
+  const benefitsArray = benefits?.split(',').map(item => item.trim()) || [];
 
   return (
     <Card className="mb-6">
@@ -19,14 +22,18 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({ description, benefits
         {description && (
           <div>
             <h3 className="font-medium mb-2">Description</h3>
-            <p className="text-muted-foreground">{description}</p>
+            <p className="text-muted-foreground whitespace-pre-line">{description}</p>
           </div>
         )}
         
-        {benefits && (
+        {benefits && benefitsArray.length > 0 && (
           <div>
-            <h3 className="font-medium mb-2">Benefits</h3>
-            <p className="text-muted-foreground">{benefits}</p>
+            <h3 className="font-medium mb-2">Key Benefits</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              {benefitsArray.map((benefit, index) => (
+                <li key={index} className="text-muted-foreground">{benefit}</li>
+              ))}
+            </ul>
           </div>
         )}
       </CardContent>

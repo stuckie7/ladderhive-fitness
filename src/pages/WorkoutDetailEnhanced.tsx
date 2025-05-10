@@ -10,6 +10,7 @@ import VideoEmbed from '@/components/workouts/detail/VideoEmbed';
 import DescriptionCard from '@/components/workouts/detail/DescriptionCard';
 import WorkoutCircuit from '@/components/workouts/detail/WorkoutCircuit';
 import ExerciseList from '@/components/workouts/detail/ExerciseList';
+import WorkoutAdditionalInfo from '@/components/workouts/detail/WorkoutAdditionalInfo';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Define the specific exercise shape needed for WorkoutCircuit and make it compatible with ExerciseList
@@ -130,7 +131,7 @@ const WorkoutDetailEnhanced: React.FC = () => {
         
         <WorkoutDetailHeader 
           title={workout.title}
-          description={workout.description}
+          description={workout.short_description || workout.description}
           difficulty={workout.difficulty}
           duration={workout.duration_minutes}
           exerciseCount={workout.exercises?.length || 0}
@@ -153,6 +154,16 @@ const WorkoutDetailEnhanced: React.FC = () => {
             <div className="mb-6">
               <WorkoutCircuit exercises={circuitExercises} />
             </div>
+            
+            <WorkoutAdditionalInfo
+              goal={workout.goal}
+              category={workout.category}
+              equipment_needed={workout.equipment_needed}
+              benefits={workout.benefits}
+              instructions={workout.instructions}
+              modifications={workout.modifications}
+              created_at={workout.created_at}
+            />
           </div>
           
           <div>
