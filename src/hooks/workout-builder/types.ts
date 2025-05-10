@@ -1,4 +1,3 @@
-
 // Update the WorkoutTemplate interface to align with Supabase table structure
 export interface WorkoutExerciseDetail {
   id: string;
@@ -53,4 +52,9 @@ export interface TemplateSet {
   reps: number;
   weight?: number;
   duration?: number;
+}
+
+// Add this interface for connecting WODs to templates
+export interface WorkoutTemplateWithWod extends WorkoutTemplate {
+  source_wod_id?: string;
 }

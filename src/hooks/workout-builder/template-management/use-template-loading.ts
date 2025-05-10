@@ -1,101 +1,59 @@
 
-import { useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useCallback } from "react";
 import { WorkoutTemplate } from "../types";
-import { useWodFetch } from '../../wods/use-wod-fetch';
-import { TemplateExercise } from '../types';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 export const useTemplateLoading = (
-  setTemplates: React.Dispatch<React.SetStateAction<WorkoutTemplate[]>>,
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  setCurrentTemplate: React.Dispatch<React.SetStateAction<WorkoutTemplate | null>>
 ) => {
   const { toast } = useToast();
-  const { fetchWodById } = useWodFetch();
 
+  // Load template from a WOD (Workout of the Day)
   const loadTemplateFromWod = useCallback(async (wodId: string) => {
     try {
-      const wod = await fetchWodById(wodId);
-      
-      if (!wod) return null;
-      
-      // Convert WOD components to template format
-      const templateExercises: TemplateExercise[] = wod.components.map((component, index) => {
-        // Extract reps from description if possible
-        const repsMatch = component.description.match(/(\d+) reps/i);
-        const defaultReps = repsMatch ? parseInt(repsMatch[1], 10) : 10;
-        
-        return {
-          id: `template-ex-${index}`,
-          exerciseId: `wod-component-${index}`,
-          name: component.description,
-          sets: [{
-            id: `set-${index}-1`,
-            reps: defaultReps,
-          }],
-          restSeconds: 60,
-        };
-      });
-      
-      const template: WorkoutTemplate = {
-        id: wodId,
-        title: wod.name,  // Using title instead of name to match types
-        name: wod.name,   // Keep name for backward compatibility
-        exercises: templateExercises,
-        category: wod.category || 'General',
-        difficulty: wod.difficulty || 'Intermediate',
-        created_at: new Date().toISOString(),
-        isCircuit: wod.components.length > 3,
-        description: wod.description || ''
-      };
-      
-      return template;
-    } catch (error) {
-      console.error("Error loading template from WOD:", error);
-      return null;
-    }
-  }, [fetchWodById]);
-
-  const loadTemplates = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('prepared_workouts')
+      // Fetch the WOD from the database
+      const { data: wod, error } = await supabase
+        .from('wods')
         .select('*')
-        .eq('is_template', true)
-        .order('created_at', { ascending: false });
-        
+        .eq('id', wodId)
+        .single();
+      
       if (error) throw error;
       
-      if (data) {
-        const loadedTemplates = data.map(template => ({
-          id: template.id,
-          title: template.title,
-          name: template.title, // For backward compatibility
-          category: template.category || 'General',
-          difficulty: template.difficulty || 'Intermediate',
-          created_at: template.created_at || new Date().toISOString(),
-          description: template.description || '',
-          exercises: [], // We'll load these on demand when a template is selected
-          isCircuit: false
-        }));
-        
-        setTemplates(loadedTemplates);
-      }
-    } catch (error) {
-      console.error("Error loading templates:", error);
+      // Create a template from the WOD
+      const template: WorkoutTemplate = {
+        id: `wod-template-${Date.now()}`,
+        title: wod.name,
+        name: wod.name,
+        description: wod.description || '',
+        exercises: [],
+        type: 'wod',
+        difficulty: wod.difficulty || 'intermediate',
+        duration: wod.avg_duration_minutes || 30,
+        created_at: new Date().toISOString(),
+        is_template: true,
+        source_wod_id: wodId
+      };
+      
+      setCurrentTemplate(template);
+      
+      toast({
+        title: "WOD Template Loaded",
+        description: `${wod.name} has been loaded as a template`
+      });
+      
+      return template;
+    } catch (error: any) {
+      console.error("Error loading WOD as template:", error);
       toast({
         title: "Error",
-        description: "Failed to load workout templates",
+        description: "Failed to load WOD as template",
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      return null;
     }
-  }, [setIsLoading, setTemplates, toast]);
+  }, [setCurrentTemplate, toast]);
 
-  return {
-    loadTemplateFromWod,
-    loadTemplates
-  };
+  return { loadTemplateFromWod };
 };
