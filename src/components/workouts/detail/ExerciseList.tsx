@@ -6,18 +6,18 @@ import ExerciseVideoHandler from '@/components/exercises/ExerciseVideoHandler';
 
 interface WorkoutExercise {
   id: string;
-  name: string;
   sets: number;
   reps: string | number;
   rest_seconds?: number;
-  exercise?: {
-    name?: string;
+  notes?: string;
+  modifications?: string;
+  exercise: {
+    name: string;
     description?: string;
     video_demonstration_url?: string;
     short_youtube_demo?: string;
     youtube_thumbnail_url?: string;
   };
-  modifications?: string;
 }
 
 interface ExerciseListProps {
@@ -49,14 +49,14 @@ const ExerciseList: React.FC<ExerciseListProps> = ({ exercises }) => {
             <div key={exercise.id} className="border-b pb-4 last:border-b-0 last:pb-0">
               <div className="flex justify-between items-center mb-1">
                 <h3 className="text-base font-medium">
-                  {index + 1}. {exercise.exercise?.name || exercise.name}
+                  {index + 1}. {exercise.exercise?.name || 'Unknown Exercise'}
                 </h3>
                 
                 {/* Add video button if video URL is available */}
                 {(exercise.exercise?.short_youtube_demo || exercise.exercise?.video_demonstration_url) && (
                   <ExerciseVideoHandler 
                     url={exercise.exercise?.short_youtube_demo || exercise.exercise?.video_demonstration_url} 
-                    title={exercise.exercise?.name || exercise.name}
+                    title={exercise.exercise?.name || 'Exercise Video'}
                     thumbnailUrl={exercise.exercise?.youtube_thumbnail_url}
                   />
                 )}
@@ -73,8 +73,8 @@ const ExerciseList: React.FC<ExerciseListProps> = ({ exercises }) => {
                 )}
               </div>
               
-              {exercise.exercise?.description && (
-                <p className="text-sm text-muted-foreground mt-2">{exercise.exercise.description}</p>
+              {exercise.notes && (
+                <p className="text-sm text-muted-foreground mt-2">{exercise.notes}</p>
               )}
               
               {exercise.modifications && (

@@ -54,14 +54,10 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       const safeExercise = {
         id: exerciseDetail?.id || item.exercise_id,
         name: exerciseDetail?.name || 'Unknown Exercise',
-        // Only include these properties if they exist
-        ...(exerciseDetail?.description ? { description: exerciseDetail.description } : {}),
-        ...(exerciseDetail?.video_demonstration_url ? 
-          { video_demonstration_url: exerciseDetail.video_demonstration_url } : {}),
-        ...(exerciseDetail?.short_youtube_demo ? 
-          { short_youtube_demo: exerciseDetail.short_youtube_demo } : {}),
-        ...(exerciseDetail?.youtube_thumbnail_url ? 
-          { youtube_thumbnail_url: exerciseDetail.youtube_thumbnail_url } : {}),
+        // We need to handle video and thumbnail fields carefully
+        ...(exerciseDetail?.short_youtube_demo ? { short_youtube_demo: exerciseDetail.short_youtube_demo } : {}),
+        ...(exerciseDetail?.youtube_thumbnail_url ? { youtube_thumbnail_url: exerciseDetail.youtube_thumbnail_url } : {}),
+        ...(exerciseDetail?.video_demonstration_url ? { video_demonstration_url: exerciseDetail.video_demonstration_url } : {})
       };
 
       return {
@@ -88,6 +84,8 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
     setError(null);
 
     try {
+      console.log("Fetching workout with ID:", workoutId);
+      
       // Fetch the workout details
       const { data: workoutData, error: workoutError } = await supabase
         .from('prepared_workouts')
@@ -103,7 +101,7 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
         throw new Error("Workout not found");
       }
 
-      // Fetch workout exercises separately without the join due to the error
+      // Fetch workout exercises separately
       const { data: exercisesData, error: exercisesError } = await supabase
         .from('prepared_workout_exercises')
         .select('*')
@@ -118,10 +116,10 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       // Fetch all exercises data separately
       const exerciseIds = exercisesData.map(item => item.exercise_id);
       
-      // Use exercises_full table which contains all the video fields
+      // Use exercises_full table but select only the fields we need
       const { data: exercisesDetails, error: exerciseDetailsError } = await supabase
         .from('exercises_full')
-        .select('*, id, name, description, short_youtube_demo, in_depth_youtube_exp, youtube_thumbnail_url, video_demonstration_url')
+        .select('id, name, short_youtube_demo, youtube_thumbnail_url, video_demonstration_url')
         .in('id', exerciseIds);
 
       if (exerciseDetailsError) {
@@ -141,6 +139,7 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
 
       setWorkout(detailedWorkout);
     } catch (err: any) {
+      console.error("Error in fetchWorkoutDetail:", err);
       setError(err.message);
       toast({
         title: "Error",
