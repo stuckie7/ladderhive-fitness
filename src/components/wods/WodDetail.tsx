@@ -21,6 +21,20 @@ const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
   const embedUrl = getYouTubeEmbedUrl(videoUrl);
   console.log("Embed URL:", embedUrl);
 
+  // Collect all part fields that have content
+  const partFields = [
+    wod.part_1, 
+    wod.part_2, 
+    wod.part_3, 
+    wod.part_4, 
+    wod.part_5, 
+    wod.part_6, 
+    wod.part_7, 
+    wod.part_8, 
+    wod.part_9, 
+    wod.part_10
+  ].filter(part => part && part.trim().length > 0);
+
   const getDifficultyColor = (difficulty: string | undefined) => {
     switch (difficulty?.toLowerCase()) {
       case 'beginner':
@@ -134,8 +148,9 @@ const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
         <CardContent className="pt-6">
           <h2 className="text-xl font-semibold mb-4">Workout Components</h2>
           <div className="space-y-4">
-            {wod.components.length > 0 ? (
-              <ul className="list-disc pl-5 space-y-3">
+            {/* Structured components */}
+            {wod.components.length > 0 && (
+              <ul className="list-disc pl-5 space-y-3 mb-4">
                 {wod.components
                   .sort((a, b) => a.order - b.order)
                   .map((component) => (
@@ -144,11 +159,75 @@ const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
                     </li>
                   ))}
               </ul>
-            ) : wod.description ? (
-              <p className="text-muted-foreground">See description above for workout details.</p>
-            ) : (
-              <p className="text-muted-foreground">No workout components available.</p>
             )}
+
+            {/* Additional parts from part_1 to part_10 */}
+            {partFields.length > 0 && (
+              <div className="space-y-3">
+                {wod.components.length > 0 && (
+                  <div className="border-t border-muted my-4"></div>
+                )}
+                <h3 className="font-medium text-md mt-2 mb-3">Additional Instructions</h3>
+                <ul className="list-disc pl-5 space-y-3">
+                  {wod.part_1 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_1}</p>
+                    </li>
+                  )}
+                  {wod.part_2 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_2}</p>
+                    </li>
+                  )}
+                  {wod.part_3 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_3}</p>
+                    </li>
+                  )}
+                  {wod.part_4 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_4}</p>
+                    </li>
+                  )}
+                  {wod.part_5 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_5}</p>
+                    </li>
+                  )}
+                  {wod.part_6 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_6}</p>
+                    </li>
+                  )}
+                  {wod.part_7 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_7}</p>
+                    </li>
+                  )}
+                  {wod.part_8 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_8}</p>
+                    </li>
+                  )}
+                  {wod.part_9 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_9}</p>
+                    </li>
+                  )}
+                  {wod.part_10 && (
+                    <li className="py-1">
+                      <p className="whitespace-pre-line">{wod.part_10}</p>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+            
+            {wod.components.length === 0 && partFields.length === 0 && wod.description ? (
+              <p className="text-muted-foreground">See description above for workout details.</p>
+            ) : wod.components.length === 0 && partFields.length === 0 ? (
+              <p className="text-muted-foreground">No workout components available.</p>
+            ) : null}
           </div>
         </CardContent>
       </Card>

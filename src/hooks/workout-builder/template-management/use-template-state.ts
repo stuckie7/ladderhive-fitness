@@ -38,8 +38,8 @@ export const useTemplateState = () => {
         
       if (error) throw error;
       
-      // Cast the data to unknown first, then to our expected type to avoid type errors
-      const preparedWorkouts = (data as unknown) as PreparedWorkoutRecord[];
+      // Type assertion without complex inference
+      const preparedWorkouts = data as PreparedWorkoutRecord[];
       
       // Map database results to WorkoutTemplate format
       const loadedTemplates: WorkoutTemplate[] = (preparedWorkouts || []).map((template) => ({

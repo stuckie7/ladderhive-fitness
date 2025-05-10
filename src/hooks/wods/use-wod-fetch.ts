@@ -163,7 +163,18 @@ export const useWodFetch = () => {
             ...item.wods,
             components,
             is_favorite: true,
-            video_url: item.wods.video_demo || null
+            video_url: item.wods.video_demo || null,
+            // Make sure all part_1 through part_10 are passed along
+            part_1: item.wods.part_1 || null,
+            part_2: item.wods.part_2 || null,
+            part_3: item.wods.part_3 || null,
+            part_4: item.wods.part_4 || null,
+            part_5: item.wods.part_5 || null,
+            part_6: item.wods.part_6 || null,
+            part_7: item.wods.part_7 || null,
+            part_8: item.wods.part_8 || null,
+            part_9: item.wods.part_9 || null,
+            part_10: item.wods.part_10 || null
           };
         });
       

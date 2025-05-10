@@ -16,6 +16,16 @@ export interface Wod {
   avg_duration_minutes?: number | null;
   created_at?: string | null;
   is_favorite?: boolean;
+  part_1?: string | null;
+  part_2?: string | null;
+  part_3?: string | null;
+  part_4?: string | null;
+  part_5?: string | null;
+  part_6?: string | null;
+  part_7?: string | null;
+  part_8?: string | null;
+  part_9?: string | null;
+  part_10?: string | null;
 }
 
 export interface WodFilters {
