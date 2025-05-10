@@ -121,7 +121,7 @@ const Dashboard = () => {
                   <Plus className="mr-2 h-5 w-5 text-fitness-accent group-hover:animate-pulse-soft" /> Create Workout
                 </Button>
               </Link>
-              <Link to="/exercises">
+              <Link to="/exercise-library">
                 <Button variant="outline" className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-orange group">
                   <Dumbbell className="mr-2 h-5 w-5 text-fitness-orange group-hover:animate-pulse-soft" /> Exercise Library
                 </Button>

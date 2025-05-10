@@ -10,7 +10,6 @@ import Onboarding from "@/pages/Onboarding";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
-import ExerciseLibrary from "@/pages/ExerciseLibrary";
 import ExercisesFullData from "@/pages/ExercisesFullData";
 import ExerciseDetail from "@/pages/ExerciseDetail";
 import AdvancedExercises from "@/pages/AdvancedExercises";
@@ -52,11 +51,8 @@ function App() {
               <Settings />
             </ProtectedRoute>
           } />
-          <Route path="/exercises" element={<ExerciseLibrary />} />
-          <Route path="/exercises-simple" element={<ExerciseLibrarySimple />} />
           <Route path="/exercises-full" element={<ExercisesFullData />} />
           <Route path="/exercise-library" element={<ExerciseLibraryEnhanced />} />
-          <Route path="/exercise-library-enhanced" element={<ExerciseLibraryEnhanced />} />
           <Route path="/exercises/:id" element={<ExerciseDetailEnhanced />} />
           <Route path="/exercise-detail/:id" element={<ExerciseDetail />} />
           <Route path="/advanced-exercises" element={<AdvancedExercises />} />
