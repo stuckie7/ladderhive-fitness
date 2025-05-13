@@ -28,7 +28,14 @@ function App() {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user: session?.user }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user: session?.user,
+      signIn: async () => {}, // These are placeholders - the real implementations are in AuthContext.tsx
+      signUp: async () => {}, 
+      signOut: async () => {},
+      loading: false
+    }}>
       <div>
         <Routes>
           <Route element={<AppLayout>{/* AppLayout children */}</AppLayout>}>
