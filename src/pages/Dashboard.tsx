@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import AppLayout from "@/components/layout/AppLayout";
@@ -17,6 +18,7 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { 
     recentWorkouts, 
     upcomingWorkouts, 
@@ -25,10 +27,11 @@ const Dashboard = () => {
     metrics,
     weeklyChartData, 
     isLoading,
+    error,
     removeFavoriteExercise
   } = useDashboardData();
   
-  const { progress, isLoading: progressLoading } = useDailyProgress();
+  const { progress, isLoading: progressLoading, error: progressError } = useDailyProgress();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const { toast } = useToast();
   
@@ -53,6 +56,8 @@ const Dashboard = () => {
     toast({
       description: `Selected workout: ${id}`,
     });
+    // Navigate to the workout detail page
+    navigate(`/workout/${id}`);
   };
 
   const handleScheduleWorkout = () => {
@@ -62,13 +67,53 @@ const Dashboard = () => {
     });
   };
 
+  // Handle start workout functionality
+  const handleStartWorkout = () => {
+    // Check if there are upcoming workouts to start
+    if (upcomingWorkouts && upcomingWorkouts.length > 0) {
+      const nextWorkout = upcomingWorkouts[0];
+      navigate(`/workout/${nextWorkout.id}`);
+      toast({
+        title: "Starting workout",
+        description: `Loading ${nextWorkout.title}`,
+      });
+    } else {
+      // If no upcoming workouts, direct to workouts page
+      navigate("/workouts");
+      toast({
+        title: "No scheduled workouts",
+        description: "Select a workout to begin",
+      });
+    }
+  };
+
+  // Handle error states
+  if (error || progressError) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center py-10">
+            <h2 className="text-2xl font-bold text-red-500 mb-4">Error Loading Dashboard</h2>
+            <p className="mb-4">{error || progressError}</p>
+            <Button onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold gradient-heading">Dashboard</h1>
           <div className="space-x-2">
-            <Button className="btn-fitness-primary">
+            <Button 
+              className="btn-fitness-primary"
+              onClick={handleStartWorkout}
+            >
               <Zap className="mr-2 h-4 w-4" /> Start Workout
             </Button>
           </div>

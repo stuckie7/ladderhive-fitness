@@ -1,134 +1,68 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-export interface DailyProgress {
-  id: string;
-  user_id: string;
-  date: string;
+interface DailyProgress {
   step_count: number;
   step_goal: number;
   active_minutes: number;
   active_minutes_goal: number;
   workouts_completed: number;
   workouts_goal: number;
+  date: string;
 }
 
-export const useDailyProgress = () => {
+// Mock function to fetch daily progress data
+const fetchDailyProgress = async (userId: string, date?: Date): Promise<DailyProgress> => {
+  // In a real implementation, this would fetch from Supabase
+  // const { data, error } = await supabase
+  //   .from('daily_progress')
+  //   .select('*')
+  //   .eq('user_id', userId)
+  //   .eq('date', date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'))
+  //   .single();
+  
+  // if (error) throw new Error(error.message);
+  // return data as DailyProgress;
+  
+  // For now, return mock data
+  return {
+    step_count: 7532,
+    step_goal: 10000,
+    active_minutes: 42,
+    active_minutes_goal: 60,
+    workouts_completed: 1,
+    workouts_goal: 1,
+    date: date ? date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+  };
+};
+
+export const useDailyProgress = (date?: Date) => {
   const [progress, setProgress] = useState<DailyProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { toast } = useToast();
-
-  const fetchDailyProgress = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    try {
-      // Check if there's an entry for today
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      
-      const { data, error } = await supabase
-        .from('daily_progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('date', today)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      if (data) {
-        setProgress(data as unknown as DailyProgress);
-      } else {
-        // If no entry exists for today, create one
-        const { data: newEntry, error: insertError } = await supabase
-          .from('daily_progress')
-          .insert({
-            user_id: user.id,
-            date: today
-          })
-          .select()
-          .single();
-        
-        if (insertError) throw insertError;
-        
-        setProgress(newEntry as unknown as DailyProgress);
-      }
-    } catch (error: any) {
-      console.error('Error fetching daily progress:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load your daily progress.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateProgress = async (updates: Partial<DailyProgress>) => {
-    if (!user || !progress) return;
-    
-    try {
-      const { error } = await supabase
-        .from('daily_progress')
-        .update(updates)
-        .eq('id', progress.id);
-      
-      if (error) throw error;
-      
-      // Update local state
-      setProgress(prev => prev ? { ...prev, ...updates } : null);
-      
-      toast({
-        title: 'Progress updated',
-        description: 'Your daily progress has been updated.',
-      });
-      
-      return true;
-    } catch (error: any) {
-      console.error('Error updating progress:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update your progress.',
-        variant: 'destructive',
-      });
-      return false;
-    }
-  };
-
-  // Log steps manually (in a real app, this might come from a fitness tracker API)
-  const logSteps = async (steps: number) => {
-    if (!progress) return;
-    
-    return updateProgress({
-      step_count: progress.step_count + steps
-    });
-  };
-
-  // Log active minutes manually
-  const logActiveMinutes = async (minutes: number) => {
-    if (!progress) return;
-    
-    return updateProgress({
-      active_minutes: progress.active_minutes + minutes
-    });
-  };
-
+  
   useEffect(() => {
-    if (user) {
-      fetchDailyProgress();
-    }
-  }, [user]);
-
-  return {
-    progress,
-    isLoading,
-    updateProgress,
-    logSteps,
-    logActiveMinutes,
-    refreshProgress: fetchDailyProgress
-  };
+    const loadProgress = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const userId = user?.id || 'demo-user';
+        const data = await fetchDailyProgress(userId, date);
+        setProgress(data);
+      } catch (err) {
+        console.error('Error loading daily progress:', err);
+        setError('Failed to load daily progress data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadProgress();
+  }, [user, date]);
+  
+  return { progress, isLoading, error };
 };

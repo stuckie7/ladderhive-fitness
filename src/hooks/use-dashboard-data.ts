@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -198,6 +199,7 @@ const fetchDashboardData = async (userId: string) => {
 
 export const useDashboardData = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [favoriteExercises, setFavoriteExercises] = useState<Exercise[]>([]);
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
   const [upcomingWorkouts, setUpcomingWorkouts] = useState<any[]>([]);
@@ -218,6 +220,7 @@ export const useDashboardData = () => {
   useEffect(() => {
     const loadDashboardData = async () => {
       setIsLoading(true);
+      setError(null);
       
       try {
         // If user is not logged in, we can still show demo data
@@ -235,6 +238,7 @@ export const useDashboardData = () => {
         setWeeklyChartData(data.weeklyChartData);
       } catch (error) {
         console.error("Error loading dashboard data:", error);
+        setError("Failed to load dashboard data. Please try again.");
         toast({
           title: "Error loading dashboard",
           description: "Failed to load your dashboard data. Please try again.",
@@ -321,6 +325,7 @@ export const useDashboardData = () => {
 
   return {
     isLoading,
+    error,
     favoriteExercises,
     recentWorkouts,
     upcomingWorkouts,
