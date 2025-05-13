@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Workout, UserWorkout } from '@/types/workout';
 
-export const useWorkouts = (
+export const useWorkoutsFetch = (
   isLoading: boolean,
   setIsLoading: (value: boolean) => void
 ) => {
@@ -70,5 +70,3 @@ export const useWorkouts = (
     fetchSavedWorkouts
   };
 };
-
-export const useWorkoutsFetch = useWorkouts; // Export with both names for backwards compatibility
