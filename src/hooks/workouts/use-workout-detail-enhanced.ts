@@ -33,7 +33,7 @@ export interface DetailedWorkout {
       id: number | string;
       name: string;
       description?: string;
-      video_demonstration_url?: string;
+      // Use the fields that actually exist in the exercises_full table
       short_youtube_demo?: string;
       youtube_thumbnail_url?: string;
     };
@@ -53,15 +53,15 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       // Find the matching exercise details for this exercise
       const exerciseDetail = exerciseDetails.find(detail => detail.id === item.exercise_id) || {};
       
-      // Create a safe exercise object with all video and description fields
+      // Create a safe exercise object with the fields that actually exist in exercises_full table
       const safeExercise = {
         id: exerciseDetail?.id || item.exercise_id,
         name: exerciseDetail?.name || 'Unknown Exercise',
         description: exerciseDetail?.description || '',
-        // We need to handle video and thumbnail fields carefully
-        ...(exerciseDetail?.short_youtube_demo ? { short_youtube_demo: exerciseDetail.short_youtube_demo } : {}),
-        ...(exerciseDetail?.youtube_thumbnail_url ? { youtube_thumbnail_url: exerciseDetail.youtube_thumbnail_url } : {}),
-        ...(exerciseDetail?.video_demonstration_url ? { video_demonstration_url: exerciseDetail.video_demonstration_url } : {})
+        // Use the fields that actually exist
+        short_youtube_demo: exerciseDetail?.short_youtube_demo || null,
+        youtube_thumbnail_url: exerciseDetail?.youtube_thumbnail_url || null,
+        in_depth_youtube_exp: exerciseDetail?.in_depth_youtube_exp || null,
       };
 
       return {
@@ -142,10 +142,10 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       // Fetch all exercises data separately
       const exerciseIds = exercisesData.map(item => item.exercise_id);
       
-      // Use exercises_full table but select only the fields we need
+      // Only select fields that we know exist in the exercises_full table
       const { data: exercisesDetails, error: exerciseDetailsError } = await supabase
         .from('exercises_full')
-        .select('id, name, short_youtube_demo, youtube_thumbnail_url, video_demonstration_url')
+        .select('id, name, short_youtube_demo, youtube_thumbnail_url, in_depth_youtube_exp')
         .in('id', exerciseIds);
 
       if (exerciseDetailsError) {

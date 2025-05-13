@@ -18,9 +18,9 @@ interface WorkoutExercise {
     id: number | string;
     name: string;
     description?: string;
-    video_demonstration_url?: string;
     short_youtube_demo?: string;
     youtube_thumbnail_url?: string;
+    in_depth_youtube_exp?: string;
   };
 }
 
@@ -71,8 +71,9 @@ const WorkoutCircuit: React.FC<WorkoutCircuitProps> = ({ exercises }) => {
             const exerciseName = exercise.exercise?.name || '';
             const isExpanded = expandedExerciseId === exercise.id;
             const isCompleted = completedExercises.has(exercise.id);
-            const videoUrl = exercise.exercise?.video_demonstration_url || 
-                            exercise.exercise?.short_youtube_demo;
+            // Use the correct video URL field that exists in the exercises_full table
+            const videoUrl = exercise.exercise?.in_depth_youtube_exp || 
+                           exercise.exercise?.short_youtube_demo;
             const thumbnailUrl = exercise.exercise?.youtube_thumbnail_url;
             
             return (
