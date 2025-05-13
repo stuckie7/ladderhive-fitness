@@ -958,6 +958,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      add_specified_exercises_to_workouts: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       dmetaphone: {
         Args: { "": string }
         Returns: string
