@@ -38,22 +38,64 @@ function App() {
     }}>
       <div>
         <Routes>
-          <Route element={<AppLayout>{/* AppLayout children */}</AppLayout>}>
-            <Route path="/" element={<Workouts />} />
-            <Route path="/workouts" element={<Workouts />} />
-            <Route path="/exercise-library" element={<ExerciseLibrary />} />
-            <Route path="/exercise/:id" element={<ExerciseDetail />} />
-            <Route path="/wods" element={<Wods />} />
-            <Route path="/wod/:id" element={<WodDetail />} />
-            <Route path="/workout/:id" element={<WorkoutDetail />} />
-            <Route path="/workout-builder" element={<WorkoutBuilder />} />
-            <Route path="/workout-builder/:id" element={<WorkoutBuilder />} />
-            
-            {/* New route for workout instructions */}
-            <Route path="/workout-instructions" element={<WorkoutInstructions />} />
-            
-            <Route path="*" element={<div>Page not found</div>} />
-          </Route>
+          <Route path="/" element={
+            <AppLayout>
+              <Workouts />
+            </AppLayout>
+          } />
+          <Route path="/workouts" element={
+            <AppLayout>
+              <Workouts />
+            </AppLayout>
+          } />
+          <Route path="/exercise-library" element={
+            <AppLayout>
+              <ExerciseLibrary />
+            </AppLayout>
+          } />
+          <Route path="/exercise/:id" element={
+            <AppLayout>
+              <ExerciseDetail />
+            </AppLayout>
+          } />
+          <Route path="/wods" element={
+            <AppLayout>
+              <Wods />
+            </AppLayout>
+          } />
+          <Route path="/wod/:id" element={
+            <AppLayout>
+              <WodDetail />
+            </AppLayout>
+          } />
+          <Route path="/workout/:id" element={
+            <AppLayout>
+              <WorkoutDetail />
+            </AppLayout>
+          } />
+          <Route path="/workout-builder" element={
+            <AppLayout>
+              <WorkoutBuilder />
+            </AppLayout>
+          } />
+          <Route path="/workout-builder/:id" element={
+            <AppLayout>
+              <WorkoutBuilder />
+            </AppLayout>
+          } />
+          
+          {/* New route for workout instructions */}
+          <Route path="/workout-instructions" element={
+            <AppLayout>
+              <WorkoutInstructions />
+            </AppLayout>
+          } />
+          
+          <Route path="*" element={
+            <AppLayout>
+              <div>Page not found</div>
+            </AppLayout>
+          } />
         </Routes>
       </div>
     </AuthContext.Provider>
