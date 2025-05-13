@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,16 +30,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentSession?.user ?? null);
         setLoading(false);
         
-        // If user just signed in, redirect to dashboard
+        // Only redirect on specific auth events, not on every state change
         if (event === 'SIGNED_IN') {
+          // Only redirect to dashboard on explicit sign in
           setTimeout(() => {
             navigate('/dashboard');
           }, 0);
         } else if (event === 'SIGNED_OUT') {
+          // Only redirect to login on explicit sign out
           setTimeout(() => {
             navigate('/login');
           }, 0);
         }
+        // Other auth state changes don't trigger redirects
       }
     );
 
@@ -50,6 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setLoading(false);
+      
+      // Don't redirect here - this prevents redirects when just checking session
     });
 
     return () => subscription.unsubscribe();
