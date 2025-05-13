@@ -26,9 +26,10 @@ export const useSuggestedExercises = (limit = 5) => {
     setError(null);
     
     try {
+      // Note: We're excluding 'description' which doesn't exist in exercises_full
       const { data, error } = await supabase
         .from('exercises_full')
-        .select('id, name, description, short_youtube_demo, youtube_thumbnail_url, prime_mover_muscle, primary_equipment')
+        .select('id, name, short_youtube_demo, youtube_thumbnail_url, prime_mover_muscle, primary_equipment')
         .not('short_youtube_demo', 'is', null)
         .not('youtube_thumbnail_url', 'is', null)
         .limit(limit)
@@ -38,7 +39,12 @@ export const useSuggestedExercises = (limit = 5) => {
         throw error;
       }
 
-      setExercises(data || []);
+      // Only proceed if data is not null and is an array
+      if (data && Array.isArray(data)) {
+        setExercises(data as SuggestedExercise[]);
+      } else {
+        setExercises([]);
+      }
     } catch (err: any) {
       console.error('Failed to fetch suggested exercises:', err);
       setError(err.message);

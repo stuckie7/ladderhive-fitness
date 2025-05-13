@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { CheckCircle2, ChevronDown, ChevronUp, Dumbbell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 import { useExercisesFull } from "@/hooks/use-exercises-full";
-import { supabase } from "@/integrations/supabase/client";
+import { useSuggestedExercises } from "@/hooks/use-suggested-exercises";
 
 // Updated interface to match the actual data structure from useWorkoutDetailEnhanced
 interface WorkoutExercise {
@@ -26,16 +25,6 @@ interface WorkoutExercise {
   };
 }
 
-interface SuggestedExercise {
-  id: number | string;
-  name: string;
-  description?: string;
-  short_youtube_demo?: string;
-  youtube_thumbnail_url?: string;
-  prime_mover_muscle?: string;
-  primary_equipment?: string;
-}
-
 interface WorkoutCircuitProps {
   exercises: WorkoutExercise[];
 }
@@ -43,8 +32,9 @@ interface WorkoutCircuitProps {
 const WorkoutCircuit: React.FC<WorkoutCircuitProps> = ({ exercises }) => {
   const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
-  const [suggestedExercises, setSuggestedExercises] = useState<SuggestedExercise[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState<boolean>(false);
+  
+  // Use the hook directly instead of fetching manually
+  const { exercises: suggestedExercises, isLoading: isLoadingSuggestions } = useSuggestedExercises(5);
 
   const toggleExpanded = (id: string) => {
     if (expandedExerciseId === id) {
@@ -62,42 +52,6 @@ const WorkoutCircuit: React.FC<WorkoutCircuitProps> = ({ exercises }) => {
       newCompleted.add(id);
     }
     setCompletedExercises(newCompleted);
-  };
-
-  useEffect(() => {
-    // Only fetch suggested exercises if there are no exercises in the workout
-    if (exercises.length === 0) {
-      fetchSuggestedExercises();
-    }
-  }, [exercises]);
-
-  const fetchSuggestedExercises = async () => {
-    setIsLoadingSuggestions(true);
-    try {
-      // Fetch exercises that have valid video or thumbnail URLs
-      const { data, error } = await supabase
-        .from('exercises_full')
-        .select('id, name, description, short_youtube_demo, youtube_thumbnail_url, prime_mover_muscle, primary_equipment')
-        .or('short_youtube_demo.neq.null,youtube_thumbnail_url.neq.null')
-        .not('short_youtube_demo', 'is', null)
-        .not('youtube_thumbnail_url', 'is', null)
-        .limit(5)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching suggested exercises:', error);
-        return;
-      }
-
-      // Ensure data is not null before setting
-      if (data) {
-        setSuggestedExercises(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch suggested exercises:', err);
-    } finally {
-      setIsLoadingSuggestions(false);
-    }
   };
 
   if (exercises.length === 0) {
