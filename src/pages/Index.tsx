@@ -3,18 +3,21 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { ArrowRight, Dumbbell, Users, BarChart3, Calendar } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   useEffect(() => {
-    // Check if user is already logged in
-    const user = localStorage.getItem("user");
-    if (user) {
-      // Redirect to dashboard if logged in
+    // Only redirect if user is logged in and they're on the exact root path
+    if (user && window.location.pathname === "/") {
       navigate("/dashboard");
     }
-  }, [navigate]);
+  }, [user, navigate]);
+  
+  // If user is logged in but we haven't redirected yet, still show the landing page
+  // This prevents a flash of the landing page before redirect
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

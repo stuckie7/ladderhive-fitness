@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -52,81 +51,54 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { user, signOut } = useAuth();
   
   useEffect(() => {
-    // Check if user is logged in
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    
-    // Fetch user profile data
-    const fetchUserProfile = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (error) throw error;
-        
-        if (data) {
+    // This should only fetch profile data, not redirect
+    if (user) {
+      // Fetch user profile data
+      const fetchUserProfile = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (error) throw error;
+          
+          if (data) {
+            setUserData({
+              ...data,
+              email: user.email,
+              name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || user.email
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching profile:", error);
           setUserData({
-            ...data,
+            id: user.id,
+            first_name: null,
+            last_name: null,
             email: user.email,
-            name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || user.email
+            name: user.email
           });
         }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        setUserData({
-          id: user.id,
-          first_name: null,
-          last_name: null,
-          email: user.email,
-          name: user.email
-        });
-      }
-    };
-    
-    fetchUserProfile();
-  }, [navigate, user]);
+      };
+      
+      fetchUserProfile();
+    }
+    // Remove the redirect to /login here
+  }, [user]);
   
   const handleLogout = async () => {
     try {
       await signOut();
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
+      // The redirect after signOut is now handled in AuthContext
     } catch (error) {
       console.error("Error logging out:", error);
     }
   };
   
-  const getInitials = (name?: string) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase();
-  };
-  
-  const navItems = [
-    { path: "/dashboard", label: "Dashboard", icon: Home, color: "text-fitness-primary" },
-    { path: "/workouts", label: "Workouts", icon: Dumbbell, color: "text-fitness-secondary" },
-    { path: "/wods", label: "WODs", icon: Timer, color: "text-fitness-orange" }, // Added WODs navigation link
-    { path: "/progress", label: "Progress", icon: BarChart3, color: "text-fitness-accent" },
-    { path: "/schedule", label: "Schedule", icon: Calendar, color: "text-fitness-orange" },
-    { path: "/profile", label: "Profile", icon: User, color: "text-fitness-primary" },
-    { path: "/settings", label: "Settings", icon: Settings, color: "text-fitness-secondary" },
-  ];
-  
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
-  
-  if (!userData) {
+  // If we don't have user data yet but we do have a user, show loading state
+  if (user && !userData) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="animate-pulse-soft">
@@ -135,6 +107,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       </div>
     );
   }
+  
+  // If user is definitely not logged in, AppLayout should not render children
+  // Don't redirect here - let ProtectedRoute handle it
   
   return (
     <SidebarProvider>
