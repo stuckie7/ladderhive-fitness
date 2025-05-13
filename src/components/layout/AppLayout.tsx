@@ -42,6 +42,26 @@ interface UserProfileData {
   [key: string]: any;
 }
 
+// Define navigation items
+const navItems = [
+  { path: "/dashboard", label: "Dashboard", icon: Home, color: "text-blue-400" },
+  { path: "/workouts", label: "Workouts", icon: Dumbbell, color: "text-green-400" },
+  { path: "/wods", label: "WODs", icon: Timer, color: "text-yellow-400" },
+  { path: "/schedule", label: "Schedule", icon: Calendar, color: "text-purple-400" },
+  { path: "/progress", label: "Progress", icon: BarChart3, color: "text-orange-400" },
+  { path: "/profile", label: "Profile", icon: User, color: "text-pink-400" },
+  { path: "/settings", label: "Settings", icon: Settings, color: "text-gray-400" },
+];
+
+// Function to get user initials for avatar
+const getInitials = (name: string | undefined): string => {
+  if (!name) return "U";
+  
+  const nameParts = name.split(" ");
+  if (nameParts.length === 1) return nameParts[0][0].toUpperCase();
+  return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+};
+
 const AppLayout = ({ children }: AppLayoutProps) => {
   const [userData, setUserData] = useState<UserProfileData | null>(null);
   const navigate = useNavigate();
@@ -49,6 +69,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
+  
+  // Function to check if route is active
+  const isActive = (path: string): boolean => {
+    return location.pathname === path;
+  };
   
   useEffect(() => {
     // This should only fetch profile data, not redirect
@@ -150,14 +175,14 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           <div className="mt-auto p-4 border-t border-gray-800/50">
             <div className="flex items-center gap-3">
               <Avatar>
-                <AvatarImage src="" alt={userData.name || ""} />
+                <AvatarImage src="" alt={userData?.name || ""} />
                 <AvatarFallback className="bg-gradient-to-br from-fitness-primary to-fitness-secondary text-gray-900 font-medium">
-                  {getInitials(userData.name)}
+                  {getInitials(userData?.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate text-white">{userData.name}</p>
-                <p className="text-xs text-gray-400 truncate">{userData.email}</p>
+                <p className="font-medium truncate text-white">{userData?.name}</p>
+                <p className="text-xs text-gray-400 truncate">{userData?.email}</p>
               </div>
               <Button 
                 variant="ghost" 
