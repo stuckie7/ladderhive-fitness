@@ -1,29 +1,31 @@
 
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { CheckCircle2, ChevronDown, ChevronUp, Dumbbell } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 
-interface Exercise {
+// Updated interface to match the actual data structure from useWorkoutDetailEnhanced
+interface WorkoutExercise {
   id: string;
-  name: string;
   sets: number;
   reps: string | number;
   rest_seconds?: number;
   notes?: string;
-  exercise?: {
-    name?: string;
+  modifications?: string;
+  order_index: number;
+  exercise: {
+    id: number | string;
+    name: string;
+    description?: string;
     video_demonstration_url?: string;
     short_youtube_demo?: string;
     youtube_thumbnail_url?: string;
-    description?: string;
   };
-  modifications?: string;
 }
 
 interface WorkoutCircuitProps {
-  exercises: Exercise[];
+  exercises: WorkoutExercise[];
 }
 
 const WorkoutCircuit: React.FC<WorkoutCircuitProps> = ({ exercises }) => {
@@ -66,7 +68,7 @@ const WorkoutCircuit: React.FC<WorkoutCircuitProps> = ({ exercises }) => {
       <CardContent className="p-0">
         <div className="divide-y">
           {exercises.map((exercise, index) => {
-            const exerciseName = exercise.exercise?.name || exercise.name;
+            const exerciseName = exercise.exercise?.name || '';
             const isExpanded = expandedExerciseId === exercise.id;
             const isCompleted = completedExercises.has(exercise.id);
             const videoUrl = exercise.exercise?.video_demonstration_url || 
