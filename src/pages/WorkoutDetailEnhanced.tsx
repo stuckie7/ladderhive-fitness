@@ -1,186 +1,170 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, PlayCircle } from 'lucide-react';
 import { useWorkoutDetailEnhanced } from '@/hooks/workouts/use-workout-detail-enhanced';
-import WorkoutDetailHeader from '@/components/workouts/detail/WorkoutDetailHeader';
-import VideoEmbed from '@/components/workouts/detail/VideoEmbed';
-import DescriptionCard from '@/components/workouts/detail/DescriptionCard';
-import WorkoutCircuit from '@/components/workouts/detail/WorkoutCircuit';
-import ExerciseList from '@/components/workouts/detail/ExerciseList';
-import WorkoutAdditionalInfo from '@/components/workouts/detail/WorkoutAdditionalInfo';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-
-// Define the specific exercise shape needed for WorkoutCircuit and make it compatible with ExerciseList
-interface CircuitExercise {
-  id: string;
-  name: string;
-  sets: number;
-  reps: string | number;
-  rest_seconds?: number;
-  notes?: string;
-  modifications?: string;
-  exercise: {
-    name: string; // Make this required to match WorkoutExercise
-    description?: string;
-    video_demonstration_url?: string;
-    short_youtube_demo?: string;
-    youtube_thumbnail_url?: string;
-  };
-}
+import { ArrowLeft, Clock, Dumbbell } from 'lucide-react';
+import DescriptionCard from '@/components/workouts/detail/DescriptionCard';
+import WorkoutAdditionalInfo from '@/components/workouts/detail/WorkoutAdditionalInfo';
+import VideoEmbed from '@/components/workouts/detail/VideoEmbed';
+import WorkoutCircuit from '@/components/workouts/detail/WorkoutCircuit';
 
 const WorkoutDetailEnhanced: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { workout, isLoading, error } = useWorkoutDetailEnhanced(id);
 
-  if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center mb-6">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="mr-2"
-              disabled
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <Skeleton className="h-8 w-64" />
-          </div>
-          
-          <Skeleton className="h-[400px] w-full mb-6" />
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-24 w-full" />
-            ))}
-          </div>
-          
-          <Skeleton className="h-64 w-full mb-6" />
-        </div>
-      </AppLayout>
-    );
-  }
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
 
-  if (error || !workout) {
-    return (
-      <AppLayout>
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center mb-6">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate('/workouts')}
-              className="mr-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-3xl font-bold">Workout Not Found</h1>
-          </div>
-          
-          <p className="text-muted-foreground">
-            Sorry, the workout you're looking for doesn't exist or couldn't be loaded.
-          </p>
-          
-          <Button 
-            className="mt-6"
-            onClick={() => navigate('/workouts')}
-          >
-            Back to Workouts
-          </Button>
-        </div>
-      </AppLayout>
-    );
-  }
+  const handleBack = () => {
+    navigate(-1);
+  };
 
-  console.log("Rendering workout details:", workout);
-
-  // Transform workout exercises to match CircuitExercise interface
-  const circuitExercises: CircuitExercise[] = workout.exercises.map(ex => ({
-    id: ex.id,
-    name: ex.exercise?.name || "Unknown Exercise",
-    sets: ex.sets,
-    reps: ex.reps,
-    rest_seconds: ex.rest_seconds,
-    notes: ex.notes,
-    modifications: ex.modifications,
-    exercise: {
-      name: ex.exercise?.name || "Unknown Exercise", // Ensure name is always defined
-      description: ex.exercise?.description,
-      video_demonstration_url: ex.exercise?.video_demonstration_url,
-      short_youtube_demo: ex.exercise?.short_youtube_demo,
-      youtube_thumbnail_url: ex.exercise?.youtube_thumbnail_url
+  const getDifficultyColor = (difficulty: string | undefined) => {
+    switch (difficulty?.toLowerCase()) {
+      case 'beginner':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'intermediate':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'advanced':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+      case 'all levels':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
-  }));
+  };
 
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center mb-6">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate('/workouts')}
-            className="mr-2"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </div>
+        <Button variant="ghost" className="mb-6" onClick={handleBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
         
-        <WorkoutDetailHeader 
-          title={workout.title}
-          description={workout.short_description || workout.description}
-          difficulty={workout.difficulty}
-          duration={workout.duration_minutes}
-          exerciseCount={workout.exercises?.length || 0}
-        />
-        
-        {workout.video_url && (
-          <VideoEmbed 
-            videoUrl={workout.video_url} 
-            thumbnailUrl={workout.thumbnail_url} 
-          />
-        )}
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
-            <DescriptionCard 
-              description={workout.long_description || workout.description} 
-              benefits={workout.benefits}
-            />
-            
-            <div className="mb-6">
-              <WorkoutCircuit exercises={circuitExercises} />
+        {isLoading ? (
+          <div className="space-y-6">
+            <Skeleton className="h-10 w-2/3" />
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-32" />
+            </div>
+            <Skeleton className="h-[300px] w-full aspect-video" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+            </div>
+            <Skeleton className="h-48" />
+            <Skeleton className="h-96" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold mb-2">Error Loading Workout</h2>
+            <p className="text-muted-foreground mb-6">{error}</p>
+            <Button onClick={handleBack}>
+              Return to Workouts
+            </Button>
+          </div>
+        ) : workout ? (
+          <div className="space-y-6">
+            {/* Header */}
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{workout.title}</h1>
+              <div className="flex flex-wrap gap-2 items-center">
+                <Badge variant="outline" className={getDifficultyColor(workout.difficulty)}>
+                  {workout.difficulty}
+                </Badge>
+                <Badge variant="secondary" className="bg-accent">
+                  {workout.category}
+                </Badge>
+                {workout.goal && (
+                  <Badge variant="outline">{workout.goal}</Badge>
+                )}
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Clock className="mr-1 h-4 w-4" />
+                  {workout.duration_minutes} min
+                </div>
+              </div>
             </div>
             
+            {/* Video */}
+            <VideoEmbed videoUrl={workout.video_url} />
+            
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <Card>
+                <CardContent className="p-4 flex items-center">
+                  <Clock className="h-6 w-6 mr-3 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Duration</p>
+                    <p className="font-medium">{workout.duration_minutes} minutes</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4 flex items-center">
+                  <Dumbbell className="h-6 w-6 mr-3 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Exercises</p>
+                    <p className="font-medium">{workout.exercises?.length || 0}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4 flex items-center">
+                  <div className="h-6 w-6 mr-3 flex items-center justify-center text-muted-foreground">
+                    {workout.category === 'Strength' && <Dumbbell className="h-5 w-5" />}
+                    {workout.category === 'Cardio' && <Clock className="h-5 w-5" />}
+                    {!['Strength', 'Cardio'].includes(workout.category || '') && '#'}
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Workout Type</p>
+                    <p className="font-medium">{workout.category} - {workout.difficulty}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Description */}
+            <DescriptionCard 
+              description={workout.long_description || workout.description} 
+              benefits={workout.benefits} 
+            />
+            
+            {/* Exercise Circuit */}
+            <WorkoutCircuit exercises={workout.exercises || []} />
+            
+            {/* Additional Info */}
             <WorkoutAdditionalInfo
               goal={workout.goal}
               category={workout.category}
               equipment_needed={workout.equipment_needed}
-              benefits={workout.benefits}
               instructions={workout.instructions}
               modifications={workout.modifications}
               created_at={workout.created_at}
             />
           </div>
-          
-          <div>
-            <div className="sticky top-6">
-              <ExerciseList exercises={circuitExercises} />
-              
-              <div className="mt-6">
-                <Button className="w-full bg-fitness-primary hover:bg-fitness-primary/90">
-                  <PlayCircle className="mr-2 h-5 w-5" />
-                  Start Workout
-                </Button>
-              </div>
-            </div>
+        ) : (
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold mb-2">Workout Not Found</h2>
+            <p className="text-muted-foreground mb-6">
+              The workout you're looking for doesn't exist or has been removed.
+            </p>
+            <Button onClick={handleBack}>
+              Return to Workouts
+            </Button>
           </div>
-        </div>
+        )}
       </div>
     </AppLayout>
   );

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 

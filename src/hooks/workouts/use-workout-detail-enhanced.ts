@@ -145,7 +145,7 @@ export const useWorkoutDetailEnhanced = (workoutId?: string) => {
       // Use exercises_full table but select only the fields we need
       const { data: exercisesDetails, error: exerciseDetailsError } = await supabase
         .from('exercises_full')
-        .select('id, name, description, short_youtube_demo, youtube_thumbnail_url, video_demonstration_url')
+        .select('id, name, short_youtube_demo, youtube_thumbnail_url, video_demonstration_url')
         .in('id', exerciseIds);
 
       if (exerciseDetailsError) {
