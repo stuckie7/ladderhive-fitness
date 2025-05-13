@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,25 +25,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log("Auth state changed:", event, currentSession?.user?.email);
+      (_event, currentSession) => {
+        console.log("Auth state changed:", _event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
         
-        // Only redirect on specific auth events, not on every state change
-        if (event === 'SIGNED_IN') {
-          // Only redirect to dashboard on explicit sign in
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 0);
-        } else if (event === 'SIGNED_OUT') {
-          // Only redirect to login on explicit sign out
-          setTimeout(() => {
-            navigate('/login');
-          }, 0);
-        }
-        // Other auth state changes don't trigger redirects
+        // Remove all redirects from the auth state change listener
+        // We'll handle specific redirects in the signIn, signOut functions instead
       }
     );
 
@@ -53,11 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentSession?.user ?? null);
       setLoading(false);
       
-      // Don't redirect here - this prevents redirects when just checking session
+      // Remove redirect from here too
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
@@ -76,6 +66,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
+      }, 0);
+      
+      // Add redirect here after successful login
+      setTimeout(() => {
+        navigate('/dashboard');
       }, 0);
     } catch (error: any) {
       console.error("Login error:", error);
@@ -115,6 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           description: "Please check your email to confirm your registration.",
         });
       }, 0);
+      
+      // Don't auto-redirect after signup as they might need to confirm email first
     } catch (error: any) {
       setTimeout(() => {
         toast({
@@ -140,6 +137,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           title: "Logged out",
           description: "You have been successfully logged out.",
         });
+      }, 0);
+      
+      // Add redirect here after successful logout
+      setTimeout(() => {
+        navigate('/login');
       }, 0);
     } catch (error: any) {
       console.error("Error logging out:", error);

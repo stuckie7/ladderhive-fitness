@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,7 @@ const LoginForm = () => {
 
   // Redirect if already logged in
   if (user) {
-    navigate('/dashboard');
+    navigate('/dashboard', { replace: true });
     return null;
   }
 
@@ -28,19 +27,9 @@ const LoginForm = () => {
     
     try {
       await signIn(email, password);
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back to LadderHive!",
-      });
-      
-      navigate("/dashboard");
+      // No need to navigate here as it's handled in the signIn function
     } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
-        variant: "destructive",
-      });
+      // Error handling is done in the signIn function
     } finally {
       setIsLoading(false);
     }
