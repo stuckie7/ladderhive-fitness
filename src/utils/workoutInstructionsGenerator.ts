@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 interface WorkoutExercise {
@@ -61,7 +60,7 @@ export async function generateWorkoutInstructions(): Promise<string> {
         .from('prepared_workout_exercises')
         .select(`
           id, exercise_id, sets, reps, rest_seconds, notes, order_index,
-          exercise:exercise_id(
+          exercise:exercises_full(
             id, name, prime_mover_muscle, secondary_muscle, description,
             short_youtube_demo, youtube_thumbnail_url
           )
@@ -76,7 +75,9 @@ export async function generateWorkoutInstructions(): Promise<string> {
       
       // Filter exercises that have video urls
       const validExercises = exercisesData.filter(ex => 
-        ex.exercise && (ex.exercise.short_youtube_demo || ex.exercise.youtube_thumbnail_url)
+        ex.exercise && 
+        typeof ex.exercise !== 'string' && 
+        (ex.exercise.short_youtube_demo || ex.exercise.youtube_thumbnail_url)
       );
       
       console.log(`Found ${validExercises.length} exercises with videos for workout: ${workout.title}`);
@@ -84,7 +85,7 @@ export async function generateWorkoutInstructions(): Promise<string> {
       if (validExercises.length > 0) {
         workoutsWithExercises.push({
           ...workout,
-          exercises: validExercises as WorkoutExercise[]
+          exercises: validExercises as unknown as WorkoutExercise[]
         });
       }
     }

@@ -29,7 +29,7 @@ const WorkoutInstructions = () => {
 
   // Custom renderer for markdown links to open in new tab
   const renderers = {
-    link: ({ href, children }: { href?: string, children: React.ReactNode }) => (
+    a: ({ href, children }: { href?: string, children: React.ReactNode }) => (
       <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
         {children}
       </a>
@@ -82,7 +82,7 @@ const WorkoutInstructions = () => {
     <div className="container py-8">
       <Card>
         <CardContent className="p-6 prose dark:prose-invert max-w-none">
-          <ReactMarkdown components={renderers}>
+          <ReactMarkdown components={renderers as any}>
             {instructions}
           </ReactMarkdown>
         </CardContent>

@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { Auth } from '@supabase/ui-react';
 import { supabase } from './integrations/supabase/client';
 import AppLayout from './components/layout/AppLayout';
 import Workouts from './pages/Workouts';
@@ -10,8 +10,6 @@ import WodDetail from './pages/WodDetail';
 import WorkoutDetail from './pages/WorkoutDetail';
 import WorkoutBuilder from './pages/WorkoutBuilder';
 import { AuthContext } from './context/AuthContext';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import ExerciseDetail from './pages/ExerciseDetail';
 import WorkoutInstructions from './pages/WorkoutInstructions';
 
@@ -31,10 +29,9 @@ function App() {
 
   return (
     <AuthContext.Provider value={{ user: session?.user }}>
-      <Auth.UserContextProvider supabaseClient={supabase} persistSession={true}>
-        <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light" />
+      <div>
         <Routes>
-          <Route element={<AppLayout />}>
+          <Route element={<AppLayout>{/* AppLayout children */}</AppLayout>}>
             <Route path="/" element={<Workouts />} />
             <Route path="/workouts" element={<Workouts />} />
             <Route path="/exercise-library" element={<ExerciseLibrary />} />
@@ -51,7 +48,7 @@ function App() {
             <Route path="*" element={<div>Page not found</div>} />
           </Route>
         </Routes>
-      </Auth.UserContextProvider>
+      </div>
     </AuthContext.Provider>
   );
 }
