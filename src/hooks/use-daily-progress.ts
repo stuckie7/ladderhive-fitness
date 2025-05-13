@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-interface DailyProgress {
+export interface DailyProgress {
   step_count: number;
   step_goal: number;
   active_minutes: number;
