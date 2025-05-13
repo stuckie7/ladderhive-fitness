@@ -22,7 +22,8 @@ import {
   LogOut,
   Menu,
   Flame,
-  Timer
+  Timer,
+  FileText
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -51,6 +52,11 @@ const navItems = [
   { path: "/progress", label: "Progress", icon: BarChart3, color: "text-orange-400" },
   { path: "/profile", label: "Profile", icon: User, color: "text-pink-400" },
   { path: "/settings", label: "Settings", icon: Settings, color: "text-gray-400" },
+  {
+    name: "Workout Instructions",
+    href: "/workout-instructions",
+    icon: "FileText", // Using an appropriate icon
+  },
 ];
 
 // Function to get user initials for avatar
