@@ -1,4 +1,7 @@
 
+// Re-export useWorkouts from parent file
+export { useWorkouts } from '../workouts';
+
 // Re-export all workout-related hooks
 export * from './use-prepared-workouts-enhanced';
 export * from './use-prepared-workouts-list';

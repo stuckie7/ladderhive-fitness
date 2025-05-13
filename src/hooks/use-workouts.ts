@@ -1,3 +1,3 @@
 
-// Re-export from the refactored module
+// Re-export from the correct module
 export { useWorkouts } from "./workouts";
