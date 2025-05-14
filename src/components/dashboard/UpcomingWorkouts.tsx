@@ -33,45 +33,25 @@ const UpcomingWorkouts = ({
   const { toast } = useToast();
   
   const getFormattedDate = (dateStr: string) => {
-    // Guard against undefined or invalid date strings
-    if (!dateStr) return 'No date';
+    const date = parseISO(dateStr);
+    if (isToday(date)) return 'Today';
+    if (isTomorrow(date)) return 'Tomorrow';
     
-    try {
-      const date = parseISO(dateStr);
-      if (isToday(date)) return 'Today';
-      if (isTomorrow(date)) return 'Tomorrow';
-      
-      const daysAway = differenceInDays(date, new Date());
-      if (daysAway < 7) return format(date, 'EEEE'); // Day name if within a week
-      
-      return format(date, 'E, MMM d');
-    } catch (error) {
-      console.error("Error formatting date:", error, dateStr);
-      return 'Invalid date';
-    }
+    const daysAway = differenceInDays(date, new Date());
+    if (daysAway < 7) return format(date, 'EEEE'); // Day name if within a week
+    
+    return format(date, 'E, MMM d');
   };
 
-  // Sort workouts by date, closest first, with null check
-  const sortedWorkouts = [...workouts].sort((a, b) => {
-    // Guard against undefined date strings
-    if (!a.date) return 1;  // Push items without dates to the end
-    if (!b.date) return -1; // Keep items with dates at the beginning
-    
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
-  });
+  // Sort workouts by date, closest first
+  const sortedWorkouts = [...workouts].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 
   // Only show upcoming workouts (today or future)
-  const upcomingWorkouts = sortedWorkouts.filter(workout => {
-    // Guard against undefined date strings
-    if (!workout.date) return false;
-    
-    try {
-      return !isBefore(parseISO(workout.date), addDays(new Date(), -1));
-    } catch (error) {
-      console.error("Error filtering workout date:", error, workout);
-      return false;
-    }
-  });
+  const upcomingWorkouts = sortedWorkouts.filter(workout => 
+    !isBefore(parseISO(workout.date), addDays(new Date(), -1))
+  );
   
   // Limit to 3 for display
   const displayWorkouts = upcomingWorkouts.slice(0, 3);
