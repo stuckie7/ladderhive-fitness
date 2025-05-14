@@ -39,6 +39,7 @@ export const useSavedWorkouts = () => {
         
         const workoutData = item.workout;
         
+        // Create the workout object with properties that definitely exist
         const workout: Workout = {
           id: item.workout_id,
           title: workoutData.title,
@@ -46,10 +47,14 @@ export const useSavedWorkouts = () => {
           duration: workoutData.duration || 0,
           exercises: workoutData.exercises || 0,
           difficulty: workoutData.difficulty || 'Beginner',
-          isSaved: true,
-          // Only assign category if it exists in the data
-          ...(workoutData.category ? { category: workoutData.category } : {})
+          isSaved: true
         };
+        
+        // Safely add category if it exists using type assertion
+        // This works because we're first checking if the property exists on the object
+        if ('category' in workoutData && workoutData.category) {
+          (workout as Workout & { category: string }).category = workoutData.category;
+        }
         
         return {
           id: item.id,
