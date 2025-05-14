@@ -22,6 +22,7 @@ export interface WorkoutDetail {
   duration_minutes?: number;  // Add this for new code
   exercises: WorkoutExerciseDetail[]; // Always use array of exercises
   category?: string;
+  goal?: string;  // Add this property to match the Supabase table structure
   created_at?: string;
   updated_at?: string;
   is_template?: boolean;

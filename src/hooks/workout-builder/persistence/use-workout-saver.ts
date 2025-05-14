@@ -60,7 +60,7 @@ export const useWorkoutSaver = (
             description: workout.description || "",
             difficulty: workout.difficulty || "Intermediate",
             category: workout.category || "General",
-            goal: workout.goal || workout.category || "General", // Fallback if goal not provided
+            goal: workout.goal || workout.category || "General", // Use goal if available, otherwise fallback to category
             duration_minutes: estimatedDuration || 30,
             is_template: workout.is_template || false
           })
@@ -76,7 +76,7 @@ export const useWorkoutSaver = (
             description: workout.description || "",
             difficulty: workout.difficulty || "Intermediate",
             category: workout.category || "General",
-            goal: workout.goal || workout.category || "General",
+            goal: workout.goal || workout.category || "General", // Use goal if available, otherwise fallback to category
             duration_minutes: estimatedDuration || 30,
             is_template: workout.is_template || false,
             updated_at: new Date().toISOString()
