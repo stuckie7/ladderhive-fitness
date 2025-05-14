@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -38,11 +37,15 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Convert the exercise_id to a string since it might be a UUID in string format
-      // or a numeric ID that needs conversion
-      const exerciseIdForDb = typeof exercise.id === 'number' 
-        ? exercise.id 
-        : exercise.id.toString();
+      // Handle the exercise_id based on its type and the database expectations
+      // For numerical IDs in the database, we need to ensure exercise_id is a number
+      const exerciseId = exercise.id;
+      // Parse the ID to a number if it's a string representing a number
+      const exerciseIdForDb = typeof exerciseId === 'string' && !isNaN(Number(exerciseId)) 
+        ? Number(exerciseId)  // Convert string to number if it represents a valid number
+        : typeof exerciseId === 'number'
+          ? exerciseId  // Already a number, use as is
+          : Number(exerciseId); // Last resort conversion, may result in NaN
       
       // Use a two-step approach:
       // 1. First insert without the reps field
@@ -50,7 +53,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdForDb, // Now correctly typed based on what DB expects
+          exercise_id: exerciseIdForDb, // Now ensured to be a number
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
