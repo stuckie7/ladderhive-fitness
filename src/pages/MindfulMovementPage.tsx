@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
@@ -6,11 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Search, Leaf } from "lucide-react";
-import { useGetMindfulMovement } from "@/hooks/use-mindful-movement";
 import { FilterBar } from "@/components/mindfulness/FilterBar";
 import { MoodQuiz } from "@/components/mindfulness/MoodQuiz";
 import { BreathingAnimation } from "@/components/mindfulness/BreathingAnimation";
 import { YogaWithBreathing } from "@/components/mindfulness/YogaWithBreathing";
+import { useYogaMindfulMovements } from "@/hooks/use-yoga-mindful-movements";
 
 const MindfulMovementPage = () => {
   const {
@@ -26,7 +25,7 @@ const MindfulMovementPage = () => {
     searchQuery,
     setSearchQuery,
     moodOptions
-  } = useGetMindfulMovement();
+  } = useYogaMindfulMovements();
   
   const [showMoodQuiz, setShowMoodQuiz] = useState(false);
   const [daysOfPractice, setDaysOfPractice] = useState(0);
