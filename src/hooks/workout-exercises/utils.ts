@@ -19,7 +19,7 @@ export interface SupabaseExercise {
 export interface WorkoutExercise {
   id: string;
   workout_id: string;
-  exercise_id: string;
+  exercise_id: string; // Always use string to match Supabase's UUID format
   sets: number;
   reps: string; // Always use string to allow formats like "8-12"
   weight?: string;
