@@ -1,68 +1,182 @@
 
-import { useState, useCallback } from 'react';
-import { useTemplateState } from './use-template-state';
-import { useTemplateCrud } from './use-template-crud';
-import { useTemplateLoading } from './use-template-loading';
-import { WorkoutTemplate } from "./template-types";
+import { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { useLoadTemplate } from "./use-template-loading";
+import { WorkoutDetail, SimplifiedWorkoutTemplate, WorkoutTemplate } from "../types";
 
 export const useTemplateManagement = () => {
-  const {
-    currentTemplate,
-    setCurrentTemplate,
-    currentExercises,
-    setCurrentExercises,
-  } = useTemplateState();
-  
-  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [templates, setTemplates] = useState<SimplifiedWorkoutTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  
+  const { loadTemplateFromPreparedWorkout, loadTemplateFromWod } = useLoadTemplate();
 
-  const templateCrudOps = useTemplateCrud();
-
+  // Load all templates (prepared workouts marked as templates)
   const loadTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch templates from the useTemplateCrud hook
-      const fetchedTemplates = await templateCrudOps.fetchTemplates();
-      setTemplates(fetchedTemplates as WorkoutTemplate[]);
+      const { data, error } = await supabase
+        .from("prepared_workouts")
+        .select("*")
+        .eq("is_template", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setTemplates(data?.map(template => ({
+        id: template.id,
+        title: template.title,
+        category: template.category,
+        difficulty: template.difficulty,
+        description: template.description,
+        created_at: template.created_at
+      })) || []);
     } catch (error) {
       console.error("Error loading templates:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load templates",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [templateCrudOps]);
+  }, [toast]);
 
-  const { 
-    loadTemplate,
-    loadTemplates: fetchTemplates,
-    loadTemplateFromPreparedWorkout,
-    loadTemplateFromWod,
-    isLoading: templateLoading
-  } = useTemplateLoading({
-    setCurrentTemplate
-  });
+  // Save current workout as a template
+  const saveAsTemplate = useCallback(async (workout: WorkoutDetail) => {
+    if (!workout.title) {
+      toast({
+        title: "Missing Title",
+        description: "Please provide a title for your template",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Update workout to mark as template
+    const workoutWithTemplate = {
+      ...workout,
+      is_template: true
+    };
+
+    try {
+      let templateId = workout.id;
+      let isNew = !templateId;
+
+      if (isNew) {
+        // Create new template
+        const { data, error } = await supabase
+          .from('prepared_workouts')
+          .insert({
+            title: workoutWithTemplate.title,
+            description: workoutWithTemplate.description || '',
+            difficulty: workoutWithTemplate.difficulty,
+            category: workoutWithTemplate.category || 'General',
+            goal: workoutWithTemplate.category || 'General',
+            duration_minutes: workoutWithTemplate.duration_minutes || 30,
+            is_template: true
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        templateId = data.id;
+        
+        // Insert exercises
+        if (workout.exercises?.length > 0) {
+          const exercisesToInsert = workout.exercises.map((ex, index) => ({
+            workout_id: templateId,
+            exercise_id: typeof ex.exercise_id === 'string' ? parseInt(ex.exercise_id as string, 10) : ex.exercise_id as number,
+            sets: ex.sets,
+            reps: String(ex.reps),
+            rest_seconds: ex.rest_seconds || 60,
+            notes: ex.notes || null,
+            order_index: index
+          }));
+          
+          const { error: exerciseError } = await supabase
+            .from('prepared_workout_exercises')
+            .insert(exercisesToInsert);
+            
+          if (exerciseError) throw exerciseError;
+        }
+      } else {
+        // Update existing template
+        const { error } = await supabase
+          .from('prepared_workouts')
+          .update({
+            is_template: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', templateId);
+          
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Workout saved as template"
+      });
+      
+      // Refresh templates list
+      loadTemplates();
+      
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save template",
+        variant: "destructive"
+      });
+    }
+  }, [toast, loadTemplates]);
+
+  // Delete template
+  const deleteTemplate = useCallback(async (templateId: string) => {
+    try {
+      // Delete prepared_workout_exercises first
+      const { error: exerciseError } = await supabase
+        .from('prepared_workout_exercises')
+        .delete()
+        .eq('workout_id', templateId);
+      
+      if (exerciseError) throw exerciseError;
+      
+      // Then delete the template
+      const { error } = await supabase
+        .from('prepared_workouts')
+        .delete()
+        .eq('id', templateId);
+      
+      if (error) throw error;
+      
+      setTemplates(prev => prev.filter(t => t.id !== templateId));
+      
+      toast({
+        title: "Success",
+        description: "Template deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete template",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
 
   return {
     templates,
-    setTemplates,
-    currentTemplate,
-    setCurrentTemplate,
-    currentExercises,
-    setCurrentExercises,
-    isLoading: isLoading || templateLoading,
-    setIsLoading,
-    addTemplate: templateCrudOps.createTemplate,
-    updateTemplate: templateCrudOps.updateTemplate,
-    deleteTemplate: templateCrudOps.deleteTemplate,
-    duplicateTemplate: templateCrudOps.duplicateTemplate,
-    saveAsTemplate: templateCrudOps.saveAsTemplate,
-    loadTemplate,
-    loadTemplateFromWod,
+    isLoading,
+    loadTemplates,
+    saveAsTemplate,
+    deleteTemplate,
     loadTemplateFromPreparedWorkout,
-    loadTemplates: fetchTemplates
+    loadTemplateFromWod
   };
 };
 
-export type { WorkoutTemplate, TemplateExercise } from './template-types';
-export { useTemplateState } from './use-template-state';
-export { useTemplateCrud } from './use-template-crud';
-export { useTemplateLoading } from './use-template-loading';
+export { useLoadTemplate } from './use-template-loading';

@@ -10,7 +10,7 @@ import ExerciseSearchPanel from '@/components/workouts/builder/ExerciseSearchPan
 import { Dialog } from '@/components/ui/dialog';
 import WorkoutTemplateSelector from '@/components/workouts/builder/WorkoutTemplateSelector';
 import { WorkoutDetail } from '@/hooks/workout-builder/types';
-import { WorkoutTemplate } from '@/hooks/workout-builder/template-management/template-types';
+import { WorkoutTemplate } from '@/hooks/workout-builder/types';
 import { useToast } from '@/components/ui/use-toast';
 
 const WorkoutBuilder = () => {

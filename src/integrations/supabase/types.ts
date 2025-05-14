@@ -581,6 +581,7 @@ export type Database = {
           goal: string
           id: string
           instructions: string | null
+          is_template: boolean | null
           long_description: string | null
           modifications: string | null
           short_description: string | null
@@ -600,6 +601,7 @@ export type Database = {
           goal: string
           id?: string
           instructions?: string | null
+          is_template?: boolean | null
           long_description?: string | null
           modifications?: string | null
           short_description?: string | null
@@ -619,6 +621,7 @@ export type Database = {
           goal?: string
           id?: string
           instructions?: string | null
+          is_template?: boolean | null
           long_description?: string | null
           modifications?: string | null
           short_description?: string | null
