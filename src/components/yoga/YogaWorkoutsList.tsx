@@ -32,7 +32,8 @@ export const YogaWorkoutsList = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Spinner size="lg" />
+        {/* Fix: Use className to control the size instead of the size prop */}
+        <Spinner className="h-8 w-8" />
       </div>
     );
   }

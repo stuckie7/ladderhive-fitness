@@ -19,6 +19,7 @@ import NutritionPage from "@/pages/NotFound"; // Temporary fallback
 import WorkoutDetailEnhanced from "@/pages/WorkoutDetailEnhanced";
 import MindfulnessPage from "@/pages/MindfulnessPage";
 import YogaRoutineDetailPage from "@/pages/YogaRoutineDetailPage";
+import YogaPage from "@/pages/YogaPage"; // Added the import
 
 const AppRoutes = () => {
   return (
@@ -46,6 +47,9 @@ const AppRoutes = () => {
       {/* New mindfulness routes */}
       <Route path="/mindfulness" element={<ProtectedRoute><MindfulnessPage /></ProtectedRoute>} />
       <Route path="/mindfulness/routine/:id" element={<ProtectedRoute><YogaRoutineDetailPage /></ProtectedRoute>} />
+      
+      {/* New yoga route */}
+      <Route path="/yoga" element={<ProtectedRoute><YogaPage /></ProtectedRoute>} />
       
       {/* 404 page */}
       <Route path="*" element={<NotFound />} />

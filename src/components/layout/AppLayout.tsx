@@ -149,8 +149,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   return (
     <>
       <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar className={`w-64 transition-all duration-300 ${sidebarOpen ? '' : '-translate-x-full'} fixed lg:static h-full z-40`}>
+        {/* Sidebar - Remove the className prop as it's not supported */}
+        <Sidebar>
           <div className="p-4 flex items-center gap-2">
             <div className="flex-1 flex items-center gap-2 ml-1">
               <div className="h-9 w-9 bg-gradient-to-br from-fitness-primary to-fitness-secondary rounded-md flex items-center justify-center">
