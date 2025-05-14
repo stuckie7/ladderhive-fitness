@@ -86,7 +86,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       // Ensure reps is a string
       const repsAsString = ensureStringReps(details.reps || 10);
       
-      // Fix the type mismatch by converting exercise_id to string and ensuring reps is a string
+      // Fix: Convert reps to string to match the database schema
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
@@ -96,7 +96,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
           order_index: newOrderIndex,
-          reps: repsAsString
+          reps: repsAsString  // Already ensured to be a string
         })
         .select()
         .single();
@@ -144,11 +144,12 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       // Ensure reps is a string
       const repsAsString = ensureStringReps(details.reps || 10);
 
+      // Fix: Convert reps to string to match the database schema
       const { data, error } = await supabase
         .from('workout_exercises')
         .update({
           sets: details.sets,
-          reps: repsAsString,
+          reps: repsAsString,  // Using string format
           weight: details.weight,
           rest_time: details.rest_time,
           notes: details.notes,
