@@ -2,8 +2,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExerciseFull } from "@/types/exercise";
-import { ArrowLeft, Edit, Plus } from "lucide-react";
+import { ArrowLeft, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import AddToWorkoutButton from "../AddToWorkoutButton";
 
 interface ExerciseDetailHeaderProps {
   exercise: ExerciseFull;
@@ -65,10 +66,7 @@ export default function ExerciseDetailHeader({
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add to Workout
-          </Button>
+          <AddToWorkoutButton exercise={exercise as any} />
         </div>
       </div>
     </>

@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Exercise } from "@/types/exercise";
 import { ArrowLeft } from "lucide-react";
+import AddToWorkoutButton from "../AddToWorkoutButton";
 
 interface ExerciseHeaderProps {
   exercise: Exercise;
@@ -36,6 +37,10 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
               </Badge>
             )}
           </div>
+        </div>
+        
+        <div className="flex gap-2 mt-4 md:mt-0">
+          <AddToWorkoutButton exercise={exercise} />
         </div>
       </div>
     </>

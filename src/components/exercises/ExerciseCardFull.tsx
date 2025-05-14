@@ -29,8 +29,9 @@ import { ExerciseFull } from "@/types/exercise";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Info, Plus, Video, Dumbbell } from "lucide-react";
+import { Edit, Trash2, Info, Video, Dumbbell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import AddToWorkoutButton from "./AddToWorkoutButton";
 
 interface ExerciseCardFullProps {
   exercise: ExerciseFull;
@@ -176,14 +177,11 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
             <Info className="h-4 w-4 mr-2" />
             View Details
           </Button>
-          <Button variant="outline" className="flex-1">
-            <Plus className="h-4 w-4 mr-2" />
-            Add to Workout
-          </Button>
+          <AddToWorkoutButton variant="outline" exercise={exercise as any} className="flex-1" />
         </div>
       </CardFooter>
     </Card>
   );
-};
+}
 
 export default ExerciseCardFull;
