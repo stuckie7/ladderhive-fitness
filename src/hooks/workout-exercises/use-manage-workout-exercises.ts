@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,7 +41,8 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       // Handle the exercise_id based on its type and the database expectations
       // For Supabase, we need to ensure exercise_id is a string
       const exerciseId = exercise.id;
-      // Make sure we always provide a string to match the database expectation
+      
+      // Convert exerciseId to string if it isn't already
       const exerciseIdForDb = String(exerciseId);
       
       // Use a two-step approach:
