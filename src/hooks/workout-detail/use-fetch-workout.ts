@@ -11,6 +11,15 @@ export const useWorkoutFetch = (workoutId: string) => {
   const fetchWorkout = useCallback(async () => {
     if (!workoutId) return;
     
+    // Validate UUID format to prevent invalid queries
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(workoutId)) {
+      console.error('Invalid UUID format:', workoutId);
+      setError(new Error('Invalid workout ID format'));
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     

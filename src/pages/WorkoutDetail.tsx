@@ -11,10 +11,28 @@ import WorkoutDetailStats from '@/components/workouts/WorkoutDetailStats';
 import WorkoutDetailHeader from '@/components/workouts/WorkoutDetailHeader';
 import WorkoutExerciseSection from '@/components/workouts/WorkoutExerciseSection';
 import { Exercise } from '@/types/exercise';
+import { toast } from '@/components/ui/use-toast';
 
 const WorkoutDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  
+  // Validate UUID format before using it
+  const validWorkoutId = (() => {
+    if (!id) return "";
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      // Show toast for invalid ID format
+      toast({
+        title: "Invalid Workout ID",
+        description: "The workout ID format is invalid.",
+        variant: "destructive",
+      });
+      return "";
+    }
+    return id;
+  })();
   
   // Safely use the hook with nullish coalescing to provide a default empty string if id is undefined
   const {
@@ -28,17 +46,23 @@ const WorkoutDetail: React.FC = () => {
     handleSaveWorkout,
     handleCompleteWorkout,
     removeExerciseFromWorkout
-  } = useWorkoutDetail(id ?? "");
+  } = useWorkoutDetail(validWorkoutId);
   
   useEffect(() => {
+    // If we have an invalid ID, redirect to workouts page
+    if (!validWorkoutId && id) {
+      navigate('/workouts');
+      return;
+    }
+    
     // If we're still loading, don't do anything yet
     if (isLoading) return;
     
     // If no workout was found, and we're not loading, try the enhanced view
-    if (!workout && !isLoading) {
-      navigate(`/workout-enhanced/${id}`);
+    if (!workout && !isLoading && validWorkoutId) {
+      navigate(`/workout-enhanced/${validWorkoutId}`);
     }
-  }, [workout, isLoading, id, navigate]);
+  }, [workout, isLoading, id, validWorkoutId, navigate]);
   
   const handleBack = () => {
     navigate(-1);
@@ -64,7 +88,7 @@ const WorkoutDetail: React.FC = () => {
     );
   }
   
-  if (!workout) {
+  if (!workout || !validWorkoutId) {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-6">
@@ -124,7 +148,7 @@ const WorkoutDetail: React.FC = () => {
               exercises={workoutExercises || []}
               isLoading={exercisesLoading || false}
               onAddExercise={onAddExercise}
-              workoutId={id}
+              workoutId={validWorkoutId}
             />
           }
         />

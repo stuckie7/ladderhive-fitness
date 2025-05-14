@@ -13,26 +13,32 @@ import { useWorkoutActions } from './use-workout-actions';
 
 // Export the useWorkoutDetail composite hook
 export const useWorkoutDetail = (workoutId: string) => {
+  // Validate UUID format to prevent invalid API calls
+  const validWorkoutId = (() => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(workoutId) ? workoutId : '';
+  })();
+  
   const { 
     workout, 
     isLoading: workoutLoading, 
     error: fetchError,
     fetchWorkout 
-  } = useWorkoutFetch(workoutId);
+  } = useWorkoutFetch(validWorkoutId);
   
   const {
     isSaved,
     error: actionsError,
     handleSaveWorkout,
     handleCompleteWorkout
-  } = useWorkoutActions(workoutId);
+  } = useWorkoutActions(validWorkoutId);
   
   const {
     exercises: workoutExercises,
     isLoading: exercisesLoading,
     addExercise,
     removeExercise,
-  } = useManageWorkoutExercises(workoutId);
+  } = useManageWorkoutExercises(validWorkoutId);
 
   // Combine error states
   const error = fetchError || actionsError;
@@ -61,6 +67,12 @@ export const useWorkoutDetail = (workoutId: string) => {
 // Export the workout exercises hook for use in workout detail pages
 // Use the correct method names from the useManageWorkoutExercises hook
 export const useWorkoutExercises = (workoutId: string) => {
+  // Validate UUID format to prevent invalid API calls
+  const validWorkoutId = (() => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(workoutId) ? workoutId : '';
+  })();
+  
   const {
     exercises,
     isLoading,
@@ -69,7 +81,7 @@ export const useWorkoutExercises = (workoutId: string) => {
     addExercise,
     updateExercise,
     removeExercise
-  } = useManageWorkoutExercises(workoutId);
+  } = useManageWorkoutExercises(validWorkoutId);
   
   return {
     exercises,
