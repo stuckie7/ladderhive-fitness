@@ -1,52 +1,105 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Exercise } from "@/types/exercise";
 import { WorkoutExercise, ensureStringReps } from "./utils";
-import { useFetchWorkoutExercises } from "./use-fetch-workout-exercises";
+import { Exercise } from "@/types/exercise";
 
-export const useManageWorkoutExercises = (workoutId?: string) => {
-  const { exercises, isLoading, fetchWorkoutExercises, setExercises, setIsLoading } = useFetchWorkoutExercises();
-  const [isAdding, setIsAdding] = useState(false);
+type WorkoutExerciseDetails = {
+  sets?: number;
+  reps?: string | number;
+  weight?: string;
+  rest_time?: number;
+  notes?: string;
+};
+
+export const useManageWorkoutExercises = (workoutId: string) => {
+  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const initialFetchDone = useRef(false);
-  
-  useEffect(() => {
-    if (workoutId && !initialFetchDone.current) {
-      fetchWorkoutExercises(workoutId);
-      initialFetchDone.current = true;
-    }
-  }, [workoutId, fetchWorkoutExercises]);
+  const hasInitialFetch = useRef(false);
 
-  const addExerciseToWorkout = useCallback(async (exercise: Exercise, details: Partial<WorkoutExercise> = {}) => {
-    if (!workoutId) {
+  // Fetch workout exercises
+  useEffect(() => {
+    if (workoutId && !hasInitialFetch.current) {
+      fetchExercises();
+      hasInitialFetch.current = true;
+    }
+  }, [workoutId]);
+
+  const fetchExercises = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('workout_exercises')
+        .select(`
+          *,
+          exercise:exercises(*)
+        `)
+        .eq('workout_id', workoutId)
+        .order('order_index', { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        const mappedExercises: WorkoutExercise[] = data.map(item => ({
+          id: item.id,
+          workout_id: item.workout_id,
+          exercise_id: item.exercise_id,
+          sets: item.sets,
+          reps: ensureStringReps(item.reps),
+          weight: item.weight,
+          rest_time: item.rest_time,
+          order_index: item.order_index,
+          exercise: item.exercise ? item.exercise : undefined,
+        }));
+        setExercises(mappedExercises);
+      }
+    } catch (error: any) {
+      console.error("Error fetching workout exercises:", error);
       toast({
         title: "Error",
-        description: "No workout selected to add exercise to.",
+        description: error.message || "Failed to load workout exercises",
         variant: "destructive",
       });
-      return null;
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsAdding(true);
+  }, [workoutId, toast]);
+
+  const addExercise = useCallback(async (exercise: Exercise, details: WorkoutExerciseDetails = {}) => {
     try {
-      // Find the highest order_index to add the new exercise at the end
+      setIsSaving(true);
+      
+      // Find the highest order_index
       const maxOrderIndex = exercises.length > 0
-        ? Math.max(...exercises.map(e => e.order_index))
+        ? Math.max(...exercises.map(ex => ex.order_index))
         : -1;
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Ensure exercise.id is used as a string
+      // Ensure exercise.id is converted to a number if the database expects it that way
+      // Based on the error message, it seems the database expects a number
+      const exerciseIdAsNumber = typeof exercise.id === 'string' 
+        ? parseInt(exercise.id, 10) 
+        : exercise.id;
+        
+      if (isNaN(exerciseIdAsNumber)) {
+        throw new Error("Invalid exercise ID");
+      }
+      
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exercise.id.toString(), // Convert to string explicitly
+          exercise_id: exerciseIdAsNumber, // Use the number version
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
-          order_index: newOrderIndex
+          order_index: newOrderIndex,
+          reps: ensureStringReps(details.reps || 10)
         })
         .select()
         .single();
@@ -55,125 +108,173 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       // Add the new exercise to the local state with the full exercise details
       const updatedExercise: WorkoutExercise = {
-        ...data,
-        reps: ensureStringReps(details.reps),
+        id: data.id,
+        workout_id: workoutId,
+        exercise_id: exercise.id,
+        sets: details.sets || 3,
+        reps: ensureStringReps(details.reps || 10),
+        weight: details.weight || null,
+        rest_time: details.rest_time || 60,
+        order_index: newOrderIndex,
         exercise
       };
       
-      setExercises([...exercises, updatedExercise]);
+      setExercises(prev => [...prev, updatedExercise]);
       
       toast({
-        title: "Exercise added",
-        description: `${exercise.name} has been added to your workout.`
+        title: "Success",
+        description: `Added ${exercise.name} to workout`,
       });
       
-      return updatedExercise;
+      return true;
     } catch (error: any) {
-      console.error("Error adding exercise to workout:", error);
+      console.error("Error adding exercise:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to add exercise to workout",
         variant: "destructive",
       });
-      return null;
-    } finally {
-      setIsAdding(false);
-    }
-  }, [workoutId, exercises, setExercises, toast, setIsAdding]);
-
-  const removeExerciseFromWorkout = useCallback(async (exerciseId: string) => {
-    if (!exerciseId) return false;
-    
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('workout_exercises')
-        .delete()
-        .eq('id', exerciseId);
-      
-      if (error) throw error;
-      
-      // Update local state by removing the exercise
-      setExercises(exercises.filter(e => e.id !== exerciseId));
-      
-      toast({
-        title: "Exercise removed",
-        description: "The exercise has been removed from your workout."
-      });
-      
-      return true;
-    } catch (error: any) {
-      console.error("Error removing exercise from workout:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to remove exercise",
-        variant: "destructive",
-      });
       return false;
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
-  }, [exercises, setExercises, setIsLoading, toast]);
+  }, [exercises, workoutId, toast]);
 
-  const updateExerciseDetails = useCallback(async (exerciseId: string, updates: Partial<WorkoutExercise>) => {
-    if (!exerciseId) return false;
-    
-    setIsLoading(true);
+  const updateExercise = useCallback(async (exerciseId: string, details: WorkoutExerciseDetails) => {
     try {
-      const updateData: Record<string, any> = {};
-      
-      // Handle properties individually to match database expectations
-      if (updates.sets !== undefined) updateData.sets = updates.sets;
-      if (updates.weight !== undefined) updateData.weight = updates.weight;
-      if (updates.rest_time !== undefined) updateData.rest_time = updates.rest_time;
-      if (updates.order_index !== undefined) updateData.order_index = updates.order_index;
-      if (updates.notes !== undefined) updateData.notes = updates.notes;
-      
-      // Handle reps separately to ensure string conversion
-      if (updates.reps !== undefined) {
-        const stringReps = ensureStringReps(updates.reps);
-        
-        // For database update
-        updateData.reps = stringReps;
-      }
-      
-      const { error } = await supabase
+      setIsSaving(true);
+
+      const { data, error } = await supabase
         .from('workout_exercises')
-        .update(updateData)
-        .eq('id', exerciseId);
-      
+        .update({
+          sets: details.sets,
+          reps: ensureStringReps(details.reps || 10),
+          weight: details.weight,
+          rest_time: details.rest_time,
+          notes: details.notes,
+        })
+        .eq('id', exerciseId)
+        .select()
+        .single();
+
       if (error) throw error;
-      
-      // Update local state
-      setExercises(exercises.map(e => 
-        e.id === exerciseId ? { 
-          ...e, 
-          ...updates,
-          reps: updates.reps ? ensureStringReps(updates.reps) : e.reps 
-        } : e
-      ));
-      
+
+      setExercises(prev =>
+        prev.map(ex =>
+          ex.id === exerciseId ? { ...ex, ...details, reps: ensureStringReps(details.reps || 10) } : ex
+        )
+      );
+
+      toast({
+        title: "Success",
+        description: `Updated exercise`,
+      });
+
       return true;
     } catch (error: any) {
       console.error("Error updating exercise:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update exercise details",
+        description: error.message || "Failed to update exercise",
         variant: "destructive",
       });
       return false;
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
-  }, [exercises, setExercises, setIsLoading, toast]);
+  }, [toast]);
+
+  const removeExercise = useCallback(async (exerciseId: string) => {
+    try {
+      setIsSaving(true);
+
+      const { error } = await supabase
+        .from('workout_exercises')
+        .delete()
+        .eq('id', exerciseId);
+
+      if (error) throw error;
+
+      setExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+
+      toast({
+        title: "Success",
+        description: `Removed exercise from workout`,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error("Error removing exercise:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove exercise from workout",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [toast]);
+
+  const reorderExercises = useCallback(async (startIndex: number, endIndex: number) => {
+    if (!exercises) return;
+
+    const reorderedExercises = [...exercises];
+    const [movedExercise] = reorderedExercises.splice(startIndex, 1);
+    reorderedExercises.splice(endIndex, 0, movedExercise);
+
+    // Optimistically update the order_index in the local state
+    const updatedExercises = reorderedExercises.map((exercise, index) => ({
+      ...exercise,
+      order_index: index,
+    }));
+    setExercises(updatedExercises);
+
+    try {
+      setIsSaving(true);
+
+      // Update the order_index in the database
+      for (const [index, exercise] of updatedExercises.entries()) {
+        const { error } = await supabase
+          .from('workout_exercises')
+          .update({ order_index: index })
+          .eq('id', exercise.id);
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: "Reordered exercises",
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error("Error reordering exercises:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reorder exercises",
+        variant: "destructive",
+      });
+
+      // If there's an error, revert to the original order
+      setExercises(exercises);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [exercises, toast]);
 
   return {
     exercises,
     isLoading,
-    isAdding,
-    fetchWorkoutExercises,
-    addExerciseToWorkout,
-    removeExerciseFromWorkout,
-    updateExerciseDetails
+    isSaving,
+    fetchExercises,
+    addExercise,
+    updateExercise,
+    removeExercise,
+    reorderExercises,
   };
 };

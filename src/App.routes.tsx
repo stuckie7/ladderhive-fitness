@@ -19,7 +19,8 @@ import NutritionPage from "@/pages/NotFound"; // Temporary fallback
 import WorkoutDetailEnhanced from "@/pages/WorkoutDetailEnhanced";
 import MindfulnessPage from "@/pages/MindfulnessPage";
 import YogaRoutineDetailPage from "@/pages/YogaRoutineDetailPage";
-import YogaPage from "@/pages/YogaPage"; // Added the import
+import YogaPage from "@/pages/YogaPage";
+import MindfulMovementPage from "@/pages/MindfulMovementPage"; // Added import for new page
 
 const AppRoutes = () => {
   return (
@@ -44,12 +45,13 @@ const AppRoutes = () => {
       <Route path="/wods/:id" element={<ProtectedRoute><WodDetailPage /></ProtectedRoute>} />
       <Route path="/nutrition" element={<ProtectedRoute><NutritionPage /></ProtectedRoute>} />
       
-      {/* New mindfulness routes */}
+      {/* Mindfulness and Yoga routes */}
       <Route path="/mindfulness" element={<ProtectedRoute><MindfulnessPage /></ProtectedRoute>} />
       <Route path="/mindfulness/routine/:id" element={<ProtectedRoute><YogaRoutineDetailPage /></ProtectedRoute>} />
-      
-      {/* New yoga route */}
       <Route path="/yoga" element={<ProtectedRoute><YogaPage /></ProtectedRoute>} />
+      
+      {/* New Mindful Movement route */}
+      <Route path="/mindful-movement" element={<ProtectedRoute><MindfulMovementPage /></ProtectedRoute>} />
       
       {/* 404 page */}
       <Route path="*" element={<NotFound />} />
