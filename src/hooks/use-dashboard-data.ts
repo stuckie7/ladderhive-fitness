@@ -198,16 +198,21 @@ export const useDashboardData = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const mappedWorkouts = data.map(item => ({
-          id: item.id,
-          title: item.workout?.title || 'Unnamed Workout',
-          scheduledDate: item.planned_for,
-          duration_minutes: item.workout?.duration_minutes || 30,
-          description: item.workout?.description || '',
-          difficulty: item.workout?.difficulty || 'intermediate',
-          category: item.workout?.category || 'general',
-          type: 'scheduled'
-        }));
+        const mappedWorkouts = data.map(item => {
+          // Safely extract properties with null checks
+          const workoutData = item.workout || {};
+          
+          return {
+            id: item.id,
+            title: workoutData.title || 'Unnamed Workout',
+            date: item.planned_for, // Use 'date' consistently as expected by UpcomingWorkouts
+            duration: workoutData.duration_minutes || 30,
+            description: workoutData.description || '',
+            difficulty: workoutData.difficulty || 'intermediate',
+            category: workoutData.category || 'general',
+            type: 'scheduled'
+          };
+        });
         setUpcomingWorkouts(mappedWorkouts);
       } 
 
@@ -230,18 +235,23 @@ export const useDashboardData = () => {
       if (wodsError) throw wodsError;
   
       if (wods && wods.length > 0) {
-        const wodItems = wods.map(wod => ({
-          id: wod.id,
-          name: wod.name,
-          title: wod.name, // Map name to title for consistency
-          description: wod.description,
-          difficulty: wod.difficulty || 'intermediate',
-          avg_duration_minutes: wod.avg_duration_minutes || 30,
-          duration_minutes: wod.avg_duration_minutes || 30,
-          category: wod.category || 'WOD',
-          scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
-          type: 'wod'
-        }));
+        const wodItems = wods.map(wod => {
+          // Generate a valid date string for upcoming workouts
+          const randomFutureDays = Math.floor(Math.random() * 7) + 1;
+          const scheduledDate = new Date();
+          scheduledDate.setDate(scheduledDate.getDate() + randomFutureDays);
+          
+          return {
+            id: wod.id,
+            title: wod.name || 'Unnamed WOD', // Ensure title exists
+            description: wod.description || '',
+            difficulty: wod.difficulty || 'intermediate',
+            duration: wod.avg_duration_minutes || 30,
+            date: scheduledDate.toISOString(), // Use ISO string format consistently
+            category: wod.category || 'WOD',
+            type: 'wod'
+          };
+        });
         combined = [...combined, ...wodItems];
       }
   
@@ -254,16 +264,23 @@ export const useDashboardData = () => {
       if (workoutsError) throw workoutsError;
   
       if (workouts && workouts.length > 0) {
-        const workoutItems = workouts.map(workout => ({
-          id: workout.id,
-          title: workout.title,
-          description: workout.description,
-          difficulty: workout.difficulty,
-          duration_minutes: workout.duration_minutes,
-          category: workout.category,
-          scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
-          type: 'workout'
-        }));
+        const workoutItems = workouts.map(workout => {
+          // Generate a valid date string for upcoming workouts
+          const randomFutureDays = Math.floor(Math.random() * 7) + 1;
+          const scheduledDate = new Date();
+          scheduledDate.setDate(scheduledDate.getDate() + randomFutureDays);
+          
+          return {
+            id: workout.id,
+            title: workout.title || 'Unnamed Workout', // Ensure title exists
+            description: workout.description || '',
+            difficulty: workout.difficulty || 'intermediate',
+            duration: workout.duration_minutes || 30,
+            date: scheduledDate.toISOString(), // Use ISO string format consistently
+            category: workout.category || 'General',
+            type: 'workout'
+          };
+        });
         combined = [...combined, ...workoutItems];
       }
   
@@ -273,8 +290,8 @@ export const useDashboardData = () => {
   
       // Sort by date
       combined.sort((a, b) => {
-        const dateA = a.scheduledDate ? new Date(a.scheduledDate).getTime() : 0;
-        const dateB = b.scheduledDate ? new Date(b.scheduledDate).getTime() : 0;
+        const dateA = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER;
+        const dateB = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER;
         return dateA - dateB;
       });
   

@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -179,7 +178,14 @@ const Dashboard = () => {
           
           <div className="col-span-2">
             <UpcomingWorkouts 
-              workouts={upcomingWorkouts} 
+              workouts={upcomingWorkouts.map(workout => ({
+                id: workout.id,
+                title: workout.title || 'Unnamed Workout',
+                date: workout.date || workout.scheduledDate || new Date().toISOString(),
+                duration: workout.duration || workout.duration_minutes || 30,
+                difficulty: workout.difficulty || 'intermediate',
+                type: workout.type as 'wod' | 'workout'
+              }))} 
               isLoading={isLoading}
               onScheduleWorkout={handleScheduleWorkout}
               onRefresh={handleRefreshWorkouts}
