@@ -34,9 +34,9 @@ const useWorkoutDetail = (workoutId: string) => {
   const {
     exercises,
     isLoading: exercisesIsLoading, 
-    addExerciseToWorkout,
-    removeExerciseFromWorkout,
-    updateExerciseDetails
+    addExercise,
+    removeExercise,
+    updateExercise
   } = useWorkoutExercises(workoutId);
   
   // Update local exercises state
@@ -58,7 +58,7 @@ const useWorkoutDetail = (workoutId: string) => {
   const handleAddExercise = async (exercise: Exercise): Promise<void> => {
     setIsAddingExercise(true);
     try {
-      await addExerciseToWorkout(exercise);
+      await addExercise(exercise);
     } catch (err) {
       console.error("Error adding exercise:", err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -92,7 +92,7 @@ const useWorkoutDetail = (workoutId: string) => {
     },
     completeWorkout: handleCompleteWorkout,
     addExerciseToWorkout: handleAddExercise,
-    removeExerciseFromWorkout
+    removeExerciseFromWorkout: removeExercise
   };
 };
 

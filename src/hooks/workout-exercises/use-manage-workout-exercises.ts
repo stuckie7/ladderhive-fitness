@@ -81,24 +81,15 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Convert exercise.id to a number if it's a string
-      let exerciseIdAsNumber: number;
-      
-      if (typeof exercise.id === 'string') {
-        exerciseIdAsNumber = parseInt(exercise.id, 10);
-        if (isNaN(exerciseIdAsNumber)) {
-          throw new Error("Invalid exercise ID");
-        }
-      } else {
-        exerciseIdAsNumber = exercise.id;
-      }
+      // Convert exercise.id to a string if it's a number
+      const exerciseIdAsString = exercise.id.toString();
       
       // Insert the exercise into the workout_exercises table
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdAsNumber,
+          exercise_id: exerciseIdAsString,
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
@@ -114,7 +105,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       const updatedExercise: WorkoutExercise = {
         id: data.id,
         workout_id: workoutId,
-        exercise_id: exerciseIdAsNumber,
+        exercise_id: exerciseIdAsString,
         sets: details.sets || 3,
         reps: ensureStringReps(details.reps || 10),
         weight: details.weight || null,
