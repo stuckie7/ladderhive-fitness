@@ -2,17 +2,16 @@
 import { useCallback } from "react";
 import { WorkoutDetail } from "./types";
 
-export const useWorkoutInfo = ({
-  workout,
-  setWorkout
-}: {
+interface WorkoutInfoProps {
   workout: WorkoutDetail;
   setWorkout: React.Dispatch<React.SetStateAction<WorkoutDetail>>;
-}) => {
-  // Update workout info
+}
+
+export const useWorkoutInfo = ({ workout, setWorkout }: WorkoutInfoProps) => {
+  // Update workout information
   const setWorkoutInfo = useCallback((info: Partial<WorkoutDetail>) => {
-    setWorkout(prevWorkout => ({
-      ...prevWorkout,
+    setWorkout(prev => ({
+      ...prev,
       ...info
     }));
   }, [setWorkout]);
@@ -20,12 +19,13 @@ export const useWorkoutInfo = ({
   // Reset workout to default state
   const resetWorkout = useCallback(() => {
     setWorkout({
-      title: "New Workout",
-      description: "",
-      difficulty: "beginner",
-      category: "strength",
-      goal: "strength",
+      id: '',
+      title: 'New Workout',
+      description: '',
+      difficulty: 'Beginner',
+      category: 'General',
       duration_minutes: 30,
+      exercises: [], // Always initialize with empty array
       is_template: false
     });
   }, [setWorkout]);

@@ -4,72 +4,70 @@ import { WorkoutDetail, WorkoutExerciseDetail } from "./types";
 
 export interface WorkoutStateType {
   workout: WorkoutDetail;
-  exercises: WorkoutExerciseDetail[];
-  searchQuery: string;
-  searchResults: any[];
-  selectedMuscleGroup: string;
-  selectedEquipment: string;
-  selectedDifficulty: string;
-  isLoading: boolean;
-  isSaving: boolean;
-  
   setWorkout: React.Dispatch<React.SetStateAction<WorkoutDetail>>;
+  exercises: WorkoutExerciseDetail[];
   setExercises: React.Dispatch<React.SetStateAction<WorkoutExerciseDetail[]>>;
+  searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  searchResults: any[];
   setSearchResults: React.Dispatch<React.SetStateAction<any[]>>;
-  setSelectedMuscleGroup: React.Dispatch<React.SetStateAction<string>>;
-  setSelectedEquipment: React.Dispatch<React.SetStateAction<string>>;
-  setSelectedDifficulty: React.Dispatch<React.SetStateAction<string>>;
+  selectedMuscleGroup: string | null;
+  setSelectedMuscleGroup: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedEquipment: string | null;
+  setSelectedEquipment: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedDifficulty: string | null;
+  setSelectedDifficulty: React.Dispatch<React.SetStateAction<string | null>>;
+  isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  isSaving: boolean;
   setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const useWorkoutState = (): WorkoutStateType => {
-  // Core state
+export const useWorkoutState = () => {
+  // Main workout data
   const [workout, setWorkout] = useState<WorkoutDetail>({
-    title: "New Workout",
-    description: "",
-    difficulty: "beginner",
-    category: "strength",
-    goal: "strength",
+    id: '',
+    title: 'New Workout',
+    description: '',
+    difficulty: 'Beginner',
+    category: 'General',
     duration_minutes: 30,
+    exercises: [], // Always initialize with empty array
     is_template: false
   });
   
+  // Exercises in the workout
   const [exercises, setExercises] = useState<WorkoutExerciseDetail[]>([]);
   
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
+  // Search and filters
+  const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
+  const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   
-  // Filter state
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("");
-  const [selectedEquipment, setSelectedEquipment] = useState("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("");
-  
-  // UI state
+  // UI states
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   return {
     workout,
-    exercises,
-    searchQuery,
-    searchResults,
-    selectedMuscleGroup,
-    selectedEquipment,
-    selectedDifficulty,
-    isLoading,
-    isSaving,
-    
     setWorkout,
+    exercises,
     setExercises,
+    searchQuery,
     setSearchQuery,
+    searchResults,
     setSearchResults,
+    selectedMuscleGroup,
     setSelectedMuscleGroup,
+    selectedEquipment,
     setSelectedEquipment,
+    selectedDifficulty,
     setSelectedDifficulty,
+    isLoading,
     setIsLoading,
+    isSaving,
     setIsSaving
   };
 };

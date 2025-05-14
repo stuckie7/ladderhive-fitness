@@ -1,149 +1,93 @@
-import { useState, useEffect } from "react";
-import { WorkoutDetail, WorkoutExerciseDetail, WorkoutTemplate } from "./types";
+
 import { useWorkoutState } from "./use-workout-state";
 import { useWorkoutInfo } from "./use-workout-info";
 import { useExerciseManagement } from "./use-exercise-management";
-import { useWorkoutPersistence } from "./persistence";
 import { useTemplateManagement } from "./template-management";
+import { useWorkoutPersistence } from "./persistence";
+import { useEffect } from "react";
 
-// Main hook for workout builder functionality
-export const useWorkoutBuilder = (workoutId?: string, templateId?: string) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Workout state management
-  const {
-    workout, setWorkout,
-    exercises, setExercises,
-    addExercise, updateExercise, removeExercise,
-    moveExercise, resetWorkout
-  } = useWorkoutState();
-
-  // Workout info management
-  const {
-    updateWorkoutInfo,
-    updateWorkoutField
-  } = useWorkoutInfo(setWorkout);
-
-  // Exercise management
-  const {
-    searchResults,
-    searchQuery,
-    isSearching,
-    searchExercises,
-    addExerciseToWorkout
-  } = useExerciseManagement(addExercise);
-
-  // Persistence operations
-  const {
-    saveWorkout,
-    loadWorkout,
-    loadTemplate
-  } = useWorkoutPersistence({
-    workout,
-    exercises,
-    setWorkout,
-    setExercises,
-    setIsLoading,
-    setIsSaving
+export const useWorkoutBuilder = (workoutId?: string) => {
+  // Core state
+  const workoutState = useWorkoutState();
+  
+  // Feature hooks
+  const workoutInfo = useWorkoutInfo({ 
+    workout: workoutState.workout, 
+    setWorkout: workoutState.setWorkout 
+  });
+  
+  const exerciseManagement = useExerciseManagement({
+    exercises: workoutState.exercises,
+    setExercises: workoutState.setExercises,
+    searchQuery: workoutState.searchQuery,
+    setSearchQuery: workoutState.setSearchQuery,
+    searchResults: workoutState.searchResults,
+    setSearchResults: workoutState.setSearchResults,
+    setIsLoading: workoutState.setIsLoading
+  });
+  
+  const templateManagement = useTemplateManagement();
+  
+  const workoutPersistence = useWorkoutPersistence({
+    workout: workoutState.workout,
+    setWorkout: workoutState.setWorkout,
+    exercises: workoutState.exercises,
+    setExercises: workoutState.setExercises,
+    setIsLoading: workoutState.setIsLoading,
+    setIsSaving: workoutState.setIsSaving
   });
 
-  // Template management
-  const {
-    templates,
-    isLoadingTemplates,
-    fetchTemplates,
-    saveAsTemplate,
-    openTemplateModal,
-    closeTemplateModal,
-    isTemplateModalOpen,
-    selectedTemplate,
-    setSelectedTemplate
-  } = useTemplateManagement({
-    workout,
-    exercises,
-    loadTemplate
-  });
-
-  // Initial load based on IDs
+  // Initial workout loading if editing
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      // Load from template if specified
-      if (templateId) {
-        await loadTemplate(templateId);
-      }
-      // Load existing workout if specified
-      else if (workoutId) {
-        await loadWorkout(workoutId);
-      }
-      // Otherwise start with empty state (done in useWorkoutState)
-      setIsLoading(false);
-    };
-
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workoutId, templateId]);
-
-  // Function to handle saving workout
-  const handleSaveWorkout = async (): Promise<WorkoutDetail | null> => {
-    setIsSubmitting(true);
-    try {
-      const result = await saveWorkout();
-      return result;
-    } finally {
-      setIsSubmitting(false);
+    if (workoutId) {
+      workoutPersistence.loadWorkout(workoutId);
     }
-  };
+  }, [workoutId, workoutPersistence]);
 
-  // Function to handle saving as template
-  const handleSaveAsTemplate = async () => {
-    setIsSubmitting(true);
-    try {
-      await saveAsTemplate();
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  // Load templates on initial render
+  useEffect(() => {
+    templateManagement.loadTemplates();
+  }, [templateManagement]);
+  
   return {
     // State
-    workout,
-    exercises,
-    isLoading,
-    isSaving,
-    isSubmitting,
+    workout: workoutState.workout,
+    exercises: workoutState.exercises,
+    templates: templateManagement.templates,
+    isLoadingTemplates: templateManagement.isLoading,
+    searchResults: workoutState.searchResults,
+    searchQuery: workoutState.searchQuery,
+    selectedMuscleGroup: workoutState.selectedMuscleGroup,
+    selectedEquipment: workoutState.selectedEquipment,
+    selectedDifficulty: workoutState.selectedDifficulty,
+    isLoading: workoutState.isLoading,
+    isSaving: workoutState.isSaving,
     
-    // Workout info operations
-    updateWorkoutInfo,
-    updateWorkoutField,
+    // Workout info methods
+    setWorkoutInfo: workoutInfo.setWorkoutInfo,
+    resetWorkout: workoutInfo.resetWorkout,
     
-    // Exercise operations
-    addExercise,
-    updateExercise,
-    removeExercise,
-    moveExercise,
-    searchExercises,
-    searchResults,
-    searchQuery,
-    isSearching,
-    addExerciseToWorkout,
+    // Exercise management
+    handleSearchChange: exerciseManagement.handleSearchChange,
+    handleFilterChange: exerciseManagement.handleFilterChange,
+    addExerciseToWorkout: exerciseManagement.addExerciseToWorkout,
+    removeExerciseFromWorkout: exerciseManagement.removeExerciseFromWorkout,
+    updateExerciseDetails: exerciseManagement.updateExerciseDetails,
+    moveExerciseUp: exerciseManagement.moveExerciseUp,
+    moveExerciseDown: exerciseManagement.moveExerciseDown,
+    reorderExercises: exerciseManagement.reorderExercises,
     
-    // Persistence operations
-    saveWorkout: handleSaveWorkout,
-    resetWorkout,
+    // Template management
+    saveAsTemplate: templateManagement.saveAsTemplate,
+    loadTemplate: workoutPersistence.loadTemplate,
+    loadTemplateFromWod: templateManagement.loadTemplateFromWod,
+    loadTemplateFromPreparedWorkout: templateManagement.loadTemplateFromPreparedWorkout,
+    deleteTemplate: templateManagement.deleteTemplate,
+    loadTemplates: templateManagement.loadTemplates,
     
-    // Template operations
-    templates,
-    isLoadingTemplates,
-    fetchTemplates,
-    saveAsTemplate: handleSaveAsTemplate,
-    openTemplateModal,
-    closeTemplateModal,
-    isTemplateModalOpen,
-    selectedTemplate,
-    setSelectedTemplate
+    // Workout persistence
+    saveWorkout: workoutPersistence.saveWorkout,
+    loadWorkout: workoutPersistence.loadWorkout,
   };
 };
 

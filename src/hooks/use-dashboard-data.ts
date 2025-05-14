@@ -2,10 +2,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Exercise } from "@/types/exercise";
+import { supabase } from "@/integrations/supabase/client";
 import { Wod } from "@/types/wod";
-import { PreparedWorkout, FavoriteExercise } from "@/types/workout";
+import { PreparedWorkout } from "@/types/workout";
 import { addDays, isBefore, parseISO } from "date-fns";
 
 // Define extended types with scheduledDate property but make problematic required properties optional
@@ -22,27 +22,239 @@ interface ScheduledWorkout extends Omit<PreparedWorkout, 'goal'> {
   type?: string;
 }
 
-// Interface for our favorite exercises that matches the DB structure
-interface DashboardFavoriteExercise {
-  id: number | string;
-  name: string;
-  target: string;
-  equipment: string;
-  image_url: string;
-}
-
 // This function will fetch dashboard data from various data sources
-export const useDashboardData = () => {
-  // Authentication and toast
-  const { user } = useAuth();
-  const { toast } = useToast();
+const fetchDashboardData = async (userId: string) => {
+  // In a real implementation, this would fetch data from Supabase tables
+  // For now, we'll return mock data that matches your expected structure
 
-  // State variables
+  // Mock favorite exercises
+  const favoriteExercises = [
+    {
+      id: "ex-1",
+      name: "Barbell Bench Press",
+      muscle_group: "Chest",
+      bodyPart: "Chest",
+      description: "A compound chest exercise focusing on pectoral development",
+      difficulty: "Intermediate",
+      video_url: null,
+      image_url: "https://example.com/bench-press.webp",
+    },
+    {
+      id: "ex-2",
+      name: "Squat",
+      muscle_group: "Legs",
+      bodyPart: "Quadriceps",
+      description: "A fundamental lower body compound exercise",
+      difficulty: "Intermediate",
+      video_url: null,
+      image_url: "https://example.com/squat.webp",
+    },
+    {
+      id: "ex-3",
+      name: "Deadlift",
+      muscle_group: "Back",
+      bodyPart: "Lower Back",
+      description: "A compound exercise that works multiple major muscle groups",
+      difficulty: "Advanced",
+      video_url: null,
+      image_url: "https://example.com/deadlift.webp",
+    },
+    {
+      id: "ex-4",
+      name: "Pull-up",
+      muscle_group: "Back",
+      bodyPart: "Lats",
+      description: "A bodyweight back exercise focusing on lat development",
+      difficulty: "Intermediate",
+      video_url: null,
+      image_url: "https://example.com/pull-up.webp",
+    },
+  ];
+
+  // Mock recent workouts for workout history
+  const recentWorkouts = [
+    {
+      id: "w-1",
+      date: new Date().toISOString(),
+      title: "Morning Push Workout",
+      duration: 45,
+      exercises: 4,
+      completed: true,
+    },
+    {
+      id: "w-2",
+      date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Yesterday
+      title: "Pull Day",
+      duration: 55,
+      exercises: 5,
+      completed: true,
+    },
+    {
+      id: "w-3",
+      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+      title: "Leg Day",
+      duration: 60,
+      exercises: 6,
+      completed: true,
+    },
+    {
+      id: "w-4",
+      date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
+      title: "Full Body Workout",
+      duration: 75,
+      exercises: 8,
+      completed: true,
+    },
+    {
+      id: "w-5",
+      date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+      title: "Planned Push Workout",
+      duration: 45,
+      exercises: 5,
+      completed: false,
+    },
+  ];
+
+  // Fetch random WODs from Supabase
+  let wods: ScheduledWod[] = [];
+  try {
+    const { data: wodData, error: wodError } = await supabase
+      .from('wods')
+      .select('id, name, description, difficulty, avg_duration_minutes, category')
+      .limit(2);
+    
+    if (wodError) throw wodError;
+    
+    if (wodData && wodData.length > 0) {
+      wods = wodData.map(wod => ({
+        ...wod,
+        id: wod.id,
+        scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
+        duration_minutes: wod.avg_duration_minutes || 30,
+        type: 'wod'
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching WODs:", error);
+  }
+
+  // Fetch random prepared workouts from Supabase
+  let preparedWorkouts: ScheduledWorkout[] = [];
+  try {
+    const { data: workoutData, error: workoutError } = await supabase
+      .from('prepared_workouts')
+      .select('id, title, description, difficulty, duration_minutes, category')
+      .limit(2);
+    
+    if (workoutError) throw workoutError;
+    
+    if (workoutData && workoutData.length > 0) {
+      preparedWorkouts = workoutData.map(workout => ({
+        ...workout,
+        scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
+        type: 'workout'
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching prepared workouts:", error);
+  }
+
+  // Combine the fetched WODs and prepared workouts into upcomingWorkouts
+  // This will ensure we have a mix of both types
+  const upcomingWorkouts = [
+    ...wods.map(wod => ({
+      id: wod.id,
+      title: wod.name, 
+      date: wod.scheduledDate, 
+      duration: wod.avg_duration_minutes || 30,
+      difficulty: wod.difficulty || "Intermediate",
+      type: 'wod'
+    })),
+    ...preparedWorkouts.map(workout => ({
+      id: workout.id,
+      title: workout.title,
+      date: workout.scheduledDate,
+      duration: workout.duration_minutes,
+      difficulty: workout.difficulty || "Intermediate",
+      type: 'workout'
+    }))
+  ].sort(() => Math.random() - 0.5); // Shuffle the array for randomness
+
+  // Mock achievements
+  const achievements = [
+    {
+      id: "a-1",
+      title: "First Workout",
+      description: "Completed your first workout",
+      date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 1 month ago
+      icon: "Trophy",
+      completed: true
+    },
+    {
+      id: "a-2",
+      title: "Consistent Athlete",
+      description: "Workout 3 days in a row",
+      date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
+      icon: "Award",
+      completed: true
+    },
+    {
+      id: "a-3",
+      title: "Strength Milestone",
+      description: "Bench press bodyweight",
+      date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+      icon: "Dumbbell",
+      completed: true
+    },
+    {
+      id: "a-4",
+      title: "Century Club",
+      description: "Complete 100 total workouts",
+      progress: 45,
+      icon: "Hundred",
+      completed: false
+    }
+  ];
+
+  // Mock metrics data for charts and stats
+  const metrics = {
+    totalWorkouts: 45,
+    workoutsThisWeek: 3,
+    completionRate: 92,
+    totalMinutes: 2430,
+    currentStreak: 3,
+    totalWeight: 18240,
+  };
+
+  // Mock weekly chart data
+  const weeklyChartData = [
+    { name: 'Mon', minutes: 45, weight: 3200 },
+    { name: 'Tue', minutes: 0, weight: 0 },
+    { name: 'Wed', minutes: 60, weight: 4100 },
+    { name: 'Thu', minutes: 30, weight: 2100 },
+    { name: 'Fri', minutes: 0, weight: 0 },
+    { name: 'Sat', minutes: 75, weight: 5300 },
+    { name: 'Sun', minutes: 0, weight: 0 },
+  ];
+
+  return {
+    favoriteExercises,
+    recentWorkouts,
+    upcomingWorkouts,
+    achievements,
+    metrics,
+    weeklyChartData
+  };
+};
+
+export const useDashboardData = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [favoriteExercises, setFavoriteExercises] = useState<Exercise[]>([]);
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
   const [upcomingWorkouts, setUpcomingWorkouts] = useState<any[]>([]);
-  const [favoriteExercises, setFavoriteExercises] = useState<DashboardFavoriteExercise[]>([]);
   const [achievements, setAchievements] = useState<any[]>([]);
-  const [metrics, setMetrics] = useState({
+  const [metrics, setMetrics] = useState<any>({
     totalWorkouts: 0,
     workoutsThisWeek: 0,
     completionRate: 0,
@@ -51,407 +263,151 @@ export const useDashboardData = () => {
     totalWeight: 0,
   });
   const [weeklyChartData, setWeeklyChartData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Function to load all dashboard data
-  useEffect(() => {
-    if (user) {
-      loadDashboardData();
-    }
-  }, [user]);
-
-  // Main function to load all dashboard data
-  const loadDashboardData = async () => {
-    setIsLoading(true);
-    setError(null);
-
+  // Function to refresh upcoming workouts periodically
+  const refreshUpcomingWorkouts = async () => {
     try {
-      // Load data in parallel
-      await Promise.all([
-        loadRecentWorkouts(),
-        loadUpcomingWorkouts(),
-        loadFavoriteExercises(),
-        loadAchievements(),
-        loadMetrics(),
-      ]);
+      const userId = user?.id || 'demo-user';
+      const data = await fetchDashboardData(userId);
+      setUpcomingWorkouts(data.upcomingWorkouts);
+    } catch (error) {
+      console.error("Error refreshing upcoming workouts:", error);
+    }
+  };
 
-    } catch (error: any) {
-      console.error("Error loading dashboard data:", error);
-      setError(error.message || "Error loading dashboard data");
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // If user is not logged in, we can still show demo data
+        const userId = user?.id || 'demo-user';
+        
+        // Fetch dashboard data (this would normally come from Supabase)
+        const data = await fetchDashboardData(userId);
+        
+        // Update state with fetched data
+        setFavoriteExercises(data.favoriteExercises);
+        setRecentWorkouts(data.recentWorkouts);
+        setUpcomingWorkouts(data.upcomingWorkouts);
+        setAchievements(data.achievements);
+        setMetrics(data.metrics);
+        setWeeklyChartData(data.weeklyChartData);
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+        setError("Failed to load dashboard data. Please try again.");
+        toast({
+          title: "Error loading dashboard",
+          description: "Failed to load your dashboard data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadDashboardData();
+    
+    // Refresh upcoming workouts every 5 minutes (300000 ms)
+    const intervalId = setInterval(() => {
+      refreshUpcomingWorkouts();
+    }, 300000);
+
+    return () => clearInterval(intervalId);
+  }, [user, toast]);
+
+  const addFavoriteExercise = async (exerciseId: string) => {
+    if (!user) {
       toast({
-        title: "Error",
-        description: "Failed to load dashboard data. Please try again.",
+        title: "Authentication required",
+        description: "Please log in to save favorite exercises",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
-
-  // Load recent workouts
-  const loadRecentWorkouts = async () => {
-    if (!user) return;
-
-    try {
-      // Query for recent workouts from user_workouts
-      const { data, error } = await supabase
-        .from('user_workouts')
-        .select(`
-          *,
-          workout:prepared_workouts(*)
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .order('completed_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-
-      // Generate sample data for testing
-      const sampleRecentWorkouts = data && data.length > 0 
-        ? data.map(item => {
-            // Handle potential errors with optional chaining and ensure defaults for all properties
-            const workoutData = item.workout || {};
-            
-            return {
-              id: item.id || '',
-              user_id: item.user_id,
-              workout_id: item.workout_id,
-              status: item.status,
-              completed_at: item.completed_at,
-              planned_for: item.planned_for,
-              created_at: item.created_at,
-              workout: {
-                id: workoutData.id || '',
-                title: workoutData.title || 'Unnamed Workout',
-                description: workoutData.description || '',
-                duration_minutes: workoutData.duration_minutes || 30,
-                difficulty: workoutData.difficulty || 'intermediate',
-                category: workoutData.category || 'general'
-              }
-            };
-          })
-        : generateSampleWorkouts(5, true);
-      setRecentWorkouts(sampleRecentWorkouts);
-
-      // Generate weekly chart data based on workout history
-      generateWeeklyChartData(sampleRecentWorkouts);
-
-    } catch (error) {
-      console.error("Error loading recent workouts:", error);
-    }
-  };
-
-  // Generate weekly chart data for visualization
-  const generateWeeklyChartData = (workouts: any[]) => {
-    // Create array for last 7 days
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (6 - i));
-      return {
-        name: date.toLocaleDateString(undefined, { weekday: 'short' }),
-        date: date.toISOString().split('T')[0],
-        minutes: 0,
-        count: 0,
-      };
-    });
-
-    // Map workout data to chart data
-    workouts.forEach(workout => {
-      const completedDate = workout.completed_at || workout.created_at;
-      if (!completedDate) return;
-      
-      const workoutDate = new Date(completedDate).toISOString().split('T')[0];
-      const dayIndex = last7Days.findIndex(day => day.date === workoutDate);
-
-      if (dayIndex !== -1) {
-        last7Days[dayIndex].count += 1;
-        last7Days[dayIndex].minutes += workout.workout?.duration_minutes || 30;
-      }
-    });
-
-    setWeeklyChartData(last7Days);
-  };
-
-  // Load upcoming scheduled workouts
-  const loadUpcomingWorkouts = async () => {
-    if (!user) return;
-
-    // First try to load from the database
-    await loadScheduledWorkouts();
     
-    // If not enough scheduled workouts, mix with upcoming WODs and prepared workouts
-    await loadRandomUpcoming();
-  };
-
-  // Load scheduled workouts from database
-  const loadScheduledWorkouts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('user_workouts')
-        .select(`
-          *,
-          workout:prepared_workouts(*)
-        `)
-        .eq('user_id', user?.id)
-        .eq('status', 'scheduled')
-        .gt('planned_for', new Date().toISOString())
-        .order('planned_for', { ascending: true })
-        .limit(5);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const mappedWorkouts = data.map(item => {
-          // Safely extract properties with null checks and defaults
-          const workoutData = item.workout || {};
-          
-          return {
-            id: item.id || '',
-            title: workoutData.title || 'Unnamed Workout',
-            date: item.planned_for || new Date().toISOString(),
-            duration: workoutData.duration_minutes || 30,
-            description: workoutData.description || '',
-            difficulty: workoutData.difficulty || 'intermediate',
-            category: workoutData.category || 'general',
-            type: 'scheduled'
-          };
-        });
-        setUpcomingWorkouts(mappedWorkouts);
-      } 
-
-    } catch (error) {
-      console.error("Error loading scheduled workouts:", error);
-    }
-  };
-
-  // Load random upcoming workouts and WODs
-  const loadRandomUpcoming = async () => {
-    try {
-      let combined: any[] = [];
-  
-      // Load some WODs
-      const { data: wods, error: wodsError } = await supabase
-        .from('wods')
-        .select('*')
-        .limit(3);
+      // In a real implementation, we would call Supabase here
+      // await supabase.from('user_favorites').insert({ user_id: user.id, exercise_id: exerciseId });
       
-      if (wodsError) throw wodsError;
-  
-      if (wods && wods.length > 0) {
-        const wodItems = wods.map(wod => {
-          // Generate a valid date string for upcoming workouts
-          const randomFutureDays = Math.floor(Math.random() * 7) + 1;
-          const scheduledDate = new Date();
-          scheduledDate.setDate(scheduledDate.getDate() + randomFutureDays);
-          
-          return {
-            id: wod.id || '',
-            title: wod.name || 'Unnamed WOD', // Ensure title exists
-            description: wod.description || '',
-            difficulty: wod.difficulty || 'intermediate',
-            duration: wod.avg_duration_minutes || 30,
-            date: scheduledDate.toISOString(), // Use ISO string format consistently
-            category: wod.category || 'WOD',
-            type: 'wod'
-          };
-        });
-        combined = [...combined, ...wodItems];
-      }
-  
-      // Load some prepared workouts
-      const { data: workouts, error: workoutsError } = await supabase
-        .from('prepared_workouts')
-        .select('*')
-        .limit(3);
-      
-      if (workoutsError) throw workoutsError;
-  
-      if (workouts && workouts.length > 0) {
-        const workoutItems = workouts.map(workout => {
-          // Generate a valid date string for upcoming workouts
-          const randomFutureDays = Math.floor(Math.random() * 7) + 1;
-          const scheduledDate = new Date();
-          scheduledDate.setDate(scheduledDate.getDate() + randomFutureDays);
-          
-          return {
-            id: workout.id || '',
-            title: workout.title || 'Unnamed Workout',
-            description: workout.description || '',
-            difficulty: workout.difficulty || 'intermediate',
-            duration: workout.duration_minutes || 30,
-            date: scheduledDate.toISOString(),
-            category: workout.category || 'General',
-            type: 'workout'
-          };
-        });
-        combined = [...combined, ...workoutItems];
-      }
-  
-      // Shuffle and limit
-      combined.sort(() => Math.random() - 0.5);
-      combined = combined.slice(0, 5);
-  
-      // Sort by date
-      combined.sort((a, b) => {
-        const dateA = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER;
-        const dateB = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER;
-        return dateA - dateB;
+      toast({
+        title: "Success",
+        description: "Exercise added to favorites",
       });
-  
-      setUpcomingWorkouts(combined);
+      
+      // Refresh dashboard data
+      const data = await fetchDashboardData(user.id);
+      setFavoriteExercises(data.favoriteExercises);
     } catch (error) {
-      console.error("Error loading random upcoming workouts:", error);
-    }
-  };
-
-  // Load favorite exercises
-  const loadFavoriteExercises = async () => {
-    if (!user) return;
-
-    try {
-      // First check user_favorite_exercises (placeholder implementation)
-      let favorites: DashboardFavoriteExercise[] = [];
-
-      // If no favorites, generate sample data
-      if (favorites.length === 0) {
-        const { data, error } = await supabase
-          .from('exercises_full')
-          .select('*')
-          .limit(5);
-
-        if (error) throw error;
-
-        if (data) {
-          favorites = data.map(ex => ({
-            id: ex.id, // Keep as number, the Exercise interface now accepts string | number
-            name: ex.name || 'Unknown Exercise',
-            target: ex.prime_mover_muscle || 'Full Body',
-            equipment: ex.primary_equipment || 'Bodyweight',
-            image_url: ex.youtube_thumbnail_url || ''
-          }));
-        }
-      }
-
-      setFavoriteExercises(favorites);
-    } catch (error) {
-      console.error("Error loading favorite exercises:", error);
-    }
-  };
-
-  // Load user achievements
-  const loadAchievements = async () => {
-    // Placeholder implementation - will be replaced with real achievements
-    const dummyAchievements = [
-      {
-        id: '1',
-        title: 'First Workout',
-        description: 'Completed your first workout',
-        icon: '🏆',
-        unlocked: true,
-        date: new Date().toISOString()
-      },
-      {
-        id: '2',
-        title: '5 Workouts',
-        description: 'Completed 5 workouts',
-        icon: '🔥',
-        unlocked: true,
-        date: new Date().toISOString()
-      },
-      {
-        id: '3',
-        title: 'Consistency',
-        description: 'Worked out 3 days in a row',
-        icon: '📈',
-        unlocked: false
-      },
-    ];
-
-    setAchievements(dummyAchievements);
-  };
-
-  // Load workout metrics
-  const loadMetrics = async () => {
-    if (!user) return;
-
-    // Sample metrics calculation (to be replaced with real metrics)
-    const totalWorkouts = Math.floor(Math.random() * 20) + 5;
-    const workoutsThisWeek = Math.floor(Math.random() * 5) + 1;
-    const completionRate = Math.floor(Math.random() * 30) + 70;
-    const totalMinutes = (Math.floor(Math.random() * 20) + 10) * totalWorkouts;
-    const currentStreak = Math.floor(Math.random() * 10) + 1;
-    const totalWeight = (Math.floor(Math.random() * 500) + 500) * (Math.floor(totalWorkouts / 2) + 1);
-
-    setMetrics({
-      totalWorkouts,
-      workoutsThisWeek,
-      completionRate,
-      totalMinutes,
-      currentStreak,
-      totalWeight
-    });
-  };
-
-  // Generate sample workout data for testing
-  const generateSampleWorkouts = (count: number, isCompleted: boolean = false) => {
-    const workouts = [];
-    const today = new Date();
-
-    for (let i = 0; i < count; i++) {
-      const date = new Date();
-      date.setDate(today.getDate() - i);
-
-      workouts.push({
-        id: `sample-${i}`,
-        user_id: user?.id,
-        workout_id: `workout-${i}`,
-        status: isCompleted ? 'completed' : 'scheduled',
-        completed_at: isCompleted ? date.toISOString() : null,
-        planned_for: !isCompleted ? date.toISOString() : null,
-        created_at: new Date(date.getTime() - 1000 * 60 * 60 * 24).toISOString(),
-        workout: {
-          id: `workout-${i}`,
-          title: `Sample Workout ${i + 1}`,
-          description: `This is a sample workout description for testing purposes.`,
-          duration_minutes: 30 + (i * 5),
-          difficulty: i % 3 === 0 ? 'beginner' : i % 3 === 1 ? 'intermediate' : 'advanced',
-          category: i % 4 === 0 ? 'strength' : i % 4 === 1 ? 'cardio' : i % 4 === 2 ? 'mobility' : 'hiit'
-        }
+      console.error("Error adding favorite exercise:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add exercise to favorites",
+        variant: "destructive",
       });
     }
-
-    return workouts;
   };
 
-  const removeFavoriteExercise = async (exerciseId: string): Promise<void> => {
-    // Remove exercise from favorites
-    setFavoriteExercises(prev => prev.filter(ex => ex.id.toString() !== exerciseId.toString()));
+  const removeFavoriteExercise = async (exerciseId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to manage favorite exercises",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    toast({
-      title: "Success",
-      description: "Exercise removed from favorites",
-    });
+    try {
+      // In a real implementation, we would call Supabase here
+      // await supabase
+      //   .from('user_favorites')
+      //   .delete()
+      //   .eq('user_id', user.id)
+      //   .eq('exercise_id', exerciseId);
+      
+      // Update state optimistically
+      setFavoriteExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+      
+      toast({
+        title: "Success",
+        description: "Exercise removed from favorites",
+      });
+    } catch (error) {
+      console.error("Error removing favorite exercise:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove exercise from favorites",
+        variant: "destructive",
+      });
+      
+      // Refresh data to ensure consistency
+      const data = await fetchDashboardData(user.id);
+      setFavoriteExercises(data.favoriteExercises);
+    }
   };
 
-  const refreshWorkouts = () => {
-    loadDashboardData();
-    toast({
-      title: "Refreshed",
-      description: "Your workout data has been refreshed",
-    });
+  // Function to manually refresh upcoming workouts
+  const refreshWorkouts = async () => {
+    setIsLoading(true);
+    await refreshUpcomingWorkouts();
+    setIsLoading(false);
   };
 
   return {
+    isLoading,
+    error,
+    favoriteExercises,
     recentWorkouts,
     upcomingWorkouts,
-    favoriteExercises,
     achievements,
     metrics,
     weeklyChartData,
-    isLoading,
-    error,
+    addFavoriteExercise,
     removeFavoriteExercise,
     refreshWorkouts
   };

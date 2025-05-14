@@ -4,13 +4,14 @@ import { Star, Plus, Dumbbell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { Exercise } from "@/types/exercise";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { FavoriteExercise } from "@/types/workout";
 
 interface FavoriteExercisesProps {
-  exercises: FavoriteExercise[];
+  exercises: Exercise[];
   isLoading: boolean;
   onAddExercise?: () => void;
   onRemoveFavorite?: (id: string) => Promise<void>;
@@ -26,7 +27,7 @@ const FavoriteExercises = ({
   const { user } = useAuth();
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const handleRemoveFavorite = async (e: React.MouseEvent, id: string | number) => {
+  const handleRemoveFavorite = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -40,10 +41,10 @@ const FavoriteExercises = ({
     }
     
     try {
-      setRemovingId(id.toString());
+      setRemovingId(id);
       
       if (onRemoveFavorite) {
-        await onRemoveFavorite(id.toString());
+        await onRemoveFavorite(id);
         toast({
           title: "Success",
           description: "Exercise removed from favorites",
@@ -89,7 +90,7 @@ const FavoriteExercises = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {exercises.map((exercise) => (
               <Link 
-                key={exercise.id.toString()} 
+                key={exercise.id} 
                 to={`/exercises/${exercise.id}`}
                 className="p-3 border border-gray-800/50 rounded-lg hover:border-fitness-accent/50 hover:bg-gray-900/30 transition-all group relative"
               >
@@ -100,7 +101,7 @@ const FavoriteExercises = ({
                   <div>
                     <h4 className="font-medium text-sm group-hover:text-fitness-accent transition-colors line-clamp-1">{exercise.name}</h4>
                     <p className="text-xs text-muted-foreground line-clamp-1">
-                      {exercise.target}
+                      {exercise.muscle_group || exercise.bodyPart || ""}
                     </p>
                   </div>
                 </div>
@@ -108,7 +109,7 @@ const FavoriteExercises = ({
                   <button 
                     className="absolute top-1 right-1 p-1 rounded-full bg-gray-800/50 hover:bg-red-500/30 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => handleRemoveFavorite(e, exercise.id)}
-                    disabled={removingId === exercise.id.toString()}
+                    disabled={removingId === exercise.id}
                   >
                     <X className="h-3 w-3" />
                   </button>
