@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -115,9 +114,8 @@ const fetchDashboardData = async (userId: string) => {
       wods = wodData.map(wod => ({
         ...wod,
         id: wod.id,
-        title: wod.name,
-        date: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
-        duration: wod.avg_duration_minutes || 30,
+        scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
+        duration_minutes: wod.avg_duration_minutes || 30,
         type: 'wod'
       })) as unknown as Wod[];
     }
@@ -138,8 +136,7 @@ const fetchDashboardData = async (userId: string) => {
     if (workoutData && workoutData.length > 0) {
       preparedWorkouts = workoutData.map(workout => ({
         ...workout,
-        date: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
-        duration: workout.duration_minutes || 45,
+        scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
         type: 'workout'
       })) as unknown as PreparedWorkout[];
     }
@@ -152,17 +149,17 @@ const fetchDashboardData = async (userId: string) => {
   const upcomingWorkouts = [
     ...wods.map(wod => ({
       id: wod.id,
-      title: wod.name || wod.title,
-      date: wod.date,
-      duration: wod.avg_duration_minutes || wod.duration || 30,
+      title: wod.name, // Fix: Use 'name' instead of accessing 'title'
+      date: wod.scheduledDate, // Fix: Use our newly created scheduledDate property
+      duration: wod.avg_duration_minutes || 30, // Fix: Use avg_duration_minutes instead of duration
       difficulty: wod.difficulty || "Intermediate",
       type: 'wod'
     })),
     ...preparedWorkouts.map(workout => ({
       id: workout.id,
       title: workout.title,
-      date: workout.date,
-      duration: workout.duration_minutes || workout.duration || 45,
+      date: workout.scheduledDate, // Fix: Use our newly created scheduledDate property
+      duration: workout.duration_minutes, // Fix: Use duration_minutes instead of duration
       difficulty: workout.difficulty || "Intermediate",
       type: 'workout'
     }))
