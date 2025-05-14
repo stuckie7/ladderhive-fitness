@@ -2,7 +2,7 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Dumbbell, Trash2, Edit, Play } from "lucide-react";
+import { Calendar, Clock, Trash2, Edit, Play } from "lucide-react";
 import { UserWorkout } from "@/types/workout";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -63,9 +63,12 @@ const SavedWorkoutCard = ({ userWorkout, onRemove }: SavedWorkoutCardProps) => {
     }
   };
   
-  const saved_at = userWorkout.created_at 
-    ? format(new Date(userWorkout.created_at), 'MMM dd, yyyy')
-    : null;
+  // Use the saved date from the planned_for or completed_at fields if available
+  const saved_at = userWorkout.completed_at 
+    ? format(new Date(userWorkout.completed_at), 'MMM dd, yyyy')
+    : userWorkout.planned_for 
+      ? format(new Date(userWorkout.planned_for), 'MMM dd, yyyy') 
+      : null;
   
   return (
     <Card 

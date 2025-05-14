@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -12,7 +11,6 @@ import {
   LayoutDashboard,
   ListChecks,
   UserCircle,
-  Workout,
   Menu,
   X,
   Zap
@@ -90,7 +88,7 @@ export function Sidebar({ className, isOpen, onClose, ...props }: SidebarProps) 
               className="w-full justify-start"
             >
               <Link to="/workouts">
-                <Workout className="mr-2 h-4 w-4" />
+                <DumbbellIcon className="mr-2 h-4 w-4" />
                 Workouts
               </Link>
             </Button>

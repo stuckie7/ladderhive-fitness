@@ -25,8 +25,7 @@ export const useSavedWorkouts = () => {
           status,
           completed_at,
           planned_for,
-          workouts(*),
-          prepared_workouts(*)
+          workouts(*)
         `)
         .eq('user_id', user.id)
         .eq('status', 'saved');
@@ -35,20 +34,20 @@ export const useSavedWorkouts = () => {
       
       // Process data to normalize workout structure
       const processedWorkouts = (data || []).map(item => {
-        // Determine if it's a regular workout or a prepared workout
-        const workoutData = item.workouts || item.prepared_workouts;
+        // Check if workouts data exists
+        if (!item.workouts) return null;
         
-        if (!workoutData) return null;
+        const workoutData = item.workouts;
         
         const workout: Workout = {
           id: item.workout_id,
           title: workoutData.title,
           description: workoutData.description || '',
-          duration: workoutData.duration || workoutData.duration_minutes || 0,
-          exercises: 0, // We'll need to fetch this separately
+          duration: workoutData.duration || 0,
+          exercises: workoutData.exercises || 0,
           difficulty: workoutData.difficulty || 'Beginner',
           isSaved: true,
-          category: workoutData.category || ''
+          category: workoutData.difficulty || ''  // Using difficulty as a fallback for category
         };
         
         return {
