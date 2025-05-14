@@ -39,7 +39,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       const newOrderIndex = maxOrderIndex + 1;
       
       // Convert reps to string if it's a number to ensure consistency
-      const repsValue = details.reps ? String(details.reps) : "10";
+      const repsValue = ensureStringReps(details.reps);
       
       const newExerciseData = {
         workout_id: workoutId,
@@ -159,7 +159,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       // Update local state
       setExercises(exercises.map(e => 
-        e.id === exerciseId ? { ...e, ...updates } : e
+        e.id === exerciseId ? { ...e, ...updates, reps: updates.reps ? ensureStringReps(updates.reps) : e.reps } : e
       ));
       
       return true;

@@ -55,15 +55,13 @@ const useWorkoutDetail = (workoutId: string) => {
   }, [workoutId, fetchWorkout]);
   
   // Handle adding an exercise with proper type handling
-  const handleAddExercise = async (exercise: Exercise) => {
+  const handleAddExercise = async (exercise: Exercise): Promise<void> => {
     setIsAddingExercise(true);
     try {
       await addExerciseToWorkout(exercise);
-      return true;
     } catch (err) {
       console.error("Error adding exercise:", err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
-      return false;
     } finally {
       setIsAddingExercise(false);
     }
@@ -86,10 +84,10 @@ const useWorkoutDetail = (workoutId: string) => {
     handleSaveWorkout,
     handleCompleteWorkout,
     // For compatibility with existing code:
-    scheduleWorkout: async () => {
+    scheduleWorkout: async (): Promise<void> => {
       console.warn("scheduleWorkout not implemented");
     },
-    startWorkout: async () => {
+    startWorkout: async (): Promise<void> => {
       console.warn("startWorkout not implemented");
     },
     completeWorkout: handleCompleteWorkout,

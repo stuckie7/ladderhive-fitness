@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Workout } from "@/types/workout";
-import { WorkoutExercise, mapSupabaseExerciseToExercise } from "@/hooks/workout-exercises/utils";
+import { WorkoutExercise, mapSupabaseExerciseToExercise, ensureStringReps } from "@/hooks/workout-exercises/utils";
 
 export const usePreparedWorkouts = (currentWorkoutId: string | null = null) => {
   const [preparedWorkouts, setPreparedWorkouts] = useState<Workout[]>([]);
@@ -80,7 +80,7 @@ export const usePreparedWorkouts = (currentWorkoutId: string | null = null) => {
         workout_id: item.workout_id,
         exercise_id: item.exercise_id,
         sets: item.sets,
-        reps: item.reps,
+        reps: ensureStringReps(item.reps), // Convert to string
         weight: item.weight,
         rest_time: item.rest_time,
         order_index: item.order_index,

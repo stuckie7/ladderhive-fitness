@@ -56,7 +56,7 @@ export const useWorkoutLoader = ({
         difficulty: workoutData.difficulty || "Beginner",
         category: workoutData.category || "General",
         duration_minutes: workoutData.duration_minutes || 30,
-        is_template: Boolean(workoutData.is_template), // Convert to boolean explicitly
+        is_template: false, // Default to false since there's no is_template field
         exercises: []  // We'll set exercises separately
       });
       
@@ -69,7 +69,7 @@ export const useWorkoutLoader = ({
           exercise_id: ex.exercise_id,
           name: exercise.name || "Unknown Exercise",
           sets: ex.sets || 3,
-          reps: ex.reps || "10",
+          reps: ex.reps || "10", // Convert to string
           rest_seconds: ex.rest_seconds || 60,
           notes: ex.notes || "",
           order_index: ex.order_index,
@@ -108,7 +108,7 @@ export const useWorkoutLoader = ({
       
       // Convert template to workout
       setWorkout({
-        title: template.title || template.name || "New Workout from Template",
+        title: template.title || (template.name || "New Workout from Template"),
         description: template.description || "",
         difficulty: template.difficulty || "Beginner",
         category: template.category || "General",
@@ -122,7 +122,7 @@ export const useWorkoutLoader = ({
         exercise_id: ex.exerciseId,
         name: ex.name || "Unknown Exercise",
         sets: ex.sets || 3,
-        reps: ex.reps || "10",
+        reps: ex.reps?.toString() || "10", // Convert to string
         rest_seconds: ex.rest_seconds || 60,
         notes: ex.notes || "",
         order_index: index,

@@ -21,7 +21,7 @@ export interface WorkoutExercise {
   workout_id: string;
   exercise_id: string;
   sets: number;
-  reps: string; // Store reps as string to allow formats like "8-12"
+  reps: string; // Always use string to allow formats like "8-12"
   weight?: string;
   rest_time?: number;
   order_index: number;

@@ -2,7 +2,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { WorkoutExercise, mapSupabaseExerciseToExercise } from "./utils";
+import { WorkoutExercise, mapSupabaseExerciseToExercise, ensureStringReps } from "./utils";
 
 export const useFetchWorkoutExercises = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +32,7 @@ export const useFetchWorkoutExercises = () => {
         workout_id: item.workout_id,
         exercise_id: item.exercise_id,
         sets: item.sets,
-        reps: item.reps,
+        reps: ensureStringReps(item.reps), // Convert to string
         weight: item.weight,
         rest_time: item.rest_time,
         order_index: item.order_index,

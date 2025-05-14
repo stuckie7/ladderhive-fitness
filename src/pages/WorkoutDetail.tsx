@@ -10,6 +10,7 @@ import WorkoutDetailLayout from '@/components/workouts/WorkoutDetailLayout';
 import WorkoutDetailStats from '@/components/workouts/WorkoutDetailStats';
 import WorkoutDetailHeader from '@/components/workouts/WorkoutDetailHeader';
 import WorkoutExerciseSection from '@/components/workouts/WorkoutExerciseSection';
+import { Exercise } from '@/types/exercise';
 
 const WorkoutDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -86,6 +87,11 @@ const WorkoutDetail: React.FC = () => {
     );
   }
   
+  // Create an exercise handler that matches the expected signature
+  const onAddExercise = async (exercise: Exercise): Promise<void> => {
+    await handleAddExercise(exercise);
+  };
+  
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
@@ -117,7 +123,7 @@ const WorkoutDetail: React.FC = () => {
             <WorkoutExerciseSection
               exercises={workoutExercises || []}
               isLoading={exercisesLoading || false}
-              onAddExercise={handleAddExercise}
+              onAddExercise={onAddExercise}
               workoutId={id}
             />
           }
