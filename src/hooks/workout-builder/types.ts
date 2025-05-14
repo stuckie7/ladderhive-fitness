@@ -18,6 +18,7 @@ export interface WorkoutExerciseDetail {
   sets: number;
   reps: string;
   rest_seconds: number;
+  weight?: string; // Add weight property
   notes?: string;
   order_index?: number;
   name?: string;
@@ -30,4 +31,17 @@ export interface WorkoutBuilderState {
   isLoading: boolean;
   isSaving: boolean;
   templates: any[];
+}
+
+// Add this to fix export errors in other files
+export interface WorkoutTemplate {
+  id?: string;
+  title: string;
+  name: string;
+  description?: string;
+  category?: string;
+  difficulty?: string;
+  created_at?: string;
+  source_wod_id?: string;
+  exercises: any[];
 }

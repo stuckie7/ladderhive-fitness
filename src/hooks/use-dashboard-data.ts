@@ -109,23 +109,28 @@ export const useDashboardData = () => {
 
       // Generate sample data for testing
       const sampleRecentWorkouts = data && data.length > 0 
-        ? data.map(item => ({
-            id: item.id,
-            user_id: item.user_id,
-            workout_id: item.workout_id,
-            status: item.status,
-            completed_at: item.completed_at,
-            planned_for: item.planned_for,
-            created_at: item.created_at,
-            workout: item.workout ? {
-              id: item.workout?.id || '',
-              title: item.workout?.title || 'Unnamed Workout',
-              description: item.workout?.description || '',
-              duration_minutes: item.workout?.duration_minutes || 30,
-              difficulty: item.workout?.difficulty || 'intermediate',
-              category: item.workout?.category || 'general'
-            } : null
-          }))
+        ? data.map(item => {
+            // Handle potential errors with optional chaining and defaults
+            const workoutData = item.workout || {};
+            
+            return {
+              id: item.id || '',
+              user_id: item.user_id,
+              workout_id: item.workout_id,
+              status: item.status,
+              completed_at: item.completed_at,
+              planned_for: item.planned_for,
+              created_at: item.created_at,
+              workout: {
+                id: workoutData.id || '',
+                title: workoutData.title || 'Unnamed Workout',
+                description: workoutData.description || '',
+                duration_minutes: workoutData.duration_minutes || 30,
+                difficulty: workoutData.difficulty || 'intermediate',
+                category: workoutData.category || 'general'
+              }
+            };
+          })
         : generateSampleWorkouts(5, true);
       setRecentWorkouts(sampleRecentWorkouts);
 
@@ -202,9 +207,9 @@ export const useDashboardData = () => {
           const workoutData = item.workout || {};
           
           return {
-            id: item.id,
+            id: item.id || '',
             title: workoutData.title || 'Unnamed Workout',
-            date: item.planned_for, // Use 'date' consistently as expected by UpcomingWorkouts
+            date: item.planned_for || new Date().toISOString(), // Ensure date is set
             duration: workoutData.duration_minutes || 30,
             description: workoutData.description || '',
             difficulty: workoutData.difficulty || 'intermediate',
@@ -241,7 +246,7 @@ export const useDashboardData = () => {
           scheduledDate.setDate(scheduledDate.getDate() + randomFutureDays);
           
           return {
-            id: wod.id,
+            id: wod.id || '',
             title: wod.name || 'Unnamed WOD', // Ensure title exists
             description: wod.description || '',
             difficulty: wod.difficulty || 'intermediate',

@@ -1,4 +1,3 @@
-
 export interface Exercise {
   id: string | number; // Update to accept both string and number ids
   name: string;
@@ -91,4 +90,13 @@ export interface ExerciseFull {
   exercise_classification: string | null;
   created_at: string | null;
   updated_at: string | null;
+}
+
+// Add this interface explicitly here so it can be imported elsewhere
+export interface FavoriteExercise {
+  id: string | number;
+  name: string;
+  target: string;
+  equipment: string;
+  image_url: string;
 }

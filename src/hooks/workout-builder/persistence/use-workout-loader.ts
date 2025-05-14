@@ -45,7 +45,7 @@ export const useWorkoutLoader = (
         category: workoutData.category,
         goal: workoutData.goal,
         duration_minutes: workoutData.duration_minutes,
-        is_template: workoutData.is_template || false // Add safe default
+        is_template: false // Use safe default since property doesn't exist
       });
       
       // Fetch the workout exercises
@@ -61,7 +61,8 @@ export const useWorkoutLoader = (
       if (exerciseData && exerciseData.length > 0) {
         const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => {
           // Handle potential undefined exercise relationship
-          const exerciseName = ex.exercise?.name || `Exercise ${ex.exercise_id}`;
+          const exerciseObj = ex.exercise || {};
+          const exerciseName = exerciseObj.name || `Exercise ${ex.exercise_id}`;
           
           return {
             id: `${ex.id}`,
@@ -135,7 +136,8 @@ export const useWorkoutLoader = (
       if (exerciseData && exerciseData.length > 0) {
         const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => {
           // Handle potential undefined exercise relationship
-          const exerciseName = ex.exercise?.name || `Exercise ${ex.exercise_id}`;
+          const exerciseObj = ex.exercise || {};
+          const exerciseName = exerciseObj.name || `Exercise ${ex.exercise_id}`;
           
           return {
             id: `temp-${Math.random().toString(36).substring(2, 11)}`, // Generate a temporary ID

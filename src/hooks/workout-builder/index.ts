@@ -91,4 +91,6 @@ export const useWorkoutBuilder = (workoutId?: string) => {
   };
 };
 
-export type { WorkoutDetail, WorkoutExerciseDetail, WorkoutTemplate } from './types';
+export type { WorkoutDetail, WorkoutExerciseDetail } from './types';
+// Use the type that's now defined in template-types.ts
+export type { WorkoutTemplate } from './template-management/template-types';

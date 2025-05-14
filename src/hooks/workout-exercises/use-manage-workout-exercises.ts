@@ -29,10 +29,13 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         : -1;
       
       const newOrderIndex = maxOrderIndex + 1;
+
+      // Convert exercise_id to string to match expected type
+      const stringExerciseId = String(exercise.id);
       
       const newExercise = {
         workout_id: workoutId,
-        exercise_id: exercise.id,
+        exercise_id: stringExerciseId,
         sets: details.sets || 3,
         reps: details.reps || 10,
         weight: details.weight || null,
