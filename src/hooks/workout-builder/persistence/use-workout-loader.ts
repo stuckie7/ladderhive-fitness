@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -55,7 +56,7 @@ export const useWorkoutLoader = ({
         difficulty: workoutData.difficulty || "Beginner",
         category: workoutData.category || "General",
         duration_minutes: workoutData.duration_minutes || 30,
-        is_template: false, // Default to false since prepared_workouts might not have is_template
+        is_template: workoutData.is_template || false, // Handle the case where is_template doesn't exist
         exercises: []  // We'll set exercises separately
       });
       
@@ -66,7 +67,7 @@ export const useWorkoutLoader = ({
         return {
           id: ex.id || `temp-${Date.now()}-${Math.random()}`,
           exercise_id: ex.exercise_id,
-          name: String(exercise.name || "Unknown Exercise"), // Safely access name with fallback and ensure it's a string
+          name: exercise.name || "Unknown Exercise", // Safely access name with fallback
           sets: ex.sets || 3,
           reps: ex.reps || "10", // Convert to string
           rest_seconds: ex.rest_seconds || 60,

@@ -5,7 +5,7 @@ import ExerciseItem from "./ExerciseItem";
 
 // Define a specific interface for the exercises used in this component
 // to avoid type conflicts with Exercise from other files
-interface Exercise {
+interface ExerciseListItem {
   id: string;
   name: string;
   sets: number;
@@ -17,7 +17,7 @@ interface Exercise {
 }
 
 interface ExerciseListProps {
-  exercises: Exercise[];
+  exercises: ExerciseListItem[];
   onComplete?: (exerciseId: string, completed: boolean) => void;
 }
 

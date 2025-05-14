@@ -1,3 +1,4 @@
+
 import { Exercise } from "@/types/exercise";
 
 // Define the shape of the data coming from Supabase
