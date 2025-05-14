@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,7 +27,8 @@ const Dashboard = () => {
     weeklyChartData, 
     isLoading,
     error,
-    removeFavoriteExercise
+    removeFavoriteExercise,
+    refreshWorkouts
   } = useDashboardData();
   
   const { progress, isLoading: progressLoading, error: progressError } = useDailyProgress();
@@ -65,6 +65,10 @@ const Dashboard = () => {
       title: "Quick Schedule",
       description: "Workout scheduling feature coming soon",
     });
+  };
+
+  const handleRefreshWorkouts = () => {
+    refreshWorkouts();
   };
 
   // Handle start workout functionality
@@ -177,6 +181,7 @@ const Dashboard = () => {
               workouts={upcomingWorkouts} 
               isLoading={isLoading}
               onScheduleWorkout={handleScheduleWorkout}
+              onRefresh={handleRefreshWorkouts}
             />
           </div>
         </div>

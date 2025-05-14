@@ -3,9 +3,12 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Exercise } from "@/types/exercise";
+import { supabase } from "@/integrations/supabase/client";
+import { Wod } from "@/types/wod";
+import { PreparedWorkout } from "@/types/workout";
+import { addDays, isBefore, parseISO } from "date-fns";
 
-// This function will simulate fetching dashboard data from various data sources
-// In a full implementation, this would call the Supabase client to get the actual data
+// This function will fetch dashboard data from various data sources
 const fetchDashboardData = async (userId: string) => {
   // In a real implementation, this would fetch data from Supabase tables
   // For now, we'll return mock data that matches your expected structure
@@ -98,37 +101,72 @@ const fetchDashboardData = async (userId: string) => {
     },
   ];
 
-  // Mock upcoming workouts
-  const upcomingWorkouts = [
-    {
-      id: "w-5",
-      title: "Push Workout",
-      date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
-      duration: 45,
-      difficulty: "Intermediate"
-    },
-    {
-      id: "w-6",
-      title: "Pull Workout",
-      date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // In 3 days
-      duration: 50,
-      difficulty: "Intermediate"
-    },
-    {
-      id: "w-7",
-      title: "Leg Day",
-      date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // In 5 days
-      duration: 55,
-      difficulty: "Advanced"
-    },
-    {
-      id: "w-8",
-      title: "Recovery & Mobility",
-      date: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(), // In 6 days
-      duration: 30,
-      difficulty: "Beginner"
+  // Fetch random WODs from Supabase
+  let wods: Wod[] = [];
+  try {
+    const { data: wodData, error: wodError } = await supabase
+      .from('wods')
+      .select('id, name, description, difficulty, avg_duration_minutes, category')
+      .limit(2);
+    
+    if (wodError) throw wodError;
+    
+    if (wodData && wodData.length > 0) {
+      wods = wodData.map(wod => ({
+        ...wod,
+        id: wod.id,
+        title: wod.name,
+        date: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
+        duration: wod.avg_duration_minutes || 30,
+        type: 'wod'
+      })) as unknown as Wod[];
     }
-  ];
+  } catch (error) {
+    console.error("Error fetching WODs:", error);
+  }
+
+  // Fetch random prepared workouts from Supabase
+  let preparedWorkouts: PreparedWorkout[] = [];
+  try {
+    const { data: workoutData, error: workoutError } = await supabase
+      .from('prepared_workouts')
+      .select('id, title, description, difficulty, duration_minutes, category')
+      .limit(2);
+    
+    if (workoutError) throw workoutError;
+    
+    if (workoutData && workoutData.length > 0) {
+      preparedWorkouts = workoutData.map(workout => ({
+        ...workout,
+        date: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
+        duration: workout.duration_minutes || 45,
+        type: 'workout'
+      })) as unknown as PreparedWorkout[];
+    }
+  } catch (error) {
+    console.error("Error fetching prepared workouts:", error);
+  }
+
+  // Combine the fetched WODs and prepared workouts into upcomingWorkouts
+  // This will ensure we have a mix of both types
+  const upcomingWorkouts = [
+    ...wods.map(wod => ({
+      id: wod.id,
+      title: wod.name || wod.title,
+      date: wod.date,
+      duration: wod.avg_duration_minutes || wod.duration || 30,
+      difficulty: wod.difficulty || "Intermediate",
+      type: 'wod'
+    })),
+    ...preparedWorkouts.map(workout => ({
+      id: workout.id,
+      title: workout.title,
+      date: workout.date,
+      duration: workout.duration_minutes || workout.duration || 45,
+      difficulty: workout.difficulty || "Intermediate",
+      type: 'workout'
+    }))
+  ].sort(() => Math.random() - 0.5); // Shuffle the array for randomness
 
   // Mock achievements
   const achievements = [
@@ -217,6 +255,17 @@ export const useDashboardData = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Function to refresh upcoming workouts periodically
+  const refreshUpcomingWorkouts = async () => {
+    try {
+      const userId = user?.id || 'demo-user';
+      const data = await fetchDashboardData(userId);
+      setUpcomingWorkouts(data.upcomingWorkouts);
+    } catch (error) {
+      console.error("Error refreshing upcoming workouts:", error);
+    }
+  };
+
   useEffect(() => {
     const loadDashboardData = async () => {
       setIsLoading(true);
@@ -250,6 +299,13 @@ export const useDashboardData = () => {
     };
     
     loadDashboardData();
+    
+    // Refresh upcoming workouts every 5 minutes (300000 ms)
+    const intervalId = setInterval(() => {
+      refreshUpcomingWorkouts();
+    }, 300000);
+
+    return () => clearInterval(intervalId);
   }, [user, toast]);
 
   const addFavoriteExercise = async (exerciseId: string) => {
@@ -323,6 +379,13 @@ export const useDashboardData = () => {
     }
   };
 
+  // Function to manually refresh upcoming workouts
+  const refreshWorkouts = async () => {
+    setIsLoading(true);
+    await refreshUpcomingWorkouts();
+    setIsLoading(false);
+  };
+
   return {
     isLoading,
     error,
@@ -333,6 +396,7 @@ export const useDashboardData = () => {
     metrics,
     weeklyChartData,
     addFavoriteExercise,
-    removeFavoriteExercise
+    removeFavoriteExercise,
+    refreshWorkouts
   };
 };
