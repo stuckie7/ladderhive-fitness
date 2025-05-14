@@ -1,8 +1,8 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Clock, Brain, Feather } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { TimeFilter, IntensityFilter, StressTypeFilter } from "@/hooks/use-mindful-movement";
+import { Separator } from "@/components/ui/separator";
 
 interface FilterBarProps {
   timeFilter: TimeFilter;
@@ -22,120 +22,95 @@ export const FilterBar = ({
   setStressTypeFilter,
 }: FilterBarProps) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">Time Available</h3>
-        </div>
+        <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Time Available</h3>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant={timeFilter === "quick" ? "default" : "outline"}
-            size="sm"
-            className={timeFilter === "quick" ? "bg-blue-600 hover:bg-blue-700" : ""}
+          <FilterBadge 
+            label="Quick (5-10 min)" 
+            active={timeFilter === "quick"} 
             onClick={() => setTimeFilter(timeFilter === "quick" ? null : "quick")}
-          >
-            5-Min Quick Relief
-          </Button>
-          <Button
-            variant={timeFilter === "short" ? "default" : "outline"}
-            size="sm"
-            className={timeFilter === "short" ? "bg-blue-600 hover:bg-blue-700" : ""}
+          />
+          <FilterBadge 
+            label="Short (10-20 min)" 
+            active={timeFilter === "short"} 
             onClick={() => setTimeFilter(timeFilter === "short" ? null : "short")}
-          >
-            15-Min Sessions
-          </Button>
-          <Button
-            variant={timeFilter === "long" ? "default" : "outline"}
-            size="sm"
-            className={timeFilter === "long" ? "bg-blue-600 hover:bg-blue-700" : ""}
+          />
+          <FilterBadge 
+            label="Long (20+ min)" 
+            active={timeFilter === "long"} 
             onClick={() => setTimeFilter(timeFilter === "long" ? null : "long")}
-          >
-            30-Min Flows
-          </Button>
+          />
         </div>
       </div>
       
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Brain className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">Stress Type</h3>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={stressTypeFilter === "work" ? "default" : "outline"}
-            size="sm"
-            className={stressTypeFilter === "work" ? "bg-blue-600 hover:bg-blue-700" : ""}
-            onClick={() => setStressTypeFilter(stressTypeFilter === "work" ? null : "work")}
-          >
-            Work Anxiety
-          </Button>
-          <Button
-            variant={stressTypeFilter === "sleep" ? "default" : "outline"}
-            size="sm"
-            className={stressTypeFilter === "sleep" ? "bg-blue-600 hover:bg-blue-700" : ""}
-            onClick={() => setStressTypeFilter(stressTypeFilter === "sleep" ? null : "sleep")}
-          >
-            Sleep Prep
-          </Button>
-          <Button
-            variant={stressTypeFilter === "refresh" ? "default" : "outline"}
-            size="sm"
-            className={stressTypeFilter === "refresh" ? "bg-blue-600 hover:bg-blue-700" : ""}
-            onClick={() => setStressTypeFilter(stressTypeFilter === "refresh" ? null : "refresh")}
-          >
-            Midday Refresh
-          </Button>
-        </div>
-      </div>
+      <Separator />
       
       <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Feather className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">Intensity</h3>
-        </div>
+        <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Intensity Level</h3>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant={intensityFilter === "gentle" ? "default" : "outline"}
-            size="sm"
-            className={intensityFilter === "gentle" ? "bg-blue-600 hover:bg-blue-700" : ""}
+          <FilterBadge 
+            label="Gentle" 
+            active={intensityFilter === "gentle"} 
             onClick={() => setIntensityFilter(intensityFilter === "gentle" ? null : "gentle")}
-          >
-            Gentle
-          </Button>
-          <Button
-            variant={intensityFilter === "moderate" ? "default" : "outline"}
-            size="sm"
-            className={intensityFilter === "moderate" ? "bg-blue-600 hover:bg-blue-700" : ""}
+          />
+          <FilterBadge 
+            label="Moderate" 
+            active={intensityFilter === "moderate"} 
             onClick={() => setIntensityFilter(intensityFilter === "moderate" ? null : "moderate")}
-          >
-            Moderate
-          </Button>
-          <Button
-            variant={intensityFilter === "restorative" ? "default" : "outline"}
-            size="sm"
-            className={intensityFilter === "restorative" ? "bg-blue-600 hover:bg-blue-700" : ""}
+          />
+          <FilterBadge 
+            label="Restorative" 
+            active={intensityFilter === "restorative"} 
             onClick={() => setIntensityFilter(intensityFilter === "restorative" ? null : "restorative")}
-          >
-            Restorative
-          </Button>
+          />
         </div>
       </div>
       
-      {(timeFilter || intensityFilter || stressTypeFilter) && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-blue-600 dark:text-blue-400"
-          onClick={() => {
-            setTimeFilter(null);
-            setIntensityFilter(null);
-            setStressTypeFilter(null);
-          }}
-        >
-          Clear All Filters
-        </Button>
-      )}
+      <Separator />
+      
+      <div>
+        <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Stress Relief For</h3>
+        <div className="flex flex-wrap gap-2">
+          <FilterBadge 
+            label="Work Stress" 
+            active={stressTypeFilter === "work"} 
+            onClick={() => setStressTypeFilter(stressTypeFilter === "work" ? null : "work")}
+          />
+          <FilterBadge 
+            label="Sleep Prep" 
+            active={stressTypeFilter === "sleep"} 
+            onClick={() => setStressTypeFilter(stressTypeFilter === "sleep" ? null : "sleep")}
+          />
+          <FilterBadge 
+            label="Energy Refresh" 
+            active={stressTypeFilter === "refresh"} 
+            onClick={() => setStressTypeFilter(stressTypeFilter === "refresh" ? null : "refresh")}
+          />
+        </div>
+      </div>
     </div>
+  );
+};
+
+interface FilterBadgeProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+const FilterBadge = ({ label, active, onClick }: FilterBadgeProps) => {
+  return (
+    <Badge
+      variant={active ? "default" : "outline"}
+      className={`cursor-pointer ${
+        active 
+          ? "bg-blue-500 hover:bg-blue-600 text-white" 
+          : "bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900/20"
+      }`}
+      onClick={onClick}
+    >
+      {label}
+    </Badge>
   );
 };

@@ -1,238 +1,120 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  SidebarProvider, 
-  Sidebar, 
-  SidebarContent, 
-  SidebarTrigger,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Toaster } from "@/components/ui/sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Container } from '@/components/ui/container';
+import { useAuth } from '@/context/AuthContext';
 import { 
   Home, 
   Dumbbell, 
-  BarChart3, 
-  User, 
+  LineChart, 
+  CalendarDays, 
   Settings, 
-  Calendar,
-  LogOut,
-  Menu,
-  Flame,
-  Timer,
-  X
-} from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+  User,
+  PanelLeft,
+  Moon, 
+  BookOpen
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
-interface AppLayoutProps {
-  children: React.ReactNode;
-}
-
-interface UserProfileData {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  name?: string;
-  [key: string]: any;
-}
-
-// Define navigation items
-const navItems = [
-  { path: "/dashboard", label: "Dashboard", icon: Home, color: "text-blue-400" },
-  { path: "/workouts", label: "Workouts", icon: Dumbbell, color: "text-green-400" },
-  { path: "/wods", label: "WODs", icon: Timer, color: "text-yellow-400" },
-  { path: "/schedule", label: "Schedule", icon: Calendar, color: "text-purple-400" },
-  { path: "/progress", label: "Progress", icon: BarChart3, color: "text-orange-400" },
-  { path: "/profile", label: "Profile", icon: User, color: "text-pink-400" },
-  { path: "/settings", label: "Settings", icon: Settings, color: "text-gray-400" },
-];
-
-// Function to get user initials for avatar
-const getInitials = (name: string | undefined): string => {
-  if (!name) return "U";
-  
-  const nameParts = name.split(" ");
-  if (nameParts.length === 1) return nameParts[0][0].toUpperCase();
-  return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
 };
 
-const AppLayout = ({ children }: AppLayoutProps) => {
-  const [userData, setUserData] = useState<UserProfileData | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const navigate = useNavigate();
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
   
-  // Function to check if route is active
-  const isActive = (path: string): boolean => {
-    return location.pathname === path;
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
-  
-  useEffect(() => {
-    // This should only fetch profile data, not redirect
-    if (user) {
-      // Fetch user profile data
-      const fetchUserProfile = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          if (error) throw error;
-          
-          if (data) {
-            setUserData({
-              ...data,
-              email: user.email,
-              name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || user.email
-            });
-          }
-        } catch (error) {
-          console.error("Error fetching profile:", error);
-          setUserData({
-            id: user.id,
-            first_name: null,
-            last_name: null,
-            email: user.email,
-            name: user.email
-          });
-        }
-      };
-      
-      fetchUserProfile();
-    }
-    // Remove the redirect to /login here
-  }, [user]);
 
-  // Close sidebar on mobile by default
-  useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-  }, [isMobile]);
-  
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      // The redirect after signOut is now handled in AuthContext
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
-  
-  // If we don't have user data yet but we do have a user, show loading state
-  if (user && !userData) {
+  const navItems: NavItem[] = [
+    { label: 'Home', href: '/dashboard', icon: <Home size={18} /> },
+    { label: 'Exercises', href: '/exercises', icon: <Dumbbell size={18} /> },
+    { label: 'Workouts', href: '/workouts', icon: <PanelLeft size={18} /> },
+    { label: 'Mindful Movement', href: '/mindful-movement', icon: <Moon size={18} /> },
+    { label: 'Progress', href: '/progress', icon: <LineChart size={18} /> },
+    { label: 'Schedule', href: '/schedule', icon: <CalendarDays size={18} /> },
+    { label: 'WODs', href: '/wods', icon: <BookOpen size={18} /> },
+  ];
+
+  const NavItem = ({ item }: { item: NavItem }) => {
+    const active = isActive(item.href);
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="animate-pulse-soft">
-          <Flame size={48} className="text-fitness-primary animate-glow" />
-        </div>
-      </div>
+      <Link 
+        to={item.href} 
+        className={`flex items-center gap-2 px-3 py-2 rounded-md ${
+          active 
+            ? 'bg-primary text-primary-foreground font-medium' 
+            : 'hover:bg-secondary'
+        }`}
+      >
+        {item.icon}
+        <span>{item.label}</span>
+      </Link>
     );
-  }
-  
-  // If user is definitely not logged in, AppLayout should not render children
-  // Don't redirect here - let ProtectedRoute handle it
-  
+  };
+
   return (
-    <>
-      <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
-        {/* Sidebar - Remove the className prop as it's not supported */}
-        <Sidebar>
-          <div className="p-4 flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2 ml-1">
-              <div className="h-9 w-9 bg-gradient-to-br from-fitness-primary to-fitness-secondary rounded-md flex items-center justify-center">
-                <span className="text-gray-900 font-bold">LH</span>
-              </div>
-              <span className="font-bold text-lg gradient-heading">LadderHive</span>
-            </div>
-          </div>
-          
-          <SidebarContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton 
-                    className={isActive(item.path) 
-                      ? `bg-gray-800/50 ${item.color}`
-                      : "text-gray-400 hover:text-white"}
-                  >
-                    <button
-                      onClick={() => navigate(item.path)}
-                      className="flex items-center gap-2 w-full group"
-                    >
-                      <item.icon className={`h-5 w-5 ${isActive(item.path) ? item.color : "text-gray-400 group-hover:text-white"}`} />
-                      <span>{item.label}</span>
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarContent>
-          
-          <div className="mt-auto p-4 border-t border-gray-800/50">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarImage src="" alt={userData?.name || ""} />
-                <AvatarFallback className="bg-gradient-to-br from-fitness-primary to-fitness-secondary text-gray-900 font-medium">
-                  {getInitials(userData?.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate text-white">{userData?.name}</p>
-                <p className="text-xs text-gray-400 truncate">{userData?.email}</p>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={handleLogout}
-                className="text-gray-400 hover:text-white hover:bg-gray-800/50"
-              >
-                <LogOut className="h-5 w-5" />
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <div className="w-64 bg-card border-r border-border hidden md:block p-4">
+        <div className="mb-6 px-2">
+          <h1 className="font-bold text-xl">FitTrack Pro</h1>
+        </div>
+
+        <nav className="space-y-1 mb-6">
+          {navItems.map((item) => (
+            <NavItem key={item.href} item={item} />
+          ))}
+        </nav>
+
+        <div className="absolute bottom-4 left-4 right-4 space-y-2">
+          <div className="flex justify-between items-center">
+            <ThemeToggle />
+            <Link to="/settings">
+              <Button variant="ghost" size="icon">
+                <Settings size={18} />
               </Button>
-            </div>
+            </Link>
+            <Link to="/profile">
+              <Button variant="ghost" size="icon">
+                <User size={18} />
+              </Button>
+            </Link>
           </div>
-        </Sidebar>
-        
-        {/* Main content - adjust padding based on sidebar state */}
-        <div className={`flex-1 flex flex-col min-h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-black ${sidebarOpen && !isMobile ? 'lg:pl-64' : ''} transition-all duration-300`}>
-          <header className="h-16 border-b border-gray-800/50 bg-gray-900/70 backdrop-blur-sm flex items-center px-4 lg:px-6">
-            {/* Toggle sidebar button for mobile */}
-            <button 
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="mr-4 lg:hidden"
-              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-            >
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-            
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-white">
-                {navItems.find(item => isActive(item.path))?.label || "Dashboard"}
-              </h1>
-            </div>
-          </header>
           
-          {/* Main content */}
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            {children}
-          </main>
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={() => signOut?.()}
+          >
+            Sign out
+          </Button>
         </div>
       </div>
-      <Toaster />
-    </>
+
+      {/* Mobile navigation */}
+      <div className="md:hidden sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b border-border">
+        <div className="p-4 flex justify-between items-center">
+          <h1 className="font-bold">FitTrack Pro</h1>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            {/* Mobile menu button could go here */}
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-h-screen">
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 };
 

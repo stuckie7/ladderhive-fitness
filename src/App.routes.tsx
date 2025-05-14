@@ -20,7 +20,7 @@ import WorkoutDetailEnhanced from "@/pages/WorkoutDetailEnhanced";
 import MindfulnessPage from "@/pages/MindfulnessPage";
 import YogaRoutineDetailPage from "@/pages/YogaRoutineDetailPage";
 import YogaPage from "@/pages/YogaPage";
-import MindfulMovementPage from "@/pages/MindfulMovementPage"; // Added import for new page
+import MindfulMovementPage from "@/pages/MindfulMovementPage";
 
 const AppRoutes = () => {
   return (
@@ -50,7 +50,7 @@ const AppRoutes = () => {
       <Route path="/mindfulness/routine/:id" element={<ProtectedRoute><YogaRoutineDetailPage /></ProtectedRoute>} />
       <Route path="/yoga" element={<ProtectedRoute><YogaPage /></ProtectedRoute>} />
       
-      {/* New Mindful Movement route */}
+      {/* Mindful Movement route */}
       <Route path="/mindful-movement" element={<ProtectedRoute><MindfulMovementPage /></ProtectedRoute>} />
       
       {/* 404 page */}

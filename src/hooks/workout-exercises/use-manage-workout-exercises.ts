@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -80,21 +81,14 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Ensure exercise.id is converted to a number if the database expects it that way
-      // Based on the error message, it seems the database expects a number
-      const exerciseIdAsNumber = typeof exercise.id === 'string' 
-        ? parseInt(exercise.id, 10) 
-        : exercise.id;
+      // Convert the exercise.id to a string for consistent type handling
+      const exerciseIdAsString = exercise.id.toString();
         
-      if (isNaN(exerciseIdAsNumber)) {
-        throw new Error("Invalid exercise ID");
-      }
-      
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdAsNumber, // Use the number version
+          exercise_id: exerciseIdAsString,
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
@@ -110,7 +104,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       const updatedExercise: WorkoutExercise = {
         id: data.id,
         workout_id: workoutId,
-        exercise_id: exercise.id,
+        exercise_id: exerciseIdAsString,
         sets: details.sets || 3,
         reps: ensureStringReps(details.reps || 10),
         weight: details.weight || null,
