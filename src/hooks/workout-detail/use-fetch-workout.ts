@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutDetail } from '@/types/workout';
 
@@ -46,9 +46,9 @@ export const useWorkoutFetch = (workoutId: string) => {
   }, [workoutId]);
 
   // Fetch data on first render
-  useState(() => {
+  useEffect(() => {
     fetchWorkout();
-  });
+  }, [fetchWorkout]);
 
   return {
     workout,

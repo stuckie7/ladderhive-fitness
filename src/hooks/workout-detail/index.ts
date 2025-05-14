@@ -8,6 +8,8 @@ export * from './use-workout-actions';
 // Import and export the workout exercises hook with correct variable names
 import { useManageWorkoutExercises } from '../workout-exercises/use-manage-workout-exercises';
 import { Exercise } from '@/types/exercise'; 
+import { useWorkoutFetch } from './use-fetch-workout';
+import { useWorkoutActions } from './use-workout-actions';
 
 // Export the useWorkoutDetail composite hook
 export const useWorkoutDetail = (workoutId: string) => {
@@ -16,14 +18,14 @@ export const useWorkoutDetail = (workoutId: string) => {
     isLoading: workoutLoading, 
     error: fetchError,
     fetchWorkout 
-  } = require('./use-fetch-workout').useWorkoutFetch(workoutId);
+  } = useWorkoutFetch(workoutId);
   
   const {
     isSaved,
     error: actionsError,
     handleSaveWorkout,
     handleCompleteWorkout
-  } = require('./use-workout-actions').useWorkoutActions(workoutId);
+  } = useWorkoutActions(workoutId);
   
   const {
     exercises: workoutExercises,
