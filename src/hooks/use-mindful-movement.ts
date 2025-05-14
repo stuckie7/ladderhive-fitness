@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { YogaWorkout } from "./use-yoga-workouts";
 
 export type TimeFilter = "quick" | "short" | "long" | null;
@@ -15,16 +15,9 @@ export interface MoodType {
   recommendedSequences: string[];
 }
 
-// Extend YogaWorkout with the needed category properties
-interface EnhancedYogaWorkout extends YogaWorkout {
-  timeCategory?: TimeFilter;
-  stressCategory?: StressTypeFilter;
-  intensityCategory?: IntensityFilter;
-}
-
 export const useGetMindfulMovement = () => {
-  const [workouts, setWorkouts] = useState<EnhancedYogaWorkout[]>([]);
-  const [filteredWorkouts, setFilteredWorkouts] = useState<EnhancedYogaWorkout[]>([]);
+  const [workouts, setWorkouts] = useState<YogaWorkout[]>([]);
+  const [filteredWorkouts, setFilteredWorkouts] = useState<YogaWorkout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
