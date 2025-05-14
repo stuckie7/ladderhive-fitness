@@ -60,7 +60,7 @@ export const useWorkoutSaver = (
             description: workout.description,
             difficulty: workout.difficulty,
             category: workout.category,
-            goal: workout.category, // Using category as goal for now
+            goal: workout.goal || workout.category, // Using category as goal for now
             duration_minutes: estimatedDuration || 30,
             is_template: workout.is_template || false
           })
@@ -76,7 +76,7 @@ export const useWorkoutSaver = (
             description: workout.description,
             difficulty: workout.difficulty,
             category: workout.category,
-            goal: workout.category, // Using category as goal for now
+            goal: workout.goal || workout.category, // Using category as goal for now
             duration_minutes: estimatedDuration || 30,
             is_template: workout.is_template || false,
             updated_at: new Date().toISOString()
@@ -119,7 +119,6 @@ export const useWorkoutSaver = (
       return {
         ...workout,
         id: workoutId,
-        exercises: exercises // Return actual exercises array
       };
       
     } catch (error) {

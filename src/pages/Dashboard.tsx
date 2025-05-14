@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import DailyProgressCard from "@/components/progress/DailyProgressCard";
 import { useDailyProgress } from "@/hooks/use-daily-progress";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { FavoriteExercise } from "@/types/workout";
 
 const Dashboard = () => {
   const navigate = useNavigate();

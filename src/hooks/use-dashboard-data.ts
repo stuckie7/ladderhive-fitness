@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Exercise } from "@/types/exercise";
+import { Exercise, FavoriteExercise } from "@/types/exercise";
 import { Wod } from "@/types/wod";
 import { PreparedWorkout } from "@/types/workout";
 import { addDays, isBefore, parseISO } from "date-fns";
@@ -119,12 +118,12 @@ export const useDashboardData = () => {
             planned_for: item.planned_for,
             created_at: item.created_at,
             workout: item.workout ? {
-              id: item.workout.id,
-              title: item.workout.title,
-              description: item.workout.description,
-              duration_minutes: item.workout.duration_minutes,
-              difficulty: item.workout.difficulty,
-              category: item.workout.category
+              id: item.workout?.id || '',
+              title: item.workout?.title || 'Unnamed Workout',
+              description: item.workout?.description || '',
+              duration_minutes: item.workout?.duration_minutes || 30,
+              difficulty: item.workout?.difficulty || 'intermediate',
+              category: item.workout?.category || 'general'
             } : null
           }))
         : generateSampleWorkouts(5, true);
@@ -271,12 +270,12 @@ export const useDashboardData = () => {
           scheduledDate.setDate(scheduledDate.getDate() + randomFutureDays);
           
           return {
-            id: workout.id,
-            title: workout.title || 'Unnamed Workout', // Ensure title exists
+            id: workout.id || '',
+            title: workout.title || 'Unnamed Workout',
             description: workout.description || '',
             difficulty: workout.difficulty || 'intermediate',
             duration: workout.duration_minutes || 30,
-            date: scheduledDate.toISOString(), // Use ISO string format consistently
+            date: scheduledDate.toISOString(),
             category: workout.category || 'General',
             type: 'workout'
           };
@@ -320,7 +319,7 @@ export const useDashboardData = () => {
 
         if (data) {
           favorites = data.map(ex => ({
-            id: ex.id.toString(), // Convert to string to match Exercise type
+            id: ex.id, // Keep as number, the Exercise interface now accepts string | number
             name: ex.name || 'Unknown Exercise',
             target: ex.prime_mover_muscle || 'Full Body',
             equipment: ex.primary_equipment || 'Bodyweight',

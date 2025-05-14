@@ -36,7 +36,7 @@ export const useWorkoutLoader = (
       
       if (!workoutData) throw new Error("Workout not found");
       
-      // Set the workout data
+      // Set the workout data with safe property access
       setWorkout({
         id: workoutData.id,
         title: workoutData.title,
@@ -45,7 +45,7 @@ export const useWorkoutLoader = (
         category: workoutData.category,
         goal: workoutData.goal,
         duration_minutes: workoutData.duration_minutes,
-        is_template: !!workoutData.is_template
+        is_template: workoutData.is_template || false // Add safe default
       });
       
       // Fetch the workout exercises
@@ -59,17 +59,22 @@ export const useWorkoutLoader = (
       
       // Map the exercises
       if (exerciseData && exerciseData.length > 0) {
-        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => ({
-          id: `${ex.id}`,
-          exercise_id: ex.exercise_id,
-          sets: ex.sets,
-          reps: ex.reps,
-          rest_seconds: ex.rest_seconds,
-          notes: ex.notes,
-          order_index: ex.order_index,
-          name: ex.exercise?.name || `Exercise ${ex.exercise_id}`,
-          exercise: ex.exercise
-        }));
+        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => {
+          // Handle potential undefined exercise relationship
+          const exerciseName = ex.exercise?.name || `Exercise ${ex.exercise_id}`;
+          
+          return {
+            id: `${ex.id}`,
+            exercise_id: ex.exercise_id,
+            sets: ex.sets,
+            reps: ex.reps,
+            rest_seconds: ex.rest_seconds,
+            notes: ex.notes,
+            order_index: ex.order_index,
+            name: exerciseName,
+            exercise: ex.exercise
+          };
+        });
         
         setExercises(mappedExercises);
       } else {
@@ -128,17 +133,22 @@ export const useWorkoutLoader = (
       
       // Map the exercises
       if (exerciseData && exerciseData.length > 0) {
-        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => ({
-          id: `temp-${Math.random().toString(36).substring(2, 11)}`, // Generate a temporary ID
-          exercise_id: ex.exercise_id,
-          sets: ex.sets,
-          reps: ex.reps,
-          rest_seconds: ex.rest_seconds,
-          notes: ex.notes,
-          order_index: ex.order_index,
-          name: ex.exercise?.name || `Exercise ${ex.exercise_id}`,
-          exercise: ex.exercise
-        }));
+        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => {
+          // Handle potential undefined exercise relationship
+          const exerciseName = ex.exercise?.name || `Exercise ${ex.exercise_id}`;
+          
+          return {
+            id: `temp-${Math.random().toString(36).substring(2, 11)}`, // Generate a temporary ID
+            exercise_id: ex.exercise_id,
+            sets: ex.sets,
+            reps: ex.reps,
+            rest_seconds: ex.rest_seconds,
+            notes: ex.notes,
+            order_index: ex.order_index,
+            name: exerciseName,
+            exercise: ex.exercise
+          };
+        });
         
         setExercises(mappedExercises);
       } else {

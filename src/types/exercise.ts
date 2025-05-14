@@ -1,6 +1,6 @@
 
 export interface Exercise {
-  id: string;
+  id: string | number; // Update to accept both string and number ids
   name: string;
   short_youtube_demo?: string | null;
   in_depth_youtube_exp?: string | null;
