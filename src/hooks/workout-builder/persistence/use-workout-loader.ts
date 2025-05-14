@@ -55,7 +55,7 @@ export const useWorkoutLoader = ({
         difficulty: workoutData.difficulty || "Beginner",
         category: workoutData.category || "General",
         duration_minutes: workoutData.duration_minutes || 30,
-        is_template: Boolean(workoutData.is_template) || false, // Convert to boolean
+        is_template: false, // Default to false since prepared_workouts might not have is_template
         exercises: []  // We'll set exercises separately
       });
       
@@ -66,7 +66,7 @@ export const useWorkoutLoader = ({
         return {
           id: ex.id || `temp-${Date.now()}-${Math.random()}`,
           exercise_id: ex.exercise_id,
-          name: exercise.name || "Unknown Exercise", // Safely access name with fallback
+          name: String(exercise.name || "Unknown Exercise"), // Safely access name with fallback and ensure it's a string
           sets: ex.sets || 3,
           reps: ex.reps || "10", // Convert to string
           rest_seconds: ex.rest_seconds || 60,

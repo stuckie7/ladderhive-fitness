@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExerciseItem from "./ExerciseItem";
 
+// Define a specific interface for the exercises used in this component
+// to avoid type conflicts with Exercise from other files
 interface Exercise {
   id: string;
   name: string;

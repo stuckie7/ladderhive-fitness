@@ -64,7 +64,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         const { error: updateError } = await supabase
           .from('workout_exercises')
           .update({ 
-            reps: repsValue // Store as string
+            reps: repsValue // Use string value for reps
           })
           .eq('id', data.id);
           
