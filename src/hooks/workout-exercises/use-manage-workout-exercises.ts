@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -86,7 +87,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       // Ensure reps is a string
       const repsAsString = ensureStringReps(details.reps || 10);
       
-      // Fix: Convert reps to string to match the database schema
+      // Cast numeric fields to the correct types for Supabase
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
@@ -96,7 +97,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
           order_index: newOrderIndex,
-          reps: repsAsString  // Already ensured to be a string
+          reps: repsAsString  // Use string format for reps
         })
         .select()
         .single();
@@ -144,12 +145,12 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       // Ensure reps is a string
       const repsAsString = ensureStringReps(details.reps || 10);
 
-      // Fix: Convert reps to string to match the database schema
+      // Cast types correctly for the update operation
       const { data, error } = await supabase
         .from('workout_exercises')
         .update({
           sets: details.sets,
-          reps: repsAsString,  // Using string format
+          reps: repsAsString,  // Use string format for reps
           weight: details.weight,
           rest_time: details.rest_time,
           notes: details.notes,
