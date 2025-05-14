@@ -9,7 +9,7 @@ import WorkoutExerciseSkeleton from "@/components/workouts/WorkoutExerciseSkelet
 import { Exercise } from "@/types/exercise";
 import { WorkoutExercise } from "@/hooks/workout-exercises/utils";
 
-// Define the interface for the exercise list items
+// Define the interface for the exercise list items to match ExerciseList component
 interface ExerciseListItem {
   id: string;
   name: string;
@@ -36,17 +36,17 @@ const WorkoutExerciseSection = ({
 }: WorkoutExerciseSectionProps) => {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
 
-  const handleAddExercise = async (exercise: Exercise) => {
+  const handleAddExercise = async (exercise: Exercise): Promise<void> => {
     await onAddExercise(exercise);
     setSearchModalOpen(false);
   };
 
-  // Include demonstration property that uses ExerciseVideoHandler in the render stage
+  // Format exercises to match ExerciseListItem interface
   const exerciseListItems: ExerciseListItem[] = exercises.map(we => ({
     id: we.id,
     name: we.exercise?.name || "Unknown Exercise",
     sets: we.sets,
-    reps: we.reps,
+    reps: we.reps, // This will be string or number already
     weight: we.weight,
     restTime: we.rest_time,
     description: we.exercise?.description,

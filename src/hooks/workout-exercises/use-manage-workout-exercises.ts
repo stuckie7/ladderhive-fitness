@@ -37,34 +37,30 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Convert reps to string if it's a number to ensure consistency
-      const repsValue = ensureStringReps(details.reps);
-      
-      // Create initial exercise data without the reps field to avoid type issues
-      const newExerciseData = {
-        workout_id: workoutId,
-        exercise_id: String(exercise.id), // Ensure it's a string
-        sets: details.sets || 3,
-        weight: details.weight || null,
-        rest_time: details.rest_time || 60,
-        order_index: newOrderIndex
-      };
-      
+      // Use a two-step approach to avoid type issues:
+      // 1. First insert without the reps field
       const { data, error } = await supabase
         .from('workout_exercises')
-        .insert(newExerciseData)
+        .insert({
+          workout_id: workoutId,
+          exercise_id: String(exercise.id), // Ensure it's a string
+          sets: details.sets || 3,
+          weight: details.weight || null,
+          rest_time: details.rest_time || 60,
+          order_index: newOrderIndex
+        })
         .select()
         .single();
       
       if (error) throw error;
       
-      // Now update with the reps field separately
+      // 2. Then update with the reps field as a string
       if (data && data.id) {
+        const repsValue = ensureStringReps(details.reps);
+        
         const { error: updateError } = await supabase
           .from('workout_exercises')
-          .update({ 
-            reps: repsValue // Use string value for reps
-          })
+          .update({ reps: repsValue })
           .eq('id', data.id);
           
         if (updateError) throw updateError;
@@ -73,7 +69,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       // Add the new exercise to the local state with the full exercise details
       const updatedExercise: WorkoutExercise = {
         ...data,
-        reps: repsValue,
+        reps: ensureStringReps(details.reps),
         exercise
       };
       

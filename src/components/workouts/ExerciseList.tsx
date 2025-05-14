@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExerciseItem from "./ExerciseItem";
 
 // Define a specific interface for the exercises used in this component
-// to avoid type conflicts with Exercise from other files
 interface ExerciseListItem {
   id: string;
   name: string;
@@ -50,7 +49,7 @@ const ExerciseList = ({ exercises, onComplete }: ExerciseListProps) => {
           {exercises.map((exercise) => (
             <ExerciseItem
               key={exercise.id}
-              exercise={exercise}
+              exercise={exercise as any} // Type assertion to avoid conflicts with Exercise type
               isCompleted={completedExercises.includes(exercise.id)}
               onToggleComplete={handleCheckChange}
               isExpanded={expandedExercise === exercise.id}

@@ -48,8 +48,8 @@ export const useWorkoutLoader = ({
       
       if (exercisesError) throw exercisesError;
       
-      // Set workout data - handle is_template as an optional property that might not exist
-      const hasIsTemplate = 'is_template' in workoutData;
+      // Set workout data - safely check if is_template exists
+      const hasIsTemplate = workoutData && typeof workoutData === 'object' && 'is_template' in workoutData;
       
       setWorkout({
         id: workoutData.id,
@@ -66,10 +66,16 @@ export const useWorkoutLoader = ({
       const mappedExercises: WorkoutExerciseDetail[] = (exercisesData || []).map(ex => {
         // Make sure ex.exercise exists and handle if it doesn't
         const exercise = ex.exercise || {};
+        
+        // Get name with safe property access
+        const exerciseName = exercise && typeof exercise === 'object' && 'name' in exercise 
+          ? exercise.name 
+          : "Unknown Exercise";
+          
         return {
           id: ex.id || `temp-${Date.now()}-${Math.random()}`,
           exercise_id: ex.exercise_id,
-          name: exercise.name || "Unknown Exercise", // Safely access name with fallback
+          name: exerciseName,
           sets: ex.sets || 3,
           reps: ex.reps || "10", // Convert to string
           rest_seconds: ex.rest_seconds || 60,
