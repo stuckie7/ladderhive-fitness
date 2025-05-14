@@ -12,7 +12,8 @@ import {
   User,
   PanelLeft,
   Moon, 
-  BookOpen
+  BookOpen,
+  Bookmark
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -35,6 +36,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Home', href: '/dashboard', icon: <Home size={18} /> },
     { label: 'Exercises', href: '/exercises', icon: <Dumbbell size={18} /> },
     { label: 'Workouts', href: '/workouts', icon: <PanelLeft size={18} /> },
+    { label: 'Saved Workouts', href: '/saved-workouts', icon: <Bookmark size={18} /> },
     { label: 'Mindful Movement', href: '/mindful-movement', icon: <Moon size={18} /> },
     { label: 'Progress', href: '/progress', icon: <LineChart size={18} /> },
     { label: 'Schedule', href: '/schedule', icon: <CalendarDays size={18} /> },

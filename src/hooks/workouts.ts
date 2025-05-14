@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { useWorkoutsFetch } from './workouts/use-workouts-fetch';
 import { useWorkoutsActions } from './workouts/use-workouts-actions';
 import { Workout } from '@/types/workout';
+import { useSavedWorkouts } from './workouts/use-saved-workouts';
 
 export const useWorkouts = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
