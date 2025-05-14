@@ -1,15 +1,16 @@
+
 // Update the WorkoutTemplate interface to align with Supabase table structure
 export interface WorkoutExerciseDetail {
   id: string;
-  name: string;
+  exercise_id: string | number;
   sets: number;
   reps: string;
   weight?: string;
   rest_seconds?: number;
   notes?: string;
   order_index: number;
-  exercise_id: string | number;
-  exercise?: any; // Add this field to support exercise details
+  exercise?: any; // Support any exercise object structure
+  name?: string; // Make name optional since it might come from the exercise object
 }
 
 export interface WorkoutDetail {
@@ -19,7 +20,7 @@ export interface WorkoutDetail {
   difficulty: string;
   duration?: number;  // Use this for backwards compatibility
   duration_minutes?: number;  // Add this for new code
-  exercises: WorkoutExerciseDetail[]; // Always use array of exercises, not number
+  exercises?: WorkoutExerciseDetail[]; // Optional array of exercises
   category?: string;
   created_at?: string;
   updated_at?: string;
@@ -29,6 +30,7 @@ export interface WorkoutDetail {
   is_new?: boolean;
   is_popular?: boolean;
   is_featured?: boolean;
+  goal?: string; // Add goal field to match Supabase schema
 }
 
 // Updated WorkoutTemplate to align with prepared_workouts table

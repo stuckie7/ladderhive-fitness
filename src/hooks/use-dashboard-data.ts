@@ -22,6 +22,15 @@ interface ScheduledWorkout extends Omit<PreparedWorkout, 'goal'> {
   type?: string;
 }
 
+// Interface for our favorite exercises that matches the DB structure
+interface FavoriteExercise extends Omit<Exercise, 'id'> {
+  id: number | string;
+  name: string;
+  target: string;
+  equipment: string;
+  image_url: string;
+}
+
 // This function will fetch dashboard data from various data sources
 export const useDashboardData = () => {
   // Authentication and toast
@@ -31,7 +40,7 @@ export const useDashboardData = () => {
   // State variables
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
   const [upcomingWorkouts, setUpcomingWorkouts] = useState<any[]>([]);
-  const [favoriteExercises, setFavoriteExercises] = useState<Exercise[]>([]);
+  const [favoriteExercises, setFavoriteExercises] = useState<FavoriteExercise[]>([]);
   const [achievements, setAchievements] = useState<any[]>([]);
   const [metrics, setMetrics] = useState({
     totalWorkouts: 0,
@@ -100,7 +109,25 @@ export const useDashboardData = () => {
       if (error) throw error;
 
       // Generate sample data for testing
-      const sampleRecentWorkouts = data && data.length > 0 ? data : generateSampleWorkouts(5, true);
+      const sampleRecentWorkouts = data && data.length > 0 
+        ? data.map(item => ({
+            id: item.id,
+            user_id: item.user_id,
+            workout_id: item.workout_id,
+            status: item.status,
+            completed_at: item.completed_at,
+            planned_for: item.planned_for,
+            created_at: item.created_at,
+            workout: item.workout ? {
+              id: item.workout.id,
+              title: item.workout.title,
+              description: item.workout.description,
+              duration_minutes: item.workout.duration_minutes,
+              difficulty: item.workout.difficulty,
+              category: item.workout.category
+            } : null
+          }))
+        : generateSampleWorkouts(5, true);
       setRecentWorkouts(sampleRecentWorkouts);
 
       // Generate weekly chart data based on workout history
@@ -127,7 +154,10 @@ export const useDashboardData = () => {
 
     // Map workout data to chart data
     workouts.forEach(workout => {
-      const workoutDate = new Date((workout.completed_at || workout.created_at)).toISOString().split('T')[0];
+      const completedDate = workout.completed_at || workout.created_at;
+      if (!completedDate) return;
+      
+      const workoutDate = new Date(completedDate).toISOString().split('T')[0];
       const dayIndex = last7Days.findIndex(day => day.date === workoutDate);
 
       if (dayIndex !== -1) {
@@ -170,12 +200,12 @@ export const useDashboardData = () => {
       if (data && data.length > 0) {
         const mappedWorkouts = data.map(item => ({
           id: item.id,
-          title: item.workout.title,
+          title: item.workout?.title || 'Unnamed Workout',
           scheduledDate: item.planned_for,
-          duration_minutes: item.workout.duration_minutes,
-          description: item.workout.description,
-          difficulty: item.workout.difficulty,
-          category: item.workout.category,
+          duration_minutes: item.workout?.duration_minutes || 30,
+          description: item.workout?.description || '',
+          difficulty: item.workout?.difficulty || 'intermediate',
+          category: item.workout?.category || 'general',
           type: 'scheduled'
         }));
         setUpcomingWorkouts(mappedWorkouts);
@@ -189,38 +219,48 @@ export const useDashboardData = () => {
   // Load random upcoming workouts and WODs
   const loadRandomUpcoming = async () => {
     try {
-      let combined: (ScheduledWod | ScheduledWorkout)[] = [];
+      let combined: any[] = [];
   
       // Load some WODs
-      const { data: wods } = await supabase
+      const { data: wods, error: wodsError } = await supabase
         .from('wods')
         .select('*')
         .limit(3);
+      
+      if (wodsError) throw wodsError;
   
       if (wods && wods.length > 0) {
         const wodItems = wods.map(wod => ({
           id: wod.id,
           name: wod.name,
+          title: wod.name, // Map name to title for consistency
           description: wod.description,
-          difficulty: wod.difficulty,
+          difficulty: wod.difficulty || 'intermediate',
           avg_duration_minutes: wod.avg_duration_minutes || 30,
-          category: wod.category,
-          scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
           duration_minutes: wod.avg_duration_minutes || 30,
+          category: wod.category || 'WOD',
+          scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
           type: 'wod'
         }));
         combined = [...combined, ...wodItems];
       }
   
       // Load some prepared workouts
-      const { data: workouts } = await supabase
+      const { data: workouts, error: workoutsError } = await supabase
         .from('prepared_workouts')
         .select('*')
         .limit(3);
+      
+      if (workoutsError) throw workoutsError;
   
       if (workouts && workouts.length > 0) {
         const workoutItems = workouts.map(workout => ({
-          ...workout,
+          id: workout.id,
+          title: workout.title,
+          description: workout.description,
+          difficulty: workout.difficulty,
+          duration_minutes: workout.duration_minutes,
+          category: workout.category,
           scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
           type: 'workout'
         }));
@@ -232,9 +272,11 @@ export const useDashboardData = () => {
       combined = combined.slice(0, 5);
   
       // Sort by date
-      combined.sort((a, b) => 
-        new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
-      );
+      combined.sort((a, b) => {
+        const dateA = a.scheduledDate ? new Date(a.scheduledDate).getTime() : 0;
+        const dateB = b.scheduledDate ? new Date(b.scheduledDate).getTime() : 0;
+        return dateA - dateB;
+      });
   
       setUpcomingWorkouts(combined);
     } catch (error) {
@@ -248,7 +290,7 @@ export const useDashboardData = () => {
 
     try {
       // First check user_favorite_exercises (placeholder implementation)
-      let favorites: Exercise[] = [];
+      let favorites: FavoriteExercise[] = [];
 
       // If no favorites, generate sample data
       if (favorites.length === 0) {
@@ -261,12 +303,12 @@ export const useDashboardData = () => {
 
         if (data) {
           favorites = data.map(ex => ({
-            id: ex.id,
+            id: ex.id.toString(), // Convert to string to match Exercise type
             name: ex.name || 'Unknown Exercise',
             target: ex.prime_mover_muscle || 'Full Body',
             equipment: ex.primary_equipment || 'Bodyweight',
-            image_url: ex.youtube_thumbnail_url
-          })) as Exercise[];
+            image_url: ex.youtube_thumbnail_url || ''
+          }));
         }
       }
 
@@ -361,9 +403,9 @@ export const useDashboardData = () => {
     return workouts;
   };
 
-  const removeFavoriteExercise = (exerciseId: string) => {
+  const removeFavoriteExercise = async (exerciseId: string): Promise<void> => {
     // Remove exercise from favorites
-    setFavoriteExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+    setFavoriteExercises(prev => prev.filter(ex => ex.id.toString() !== exerciseId.toString()));
     
     toast({
       title: "Success",

@@ -65,8 +65,8 @@ export const useWorkoutPersistence = (
             title: workout.title,
             description: workout.description,
             difficulty: workout.difficulty,
-            category: workout.category,
-            goal: workout.category, // Using category as goal for now
+            category: workout.category || 'Other',
+            goal: workout.goal || workout.category || 'General Fitness',
             duration_minutes: estimatedDuration || 30,
             is_template: workout.is_template || false
           })
@@ -81,10 +81,10 @@ export const useWorkoutPersistence = (
             title: workout.title,
             description: workout.description,
             difficulty: workout.difficulty,
-            category: workout.category,
-            goal: workout.category, // Using category as goal for now
+            category: workout.category || 'Other',
+            goal: workout.goal || workout.category || 'General Fitness',
             duration_minutes: estimatedDuration || 30,
-            is_template: workout.is_template || false,
+            is_template: !!workout.is_template,
             updated_at: new Date().toISOString()
           })
           .eq('id', workoutId);
@@ -180,16 +180,13 @@ export const useWorkoutPersistence = (
         category: workoutData.category,
         goal: workoutData.goal,
         duration_minutes: workoutData.duration_minutes,
-        is_template: workoutData.is_template || false
+        is_template: !!workoutData.is_template
       });
       
       // Fetch the workout exercises
       const { data: exerciseData, error: exerciseError } = await supabase
         .from('prepared_workout_exercises')
-        .select(`
-          *,
-          exercise:exercise_id(*)
-        `)
+        .select('*, exercise:exercises_full(*)')
         .eq('workout_id', id)
         .order('order_index', { ascending: true });
         
@@ -197,7 +194,7 @@ export const useWorkoutPersistence = (
       
       // Map the exercises
       if (exerciseData && exerciseData.length > 0) {
-        const mappedExercises = exerciseData.map(ex => ({
+        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => ({
           id: `${ex.id}`,
           exercise_id: ex.exercise_id,
           sets: ex.sets,
@@ -205,6 +202,7 @@ export const useWorkoutPersistence = (
           rest_seconds: ex.rest_seconds,
           notes: ex.notes,
           order_index: ex.order_index,
+          name: ex.exercise ? ex.exercise.name : `Exercise ${ex.exercise_id}`,
           exercise: ex.exercise
         }));
         
@@ -257,10 +255,7 @@ export const useWorkoutPersistence = (
       // Fetch the template exercises
       const { data: exerciseData, error: exerciseError } = await supabase
         .from('prepared_workout_exercises')
-        .select(`
-          *,
-          exercise:exercise_id(*)
-        `)
+        .select('*, exercise:exercises_full(*)')
         .eq('workout_id', templateId)
         .order('order_index', { ascending: true });
         
@@ -268,7 +263,7 @@ export const useWorkoutPersistence = (
       
       // Map the exercises
       if (exerciseData && exerciseData.length > 0) {
-        const mappedExercises = exerciseData.map(ex => ({
+        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => ({
           id: `temp-${Math.random().toString(36).substring(2, 11)}`, // Generate a temporary ID
           exercise_id: ex.exercise_id,
           sets: ex.sets,
@@ -276,6 +271,7 @@ export const useWorkoutPersistence = (
           rest_seconds: ex.rest_seconds,
           notes: ex.notes,
           order_index: ex.order_index,
+          name: ex.exercise ? ex.exercise.name : `Exercise ${ex.exercise_id}`,
           exercise: ex.exercise
         }));
         
