@@ -52,7 +52,7 @@ export const useSavedWorkouts = () => {
         
         // Safely add category if it exists using type assertion
         // This works because we're first checking if the property exists on the object
-        if ('category' in workoutData && workoutData.category) {
+        if ('category' in workoutData && typeof workoutData.category === 'string') {
           (workout as Workout & { category: string }).category = workoutData.category;
         }
         
