@@ -47,7 +47,8 @@ export const useSavedWorkouts = () => {
           exercises: workoutData.exercises || 0,
           difficulty: workoutData.difficulty || 'Beginner',
           isSaved: true,
-          category: workoutData.category || workoutData.difficulty || ''  // Using category if available, fallback to difficulty
+          // Only assign category if it exists in the data
+          ...(workoutData.category ? { category: workoutData.category } : {})
         };
         
         return {
