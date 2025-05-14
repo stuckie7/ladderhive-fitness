@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -7,13 +8,18 @@ import { Wod } from "@/types/wod";
 import { PreparedWorkout } from "@/types/workout";
 import { addDays, isBefore, parseISO } from "date-fns";
 
-// Define extended types with scheduledDate property
-interface ScheduledWod extends Wod {
+// Define extended types with scheduledDate property but make problematic required properties optional
+interface ScheduledWod extends Omit<Wod, 'components'> {
   scheduledDate: string;
+  components?: Wod['components'];
+  duration_minutes?: number;
+  type?: string;
 }
 
-interface ScheduledWorkout extends PreparedWorkout {
+interface ScheduledWorkout extends Omit<PreparedWorkout, 'goal'> {
   scheduledDate: string;
+  goal?: string;
+  type?: string;
 }
 
 // This function will fetch dashboard data from various data sources
@@ -126,7 +132,7 @@ const fetchDashboardData = async (userId: string) => {
         scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
         duration_minutes: wod.avg_duration_minutes || 30,
         type: 'wod'
-      })) as ScheduledWod[];
+      }));
     }
   } catch (error) {
     console.error("Error fetching WODs:", error);
@@ -147,7 +153,7 @@ const fetchDashboardData = async (userId: string) => {
         ...workout,
         scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
         type: 'workout'
-      })) as ScheduledWorkout[];
+      }));
     }
   } catch (error) {
     console.error("Error fetching prepared workouts:", error);
