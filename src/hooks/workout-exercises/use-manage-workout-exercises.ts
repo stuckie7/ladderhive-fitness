@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -38,17 +37,12 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Convert exercise.id to string if it's a number to ensure consistent handling
-      // This fixes the type error in line 66
-      const exerciseId = typeof exercise.id === 'number' ? String(exercise.id) : exercise.id;
-      
-      // Use a two-step approach:
-      // 1. First insert without the reps field
+      // Ensure exercise.id is used as a string
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseId, // Now correctly handled as string
+          exercise_id: exercise.id.toString(), // Convert to string explicitly
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
@@ -58,18 +52,6 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         .single();
       
       if (error) throw error;
-      
-      // 2. Then update with the reps field as a string
-      if (data && data.id) {
-        const repsValue = ensureStringReps(details.reps);
-        
-        const { error: updateError } = await supabase
-          .from('workout_exercises')
-          .update({ reps: repsValue })
-          .eq('id', data.id);
-          
-        if (updateError) throw updateError;
-      }
       
       // Add the new exercise to the local state with the full exercise details
       const updatedExercise: WorkoutExercise = {
