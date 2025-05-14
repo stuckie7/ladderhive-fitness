@@ -9,8 +9,7 @@ import WorkoutBuilderExerciseList from '@/components/workouts/builder/WorkoutBui
 import ExerciseSearchPanel from '@/components/workouts/builder/ExerciseSearchPanel';
 import { Dialog } from '@/components/ui/dialog';
 import WorkoutTemplateSelector from '@/components/workouts/builder/WorkoutTemplateSelector';
-// Import the correct WorkoutTemplate type
-import { WorkoutTemplate } from '@/hooks/workout-builder/template-management';
+import { WorkoutDetail } from '@/hooks/workout-builder/types';
 
 const WorkoutBuilder = () => {
   const { id } = useParams();
@@ -73,6 +72,11 @@ const WorkoutBuilder = () => {
     }
   };
   
+  // Create a wrapper function to match the expected type
+  const handleUpdateWorkoutInfo = (info: Partial<WorkoutDetail>) => {
+    setWorkoutInfo(info);
+  };
+  
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
@@ -89,7 +93,7 @@ const WorkoutBuilder = () => {
           <div className="lg:col-span-2 space-y-6">
             <WorkoutBuilderDetailsForm 
               workout={workout} 
-              onUpdate={setWorkoutInfo} 
+              onUpdate={handleUpdateWorkoutInfo}
               isLoading={isLoading}
             />
             
@@ -121,7 +125,7 @@ const WorkoutBuilder = () => {
 
         <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
           <WorkoutTemplateSelector 
-            templates={templates as WorkoutTemplate[]}
+            templates={templates}
             onSelectTemplate={handleSelectTemplate}
             onDeleteTemplate={deleteTemplate}
             onClose={() => setIsTemplateDialogOpen(false)}

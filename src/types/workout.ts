@@ -1,3 +1,4 @@
+
 // Define types for workout data
 export interface Workout {
   id: string;
@@ -18,7 +19,14 @@ export interface UserWorkout {
   status: string;
   completed_at: string | null;
   planned_for: string | null;
-  workout: Workout;
+  workout?: {
+    id?: string;
+    title?: string;
+    description?: string;
+    duration_minutes?: number;
+    difficulty?: string;
+    category?: string;
+  } | null;
   date?: string;
 }
 
@@ -48,4 +56,15 @@ export interface PreparedWorkoutExercise {
   order_index: number;
   notes?: string;
   exercise?: any; // Will be populated with exercise data when fetched
+  name?: string; // For compatibility with exercise names from various sources
+  weight?: string; // Add weight property
+}
+
+// Interface for favorite exercises that can handle both string and number IDs
+export interface FavoriteExercise {
+  id: string | number;
+  name: string;
+  target: string;
+  equipment: string;
+  image_url: string;
 }

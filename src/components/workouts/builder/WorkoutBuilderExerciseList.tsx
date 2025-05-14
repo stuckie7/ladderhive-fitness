@@ -1,9 +1,10 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ListChecks, Trash2, ArrowUp, ArrowDown, Edit, Grip } from "lucide-react";
+import { ListChecks, Trash2, ArrowUp, ArrowDown, Edit, Grip, Dumbbell, Search } from "lucide-react";
 import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 import { WorkoutExerciseDetail } from "@/hooks/use-workout-builder";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
@@ -27,6 +28,8 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
   onReorder,
   isLoading = false // Default to false
 }) => {
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination || !onReorder) return;
     
@@ -75,11 +78,18 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
       <CardContent>
         {exercises.length === 0 ? (
           <div className="text-center p-8 border border-dashed border-gray-800 rounded-lg">
-            <ListChecks className="mx-auto h-12 w-12 text-gray-600 mb-2" />
-            <h3 className="text-lg font-medium">No exercises added yet</h3>
-            <p className="text-muted-foreground mt-1">
+            <Dumbbell className="mx-auto h-12 w-12 text-gray-600 mb-2" />
+            <h3 className="text-lg font-medium mb-2">No exercises added yet</h3>
+            <p className="text-muted-foreground text-center mb-4">
               Search and add exercises from the library on the left.
             </p>
+            <Button 
+              onClick={() => setSearchModalOpen(true)}
+              className="bg-fitness-primary hover:bg-fitness-primary/90"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search & Add Exercise
+            </Button>
           </div>
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
