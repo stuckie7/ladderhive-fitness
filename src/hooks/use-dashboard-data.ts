@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise } from "@/types/exercise";
 import { Wod } from "@/types/wod";
-import { PreparedWorkout } from "@/types/workout";
+import { PreparedWorkout, FavoriteExercise } from "@/types/workout";
 import { addDays, isBefore, parseISO } from "date-fns";
 
 // Define extended types with scheduledDate property but make problematic required properties optional
@@ -111,7 +111,7 @@ export const useDashboardData = () => {
       // Generate sample data for testing
       const sampleRecentWorkouts = data && data.length > 0 
         ? data.map(item => {
-            // Handle potential errors with optional chaining and defaults
+            // Handle potential errors with optional chaining and ensure defaults for all properties
             const workoutData = item.workout || {};
             
             return {
@@ -204,17 +204,17 @@ export const useDashboardData = () => {
 
       if (data && data.length > 0) {
         const mappedWorkouts = data.map(item => {
-          // Safely extract properties with null checks
+          // Safely extract properties with null checks and defaults
           const workoutData = item.workout || {};
           
           return {
             id: item.id || '',
-            title: workoutData?.title || 'Unnamed Workout',
-            date: item.planned_for || new Date().toISOString(), // Ensure date is set
-            duration: workoutData?.duration_minutes || 30,
-            description: workoutData?.description || '',
-            difficulty: workoutData?.difficulty || 'intermediate',
-            category: workoutData?.category || 'general',
+            title: workoutData.title || 'Unnamed Workout',
+            date: item.planned_for || new Date().toISOString(),
+            duration: workoutData.duration_minutes || 30,
+            description: workoutData.description || '',
+            difficulty: workoutData.difficulty || 'intermediate',
+            category: workoutData.category || 'general',
             type: 'scheduled'
           };
         });
@@ -312,7 +312,7 @@ export const useDashboardData = () => {
 
     try {
       // First check user_favorite_exercises (placeholder implementation)
-      let favorites: FavoriteExercise[] = [];
+      let favorites: DashboardFavoriteExercise[] = [];
 
       // If no favorites, generate sample data
       if (favorites.length === 0) {

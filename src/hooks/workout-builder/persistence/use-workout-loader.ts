@@ -40,7 +40,7 @@ export const useWorkoutLoader = (
       setWorkout({
         id: workoutData.id,
         title: workoutData.title,
-        description: workoutData.description,
+        description: workoutData.description || '',
         difficulty: workoutData.difficulty,
         category: workoutData.category,
         goal: workoutData.goal,
@@ -62,7 +62,9 @@ export const useWorkoutLoader = (
         const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => {
           // Handle potential undefined exercise relationship
           const exerciseObj = ex.exercise || {};
-          const exerciseName = exerciseObj.name || `Exercise ${ex.exercise_id}`;
+          const exerciseName = exerciseObj && typeof exerciseObj === 'object' && 'name' in exerciseObj 
+            ? exerciseObj.name as string 
+            : `Exercise ${ex.exercise_id}`;
           
           return {
             id: `${ex.id}`,
@@ -116,7 +118,7 @@ export const useWorkoutLoader = (
       // Create a new workout based on the template
       setWorkout({
         title: `Copy of ${templateData.title}`,
-        description: templateData.description,
+        description: templateData.description || '',
         difficulty: templateData.difficulty,
         category: templateData.category,
         goal: templateData.goal,
@@ -138,7 +140,9 @@ export const useWorkoutLoader = (
         const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => {
           // Handle potential undefined exercise relationship
           const exerciseObj = ex.exercise || {};
-          const exerciseName = exerciseObj.name || `Exercise ${ex.exercise_id}`;
+          const exerciseName = exerciseObj && typeof exerciseObj === 'object' && 'name' in exerciseObj 
+            ? exerciseObj.name as string 
+            : `Exercise ${ex.exercise_id}`;
           
           return {
             id: `temp-${Math.random().toString(36).substring(2, 11)}`, // Generate a temporary ID

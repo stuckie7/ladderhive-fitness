@@ -1,35 +1,34 @@
 
-// Define types for the workout builder
 export interface WorkoutDetail {
   id?: string;
   title: string;
-  description: string;
+  description?: string;
   difficulty: string;
-  category: string;
+  category?: string;
   goal?: string;
   duration_minutes?: number;
-  is_template: boolean;
+  is_template?: boolean;
 }
 
 export interface WorkoutExerciseDetail {
   id: string;
-  exercise_id: number | string;
+  exercise_id: string | number;
   sets: number;
-  reps: string;
+  reps: string | number;
   rest_seconds: number;
+  weight?: string; // Add this property
   notes?: string;
   order_index: number;
-  name?: string;
+  name: string;
   exercise?: any;
-  weight?: string;
 }
 
+// Export WorkoutTemplate for compatibility
 export interface WorkoutTemplate {
   id: string;
-  title: string;
+  name: string;
   description?: string;
   difficulty: string;
   category: string;
-  is_template: boolean;
-  created_at?: string;
+  exercises: number;
 }

@@ -194,17 +194,25 @@ export const useWorkoutPersistence = (
       
       // Map the exercises
       if (exerciseData && exerciseData.length > 0) {
-        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => ({
-          id: `${ex.id}`,
-          exercise_id: ex.exercise_id,
-          sets: ex.sets,
-          reps: ex.reps,
-          rest_seconds: ex.rest_seconds,
-          notes: ex.notes,
-          order_index: ex.order_index,
-          name: ex.exercise ? ex.exercise.name : `Exercise ${ex.exercise_id}`,
-          exercise: ex.exercise
-        }));
+        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => {
+          const exerciseInfo = ex.exercise || {};
+          const exerciseName = typeof exerciseInfo === 'object' && exerciseInfo && 'name' in exerciseInfo 
+            ? String(exerciseInfo.name) 
+            : `Exercise ${ex.exercise_id}`;
+            
+          return {
+            id: `${ex.id}`,
+            exercise_id: ex.exercise_id,
+            sets: ex.sets,
+            reps: ex.reps,
+            rest_seconds: ex.rest_seconds,
+            notes: ex.notes,
+            order_index: ex.order_index,
+            name: exerciseName,
+            exercise: ex.exercise,
+            weight: ""
+          };
+        });
         
         setExercises(mappedExercises);
       } else {
@@ -263,17 +271,25 @@ export const useWorkoutPersistence = (
       
       // Map the exercises
       if (exerciseData && exerciseData.length > 0) {
-        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => ({
-          id: `temp-${Math.random().toString(36).substring(2, 11)}`, // Generate a temporary ID
-          exercise_id: ex.exercise_id,
-          sets: ex.sets,
-          reps: ex.reps,
-          rest_seconds: ex.rest_seconds,
-          notes: ex.notes,
-          order_index: ex.order_index,
-          name: ex.exercise ? ex.exercise.name : `Exercise ${ex.exercise_id}`,
-          exercise: ex.exercise
-        }));
+        const mappedExercises: WorkoutExerciseDetail[] = exerciseData.map(ex => {
+          const exerciseInfo = ex.exercise || {};
+          const exerciseName = typeof exerciseInfo === 'object' && exerciseInfo && 'name' in exerciseInfo 
+            ? String(exerciseInfo.name) 
+            : `Exercise ${ex.exercise_id}`;
+            
+          return {
+            id: `temp-${Math.random().toString(36).substring(2, 11)}`, // Generate a temporary ID
+            exercise_id: ex.exercise_id,
+            sets: ex.sets,
+            reps: ex.reps,
+            rest_seconds: ex.rest_seconds,
+            notes: ex.notes,
+            order_index: ex.order_index,
+            name: exerciseName,
+            exercise: ex.exercise,
+            weight: ""
+          };
+        });
         
         setExercises(mappedExercises);
       } else {

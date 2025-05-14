@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -33,9 +34,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       const orderIndex = existingExercises ? existingExercises.length : 0;
 
       // Convert exercise_id to string if it's a number
-      const exerciseId = typeof exercise.id === 'number' 
-        ? exercise.id.toString() 
-        : exercise.id;
+      const exerciseId = exercise.id.toString();
 
       // Insert the new exercise
       const { data, error } = await supabase
