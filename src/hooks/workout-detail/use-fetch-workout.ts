@@ -1,73 +1,62 @@
 
-import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Workout } from "@/types/workout";
 
-export const useFetchWorkout = (workoutId?: string) => {
-  const [workout, setWorkout] = useState<Workout | null>(null);
+export interface WorkoutDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  difficulty: string;
+  duration: number;
+  exercises: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export const useWorkoutDetail = (workoutId?: string) => {
+  const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaved, setIsSaved] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
-  // Fetch the workout details
   const fetchWorkout = useCallback(async () => {
     if (!workoutId) {
-      toast({
-        title: "Error",
-        description: "No workout ID provided",
-        variant: "destructive",
-      });
-      setTimeout(() => navigate("/workouts"), 3000);
+      setIsLoading(false);
       return;
     }
-    
-    setIsLoading(true);
+
     try {
-      console.log("Fetching workout with ID:", workoutId);
-      
-      // Fetch the workout details
-      const { data: workoutData, error: workoutError } = await supabase
+      setIsLoading(true);
+      const { data, error } = await supabase
         .from('workouts')
         .select('*')
         .eq('id', workoutId)
-        .maybeSingle(); // Use maybeSingle instead of single to prevent error
-      
-      if (workoutError) throw workoutError;
-      
-      if (workoutData) {
-        setWorkout(workoutData);
-      
-        // Check if the workout is saved by the current user
-        const { data: userWorkout, error: userWorkoutError } = await supabase
-          .from('user_workouts')
-          .select('id')
-          .eq('workout_id', workoutId)
-          .eq('status', 'saved')
-          .maybeSingle();
-        
-        if (!userWorkoutError && userWorkout) {
-          setIsSaved(true);
-        }
+        .single();
+
+      if (error) {
+        throw error;
       }
-      
-      return workoutData;
+
+      setWorkout(data as WorkoutDetail);
     } catch (error: any) {
-      console.error("Error fetching workout:", error);
-      // Don't toast an error here since we might display a mock workout instead
-      return null;
+      console.error("Error fetching workout:", error.message);
+      toast({
+        title: "Error",
+        description: "Failed to load workout details.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [workoutId, toast, navigate]);
+  }, [workoutId, toast]);
+
+  useEffect(() => {
+    fetchWorkout();
+  }, [fetchWorkout]);
 
   return {
     workout,
     isLoading,
-    isSaved,
-    setIsSaved,
-    fetchWorkout
+    fetchWorkout,
   };
 };

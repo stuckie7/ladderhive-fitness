@@ -1,52 +1,25 @@
 
 import { Exercise } from "@/types/exercise";
 
-// Define the shape of the data coming from Supabase
-export interface SupabaseExercise {
-  id: string;
-  name: string;
-  muscle_group?: string;
-  equipment?: string;
-  difficulty?: string;
-  description?: string;
-  image_url?: string;
-  video_url?: string;
-  instructions?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface WorkoutExercise {
   id: string;
   workout_id: string;
-  exercise_id: string; // Always use string to match Supabase's UUID format
+  exercise_id: string;
   sets: number;
-  reps: string; // Always use string to allow formats like "8-12"
-  weight?: string;
-  rest_time?: number;
+  reps: string;
+  weight: string | null;
+  rest_time: number;
   order_index: number;
-  notes?: string;
-  exercise?: Exercise | any; // Allow any to handle different exercise types
+  exercise?: Exercise;
 }
 
-// Helper function to map Supabase exercise data to our Exercise type
-export const mapSupabaseExerciseToExercise = (supabaseExercise: SupabaseExercise): Exercise => {
-  return {
-    id: supabaseExercise.id,
-    name: supabaseExercise.name,
-    bodyPart: supabaseExercise.muscle_group || "",
-    target: supabaseExercise.muscle_group || "", // Default target to muscle_group if available
-    equipment: supabaseExercise.equipment || "",
-    muscle_group: supabaseExercise.muscle_group,
-    description: supabaseExercise.description,
-    difficulty: supabaseExercise.difficulty as any,
-    image_url: supabaseExercise.image_url,
-    video_url: supabaseExercise.video_url
-  };
-};
-
-// Helper function to ensure consistency in reps format
-export const ensureStringReps = (reps: string | number | undefined): string => {
-  if (typeof reps === 'undefined') return "10";
-  return reps.toString();
+/**
+ * Ensures that reps is always stored as a string
+ * This helps with supporting ranges like "8-12" or "to failure"
+ */
+export const ensureStringReps = (reps: string | number | null | undefined): string => {
+  if (reps === null || reps === undefined) {
+    return "10";
+  }
+  return String(reps);
 };

@@ -12,12 +12,12 @@ export const useWorkoutExercises = (workoutId?: string) => {
   const {
     exercises,
     isLoading,
-    isAdding,
-    fetchWorkoutExercises,
-    addExerciseToWorkout,
-    removeExerciseFromWorkout,
-    updateExerciseDetails
-  } = useManageWorkoutExercises(workoutId);
+    isSaving: isAdding,
+    fetchExercises: fetchWorkoutExercises,
+    addExercise: addExerciseToWorkout,
+    removeExercise: removeExerciseFromWorkout,
+    updateExercise: updateExerciseDetails
+  } = useManageWorkoutExercises(workoutId || '');
 
   // Use the exercises from useManageWorkoutExercises hook
   useEffect(() => {
@@ -41,7 +41,7 @@ export const useWorkoutExercises = (workoutId?: string) => {
   // Initial data fetch if workoutId is provided
   useEffect(() => {
     if (workoutId) {
-      fetchWorkoutExercises(workoutId);
+      fetchWorkoutExercises();
     }
   }, [workoutId, fetchWorkoutExercises]);
 

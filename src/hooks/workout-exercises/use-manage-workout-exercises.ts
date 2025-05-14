@@ -82,8 +82,11 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       const newOrderIndex = maxOrderIndex + 1;
       
       // Convert the exercise.id to a string for consistent type handling
-      const exerciseIdAsString = exercise.id.toString();
-        
+      const exerciseIdAsString = String(exercise.id);
+      
+      // Ensure reps is a string
+      const repsAsString = ensureStringReps(details.reps || 10);
+      
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
@@ -93,7 +96,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
           order_index: newOrderIndex,
-          reps: ensureStringReps(details.reps || 10)
+          reps: repsAsString
         })
         .select()
         .single();
@@ -106,7 +109,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
         workout_id: workoutId,
         exercise_id: exerciseIdAsString,
         sets: details.sets || 3,
-        reps: ensureStringReps(details.reps || 10),
+        reps: repsAsString,
         weight: details.weight || null,
         rest_time: details.rest_time || 60,
         order_index: newOrderIndex,
@@ -138,11 +141,14 @@ export const useManageWorkoutExercises = (workoutId: string) => {
     try {
       setIsSaving(true);
 
+      // Ensure reps is a string
+      const repsAsString = ensureStringReps(details.reps || 10);
+
       const { data, error } = await supabase
         .from('workout_exercises')
         .update({
           sets: details.sets,
-          reps: ensureStringReps(details.reps || 10),
+          reps: repsAsString,
           weight: details.weight,
           rest_time: details.rest_time,
           notes: details.notes,
@@ -155,7 +161,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
 
       setExercises(prev =>
         prev.map(ex =>
-          ex.id === exerciseId ? { ...ex, ...details, reps: ensureStringReps(details.reps || 10) } : ex
+          ex.id === exerciseId ? { ...ex, ...details, reps: repsAsString } : ex
         )
       );
 
@@ -268,7 +274,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
     fetchExercises,
     addExercise,
     updateExercise,
-    removeExercise,
-    reorderExercises,
+    removeExercise: removeExercise,
+    reorderExercises: reorderExercises,
   };
 };

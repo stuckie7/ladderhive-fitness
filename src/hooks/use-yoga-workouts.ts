@@ -16,6 +16,11 @@ export interface YogaWorkout {
   youtube_thumbnail_url?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  
+  // Adding these properties to fix type errors
+  timeCategory?: "quick" | "short" | "long" | null;
+  stressCategory?: "work" | "sleep" | "refresh" | null;
+  intensityCategory?: "gentle" | "moderate" | "restorative" | null;
 }
 
 export const useYogaWorkouts = () => {
