@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard,
   Settings,
@@ -8,7 +7,7 @@ import {
   LineChart,
   Timer,
   Leaf,
-  Moon,
+  Yoga,
   Brain,
 } from "lucide-react";
 import { NavItem } from "@/components/layout/NavItem";
@@ -21,7 +20,7 @@ interface AppLayoutProps {
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,7 +51,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <NavItem to="/progress" icon={LineChart}>Progress</NavItem>
             <NavItem to="/wods" icon={Timer}>WODs</NavItem>
             <NavItem to="/mindful-movement" icon={Leaf}>Mindful Movement</NavItem>
-            <NavItem to="/yoga" icon={Moon}>Yoga</NavItem>
+            <NavItem to="/yoga" icon={Yoga}>Yoga</NavItem>
             <NavItem to="/mindfulness" icon={Brain}>Mindfulness</NavItem>
           </div>
 
@@ -65,7 +64,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           {/* Logout button */}
           <div className="mt-8">
             <button
-              onClick={signOut}
+              onClick={logout}
               className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800 focus:outline-none"
             >
               Logout
