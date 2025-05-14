@@ -945,6 +945,117 @@ export type Database = {
         }
         Relationships: []
       }
+      yoga_workouts: {
+        Row: {
+          arm_movement_pattern: string | null
+          body_region: string | null
+          combination_exercise: boolean | null
+          created_at: string | null
+          difficulty: string | null
+          exercise_classification: string | null
+          foot_elevation: string | null
+          force_type: string | null
+          grip: string | null
+          id: string
+          in_depth_youtube_exp: string | null
+          laterality: string | null
+          leg_movement_pattern: string | null
+          load_position: string | null
+          mechanics: string | null
+          movement_pattern_1: string | null
+          movement_pattern_2: string | null
+          movement_pattern_3: string | null
+          name: string
+          plane_of_motion_1: string | null
+          plane_of_motion_2: string | null
+          plane_of_motion_3: string | null
+          posture: string | null
+          primary_equipment: string | null
+          primary_items_count: number | null
+          prime_mover_muscle: string | null
+          secondary_equipment: string | null
+          secondary_items_count: number | null
+          secondary_muscle: string | null
+          short_youtube_demo: string | null
+          tertiary_muscle: string | null
+          updated_at: string | null
+          x: string | null
+          youtube_thumbnail_url: string | null
+        }
+        Insert: {
+          arm_movement_pattern?: string | null
+          body_region?: string | null
+          combination_exercise?: boolean | null
+          created_at?: string | null
+          difficulty?: string | null
+          exercise_classification?: string | null
+          foot_elevation?: string | null
+          force_type?: string | null
+          grip?: string | null
+          id?: string
+          in_depth_youtube_exp?: string | null
+          laterality?: string | null
+          leg_movement_pattern?: string | null
+          load_position?: string | null
+          mechanics?: string | null
+          movement_pattern_1?: string | null
+          movement_pattern_2?: string | null
+          movement_pattern_3?: string | null
+          name: string
+          plane_of_motion_1?: string | null
+          plane_of_motion_2?: string | null
+          plane_of_motion_3?: string | null
+          posture?: string | null
+          primary_equipment?: string | null
+          primary_items_count?: number | null
+          prime_mover_muscle?: string | null
+          secondary_equipment?: string | null
+          secondary_items_count?: number | null
+          secondary_muscle?: string | null
+          short_youtube_demo?: string | null
+          tertiary_muscle?: string | null
+          updated_at?: string | null
+          x?: string | null
+          youtube_thumbnail_url?: string | null
+        }
+        Update: {
+          arm_movement_pattern?: string | null
+          body_region?: string | null
+          combination_exercise?: boolean | null
+          created_at?: string | null
+          difficulty?: string | null
+          exercise_classification?: string | null
+          foot_elevation?: string | null
+          force_type?: string | null
+          grip?: string | null
+          id?: string
+          in_depth_youtube_exp?: string | null
+          laterality?: string | null
+          leg_movement_pattern?: string | null
+          load_position?: string | null
+          mechanics?: string | null
+          movement_pattern_1?: string | null
+          movement_pattern_2?: string | null
+          movement_pattern_3?: string | null
+          name?: string
+          plane_of_motion_1?: string | null
+          plane_of_motion_2?: string | null
+          plane_of_motion_3?: string | null
+          posture?: string | null
+          primary_equipment?: string | null
+          primary_items_count?: number | null
+          prime_mover_muscle?: string | null
+          secondary_equipment?: string | null
+          secondary_items_count?: number | null
+          secondary_muscle?: string | null
+          short_youtube_demo?: string | null
+          tertiary_muscle?: string | null
+          updated_at?: string | null
+          x?: string | null
+          youtube_thumbnail_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

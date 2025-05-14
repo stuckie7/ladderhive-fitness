@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -38,13 +37,8 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Handle the exercise_id based on its type and the database expectations
-      // For Supabase, we need to ensure exercise_id is a string
-      const exerciseId = exercise.id;
-      
-      // Convert exerciseId to string if it isn't already and also parse as number for the database
-      // This ensures type compatibility with the database schema
-      const exerciseIdForDb = Number(exerciseId);
+      // Get the exercise ID (ensuring it's string type for consistent handling)
+      const exerciseId = String(exercise.id);
       
       // Use a two-step approach:
       // 1. First insert without the reps field
@@ -52,7 +46,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdForDb, // Now ensured to be a number 
+          exercise_id: exerciseId, // Use as string to match Supabase's expectations
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
