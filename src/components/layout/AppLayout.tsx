@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -146,90 +147,92 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   // Don't redirect here - let ProtectedRoute handle it
   
   return (
-    <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar className={`w-64 transition-all duration-300 ${sidebarOpen ? '' : '-translate-x-full'} fixed lg:static h-full z-40`}>
-        <div className="p-4 flex items-center gap-2">
-          <div className="flex-1 flex items-center gap-2 ml-1">
-            <div className="h-9 w-9 bg-gradient-to-br from-fitness-primary to-fitness-secondary rounded-md flex items-center justify-center">
-              <span className="text-gray-900 font-bold">LH</span>
+    <>
+      <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar className={`w-64 transition-all duration-300 ${sidebarOpen ? '' : '-translate-x-full'} fixed lg:static h-full z-40`}>
+          <div className="p-4 flex items-center gap-2">
+            <div className="flex-1 flex items-center gap-2 ml-1">
+              <div className="h-9 w-9 bg-gradient-to-br from-fitness-primary to-fitness-secondary rounded-md flex items-center justify-center">
+                <span className="text-gray-900 font-bold">LH</span>
+              </div>
+              <span className="font-bold text-lg gradient-heading">LadderHive</span>
             </div>
-            <span className="font-bold text-lg gradient-heading">LadderHive</span>
           </div>
-        </div>
-        
-        <SidebarContent>
-          <SidebarMenu>
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.path}>
-                <SidebarMenuButton 
-                  className={isActive(item.path) 
-                    ? `bg-gray-800/50 ${item.color}`
-                    : "text-gray-400 hover:text-white"}
-                >
-                  <button
-                    onClick={() => navigate(item.path)}
-                    className="flex items-center gap-2 w-full group"
-                  >
-                    <item.icon className={`h-5 w-5 ${isActive(item.path) ? item.color : "text-gray-400 group-hover:text-white"}`} />
-                    <span>{item.label}</span>
-                  </button>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarContent>
-        
-        <div className="mt-auto p-4 border-t border-gray-800/50">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src="" alt={userData?.name || ""} />
-              <AvatarFallback className="bg-gradient-to-br from-fitness-primary to-fitness-secondary text-gray-900 font-medium">
-                {getInitials(userData?.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate text-white">{userData?.name}</p>
-              <p className="text-xs text-gray-400 truncate">{userData?.email}</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleLogout}
-              className="text-gray-400 hover:text-white hover:bg-gray-800/50"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </Sidebar>
-      
-      {/* Main content - adjust padding based on sidebar state */}
-      <div className={`flex-1 flex flex-col min-h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-black ${sidebarOpen && !isMobile ? 'lg:pl-64' : ''} transition-all duration-300`}>
-        <header className="h-16 border-b border-gray-800/50 bg-gray-900/70 backdrop-blur-sm flex items-center px-4 lg:px-6">
-          {/* Toggle sidebar button for mobile */}
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mr-4 lg:hidden"
-            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
           
-          <div className="flex-1">
-            <h1 className="text-xl font-semibold text-white">
-              {navItems.find(item => isActive(item.path))?.label || "Dashboard"}
-            </h1>
+          <SidebarContent>
+            <SidebarMenu>
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton 
+                    className={isActive(item.path) 
+                      ? `bg-gray-800/50 ${item.color}`
+                      : "text-gray-400 hover:text-white"}
+                  >
+                    <button
+                      onClick={() => navigate(item.path)}
+                      className="flex items-center gap-2 w-full group"
+                    >
+                      <item.icon className={`h-5 w-5 ${isActive(item.path) ? item.color : "text-gray-400 group-hover:text-white"}`} />
+                      <span>{item.label}</span>
+                    </button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+          
+          <div className="mt-auto p-4 border-t border-gray-800/50">
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarImage src="" alt={userData?.name || ""} />
+                <AvatarFallback className="bg-gradient-to-br from-fitness-primary to-fitness-secondary text-gray-900 font-medium">
+                  {getInitials(userData?.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate text-white">{userData?.name}</p>
+                <p className="text-xs text-gray-400 truncate">{userData?.email}</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleLogout}
+                className="text-gray-400 hover:text-white hover:bg-gray-800/50"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-        </header>
+        </Sidebar>
         
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
-        </main>
+        {/* Main content - adjust padding based on sidebar state */}
+        <div className={`flex-1 flex flex-col min-h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-black ${sidebarOpen && !isMobile ? 'lg:pl-64' : ''} transition-all duration-300`}>
+          <header className="h-16 border-b border-gray-800/50 bg-gray-900/70 backdrop-blur-sm flex items-center px-4 lg:px-6">
+            {/* Toggle sidebar button for mobile */}
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="mr-4 lg:hidden"
+              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-white">
+                {navItems.find(item => isActive(item.path))?.label || "Dashboard"}
+              </h1>
+            </div>
+          </header>
+          
+          {/* Main content */}
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
-    <Toaster />
+      <Toaster />
+    </>
   );
 };
 
