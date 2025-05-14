@@ -7,7 +7,7 @@ interface Exercise {
   id: string;
   name: string;
   sets: number;
-  reps: string | number; // Updated to accept both string and number
+  reps: string | number; // Use string | number to handle various rep formats
   weight?: string;
   restTime?: number;
   description?: string;

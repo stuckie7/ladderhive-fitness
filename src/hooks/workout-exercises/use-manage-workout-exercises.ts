@@ -41,6 +41,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       // Convert reps to string if it's a number to ensure consistency
       const repsValue = ensureStringReps(details.reps);
       
+      // First insert without the reps field to avoid type issues
       const newExerciseData = {
         workout_id: workoutId,
         exercise_id: String(exercise.id), // Ensure it's a string
@@ -50,7 +51,6 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         order_index: newOrderIndex
       };
       
-      // Insert without reps field first to avoid type issues
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert(newExerciseData)
@@ -146,8 +146,13 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       if (updates.rest_time !== undefined) updateData.rest_time = updates.rest_time;
       if (updates.order_index !== undefined) updateData.order_index = updates.order_index;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
+      
+      // Handle reps separately to ensure string conversion
       if (updates.reps !== undefined) {
-        updateData.reps = ensureStringReps(updates.reps);
+        const stringReps = ensureStringReps(updates.reps);
+        
+        // For database update
+        updateData.reps = stringReps;
       }
       
       const { error } = await supabase
@@ -159,7 +164,11 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       // Update local state
       setExercises(exercises.map(e => 
-        e.id === exerciseId ? { ...e, ...updates, reps: updates.reps ? ensureStringReps(updates.reps) : e.reps } : e
+        e.id === exerciseId ? { 
+          ...e, 
+          ...updates,
+          reps: updates.reps ? ensureStringReps(updates.reps) : e.reps 
+        } : e
       ));
       
       return true;
