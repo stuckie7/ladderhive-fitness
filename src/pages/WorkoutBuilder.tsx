@@ -96,7 +96,7 @@ const WorkoutBuilder = () => {
   // Convert templates to the expected type for WorkoutTemplateSelector
   const templateItems: WorkoutTemplateType[] = templates 
     ? templates.map(t => ({
-        id: t.id || '',
+        id: t.id || '', // Handle potentially undefined id
         title: t.title,
         name: t.name,
         description: t.description,

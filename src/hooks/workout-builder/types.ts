@@ -32,9 +32,9 @@ export interface WorkoutDetail {
   is_featured?: boolean;
 }
 
-// Updated WorkoutTemplate to align with prepared_workouts table
+// Updated WorkoutTemplate to align with prepared_workouts table and template-types.ts
 export interface WorkoutTemplate {
-  id: string;
+  id: string; // Make id required to match template-types
   name?: string;         // For backward compatibility
   title: string;        // Matches prepared_workouts table
   exercises: TemplateExercise[];
@@ -49,7 +49,7 @@ export interface WorkoutTemplate {
 
 // Break recursive dependency to fix infinite type instantiation error
 export type SimplifiedWorkoutTemplate = {
-  id: string;
+  id: string; // Make id required to match template-types
   name?: string;
   title: string;
   category?: string;
@@ -65,7 +65,7 @@ export interface TemplateExercise {
   exerciseId: string;
   name?: string;
   sets: number;
-  reps?: string | number;
+  reps: string | number; // Make consistent with template-types
   rest_seconds?: number;
   notes?: string;
 }

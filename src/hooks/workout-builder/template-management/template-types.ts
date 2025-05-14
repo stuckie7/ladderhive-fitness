@@ -26,6 +26,7 @@ export interface SimplifiedWorkoutTemplate {
 
 // Full template type 
 export interface WorkoutTemplate extends SimplifiedWorkoutTemplate {
+  id: string; // Make id required to match the other template type
   exercises: TemplateExercise[];
 }
 
