@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -81,7 +80,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Important: Convert exercise.id to a number for Supabase
+      // Convert exercise.id to a number for Supabase
       const exerciseIdAsNumber = Number(exercise.id);
       
       if (isNaN(exerciseIdAsNumber)) {
@@ -92,11 +91,12 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       const repsAsString = ensureStringReps(details.reps || 10);
       const repsAsNumber = Number(repsAsString);
       
+      // The exercise_id in the database expects a number type
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdAsNumber,
+          exercise_id: exerciseIdAsNumber, // Pass as number
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
