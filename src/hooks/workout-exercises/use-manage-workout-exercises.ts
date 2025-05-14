@@ -41,7 +41,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       // Convert reps to string if it's a number to ensure consistency
       const repsValue = ensureStringReps(details.reps);
       
-      // First insert without the reps field to avoid type issues
+      // Create initial exercise data without the reps field to avoid type issues
       const newExerciseData = {
         workout_id: workoutId,
         exercise_id: String(exercise.id), // Ensure it's a string
@@ -59,7 +59,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       if (error) throw error;
       
-      // Now update with reps field separately
+      // Now update with the reps field separately
       if (data && data.id) {
         const { error: updateError } = await supabase
           .from('workout_exercises')

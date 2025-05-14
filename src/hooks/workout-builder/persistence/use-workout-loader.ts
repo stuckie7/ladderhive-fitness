@@ -48,7 +48,9 @@ export const useWorkoutLoader = ({
       
       if (exercisesError) throw exercisesError;
       
-      // Set workout data
+      // Set workout data - handle is_template as an optional property that might not exist
+      const hasIsTemplate = 'is_template' in workoutData;
+      
       setWorkout({
         id: workoutData.id,
         title: workoutData.title || "Unnamed Workout",
@@ -56,7 +58,7 @@ export const useWorkoutLoader = ({
         difficulty: workoutData.difficulty || "Beginner",
         category: workoutData.category || "General",
         duration_minutes: workoutData.duration_minutes || 30,
-        is_template: workoutData.is_template || false, // Handle the case where is_template doesn't exist
+        is_template: hasIsTemplate ? Boolean(workoutData.is_template) : false,
         exercises: []  // We'll set exercises separately
       });
       
