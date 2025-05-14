@@ -21,6 +21,7 @@ const WorkoutBuilder = () => {
   const wodId = searchParams.get('wod');
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const { toast } = useToast();
+  const [saveAttempted, setSaveAttempted] = useState(false);
   
   const {
     workout,
@@ -63,28 +64,100 @@ const WorkoutBuilder = () => {
 
   // Wrapper functions to match expected prop types
   const handleSave = async () => {
-    const result = await saveWorkout();
-    if (result && result.id) {
+    if (isSaving) return; // Prevent double-saving
+    
+    // Validate required fields
+    if (!workout.title) {
       toast({
-        title: "Success",
-        description: "Workout saved successfully!",
+        title: "Missing information",
+        description: "Please enter a workout title before saving.",
+        variant: "destructive"
       });
+      return;
+    }
+    
+    if (exercises.length === 0) {
+      toast({
+        title: "No exercises",
+        description: "Please add at least one exercise to your workout.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setSaveAttempted(true);
+    
+    try {
+      const result = await saveWorkout();
       
-      // Navigate to the workout detail page if it's a new workout
-      if (id !== result.id) {
-        navigate(`/workouts/${result.id}`);
+      if (result && result.id) {
+        toast({
+          title: "Success",
+          description: "Workout saved successfully!",
+        });
+        
+        // Navigate to the workout detail page if it's a new workout
+        if (id !== result.id) {
+          navigate(`/workouts/${result.id}`);
+        }
+        
+        setSaveAttempted(false);
+      } else {
+        throw new Error("Failed to save workout");
       }
+    } catch (error) {
+      console.error("Error in handleSave:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save workout. Please try again.",
+        variant: "destructive"
+      });
+      setSaveAttempted(false);
     }
   };
 
   const handleCreateTemplate = async () => {
-    await saveAsTemplate(workout);
+    if (!workout.title) {
+      toast({
+        title: "Missing information",
+        description: "Please enter a template title before saving.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      await saveAsTemplate({
+        ...workout,
+        title: workout.title || "Untitled Template"
+      });
+      toast({
+        title: "Success",
+        description: "Template saved successfully!",
+      });
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save template. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleSelectTemplate = async (templateId: string) => {
     if (loadTemplateFromPreparedWorkout) {
-      await loadTemplateFromPreparedWorkout(templateId);
-      setIsTemplateDialogOpen(false);
+      try {
+        await loadTemplateFromPreparedWorkout(templateId);
+        setIsTemplateDialogOpen(false);
+      } catch (error) {
+        console.error("Error loading template:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load template. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 

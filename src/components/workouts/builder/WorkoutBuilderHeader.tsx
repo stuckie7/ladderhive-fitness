@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -37,11 +38,12 @@ const WorkoutBuilderHeader: React.FC<WorkoutBuilderHeaderProps> = ({
           {id ? "Edit Workout" : "Create New Workout"}
         </h1>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button 
           variant="outline" 
           onClick={() => setIsTemplateDialogOpen(true)}
           className="flex items-center gap-1"
+          disabled={isSaving}
         >
           <BookOpen className="h-4 w-4" />
           Templates
@@ -50,11 +52,16 @@ const WorkoutBuilderHeader: React.FC<WorkoutBuilderHeaderProps> = ({
           variant="outline" 
           onClick={handleCreateTemplate}
           className="flex items-center gap-1"
+          disabled={isSaving}
         >
           <Copy className="h-4 w-4" />
           Save as Template
         </Button>
-        <Button variant="outline" onClick={resetWorkout}>
+        <Button 
+          variant="outline" 
+          onClick={resetWorkout}
+          disabled={isSaving}
+        >
           Reset
         </Button>
         <Button 

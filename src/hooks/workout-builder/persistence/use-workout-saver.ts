@@ -56,11 +56,11 @@ export const useWorkoutSaver = (
         const { data: workoutData, error: workoutError } = await supabase
           .from('prepared_workouts')
           .insert({
-            title: workout.title,
-            description: workout.description,
-            difficulty: workout.difficulty,
-            category: workout.category,
-            goal: workout.category, // Using category as goal for now
+            title: workout.title || "Untitled Workout", // Ensure we have a title
+            description: workout.description || "",
+            difficulty: workout.difficulty || "Intermediate",
+            category: workout.category || "General",
+            goal: workout.goal || workout.category || "General", // Fallback if goal not provided
             duration_minutes: estimatedDuration || 30,
             is_template: workout.is_template || false
           })
@@ -72,11 +72,11 @@ export const useWorkoutSaver = (
         const { error: workoutError } = await supabase
           .from('prepared_workouts')
           .update({
-            title: workout.title,
-            description: workout.description,
-            difficulty: workout.difficulty,
-            category: workout.category,
-            goal: workout.category, // Using category as goal for now
+            title: workout.title || "Untitled Workout",
+            description: workout.description || "",
+            difficulty: workout.difficulty || "Intermediate",
+            category: workout.category || "General",
+            goal: workout.goal || workout.category || "General",
             duration_minutes: estimatedDuration || 30,
             is_template: workout.is_template || false,
             updated_at: new Date().toISOString()
