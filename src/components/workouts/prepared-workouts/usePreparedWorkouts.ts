@@ -3,7 +3,33 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Workout } from "@/types/workout";
-import { WorkoutExercise, mapSupabaseExerciseToExercise, ensureStringReps } from "@/hooks/workout-exercises/utils";
+import { WorkoutExercise, ensureStringReps } from "@/hooks/workout-exercises/utils";
+import { Exercise } from "@/types/exercise";
+
+/**
+ * Maps a Supabase exercise object to our Exercise type
+ */
+const mapSupabaseExerciseToExercise = (exerciseData: any): Exercise => {
+  return {
+    id: exerciseData.id,
+    name: exerciseData.name || '',
+    description: exerciseData.description || '',
+    muscle_group: exerciseData.target_muscle_group || exerciseData.prime_mover_muscle || exerciseData.muscle_group,
+    equipment: exerciseData.primary_equipment || exerciseData.equipment,
+    difficulty: exerciseData.difficulty || exerciseData.difficulty_level,
+    instructions: Array.isArray(exerciseData.instructions) ? exerciseData.instructions : 
+      (exerciseData.instructions ? [exerciseData.instructions] : []),
+    video_url: exerciseData.video_url || exerciseData.short_youtube_demo || exerciseData.video_demonstration_url,
+    image_url: exerciseData.image_url || exerciseData.youtube_thumbnail_url,
+    bodyPart: exerciseData.body_region,
+    target: exerciseData.target_muscle_group || exerciseData.prime_mover_muscle,
+    secondaryMuscles: [
+      exerciseData.secondary_muscle,
+      exerciseData.tertiary_muscle
+    ].filter(Boolean),
+    video_demonstration_url: exerciseData.video_demonstration_url || exerciseData.short_youtube_demo,
+  };
+};
 
 export const usePreparedWorkouts = (currentWorkoutId: string | null = null) => {
   const [preparedWorkouts, setPreparedWorkouts] = useState<Workout[]>([]);

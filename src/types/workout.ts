@@ -1,3 +1,4 @@
+
 // Define types for workout data
 export interface Workout {
   id: string;
@@ -9,6 +10,10 @@ export interface Workout {
   date?: string;
   isSaved?: boolean;
   category?: string; // Add optional category property
+}
+
+export interface WorkoutDetail extends Workout {
+  // Add any additional properties specific to a detailed workout view
 }
 
 export interface UserWorkout {

@@ -23,3 +23,28 @@ export const ensureStringReps = (reps: string | number | null | undefined): stri
   }
   return String(reps);
 };
+
+/**
+ * Maps a Supabase exercise object to our Exercise type
+ */
+export const mapSupabaseExerciseToExercise = (exerciseData: any): Exercise => {
+  return {
+    id: exerciseData.id,
+    name: exerciseData.name || '',
+    description: exerciseData.description || '',
+    muscle_group: exerciseData.target_muscle_group || exerciseData.prime_mover_muscle || exerciseData.muscle_group,
+    equipment: exerciseData.primary_equipment || exerciseData.equipment,
+    difficulty: exerciseData.difficulty || exerciseData.difficulty_level,
+    instructions: Array.isArray(exerciseData.instructions) ? exerciseData.instructions : 
+      (exerciseData.instructions ? [exerciseData.instructions] : []),
+    video_url: exerciseData.video_url || exerciseData.short_youtube_demo || exerciseData.video_demonstration_url,
+    image_url: exerciseData.image_url || exerciseData.youtube_thumbnail_url,
+    bodyPart: exerciseData.body_region,
+    target: exerciseData.target_muscle_group || exerciseData.prime_mover_muscle,
+    secondaryMuscles: [
+      exerciseData.secondary_muscle,
+      exerciseData.tertiary_muscle
+    ].filter(Boolean),
+    video_demonstration_url: exerciseData.video_demonstration_url || exerciseData.short_youtube_demo,
+  };
+};

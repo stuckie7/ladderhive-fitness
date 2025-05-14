@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { WorkoutExercise, ensureStringReps } from "./utils";
+import { WorkoutExercise, ensureStringReps, mapSupabaseExerciseToExercise } from "./utils";
 import { Exercise } from "@/types/exercise";
 
 type WorkoutExerciseDetails = {
@@ -54,7 +54,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
           weight: item.weight,
           rest_time: item.rest_time,
           order_index: item.order_index,
-          exercise: item.exercise ? item.exercise : undefined,
+          exercise: item.exercise ? mapSupabaseExerciseToExercise(item.exercise) : undefined,
         }));
         setExercises(mappedExercises);
       }

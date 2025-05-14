@@ -1,5 +1,5 @@
 
-import { useManageWorkoutExercises } from "./workout-exercises/use-manage-workout-exercises";
+import { useWorkoutExercises as useManageWorkoutExercises } from "./workout-exercises/use-manage-workout-exercises";
 import { useCallback, useState, useEffect } from "react";
 import { WorkoutExercise } from "./workout-exercises/utils";
 import { Exercise } from "@/types/exercise";

@@ -1,67 +1,165 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
-import { useWorkouts } from "@/hooks/use-workouts";
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
-export const useWorkoutActions = (
-  workoutId?: string,
-  setIsSaved?: (value: boolean) => void
-) => {
-  const [isLoading, setIsLoading] = useState(false);
+export const useWorkoutActions = (workoutId: string) => {
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
-  
-  const { 
-    saveWorkout, 
-    unsaveWorkout, 
-    completeWorkout
-  } = useWorkouts();
 
-  const handleSaveWorkout = async (isSaved: boolean) => {
+  // Check if workout is saved
+  const checkIfSaved = useCallback(async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session?.user) return false;
+      
+      const userId = session.session.user.id;
+      
+      const { data, error } = await supabase
+        .from('user_workouts')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('workout_id', workoutId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 is no rows returned
+        throw error;
+      }
+      
+      setIsSaved(!!data);
+      return !!data;
+    } catch (err: any) {
+      console.error('Error checking if workout is saved:', err);
+      return false;
+    }
+  }, [workoutId]);
+
+  useEffect(() => {
+    if (workoutId) {
+      checkIfSaved();
+    }
+  }, [workoutId, checkIfSaved]);
+
+  const handleSaveWorkout = useCallback(async (currentSavedState: boolean) => {
     if (!workoutId) return;
     
     setIsLoading(true);
+    setError(null);
+    
     try {
-      if (isSaved) {
-        const result = await unsaveWorkout(workoutId);
-        if (result.success && setIsSaved) {
-          setIsSaved(false);
-        }
-      } else {
-        const result = await saveWorkout(workoutId);
-        if (result.success && setIsSaved) {
-          setIsSaved(true);
-        }
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session?.user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to save workouts",
+          variant: "destructive"
+        });
+        return;
       }
+      
+      const userId = session.session.user.id;
+      
+      if (!currentSavedState) {
+        // Save workout
+        const { error } = await supabase
+          .from('user_workouts')
+          .insert({
+            user_id: userId,
+            workout_id: workoutId,
+            status: 'saved'
+          });
+          
+        if (error) throw error;
+        
+        setIsSaved(true);
+        toast({
+          title: "Workout saved",
+          description: "Workout has been added to your saved workouts"
+        });
+      } else {
+        // Unsave workout
+        const { error } = await supabase
+          .from('user_workouts')
+          .delete()
+          .eq('user_id', userId)
+          .eq('workout_id', workoutId);
+          
+        if (error) throw error;
+        
+        setIsSaved(false);
+        toast({
+          title: "Workout removed",
+          description: "Workout has been removed from your saved workouts"
+        });
+      }
+    } catch (err: any) {
+      console.error('Error saving/unsaving workout:', err);
+      setError(err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to update workout",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [workoutId, toast]);
 
-  const handleCompleteWorkout = async () => {
+  const handleCompleteWorkout = useCallback(async () => {
     if (!workoutId) return;
     
     setIsLoading(true);
+    setError(null);
+    
     try {
-      const result = await completeWorkout(workoutId);
-      if (result.success) {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session?.user) {
         toast({
-          title: "Workout Completed",
-          description: "Great job! Your workout has been recorded.",
+          title: "Authentication required",
+          description: "Please log in to complete workouts",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const userId = session.session.user.id;
+      const now = new Date().toISOString();
+      
+      // Mark workout as completed
+      const { error } = await supabase
+        .from('user_workouts')
+        .upsert({
+          user_id: userId,
+          workout_id: workoutId,
+          status: 'completed',
+          completed_at: now
         });
         
-        setTimeout(() => {
-          navigate("/workouts");
-        }, 2000);
-      }
+      if (error) throw error;
+      
+      toast({
+        title: "Workout completed",
+        description: "Great job! Your workout has been marked as completed."
+      });
+    } catch (err: any) {
+      console.error('Error completing workout:', err);
+      setError(err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to mark workout as completed",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [workoutId, toast]);
 
   return {
+    isSaved,
     isLoading,
+    error,
     handleSaveWorkout,
     handleCompleteWorkout
   };

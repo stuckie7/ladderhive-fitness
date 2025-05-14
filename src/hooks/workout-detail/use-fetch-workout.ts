@@ -1,62 +1,59 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { WorkoutDetail } from '@/types/workout';
 
-export interface WorkoutDetail {
-  id: string;
-  title: string;
-  description: string | null;
-  difficulty: string;
-  duration: number;
-  exercises: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export const useWorkoutDetail = (workoutId?: string) => {
+export const useWorkoutFetch = (workoutId: string) => {
   const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchWorkout = useCallback(async () => {
-    if (!workoutId) {
-      setIsLoading(false);
-      return;
-    }
-
+    if (!workoutId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      setIsLoading(true);
-      const { data, error } = await supabase
+      // Fetch the workout details
+      const { data: workoutData, error: workoutError } = await supabase
         .from('workouts')
         .select('*')
         .eq('id', workoutId)
         .single();
-
-      if (error) {
-        throw error;
-      }
-
-      setWorkout(data as WorkoutDetail);
-    } catch (error: any) {
-      console.error("Error fetching workout:", error.message);
-      toast({
-        title: "Error",
-        description: "Failed to load workout details.",
-        variant: "destructive",
-      });
+        
+      if (workoutError) throw workoutError;
+      if (!workoutData) throw new Error('Workout not found');
+      
+      // Prepare the complete workout object
+      const completeWorkout: WorkoutDetail = {
+        ...workoutData,
+        id: workoutData.id,
+        title: workoutData.title,
+        description: workoutData.description || '',
+        duration: workoutData.duration || 0,
+        exercises: workoutData.exercises || 0,
+        difficulty: workoutData.difficulty || 'Beginner',
+      };
+      
+      setWorkout(completeWorkout);
+    } catch (err: any) {
+      console.error('Error fetching workout:', err);
+      setError(err);
     } finally {
       setIsLoading(false);
     }
-  }, [workoutId, toast]);
+  }, [workoutId]);
 
-  useEffect(() => {
+  // Fetch data on first render
+  useState(() => {
     fetchWorkout();
-  }, [fetchWorkout]);
+  });
 
   return {
     workout,
     isLoading,
-    fetchWorkout,
+    error,
+    fetchWorkout
   };
 };
