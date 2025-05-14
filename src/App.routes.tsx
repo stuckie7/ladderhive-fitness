@@ -21,6 +21,7 @@ import MindfulnessPage from "@/pages/MindfulnessPage";
 import YogaRoutineDetailPage from "@/pages/YogaRoutineDetailPage";
 import YogaPage from "@/pages/YogaPage";
 import MindfulMovementPage from "@/pages/MindfulMovementPage";
+import SavedWorkouts from "@/pages/SavedWorkouts";
 
 const AppRoutes = () => {
   return (
@@ -38,6 +39,7 @@ const AppRoutes = () => {
       <Route path="/workouts/:id" element={<ProtectedRoute><WorkoutDetail /></ProtectedRoute>} />
       <Route path="/workouts/enhanced/:id" element={<ProtectedRoute><WorkoutDetailEnhanced /></ProtectedRoute>} />
       <Route path="/workout-builder" element={<ProtectedRoute><WorkoutBuilder /></ProtectedRoute>} />
+      <Route path="/saved-workouts" element={<ProtectedRoute><SavedWorkouts /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
       <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
