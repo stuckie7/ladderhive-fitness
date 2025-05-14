@@ -10,7 +10,7 @@ import ExerciseSearchPanel from '@/components/workouts/builder/ExerciseSearchPan
 import { Dialog } from '@/components/ui/dialog';
 import WorkoutTemplateSelector from '@/components/workouts/builder/WorkoutTemplateSelector';
 import { WorkoutDetail } from '@/hooks/workout-builder/types';
-import { WorkoutTemplate } from '@/hooks/workout-builder/types';
+import { WorkoutTemplate as WorkoutTemplateType } from '@/hooks/workout-builder/template-management/template-types';
 import { useToast } from '@/components/ui/use-toast';
 
 const WorkoutBuilder = () => {
@@ -93,8 +93,19 @@ const WorkoutBuilder = () => {
     setWorkoutInfo(info);
   };
   
-  // Cast templates to the correct type for WorkoutTemplateSelector
-  const templateItems = templates as unknown as WorkoutTemplate[];
+  // Convert templates to the expected type for WorkoutTemplateSelector
+  const templateItems: WorkoutTemplateType[] = templates 
+    ? templates.map(t => ({
+        id: t.id || '',
+        title: t.title,
+        name: t.name,
+        description: t.description,
+        category: t.category,
+        difficulty: t.difficulty,
+        created_at: t.created_at,
+        exercises: [], // We don't need exercises for the selector
+      }))
+    : [];
   
   return (
     <AppLayout>

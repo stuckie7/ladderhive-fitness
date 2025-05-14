@@ -7,7 +7,7 @@ export interface TemplateExercise {
   exerciseId: string;
   name?: string;
   sets: number;
-  reps: string | number; // Allow both string and number
+  reps: string | number; // Make reps required, not optional
   rest_seconds?: number;
   notes?: string;
 }

@@ -2,15 +2,22 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useLoadTemplate } from "./use-template-loading";
 import { WorkoutDetail, SimplifiedWorkoutTemplate, WorkoutTemplate } from "../types";
+import { useLoadTemplate as useTemplateLoader } from "./use-template-loading";
 
 export const useTemplateManagement = () => {
   const [templates, setTemplates] = useState<SimplifiedWorkoutTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentTemplate, setCurrentTemplate] = useState<WorkoutTemplate | null>(null);
   const { toast } = useToast();
   
-  const { loadTemplateFromPreparedWorkout, loadTemplateFromWod } = useLoadTemplate();
+  // Initialize template loading functionality with our setter
+  const { 
+    loadTemplateFromPreparedWorkout, 
+    loadTemplateFromWod 
+  } = useTemplateLoader({
+    setCurrentTemplate
+  });
 
   // Load all templates (prepared workouts marked as templates)
   const loadTemplates = useCallback(async () => {
@@ -175,8 +182,10 @@ export const useTemplateManagement = () => {
     saveAsTemplate,
     deleteTemplate,
     loadTemplateFromPreparedWorkout,
-    loadTemplateFromWod
+    loadTemplateFromWod,
+    currentTemplate
   };
 };
 
-export { useLoadTemplate } from './use-template-loading';
+// Export from this file to maintain backward compatibility
+export { useTemplateLoader as useLoadTemplate } from "./use-template-loading";

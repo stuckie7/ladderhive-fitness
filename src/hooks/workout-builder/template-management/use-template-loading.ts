@@ -4,14 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { WorkoutTemplate, TemplateExercise } from './template-types';
 
-// Interface for the hook props
-interface UseTemplateLoadingProps {
-  setCurrentTemplate: (template: WorkoutTemplate | null) => void;
-}
-
-export const useTemplateLoading = ({ 
+// Export the hook directly without wrapper
+export const useLoadTemplate = ({ 
   setCurrentTemplate 
-}: UseTemplateLoadingProps) => {
+}: {
+  setCurrentTemplate: (template: WorkoutTemplate | null) => void;
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
