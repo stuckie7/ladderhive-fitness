@@ -48,7 +48,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
         const mappedExercises: WorkoutExercise[] = data.map(item => ({
           id: item.id,
           workout_id: item.workout_id,
-          exercise_id: item.exercise_id,
+          exercise_id: String(item.exercise_id), // Ensure it's a string in our app
           sets: item.sets,
           reps: ensureStringReps(item.reps),
           weight: item.weight,
@@ -81,22 +81,27 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Ensure exercise_id is a string as expected by Supabase
-      const exerciseId = String(exercise.id);
+      // Important: Convert exercise.id to a number for Supabase
+      const exerciseIdAsNumber = Number(exercise.id);
       
-      // Ensure reps is a string
+      if (isNaN(exerciseIdAsNumber)) {
+        throw new Error("Invalid exercise ID");
+      }
+      
+      // Ensure reps is a string for our app but number for Supabase
       const repsAsString = ensureStringReps(details.reps || 10);
+      const repsAsNumber = Number(repsAsString);
       
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseId,
+          exercise_id: exerciseIdAsNumber,
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
           order_index: newOrderIndex,
-          reps: repsAsString
+          reps: repsAsNumber // Supabase expects a number
         })
         .select()
         .single();
@@ -107,9 +112,9 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       const updatedExercise: WorkoutExercise = {
         id: data.id,
         workout_id: workoutId,
-        exercise_id: exerciseId,
+        exercise_id: String(exerciseIdAsNumber), // Store as string in our app
         sets: details.sets || 3,
-        reps: repsAsString,
+        reps: repsAsString, // Store as string in our app
         weight: details.weight || null,
         rest_time: details.rest_time || 60,
         order_index: newOrderIndex,
@@ -141,14 +146,15 @@ export const useManageWorkoutExercises = (workoutId: string) => {
     try {
       setIsSaving(true);
 
-      // Ensure reps is a string
+      // Ensure reps is a string for our app but number for Supabase
       const repsAsString = ensureStringReps(details.reps || 10);
+      const repsAsNumber = Number(repsAsString);
 
       const { data, error } = await supabase
         .from('workout_exercises')
         .update({
           sets: details.sets,
-          reps: repsAsString,
+          reps: repsAsNumber, // Supabase expects a number
           weight: details.weight,
           rest_time: details.rest_time,
           notes: details.notes,

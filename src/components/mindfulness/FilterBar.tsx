@@ -1,20 +1,20 @@
 
-import React from "react";
-import { Badge } from "@/components/ui/badge";
-import { TimeFilter, IntensityFilter, StressTypeFilter } from "@/hooks/use-mindful-movement";
-import { Separator } from "@/components/ui/separator";
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Clock, ActivitySquare, Brain } from "lucide-react";
 
 interface FilterBarProps {
-  timeFilter: TimeFilter;
-  setTimeFilter: (filter: TimeFilter) => void;
-  intensityFilter: IntensityFilter;
-  setIntensityFilter: (filter: IntensityFilter) => void;
-  stressTypeFilter: StressTypeFilter;
-  setStressTypeFilter: (filter: StressTypeFilter) => void;
+  timeFilter: string | null;
+  setTimeFilter: (value: string | null) => void;
+  intensityFilter: string | null;
+  setIntensityFilter: (value: string | null) => void;
+  stressTypeFilter: string | null;
+  setStressTypeFilter: (value: string | null) => void;
 }
 
-export const FilterBar = ({
-  timeFilter,
+export const FilterBar = ({ 
+  timeFilter, 
   setTimeFilter,
   intensityFilter,
   setIntensityFilter,
@@ -22,95 +22,71 @@ export const FilterBar = ({
   setStressTypeFilter,
 }: FilterBarProps) => {
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Time Available</h3>
-        <div className="flex flex-wrap gap-2">
-          <FilterBadge 
-            label="Quick (5-10 min)" 
-            active={timeFilter === "quick"} 
-            onClick={() => setTimeFilter(timeFilter === "quick" ? null : "quick")}
-          />
-          <FilterBadge 
-            label="Short (10-20 min)" 
-            active={timeFilter === "short"} 
-            onClick={() => setTimeFilter(timeFilter === "short" ? null : "short")}
-          />
-          <FilterBadge 
-            label="Long (20+ min)" 
-            active={timeFilter === "long"} 
-            onClick={() => setTimeFilter(timeFilter === "long" ? null : "long")}
-          />
+    <div className="space-y-4">
+      <Card className="p-4">
+        <h3 className="font-medium flex items-center mb-3">
+          <Clock className="h-4 w-4 mr-2" /> Time Needed
+        </h3>
+        <div className="flex flex-col gap-2">
+          {["quick", "medium", "extended"].map((time) => (
+            <Button
+              key={time}
+              variant={timeFilter === time ? "default" : "outline"}
+              size="sm"
+              className="justify-start"
+              onClick={() => setTimeFilter(timeFilter === time ? null : time)}
+            >
+              {time === "quick" && "Quick (5-15 min)"}
+              {time === "medium" && "Medium (15-30 min)"}
+              {time === "extended" && "Extended (30+ min)"}
+            </Button>
+          ))}
         </div>
-      </div>
-      
-      <Separator />
-      
-      <div>
-        <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Intensity Level</h3>
-        <div className="flex flex-wrap gap-2">
-          <FilterBadge 
-            label="Gentle" 
-            active={intensityFilter === "gentle"} 
-            onClick={() => setIntensityFilter(intensityFilter === "gentle" ? null : "gentle")}
-          />
-          <FilterBadge 
-            label="Moderate" 
-            active={intensityFilter === "moderate"} 
-            onClick={() => setIntensityFilter(intensityFilter === "moderate" ? null : "moderate")}
-          />
-          <FilterBadge 
-            label="Restorative" 
-            active={intensityFilter === "restorative"} 
-            onClick={() => setIntensityFilter(intensityFilter === "restorative" ? null : "restorative")}
-          />
+      </Card>
+
+      <Card className="p-4">
+        <h3 className="font-medium flex items-center mb-3">
+          <ActivitySquare className="h-4 w-4 mr-2" /> Intensity Level
+        </h3>
+        <div className="flex flex-col gap-2">
+          {["gentle", "moderate", "vigorous"].map((intensity) => (
+            <Button
+              key={intensity}
+              variant={intensityFilter === intensity ? "default" : "outline"}
+              size="sm"
+              className="justify-start"
+              onClick={() => setIntensityFilter(intensityFilter === intensity ? null : intensity)}
+            >
+              {intensity === "gentle" && "Gentle"}
+              {intensity === "moderate" && "Moderate"}
+              {intensity === "vigorous" && "Vigorous"}
+            </Button>
+          ))}
         </div>
-      </div>
-      
-      <Separator />
-      
-      <div>
-        <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Stress Relief For</h3>
-        <div className="flex flex-wrap gap-2">
-          <FilterBadge 
-            label="Work Stress" 
-            active={stressTypeFilter === "work"} 
-            onClick={() => setStressTypeFilter(stressTypeFilter === "work" ? null : "work")}
-          />
-          <FilterBadge 
-            label="Sleep Prep" 
-            active={stressTypeFilter === "sleep"} 
-            onClick={() => setStressTypeFilter(stressTypeFilter === "sleep" ? null : "sleep")}
-          />
-          <FilterBadge 
-            label="Energy Refresh" 
-            active={stressTypeFilter === "refresh"} 
-            onClick={() => setStressTypeFilter(stressTypeFilter === "refresh" ? null : "refresh")}
-          />
+      </Card>
+
+      <Card className="p-4">
+        <h3 className="font-medium flex items-center mb-3">
+          <Brain className="h-4 w-4 mr-2" /> Stress Type
+        </h3>
+        <div className="flex flex-col gap-2">
+          {["anxiety", "focus", "energy", "sleep", "relaxation"].map((type) => (
+            <Button
+              key={type}
+              variant={stressTypeFilter === type ? "default" : "outline"}
+              size="sm"
+              className="justify-start"
+              onClick={() => setStressTypeFilter(stressTypeFilter === type ? null : type)}
+            >
+              {type === "anxiety" && "Anxiety Relief"}
+              {type === "focus" && "Improve Focus"}
+              {type === "energy" && "Boost Energy"}
+              {type === "sleep" && "Better Sleep"}
+              {type === "relaxation" && "Deep Relaxation"}
+            </Button>
+          ))}
         </div>
-      </div>
+      </Card>
     </div>
-  );
-};
-
-interface FilterBadgeProps {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}
-
-const FilterBadge = ({ label, active, onClick }: FilterBadgeProps) => {
-  return (
-    <Badge
-      variant={active ? "default" : "outline"}
-      className={`cursor-pointer ${
-        active 
-          ? "bg-blue-500 hover:bg-blue-600 text-white" 
-          : "bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900/20"
-      }`}
-      onClick={onClick}
-    >
-      {label}
-    </Badge>
   );
 };

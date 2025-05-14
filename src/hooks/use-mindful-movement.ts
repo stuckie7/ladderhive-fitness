@@ -1,170 +1,158 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { YogaWorkout } from "./use-yoga-workouts";
 
-export type TimeFilter = "quick" | "short" | "long" | null;
-export type IntensityFilter = "gentle" | "moderate" | "restorative" | null;
-export type StressTypeFilter = "work" | "sleep" | "refresh" | null;
-
-export interface MoodType {
+interface MindfulMovement {
   id: string;
-  name: string;
+  title: string;
   description: string;
-  recommendedSequences: string[];
+  duration: string;
+  intensity: string;
+  timeNeeded: string;
+  stressType: string;
+  thumbnailUrl?: string;
+  videoUrl?: string;
 }
 
 export const useGetMindfulMovement = () => {
-  const [workouts, setWorkouts] = useState<YogaWorkout[]>([]);
-  const [filteredWorkouts, setFilteredWorkouts] = useState<YogaWorkout[]>([]);
+  const [workouts, setWorkouts] = useState<MindfulMovement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>(null);
-  const [intensityFilter, setIntensityFilter] = useState<IntensityFilter>(null);
-  const [stressTypeFilter, setStressTypeFilter] = useState<StressTypeFilter>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeFilter, setTimeFilter] = useState<string | null>(null);
+  const [intensityFilter, setIntensityFilter] = useState<string | null>(null);
+  const [stressTypeFilter, setStressTypeFilter] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Sample mood options for the "How are you feeling?" quiz
-  const moodOptions: MoodType[] = [
-    {
-      id: "overwhelmed",
-      name: "Overwhelmed",
-      description: "Feeling like there's too much going on",
-      recommendedSequences: ["quick", "gentle", "work"]
-    },
-    {
-      id: "anxious",
-      name: "Anxious",
-      description: "Feeling worried or uneasy",
-      recommendedSequences: ["short", "moderate", "work"]
-    },
-    {
-      id: "tired",
-      name: "Tired",
-      description: "Low on energy",
-      recommendedSequences: ["quick", "gentle", "refresh"]
-    },
-    {
-      id: "restless",
-      name: "Restless",
-      description: "Having trouble settling down",
-      recommendedSequences: ["long", "moderate", "sleep"]
-    },
-    {
-      id: "stressed",
-      name: "Stressed",
-      description: "Feeling pressure or tension",
-      recommendedSequences: ["short", "restorative", "work"]
-    }
-  ];
-  
-  const fetchYogaWorkouts = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase
-        .from('yoga_workouts')
-        .select('*')
-        .order('name');
-        
-      if (error) throw error;
-      
-      const workoutsWithDuration = data.map(workout => {
-        // Add duration categories based on difficulty for this example
-        // In a real app, you might have actual duration data
-        let timeCategory: TimeFilter = null;
-        if (workout.difficulty === "Beginner") timeCategory = "quick";
-        else if (workout.difficulty === "Intermediate") timeCategory = "short";
-        else if (workout.difficulty === "Advanced") timeCategory = "long";
-        
-        // Add stress type categories based on body region
-        let stressCategory: StressTypeFilter = null;
-        if (workout.body_region?.includes("Upper")) stressCategory = "work";
-        else if (workout.body_region?.includes("Lower")) stressCategory = "sleep";
-        else stressCategory = "refresh";
-        
-        // Add intensity based on difficulty
-        let intensityCategory: IntensityFilter = null;
-        if (workout.difficulty === "Beginner") intensityCategory = "gentle";
-        else if (workout.difficulty === "Intermediate") intensityCategory = "moderate";
-        else intensityCategory = "restorative";
-        
-        return {
-          ...workout,
-          timeCategory,
-          stressCategory,
-          intensityCategory
-        };
-      });
-      
-      setWorkouts(workoutsWithDuration);
-      setFilteredWorkouts(workoutsWithDuration);
-    } catch (error: any) {
-      console.error("Error fetching yoga workouts:", error);
-      setError(error);
-      toast({
-        title: "Error",
-        description: "Failed to load yoga workouts. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  // These would typically come from your database
+  const moodOptions = {
+    time: ["quick", "medium", "extended"],
+    intensity: ["gentle", "moderate", "vigorous"],
+    stressType: ["anxiety", "focus", "energy", "sleep", "relaxation"]
   };
   
-  // Apply filters whenever they change
+  // Mock data - this would be replaced with data from your Supabase table
   useEffect(() => {
-    if (workouts.length === 0) return;
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Mock data
+        const mockWorkouts: MindfulMovement[] = [
+          {
+            id: "1",
+            title: "Morning Mindfulness Flow",
+            description: "Start your day with this gentle sequence designed to awaken your body and calm your mind.",
+            duration: "15 mins",
+            intensity: "gentle",
+            timeNeeded: "quick",
+            stressType: "anxiety",
+            thumbnailUrl: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1000",
+            videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+          },
+          {
+            id: "2",
+            title: "Desk Break Stretches",
+            description: "Take a quick break from work to reset your posture and reduce tension with these simple movements.",
+            duration: "5 mins",
+            intensity: "gentle",
+            timeNeeded: "quick",
+            stressType: "focus",
+            thumbnailUrl: "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?auto=format&fit=crop&q=80&w=1000",
+          },
+          {
+            id: "3",
+            title: "Energy Boost Flow",
+            description: "This moderate sequence will help you shake off lethargy and restore your energy levels.",
+            duration: "20 mins",
+            intensity: "moderate",
+            timeNeeded: "medium",
+            stressType: "energy",
+            thumbnailUrl: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=1000",
+          },
+          {
+            id: "4",
+            title: "Bedtime Wind-Down",
+            description: "Prepare your body and mind for sleep with this gentle sequence of calming movements.",
+            duration: "10 mins",
+            intensity: "gentle",
+            timeNeeded: "quick",
+            stressType: "sleep",
+            thumbnailUrl: "https://images.unsplash.com/photo-1545389336-cf090694435e?auto=format&fit=crop&q=80&w=1000",
+          },
+          {
+            id: "5",
+            title: "Deep Relaxation Practice",
+            description: "Release tension from your entire body with this comprehensive relaxation sequence.",
+            duration: "30 mins",
+            intensity: "gentle",
+            timeNeeded: "extended",
+            stressType: "relaxation",
+            thumbnailUrl: "https://images.unsplash.com/photo-1470137233282-5de094429b8f?auto=format&fit=crop&q=80&w=1000",
+          }
+        ];
+        
+        // Apply filters
+        let filtered = [...mockWorkouts];
+        
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          filtered = filtered.filter(workout => 
+            workout.title.toLowerCase().includes(query) || 
+            workout.description.toLowerCase().includes(query)
+          );
+        }
+        
+        if (timeFilter) {
+          filtered = filtered.filter(workout => 
+            workout.timeNeeded.toLowerCase() === timeFilter.toLowerCase()
+          );
+        }
+        
+        if (intensityFilter) {
+          filtered = filtered.filter(workout => 
+            workout.intensity.toLowerCase() === intensityFilter.toLowerCase()
+          );
+        }
+        
+        if (stressTypeFilter) {
+          filtered = filtered.filter(workout => 
+            workout.stressType.toLowerCase() === stressTypeFilter.toLowerCase()
+          );
+        }
+        
+        setWorkouts(filtered);
+      } catch (err: any) {
+        console.error("Error fetching mindful movement data:", err);
+        setError(err);
+        toast({
+          title: "Error",
+          description: "Failed to load mindful movement practices",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    let result = [...workouts];
-    
-    if (timeFilter) {
-      result = result.filter(workout => workout.timeCategory === timeFilter);
-    }
-    
-    if (intensityFilter) {
-      result = result.filter(workout => workout.intensityCategory === intensityFilter);
-    }
-    
-    if (stressTypeFilter) {
-      result = result.filter(workout => workout.stressCategory === stressTypeFilter);
-    }
-    
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        workout => 
-          workout.name.toLowerCase().includes(query) ||
-          (workout.prime_mover_muscle && workout.prime_mover_muscle.toLowerCase().includes(query)) ||
-          (workout.body_region && workout.body_region.toLowerCase().includes(query))
-      );
-    }
-    
-    setFilteredWorkouts(result);
-  }, [workouts, timeFilter, intensityFilter, stressTypeFilter, searchQuery]);
-  
-  useEffect(() => {
-    fetchYogaWorkouts();
-  }, []);
+    fetchData();
+  }, [searchQuery, timeFilter, intensityFilter, stressTypeFilter, toast]);
   
   return {
-    workouts: filteredWorkouts,
+    workouts,
     isLoading,
     error,
-    fetchYogaWorkouts,
+    searchQuery,
+    setSearchQuery,
     timeFilter,
     setTimeFilter,
     intensityFilter,
     setIntensityFilter,
     stressTypeFilter,
     setStressTypeFilter,
-    searchQuery,
-    setSearchQuery,
     moodOptions
   };
 };

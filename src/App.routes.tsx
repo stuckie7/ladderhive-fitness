@@ -50,7 +50,7 @@ const AppRoutes = () => {
       <Route path="/mindfulness/routine/:id" element={<ProtectedRoute><YogaRoutineDetailPage /></ProtectedRoute>} />
       <Route path="/yoga" element={<ProtectedRoute><YogaPage /></ProtectedRoute>} />
       
-      {/* Mindful Movement route */}
+      {/* Mindful Movement route - updated to exact path */}
       <Route path="/mindful-movement" element={<ProtectedRoute><MindfulMovementPage /></ProtectedRoute>} />
       
       {/* 404 page */}
