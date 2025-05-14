@@ -65,6 +65,7 @@ const getInitials = (name: string | undefined): string => {
 
 const AppLayout = ({ children }: AppLayoutProps) => {
   const [userData, setUserData] = useState<UserProfileData | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -113,6 +114,13 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     }
     // Remove the redirect to /login here
   }, [user]);
+
+  // Close sidebar on mobile by default
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
   
   const handleLogout = async () => {
     try {
@@ -196,8 +204,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           </div>
         </Sidebar>
         
-        {/* Main content - adjusted to account for sidebar width */}
-        <div className="flex-1 flex flex-col min-h-screen max-h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-black pl-0">
+        {/* Main content - adjusted with proper left padding to account for sidebar width */}
+        <div className="flex-1 flex flex-col min-h-screen max-h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-black pl-64 transition-all duration-300">
           <header className="h-16 border-b border-gray-800/50 bg-gray-900/70 backdrop-blur-sm flex items-center px-4 lg:px-6">
             {isMobile && (
               <SidebarTrigger>

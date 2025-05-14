@@ -42,8 +42,9 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       // For Supabase, we need to ensure exercise_id is a string
       const exerciseId = exercise.id;
       
-      // Convert exerciseId to string if it isn't already
-      const exerciseIdForDb = String(exerciseId);
+      // Convert exerciseId to string if it isn't already and also parse as number for the database
+      // This ensures type compatibility with the database schema
+      const exerciseIdForDb = Number(exerciseId);
       
       // Use a two-step approach:
       // 1. First insert without the reps field
@@ -51,7 +52,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdForDb, // Now ensured to be a string
+          exercise_id: exerciseIdForDb, // Now ensured to be a number 
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
