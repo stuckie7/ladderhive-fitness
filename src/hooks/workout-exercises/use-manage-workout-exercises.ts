@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -37,13 +38,16 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
+      // Convert exercise_id to string if it's a number to resolve the type issue
+      const exercise_id = String(exercise.id);
+      
       // Use a two-step approach to avoid type issues:
       // 1. First insert without the reps field
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: String(exercise.id), // Ensure it's a string
+          exercise_id: exercise_id, // Now a string
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,

@@ -4,12 +4,12 @@ export interface WorkoutExerciseDetail {
   id: string;
   name: string;
   sets: number;
-  reps: string | number;
+  reps: string | number; // Support both string and number for reps
   weight?: string;
   rest_seconds?: number;
   notes?: string;
   order_index: number;
-  exercise_id: string | number;
+  exercise_id: string | number; // Support both string and number for exercise_id
   exercise?: any; // Add this field to support exercise details
 }
 

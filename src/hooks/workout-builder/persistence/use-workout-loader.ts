@@ -67,15 +67,15 @@ export const useWorkoutLoader = ({
         // Make sure ex.exercise exists and handle if it doesn't
         const exercise = ex.exercise || {};
         
-        // Get name with safe property access
+        // Get name with safe property access - ensure it's a string
         const exerciseName = exercise && typeof exercise === 'object' && 'name' in exercise 
-          ? exercise.name 
+          ? String(exercise.name) 
           : "Unknown Exercise";
           
         return {
           id: ex.id || `temp-${Date.now()}-${Math.random()}`,
           exercise_id: ex.exercise_id,
-          name: exerciseName,
+          name: exerciseName, // Now guaranteed to be a string
           sets: ex.sets || 3,
           reps: ex.reps || "10", // Convert to string
           rest_seconds: ex.rest_seconds || 60,
@@ -130,7 +130,7 @@ export const useWorkoutLoader = ({
         exercise_id: ex.exerciseId,
         name: ex.name || "Unknown Exercise",
         sets: ex.sets || 3,
-        reps: ex.reps?.toString() || "10", // Convert to string
+        reps: String(ex.reps || "10"), // Convert to string explicitly
         rest_seconds: ex.rest_seconds || 60,
         notes: ex.notes || "",
         order_index: index,
