@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -87,6 +86,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       // Ensure reps is a string
       const repsAsString = ensureStringReps(details.reps || 10);
       
+      // Fix the type mismatch by converting exercise_id to string and ensuring reps is a string
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
@@ -274,7 +274,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
     fetchExercises,
     addExercise,
     updateExercise,
-    removeExercise: removeExercise,
-    reorderExercises: reorderExercises,
+    removeExercise,
+    reorderExercises,
   };
 };

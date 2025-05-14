@@ -1,6 +1,6 @@
 
-import { useWorkoutExercises as useManageWorkoutExercises } from "./workout-exercises/use-manage-workout-exercises";
 import { useCallback, useState, useEffect } from "react";
+import { useManageWorkoutExercises } from "./workout-exercises/use-manage-workout-exercises";
 import { WorkoutExercise } from "./workout-exercises/utils";
 import { Exercise } from "@/types/exercise";
 
@@ -12,9 +12,9 @@ export const useWorkoutExercises = (workoutId?: string) => {
   const {
     exercises,
     isLoading,
-    isSaving: isAdding,
-    fetchExercises: fetchWorkoutExercises,
-    addExercise: addExerciseToWorkout,
+    isSaving,
+    fetchExercises,
+    addExercise,
     removeExercise: removeExerciseFromWorkout,
     updateExercise: updateExerciseDetails
   } = useManageWorkoutExercises(workoutId || '');
@@ -41,17 +41,17 @@ export const useWorkoutExercises = (workoutId?: string) => {
   // Initial data fetch if workoutId is provided
   useEffect(() => {
     if (workoutId) {
-      fetchWorkoutExercises();
+      fetchExercises();
     }
-  }, [workoutId, fetchWorkoutExercises]);
+  }, [workoutId, fetchExercises]);
 
   return {
     exercises: localExercises,
     isLoading: localIsLoading || initialLoading,
-    fetchWorkoutExercises,
-    addExerciseToWorkout,
+    fetchWorkoutExercises: fetchExercises,
+    addExerciseToWorkout: addExercise,
     removeExerciseFromWorkout,
     updateExerciseDetails,
-    isAdding
+    isAdding: isSaving
   };
 };
