@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -80,10 +81,10 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Convert exercise.id to a number for Supabase
-      const exerciseIdAsNumber = Number(exercise.id);
+      // Convert exercise.id to a string for Supabase
+      const exerciseId = exercise.id;
       
-      if (isNaN(exerciseIdAsNumber)) {
+      if (!exerciseId) {
         throw new Error("Invalid exercise ID");
       }
       
@@ -91,12 +92,12 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       const repsAsString = ensureStringReps(details.reps || 10);
       const repsAsNumber = Number(repsAsString);
       
-      // The exercise_id in the database expects a number type
+      // The exercise_id in the database requires string type according to the error
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdAsNumber, // Pass as number
+          exercise_id: exerciseId, // Keep as string
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
@@ -112,7 +113,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       const updatedExercise: WorkoutExercise = {
         id: data.id,
         workout_id: workoutId,
-        exercise_id: String(exerciseIdAsNumber), // Store as string in our app
+        exercise_id: exerciseId, // Store as string in our app
         sets: details.sets || 3,
         reps: repsAsString, // Store as string in our app
         weight: details.weight || null,
