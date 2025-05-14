@@ -7,6 +7,15 @@ import { Wod } from "@/types/wod";
 import { PreparedWorkout } from "@/types/workout";
 import { addDays, isBefore, parseISO } from "date-fns";
 
+// Define extended types with scheduledDate property
+interface ScheduledWod extends Wod {
+  scheduledDate: string;
+}
+
+interface ScheduledWorkout extends PreparedWorkout {
+  scheduledDate: string;
+}
+
 // This function will fetch dashboard data from various data sources
 const fetchDashboardData = async (userId: string) => {
   // In a real implementation, this would fetch data from Supabase tables
@@ -101,7 +110,7 @@ const fetchDashboardData = async (userId: string) => {
   ];
 
   // Fetch random WODs from Supabase
-  let wods: Wod[] = [];
+  let wods: ScheduledWod[] = [];
   try {
     const { data: wodData, error: wodError } = await supabase
       .from('wods')
@@ -117,14 +126,14 @@ const fetchDashboardData = async (userId: string) => {
         scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
         duration_minutes: wod.avg_duration_minutes || 30,
         type: 'wod'
-      })) as unknown as Wod[];
+      })) as ScheduledWod[];
     }
   } catch (error) {
     console.error("Error fetching WODs:", error);
   }
 
   // Fetch random prepared workouts from Supabase
-  let preparedWorkouts: PreparedWorkout[] = [];
+  let preparedWorkouts: ScheduledWorkout[] = [];
   try {
     const { data: workoutData, error: workoutError } = await supabase
       .from('prepared_workouts')
@@ -138,7 +147,7 @@ const fetchDashboardData = async (userId: string) => {
         ...workout,
         scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
         type: 'workout'
-      })) as unknown as PreparedWorkout[];
+      })) as ScheduledWorkout[];
     }
   } catch (error) {
     console.error("Error fetching prepared workouts:", error);
@@ -149,17 +158,17 @@ const fetchDashboardData = async (userId: string) => {
   const upcomingWorkouts = [
     ...wods.map(wod => ({
       id: wod.id,
-      title: wod.name, // Fix: Use 'name' instead of accessing 'title'
-      date: wod.scheduledDate, // Fix: Use our newly created scheduledDate property
-      duration: wod.avg_duration_minutes || 30, // Fix: Use avg_duration_minutes instead of duration
+      title: wod.name, 
+      date: wod.scheduledDate, 
+      duration: wod.avg_duration_minutes || 30,
       difficulty: wod.difficulty || "Intermediate",
       type: 'wod'
     })),
     ...preparedWorkouts.map(workout => ({
       id: workout.id,
       title: workout.title,
-      date: workout.scheduledDate, // Fix: Use our newly created scheduledDate property
-      duration: workout.duration_minutes, // Fix: Use duration_minutes instead of duration
+      date: workout.scheduledDate,
+      duration: workout.duration_minutes,
       difficulty: workout.difficulty || "Intermediate",
       type: 'workout'
     }))
