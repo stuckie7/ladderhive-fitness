@@ -16,19 +16,18 @@ export function useAddToWorkout() {
   const handleExerciseAdded = (exercise: Exercise) => {
     setRecentlyAddedExercise(exercise);
     
-    // Show toast with undo option - using a function to create the action element
-    // This avoids using JSX directly in the .ts file
+    // Show toast with undo option
     toast({
       title: "Exercise Added",
       description: `${exercise.name} was added to your workout`,
-      action: function UndoButton() {
-        return {
-          altText: "Undo",
-          onClick: () => handleUndoAdd(),
-          className: "bg-primary text-primary-foreground px-2 py-1 rounded text-xs",
-          children: "Undo"
-        } as ToastActionElement;
-      }()
+      action: (
+        <button
+          onClick={() => handleUndoAdd()}
+          className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs"
+        >
+          Undo
+        </button>
+      )
     });
     
     // Clear the recently added status after 3 seconds
