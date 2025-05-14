@@ -38,14 +38,10 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       const newOrderIndex = maxOrderIndex + 1;
       
       // Handle the exercise_id based on its type and the database expectations
-      // For numerical IDs in the database, we need to ensure exercise_id is a number
+      // For Supabase, we need to ensure exercise_id is a string
       const exerciseId = exercise.id;
-      // Parse the ID to a number if it's a string representing a number
-      const exerciseIdForDb = typeof exerciseId === 'string' && !isNaN(Number(exerciseId)) 
-        ? Number(exerciseId)  // Convert string to number if it represents a valid number
-        : typeof exerciseId === 'number'
-          ? exerciseId  // Already a number, use as is
-          : Number(exerciseId); // Last resort conversion, may result in NaN
+      // Make sure we always provide a string to match the database expectation
+      const exerciseIdForDb = String(exerciseId);
       
       // Use a two-step approach:
       // 1. First insert without the reps field
@@ -53,7 +49,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdForDb, // Now ensured to be a number
+          exercise_id: exerciseIdForDb, // Now ensured to be a string
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
