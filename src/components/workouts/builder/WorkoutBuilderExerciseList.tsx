@@ -1,10 +1,10 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ListChecks, Trash2, ArrowUp, ArrowDown, Edit, Grip } from "lucide-react";
+import { ListChecks, Trash2, ArrowUp, ArrowDown, Edit, Grip, Dumbbell, Search } from "lucide-react";
 import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 import { WorkoutExerciseDetail } from "@/hooks/use-workout-builder";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
@@ -28,6 +28,8 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
   onReorder,
   isLoading = false // Default to false
 }) => {
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination || !onReorder) return;
     

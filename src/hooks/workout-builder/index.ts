@@ -5,6 +5,7 @@ import { useExerciseManagement } from "./use-exercise-management";
 import { useTemplateManagement } from "./template-management";
 import { useWorkoutPersistence } from "./persistence";
 import { useEffect } from "react";
+import { WorkoutDetail, WorkoutExerciseDetail, WorkoutTemplate } from "./types";
 
 export const useWorkoutBuilder = (workoutId?: string) => {
   // Core state
@@ -91,6 +92,4 @@ export const useWorkoutBuilder = (workoutId?: string) => {
   };
 };
 
-export type { WorkoutDetail, WorkoutExerciseDetail } from './types';
-// Use the type that's now defined in template-types.ts
-export type { WorkoutTemplate } from './template-management/template-types';
+export type { WorkoutDetail, WorkoutExerciseDetail, WorkoutTemplate } from './types';

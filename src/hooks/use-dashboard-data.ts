@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Exercise, FavoriteExercise } from "@/types/exercise";
+import { Exercise } from "@/types/exercise";
 import { Wod } from "@/types/wod";
 import { PreparedWorkout } from "@/types/workout";
 import { addDays, isBefore, parseISO } from "date-fns";
@@ -22,7 +23,7 @@ interface ScheduledWorkout extends Omit<PreparedWorkout, 'goal'> {
 }
 
 // Interface for our favorite exercises that matches the DB structure
-interface FavoriteExercise extends Omit<Exercise, 'id'> {
+interface DashboardFavoriteExercise {
   id: number | string;
   name: string;
   target: string;
@@ -39,7 +40,7 @@ export const useDashboardData = () => {
   // State variables
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
   const [upcomingWorkouts, setUpcomingWorkouts] = useState<any[]>([]);
-  const [favoriteExercises, setFavoriteExercises] = useState<FavoriteExercise[]>([]);
+  const [favoriteExercises, setFavoriteExercises] = useState<DashboardFavoriteExercise[]>([]);
   const [achievements, setAchievements] = useState<any[]>([]);
   const [metrics, setMetrics] = useState({
     totalWorkouts: 0,
@@ -208,12 +209,12 @@ export const useDashboardData = () => {
           
           return {
             id: item.id || '',
-            title: workoutData.title || 'Unnamed Workout',
+            title: workoutData?.title || 'Unnamed Workout',
             date: item.planned_for || new Date().toISOString(), // Ensure date is set
-            duration: workoutData.duration_minutes || 30,
-            description: workoutData.description || '',
-            difficulty: workoutData.difficulty || 'intermediate',
-            category: workoutData.category || 'general',
+            duration: workoutData?.duration_minutes || 30,
+            description: workoutData?.description || '',
+            difficulty: workoutData?.difficulty || 'intermediate',
+            category: workoutData?.category || 'general',
             type: 'scheduled'
           };
         });

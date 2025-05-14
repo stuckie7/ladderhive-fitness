@@ -45,7 +45,7 @@ export const useWorkoutLoader = (
         category: workoutData.category,
         goal: workoutData.goal,
         duration_minutes: workoutData.duration_minutes,
-        is_template: false // Use safe default since property doesn't exist
+        is_template: false // Add missing property
       });
       
       // Fetch the workout exercises
@@ -70,6 +70,7 @@ export const useWorkoutLoader = (
             sets: ex.sets,
             reps: ex.reps,
             rest_seconds: ex.rest_seconds,
+            weight: "", // Add missing property
             notes: ex.notes,
             order_index: ex.order_index,
             name: exerciseName,
@@ -145,6 +146,7 @@ export const useWorkoutLoader = (
             sets: ex.sets,
             reps: ex.reps,
             rest_seconds: ex.rest_seconds,
+            weight: "", // Add missing property
             notes: ex.notes,
             order_index: ex.order_index,
             name: exerciseName,
