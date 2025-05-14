@@ -81,29 +81,22 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Convert the exercise.id to a number for the database (as exercise_id column expects a number)
-      const exerciseIdAsNumber = typeof exercise.id === 'string' 
-        ? parseInt(exercise.id, 10) 
-        : exercise.id;
-      
-      if (isNaN(exerciseIdAsNumber)) {
-        throw new Error("Invalid exercise ID");
-      }
+      // Ensure exercise_id is a string as expected by Supabase
+      const exerciseId = String(exercise.id);
       
       // Ensure reps is a string
       const repsAsString = ensureStringReps(details.reps || 10);
       
-      // Make sure all fields match the expected types for Supabase
       const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdAsNumber, // Pass as number
+          exercise_id: exerciseId,
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
           order_index: newOrderIndex,
-          reps: repsAsString  // Pass as string
+          reps: repsAsString
         })
         .select()
         .single();
@@ -114,7 +107,7 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       const updatedExercise: WorkoutExercise = {
         id: data.id,
         workout_id: workoutId,
-        exercise_id: String(exerciseIdAsNumber), // Convert back to string for our local state
+        exercise_id: exerciseId,
         sets: details.sets || 3,
         reps: repsAsString,
         weight: details.weight || null,
@@ -151,12 +144,11 @@ export const useManageWorkoutExercises = (workoutId: string) => {
       // Ensure reps is a string
       const repsAsString = ensureStringReps(details.reps || 10);
 
-      // Make sure all fields match the expected types for Supabase
       const { data, error } = await supabase
         .from('workout_exercises')
         .update({
           sets: details.sets,
-          reps: repsAsString,  // Pass as string
+          reps: repsAsString,
           weight: details.weight,
           rest_time: details.rest_time,
           notes: details.notes,
