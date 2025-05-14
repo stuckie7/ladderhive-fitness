@@ -56,7 +56,7 @@ export const useWorkoutLoader = ({
         difficulty: workoutData.difficulty || "Beginner",
         category: workoutData.category || "General",
         duration_minutes: workoutData.duration_minutes || 30,
-        is_template: workoutData.is_template === true, // Use boolean conversion
+        is_template: Boolean(workoutData.is_template), // Convert to boolean explicitly
         exercises: []  // We'll set exercises separately
       });
       

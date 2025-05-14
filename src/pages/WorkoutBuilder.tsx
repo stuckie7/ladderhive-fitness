@@ -93,6 +93,9 @@ const WorkoutBuilder = () => {
     setWorkoutInfo(info);
   };
   
+  // Cast templates to the correct type for WorkoutTemplateSelector
+  const templateItems = templates as unknown as WorkoutTemplate[];
+  
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
@@ -141,7 +144,7 @@ const WorkoutBuilder = () => {
 
         <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
           <WorkoutTemplateSelector 
-            templates={templates as unknown as WorkoutTemplate[]}
+            templates={templateItems}
             onSelectTemplate={handleSelectTemplate}
             onDeleteTemplate={deleteTemplate}
             onClose={() => setIsTemplateDialogOpen(false)}

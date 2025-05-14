@@ -19,13 +19,13 @@ export interface SupabaseExercise {
 export interface WorkoutExercise {
   id: string;
   workout_id: string;
-  exercise_id: string; // Changed to string for consistency
+  exercise_id: string;
   sets: number;
-  reps: string | number; // Allow both number and string for flexibility
+  reps: string; // Store reps as string to allow formats like "8-12"
   weight?: string;
   rest_time?: number;
   order_index: number;
-  notes?: string; // Added notes field
+  notes?: string;
   exercise?: Exercise | any; // Allow any to handle different exercise types
 }
 

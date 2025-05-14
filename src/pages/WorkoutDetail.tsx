@@ -15,17 +15,19 @@ const WorkoutDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
+  // Safely use the hook with nullish coalescing to provide a default empty string if id is undefined
   const {
     workout,
     isLoading,
     isSaved,
     workoutExercises,
     exercisesLoading,
-    workoutActionLoading,
+    error,
     handleAddExercise,
     handleSaveWorkout,
-    handleCompleteWorkout
-  } = useWorkoutDetail(id);
+    handleCompleteWorkout,
+    removeExerciseFromWorkout
+  } = useWorkoutDetail(id ?? "");
   
   useEffect(() => {
     // If we're still loading, don't do anything yet
@@ -97,9 +99,9 @@ const WorkoutDetail: React.FC = () => {
             <WorkoutDetailHeader
               title={workout.title}
               description={workout.description}
-              isSaved={isSaved}
-              isLoading={workoutActionLoading}
-              onToggleSave={() => handleSaveWorkout(isSaved)}
+              isSaved={isSaved || false}
+              isLoading={false}
+              onToggleSave={() => handleSaveWorkout(isSaved || false)}
               onStartWorkout={handleCompleteWorkout}
             />
           }
@@ -113,8 +115,8 @@ const WorkoutDetail: React.FC = () => {
           }
           content={
             <WorkoutExerciseSection
-              exercises={workoutExercises}
-              isLoading={exercisesLoading}
+              exercises={workoutExercises || []}
+              isLoading={exercisesLoading || false}
               onAddExercise={handleAddExercise}
               workoutId={id}
             />

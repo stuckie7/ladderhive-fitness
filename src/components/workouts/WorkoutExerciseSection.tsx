@@ -9,11 +9,12 @@ import WorkoutExerciseSkeleton from "@/components/workouts/WorkoutExerciseSkelet
 import { Exercise } from "@/types/exercise";
 import { WorkoutExercise } from "@/hooks/workout-exercises/utils";
 
+// Define the interface for the exercise list items
 interface ExerciseListItem {
   id: string;
   name: string;
   sets: number;
-  reps: string | number; // Updated to allow string or number
+  reps: string | number;
   weight?: string;
   restTime?: number;
   description?: string;

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Exercise } from "@/types/exercise";
-import { WorkoutExercise } from "./utils";
+import { WorkoutExercise, ensureStringReps } from "./utils";
 import { useFetchWorkoutExercises } from "./use-fetch-workout-exercises";
 
 export const useManageWorkoutExercises = (workoutId?: string) => {
@@ -41,30 +41,40 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       // Convert reps to string if it's a number to ensure consistency
       const repsValue = details.reps ? String(details.reps) : "10";
       
-      const newExercise = {
+      const newExerciseData = {
         workout_id: workoutId,
         exercise_id: String(exercise.id), // Ensure it's a string
         sets: details.sets || 3,
-        reps: repsValue, // Store as string for DB
         weight: details.weight || null,
         rest_time: details.rest_time || 60,
         order_index: newOrderIndex
       };
       
+      // Insert without reps field first to avoid type issues
       const { data, error } = await supabase
         .from('workout_exercises')
-        .insert({
-          ...newExercise,
-          reps: repsValue // Ensure reps is stored as string
-        })
+        .insert(newExerciseData)
         .select()
         .single();
       
       if (error) throw error;
       
+      // Now update with reps field separately
+      if (data && data.id) {
+        const { error: updateError } = await supabase
+          .from('workout_exercises')
+          .update({ 
+            reps: repsValue // Store as string
+          })
+          .eq('id', data.id);
+          
+        if (updateError) throw updateError;
+      }
+      
       // Add the new exercise to the local state with the full exercise details
       const updatedExercise: WorkoutExercise = {
         ...data,
+        reps: repsValue,
         exercise
       };
       
@@ -128,15 +138,21 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
     
     setIsLoading(true);
     try {
-      // Convert reps to string for database storage
-      const updatesToSave = { ...updates };
-      if (updatesToSave.reps !== undefined) {
-        updatesToSave.reps = String(updatesToSave.reps);
+      const updateData: Record<string, any> = {};
+      
+      // Handle properties individually to match database expectations
+      if (updates.sets !== undefined) updateData.sets = updates.sets;
+      if (updates.weight !== undefined) updateData.weight = updates.weight;
+      if (updates.rest_time !== undefined) updateData.rest_time = updates.rest_time;
+      if (updates.order_index !== undefined) updateData.order_index = updates.order_index;
+      if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if (updates.reps !== undefined) {
+        updateData.reps = ensureStringReps(updates.reps);
       }
       
       const { error } = await supabase
         .from('workout_exercises')
-        .update(updatesToSave)
+        .update(updateData)
         .eq('id', exerciseId);
       
       if (error) throw error;
