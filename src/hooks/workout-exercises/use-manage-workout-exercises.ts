@@ -38,9 +38,11 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
-      // Important: Convert the exercise_id to the correct type based on the database expectation
-      // For Supabase with UUID, this should be a string
-      const exerciseIdForDb = exercise.id.toString();
+      // Convert the exercise_id to a string since it might be a UUID in string format
+      // or a numeric ID that needs conversion
+      const exerciseIdForDb = typeof exercise.id === 'number' 
+        ? exercise.id 
+        : exercise.id.toString();
       
       // Use a two-step approach:
       // 1. First insert without the reps field
@@ -48,7 +50,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseIdForDb, // Now explicitly a string
+          exercise_id: exerciseIdForDb, // Now correctly typed based on what DB expects
           sets: details.sets || 3,
           weight: details.weight || null,
           rest_time: details.rest_time || 60,
