@@ -38,11 +38,14 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       const newOrderIndex = maxOrderIndex + 1;
       
+      // Convert reps to string if it's a number to ensure consistency
+      const repsValue = details.reps ? String(details.reps) : "10";
+      
       const newExercise = {
         workout_id: workoutId,
         exercise_id: String(exercise.id), // Ensure it's a string
         sets: details.sets || 3,
-        reps: details.reps || 10,
+        reps: repsValue, // Store as string for DB
         weight: details.weight || null,
         rest_time: details.rest_time || 60,
         order_index: newOrderIndex
@@ -50,7 +53,10 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       const { data, error } = await supabase
         .from('workout_exercises')
-        .insert(newExercise)
+        .insert({
+          ...newExercise,
+          reps: repsValue // Ensure reps is stored as string
+        })
         .select()
         .single();
       
@@ -122,9 +128,15 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
     
     setIsLoading(true);
     try {
+      // Convert reps to string for database storage
+      const updatesToSave = { ...updates };
+      if (updatesToSave.reps !== undefined) {
+        updatesToSave.reps = String(updatesToSave.reps);
+      }
+      
       const { error } = await supabase
         .from('workout_exercises')
-        .update(updates)
+        .update(updatesToSave)
         .eq('id', exerciseId);
       
       if (error) throw error;

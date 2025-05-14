@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -8,7 +9,8 @@ import WorkoutBuilderExerciseList from '@/components/workouts/builder/WorkoutBui
 import ExerciseSearchPanel from '@/components/workouts/builder/ExerciseSearchPanel';
 import { Dialog } from '@/components/ui/dialog';
 import WorkoutTemplateSelector from '@/components/workouts/builder/WorkoutTemplateSelector';
-import { WorkoutDetail, WorkoutTemplate } from '@/hooks/workout-builder/types';
+import { WorkoutDetail } from '@/hooks/workout-builder/types';
+import { WorkoutTemplate } from '@/hooks/workout-builder/template-management/template-types';
 import { useToast } from '@/components/ui/use-toast';
 
 const WorkoutBuilder = () => {
@@ -139,7 +141,7 @@ const WorkoutBuilder = () => {
 
         <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
           <WorkoutTemplateSelector 
-            templates={templates as WorkoutTemplate[]}
+            templates={templates as unknown as WorkoutTemplate[]}
             onSelectTemplate={handleSelectTemplate}
             onDeleteTemplate={deleteTemplate}
             onClose={() => setIsTemplateDialogOpen(false)}

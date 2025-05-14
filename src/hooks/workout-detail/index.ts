@@ -1,65 +1,66 @@
 
-import { useState, useEffect, useRef } from "react";
 import { useFetchWorkout } from "./use-fetch-workout";
 import { useWorkoutActions } from "./use-workout-actions";
-import { useWorkoutExercises } from "@/hooks/use-workout-exercises";
+import { useState, useEffect } from "react";
 import { Exercise } from "@/types/exercise";
 
-export const useWorkoutDetail = (workoutId?: string) => {
-  const {
-    workout,
-    isLoading,
-    isSaved,
-    setIsSaved,
-    fetchWorkout
-  } = useFetchWorkout(workoutId);
-
-  const {
-    isLoading: workoutActionLoading,
-    handleSaveWorkout,
-    handleCompleteWorkout
-  } = useWorkoutActions(workoutId, setIsSaved);
-
+// Define an immediately invoked function expression to handle importing these hooks
+const useWorkoutDetail = (workoutId: string) => {
+  // States
+  const [isAddingExercise, setIsAddingExercise] = useState(false);
+  
+  // Import and initialize the hooks
   const { 
-    exercises: workoutExercises, 
-    isLoading: exercisesLoading,
-    fetchWorkoutExercises,
-    addExerciseToWorkout
-  } = useWorkoutExercises(workoutId);
-
-  const initialFetchDone = useRef(false);
-
+    workout,
+    exercises, 
+    isLoading,
+    error,
+    refetchWorkout
+  } = useFetchWorkout(workoutId);
+  
+  const {
+    scheduleWorkout,
+    startWorkout,
+    completeWorkout,
+    addExerciseToWorkout,
+    removeExerciseFromWorkout,
+    isActionLoading
+  } = useWorkoutActions(workoutId);
+  
+  // Refetch when workoutId changes
   useEffect(() => {
-    // Only run fetch once on mount and when workoutId changes
-    if (!initialFetchDone.current && workoutId) {
-      const loadWorkout = async () => {
-        await fetchWorkout();
-        await fetchWorkoutExercises(); // Remove the workoutId argument here
-        initialFetchDone.current = true;
-      };
-      
-      loadWorkout();
+    if (workoutId) {
+      refetchWorkout(); // Fix: Call with no arguments since refetchWorkout doesn't expect any
     }
-  }, [workoutId, fetchWorkout, fetchWorkoutExercises]);
-
+  }, [workoutId, refetchWorkout]);
+  
+  // Handle adding an exercise with proper type handling
   const handleAddExercise = async (exercise: Exercise) => {
-    if (!workoutId) return;
-    
-    await addExerciseToWorkout(workoutId, exercise);
+    setIsAddingExercise(true);
+    try {
+      // Convert the exercise properly
+      await addExerciseToWorkout(exercise);
+      await refetchWorkout(); // Refresh workout data after adding exercise
+      return true;
+    } catch (error) {
+      console.error("Error adding exercise:", error);
+      return false;
+    } finally {
+      setIsAddingExercise(false);
+    }
   };
-
+  
   return {
     workout,
-    isLoading,
-    isSaved,
-    workoutExercises,
-    exercisesLoading,
-    workoutActionLoading,
-    handleAddExercise,
-    handleSaveWorkout,
-    handleCompleteWorkout
+    exercises,
+    isLoading: isLoading || isActionLoading || isAddingExercise,
+    error,
+    scheduleWorkout,
+    startWorkout,
+    completeWorkout,
+    addExerciseToWorkout: handleAddExercise,
+    removeExerciseFromWorkout,
   };
 };
 
-export * from "./use-fetch-workout";
-export * from "./use-workout-actions";
+export { useWorkoutDetail };

@@ -7,7 +7,7 @@ export interface TemplateExercise {
   exerciseId: string;
   name?: string;
   sets: number;
-  reps: string | number; // Make sure it's required here to match the other definition
+  reps: string | number; // Allow both string and number, but make it required
   rest_seconds?: number;
   notes?: string;
 }
@@ -16,7 +16,7 @@ export interface TemplateExercise {
 export interface SimplifiedWorkoutTemplate {
   id?: string;
   title: string;
-  name: string;
+  name?: string; // Make name optional to match other definition
   description?: string;
   category?: string;
   difficulty?: string;

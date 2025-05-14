@@ -56,23 +56,27 @@ export const useWorkoutLoader = ({
         difficulty: workoutData.difficulty || "Beginner",
         category: workoutData.category || "General",
         duration_minutes: workoutData.duration_minutes || 30,
-        is_template: workoutData.is_template || false,
+        is_template: workoutData.is_template === true, // Use boolean conversion
         exercises: []  // We'll set exercises separately
       });
       
       // Transform and set exercises data
-      const mappedExercises: WorkoutExerciseDetail[] = (exercisesData || []).map(ex => ({
-        id: ex.id || `temp-${Date.now()}-${Math.random()}`,
-        exercise_id: ex.exercise_id,
-        name: ex.exercise?.name || "Unknown Exercise",
-        sets: ex.sets || 3,
-        reps: ex.reps || "10",
-        rest_seconds: ex.rest_seconds || 60,
-        notes: ex.notes || "",
-        order_index: ex.order_index,
-        exercise: ex.exercise || {},
-        weight: "" // Default empty weight
-      }));
+      const mappedExercises: WorkoutExerciseDetail[] = (exercisesData || []).map(ex => {
+        // Make sure ex.exercise exists and handle if it doesn't
+        const exercise = ex.exercise || {};
+        return {
+          id: ex.id || `temp-${Date.now()}-${Math.random()}`,
+          exercise_id: ex.exercise_id,
+          name: exercise.name || "Unknown Exercise",
+          sets: ex.sets || 3,
+          reps: ex.reps || "10",
+          rest_seconds: ex.rest_seconds || 60,
+          notes: ex.notes || "",
+          order_index: ex.order_index,
+          exercise: exercise,
+          weight: "" // Default empty weight
+        };
+      });
       
       setExercises(mappedExercises);
       
@@ -130,7 +134,7 @@ export const useWorkoutLoader = ({
       
       toast({
         title: "Template Loaded",
-        description: `"${template.title || template.name}" loaded successfully.`
+        description: `"${template.title || template.name || "Template"}" loaded successfully.`
       });
       
       return {

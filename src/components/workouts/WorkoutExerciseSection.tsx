@@ -13,7 +13,7 @@ interface ExerciseListItem {
   id: string;
   name: string;
   sets: number;
-  reps: number;
+  reps: string | number; // Updated to allow string or number
   weight?: string;
   restTime?: number;
   description?: string;

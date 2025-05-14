@@ -21,7 +21,7 @@ export interface WorkoutExercise {
   workout_id: string;
   exercise_id: string; // Changed to string for consistency
   sets: number;
-  reps: number | string; // Allow both number and string for flexibility
+  reps: string | number; // Allow both number and string for flexibility
   weight?: string;
   rest_time?: number;
   order_index: number;
@@ -43,4 +43,10 @@ export const mapSupabaseExerciseToExercise = (supabaseExercise: SupabaseExercise
     image_url: supabaseExercise.image_url,
     video_url: supabaseExercise.video_url
   };
+};
+
+// Helper function to ensure consistency in reps format
+export const ensureStringReps = (reps: string | number | undefined): string => {
+  if (typeof reps === 'undefined') return "10";
+  return reps.toString();
 };
