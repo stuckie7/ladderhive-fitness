@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -139,7 +140,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-fitness-dark">
-        <Sidebar className="border-r border-gray-800/50 bg-gray-900/95 backdrop-blur-md">
+        <Sidebar>
           <div className="p-4 flex items-center gap-2">
             <div className="flex-1 flex items-center gap-2 ml-1">
               <div className="h-9 w-9 bg-gradient-to-br from-fitness-primary to-fitness-secondary rounded-md flex items-center justify-center">
@@ -149,12 +150,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             </div>
           </div>
           
-          <SidebarContent className="px-2">
+          <SidebarContent>
             <SidebarMenu>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton 
-                    asChild
                     className={isActive(item.path) 
                       ? `bg-gray-800/50 ${item.color}`
                       : "text-gray-400 hover:text-white"}
@@ -196,10 +196,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           </div>
         </Sidebar>
         
-        <div className="flex-1 flex flex-col min-h-screen max-h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-black">
+        {/* Main content - adjusted to account for sidebar width */}
+        <div className="flex-1 flex flex-col min-h-screen max-h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-black pl-0">
           <header className="h-16 border-b border-gray-800/50 bg-gray-900/70 backdrop-blur-sm flex items-center px-4 lg:px-6">
             {isMobile && (
-              <SidebarTrigger asChild>
+              <SidebarTrigger>
                 <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-gray-800/50">
                   <Menu className="h-5 w-5" />
                 </Button>
