@@ -8,6 +8,7 @@ import { useFetchWorkoutExercises } from "./use-fetch-workout-exercises";
 
 export const useManageWorkoutExercises = (workoutId?: string) => {
   const { exercises, isLoading, fetchWorkoutExercises, setExercises, setIsLoading } = useFetchWorkoutExercises();
+  const [isAdding, setIsAdding] = useState(false);
   const { toast } = useToast();
   const initialFetchDone = useRef(false);
   
@@ -18,10 +19,17 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
     }
   }, [workoutId, fetchWorkoutExercises]);
 
-  const addExerciseToWorkout = useCallback(async (workoutId: string, exercise: Exercise, details: Partial<WorkoutExercise> = {}) => {
-    if (!workoutId) return null;
+  const addExerciseToWorkout = useCallback(async (exercise: Exercise, details: Partial<WorkoutExercise> = {}) => {
+    if (!workoutId) {
+      toast({
+        title: "Error",
+        description: "No workout selected to add exercise to.",
+        variant: "destructive",
+      });
+      return null;
+    }
     
-    setIsLoading(true);
+    setIsAdding(true);
     try {
       // Find the highest order_index to add the new exercise at the end
       const maxOrderIndex = exercises.length > 0
@@ -32,7 +40,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       const newExercise = {
         workout_id: workoutId,
-        exercise_id: exercise.id,
+        exercise_id: String(exercise.id), // Ensure it's a string
         sets: details.sets || 3,
         reps: details.reps || 10,
         weight: details.weight || null,
@@ -71,9 +79,9 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       });
       return null;
     } finally {
-      setIsLoading(false);
+      setIsAdding(false);
     }
-  }, [exercises, setExercises, setIsLoading, toast]);
+  }, [workoutId, exercises, setExercises, toast, setIsAdding]);
 
   const removeExerciseFromWorkout = useCallback(async (exerciseId: string) => {
     if (!exerciseId) return false;
@@ -109,11 +117,44 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
     }
   }, [exercises, setExercises, setIsLoading, toast]);
 
+  const updateExerciseDetails = useCallback(async (exerciseId: string, updates: Partial<WorkoutExercise>) => {
+    if (!exerciseId) return false;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('workout_exercises')
+        .update(updates)
+        .eq('id', exerciseId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setExercises(exercises.map(e => 
+        e.id === exerciseId ? { ...e, ...updates } : e
+      ));
+      
+      return true;
+    } catch (error: any) {
+      console.error("Error updating exercise:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update exercise details",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [exercises, setExercises, setIsLoading, toast]);
+
   return {
     exercises,
     isLoading,
+    isAdding,
     fetchWorkoutExercises,
     addExerciseToWorkout,
-    removeExerciseFromWorkout
+    removeExerciseFromWorkout,
+    updateExerciseDetails
   };
 };

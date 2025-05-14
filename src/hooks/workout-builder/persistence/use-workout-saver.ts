@@ -101,19 +101,21 @@ export const useWorkoutSaver = (
       // Insert exercise entries
       const exercisesToInsert = exercises.map((ex, index) => ({
         workout_id: workoutId,
-        exercise_id: typeof ex.exercise_id === 'string' ? parseInt(ex.exercise_id as string, 10) : ex.exercise_id, // Ensure it's a number
+        exercise_id: typeof ex.exercise_id === 'string' ? parseInt(ex.exercise_id as string, 10) : ex.exercise_id as number,
         sets: ex.sets,
-        reps: ex.reps,
+        reps: String(ex.reps), // Ensure reps is a string
         rest_seconds: ex.rest_seconds || 60,
         notes: ex.notes || null,
         order_index: index
       }));
       
-      const { error: exerciseError } = await supabase
-        .from('prepared_workout_exercises')
-        .insert(exercisesToInsert);
-      
-      if (exerciseError) throw exerciseError;
+      if (exercisesToInsert.length > 0) {
+        const { error: exerciseError } = await supabase
+          .from('prepared_workout_exercises')
+          .insert(exercisesToInsert);
+        
+        if (exerciseError) throw exerciseError;
+      }
       
       // Return updated workout with ID for navigation
       return {

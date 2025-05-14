@@ -32,8 +32,7 @@ export const useWorkoutState = () => {
     difficulty: 'Beginner',
     category: 'General',
     duration_minutes: 30,
-    exercises: [], // Always initialize with empty array
-    is_template: false
+    exercises: [] // Always initialize with empty array
   });
   
   // Exercises in the workout

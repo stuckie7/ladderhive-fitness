@@ -2,146 +2,153 @@
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/context/AuthContext";
-import { WorkoutStateType } from "../use-workout-state";
-import { WorkoutExerciseDetail } from "../types";
+import { WorkoutDetail, WorkoutExerciseDetail, WorkoutTemplate } from "../types";
 
-export const useWorkoutLoader = (
-  { 
-    setWorkout,
-    setExercises,
-    setIsLoading
-  }: Pick<WorkoutStateType, 
-    'setWorkout' | 'setExercises' | 'setIsLoading'
-  >
-) => {
-  const { user } = useAuth();
+interface WorkoutLoaderProps {
+  setWorkout: React.Dispatch<React.SetStateAction<WorkoutDetail>>;
+  setExercises: React.Dispatch<React.SetStateAction<WorkoutExerciseDetail[]>>;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export const useWorkoutLoader = ({
+  setWorkout,
+  setExercises,
+  setIsLoading
+}: WorkoutLoaderProps) => {
   const { toast } = useToast();
 
-  // Load workout data if editing an existing workout
-  const loadWorkout = useCallback(async (id: string) => {
-    if (!user) return;
+  // Load workout
+  const loadWorkout = useCallback(async (workoutId: string) => {
+    if (!workoutId) return;
     
     setIsLoading(true);
     try {
-      // Fetch the workout details
+      // Fetch workout details
       const { data: workoutData, error: workoutError } = await supabase
         .from('prepared_workouts')
         .select('*')
-        .eq('id', id)
+        .eq('id', workoutId)
         .single();
       
       if (workoutError) throw workoutError;
       
-      if (workoutData) {
-        // Check if is_template field exists in database response
-        const workoutWithTemplate = workoutData as unknown as (typeof workoutData & { is_template?: boolean });
-        const isTemplate = workoutWithTemplate.is_template !== undefined ? Boolean(workoutWithTemplate.is_template) : false;
-        
-        setWorkout({
-          id: workoutData.id,
-          title: workoutData.title,
-          description: workoutData.description || "",
-          difficulty: workoutData.difficulty,
-          category: workoutData.category,
-          duration_minutes: workoutData.duration_minutes,
-          created_at: workoutData.created_at,
-          is_template: isTemplate,
-          exercises: [] // Initialize with empty array
-        });
-        
-        // Fetch the workout exercises
-        const { data: exercisesData, error: exercisesError } = await supabase
-          .from('prepared_workout_exercises')
-          .select(`
-            id,
-            exercise_id,
-            sets,
-            reps,
-            rest_seconds,
-            notes,
-            order_index
-          `)
-          .eq('workout_id', id)
-          .order('order_index');
-        
-        if (exercisesError) throw exercisesError;
-        
-        if (exercisesData && exercisesData.length > 0) {
-          // Get all unique exercise IDs
-          const exerciseIds = exercisesData.map(ex => ex.exercise_id);
-          
-          // Fetch exercise details for all exercises at once
-          const { data: exerciseDetails, error: exerciseDetailsError } = await supabase
-            .from('exercises_full')
-            .select('*')
-            .in('id', exerciseIds);
-            
-          if (exerciseDetailsError) throw exerciseDetailsError;
-          
-          // Map exercise details to workout exercises
-          const workoutExercises = exercisesData.map(ex => {
-            const exerciseDetail = exerciseDetails?.find(detail => detail.id === ex.exercise_id);
-            // Create the WorkoutExerciseDetail with name from the exercise
-            const detail: WorkoutExerciseDetail = {
-              id: ex.id,
-              name: exerciseDetail?.name || "Unknown Exercise",
-              exercise_id: String(ex.exercise_id), // Convert to string to match the expected type
-              sets: ex.sets,
-              reps: ex.reps,
-              rest_seconds: ex.rest_seconds,
-              notes: ex.notes,
-              order_index: ex.order_index,
-              exercise: exerciseDetail // Add the full exercise details
-            };
-            return detail;
-          });
-          
-          setExercises(workoutExercises);
-        }
+      if (!workoutData) {
+        throw new Error("Workout not found");
       }
-    } catch (error) {
+      
+      // Fetch workout exercises
+      const { data: exercisesData, error: exercisesError } = await supabase
+        .from('prepared_workout_exercises')
+        .select(`
+          *,
+          exercise:exercises_full(*)
+        `)
+        .eq('workout_id', workoutId)
+        .order('order_index', { ascending: true });
+      
+      if (exercisesError) throw exercisesError;
+      
+      // Set workout data
+      setWorkout({
+        id: workoutData.id,
+        title: workoutData.title || "Unnamed Workout",
+        description: workoutData.description || "",
+        difficulty: workoutData.difficulty || "Beginner",
+        category: workoutData.category || "General",
+        duration_minutes: workoutData.duration_minutes || 30,
+        is_template: workoutData.is_template || false,
+        exercises: []  // We'll set exercises separately
+      });
+      
+      // Transform and set exercises data
+      const mappedExercises: WorkoutExerciseDetail[] = (exercisesData || []).map(ex => ({
+        id: ex.id || `temp-${Date.now()}-${Math.random()}`,
+        exercise_id: ex.exercise_id,
+        name: ex.exercise?.name || "Unknown Exercise",
+        sets: ex.sets || 3,
+        reps: ex.reps || "10",
+        rest_seconds: ex.rest_seconds || 60,
+        notes: ex.notes || "",
+        order_index: ex.order_index,
+        exercise: ex.exercise || {},
+        weight: "" // Default empty weight
+      }));
+      
+      setExercises(mappedExercises);
+      
+      return {
+        workout: workoutData,
+        exercises: mappedExercises
+      };
+    } catch (error: any) {
       console.error("Error loading workout:", error);
       toast({
         title: "Error",
-        description: "Failed to load workout details. Please try again.",
+        description: error.message || "Failed to load workout details.",
         variant: "destructive"
       });
+      return null;
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast, setWorkout, setExercises, setIsLoading]);
-
-  // Load a template
-  const loadTemplate = useCallback(async (templateId: string) => {
-    setIsLoading(true);
+  }, [setWorkout, setExercises, setIsLoading, toast]);
+  
+  // Load template into workout builder
+  const loadTemplate = useCallback(async (template: WorkoutTemplate) => {
     try {
-      // Load the template workout
-      await loadWorkout(templateId);
+      if (!template || !template.id) {
+        throw new Error("Invalid template");
+      }
       
-      // Update the title to remove "(Template)" if present
-      setWorkout(prev => ({
-        ...prev,
-        id: undefined, // Create a new workout instead of updating the template
-        title: prev.title?.replace(' (Template)', '') || 'New Workout',
-        is_template: false
+      setIsLoading(true);
+      
+      // Convert template to workout
+      setWorkout({
+        title: template.title || template.name || "New Workout from Template",
+        description: template.description || "",
+        difficulty: template.difficulty || "Beginner",
+        category: template.category || "General",
+        duration_minutes: 30, // Default duration
+        exercises: [] // We'll set exercises separately
+      });
+      
+      // Transform template exercises to workout exercises
+      const mappedExercises: WorkoutExerciseDetail[] = (template.exercises || []).map((ex, index) => ({
+        id: `temp-${Date.now()}-${index}`,
+        exercise_id: ex.exerciseId,
+        name: ex.name || "Unknown Exercise",
+        sets: ex.sets || 3,
+        reps: ex.reps || "10",
+        rest_seconds: ex.rest_seconds || 60,
+        notes: ex.notes || "",
+        order_index: index,
+        exercise: {}, // Will be populated later if needed
+        weight: "" // Default empty weight
       }));
+      
+      setExercises(mappedExercises);
       
       toast({
         title: "Template Loaded",
-        description: "The workout template has been loaded successfully.",
+        description: `"${template.title || template.name}" loaded successfully.`
       });
-    } catch (error) {
+      
+      return {
+        workout: template,
+        exercises: mappedExercises
+      };
+    } catch (error: any) {
       console.error("Error loading template:", error);
       toast({
         title: "Error",
-        description: "Failed to load workout template. Please try again.",
+        description: error.message || "Failed to load template.",
         variant: "destructive"
       });
+      return null;
     } finally {
       setIsLoading(false);
     }
-  }, [loadWorkout, toast, setWorkout, setIsLoading]);
+  }, [setWorkout, setExercises, setIsLoading, toast]);
 
   return {
     loadWorkout,

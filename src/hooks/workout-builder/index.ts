@@ -5,6 +5,7 @@ import { useExerciseManagement } from "./use-exercise-management";
 import { useTemplateManagement } from "./template-management";
 import { useWorkoutPersistence } from "./persistence";
 import { useEffect } from "react";
+import { WorkoutDetail, WorkoutExerciseDetail, WorkoutTemplate } from "./types";
 
 export const useWorkoutBuilder = (workoutId?: string) => {
   // Core state
@@ -54,14 +55,13 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     workout: workoutState.workout,
     exercises: workoutState.exercises,
     templates: templateManagement.templates,
-    isLoadingTemplates: templateManagement.isLoading,
-    searchResults: workoutState.searchResults,
+    isLoading: workoutState.isLoading,
+    isSaving: workoutState.isSaving,
     searchQuery: workoutState.searchQuery,
+    searchResults: workoutState.searchResults,
     selectedMuscleGroup: workoutState.selectedMuscleGroup,
     selectedEquipment: workoutState.selectedEquipment,
     selectedDifficulty: workoutState.selectedDifficulty,
-    isLoading: workoutState.isLoading,
-    isSaving: workoutState.isSaving,
     
     // Workout info methods
     setWorkoutInfo: workoutInfo.setWorkoutInfo,

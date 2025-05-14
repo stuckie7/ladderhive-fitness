@@ -1,23 +1,24 @@
-
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { useWorkoutBuilder } from '@/hooks/use-workout-builder';
-import { useParams, useSearchParams } from 'react-router-dom';
 import WorkoutBuilderHeader from '@/components/workouts/builder/WorkoutBuilderHeader';
 import WorkoutBuilderDetailsForm from '@/components/workouts/builder/WorkoutBuilderDetailsForm';
 import WorkoutBuilderExerciseList from '@/components/workouts/builder/WorkoutBuilderExerciseList';
 import ExerciseSearchPanel from '@/components/workouts/builder/ExerciseSearchPanel';
 import { Dialog } from '@/components/ui/dialog';
 import WorkoutTemplateSelector from '@/components/workouts/builder/WorkoutTemplateSelector';
-// Import the correct WorkoutTemplate type
-import { WorkoutTemplate } from '@/hooks/workout-builder/template-management';
+import { WorkoutDetail, WorkoutTemplate } from '@/hooks/workout-builder/types';
+import { useToast } from '@/components/ui/use-toast';
 
 const WorkoutBuilder = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get('template');
   const wodId = searchParams.get('wod');
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const { toast } = useToast();
   
   const {
     workout,
@@ -60,7 +61,18 @@ const WorkoutBuilder = () => {
 
   // Wrapper functions to match expected prop types
   const handleSave = async () => {
-    await saveWorkout();
+    const result = await saveWorkout();
+    if (result && result.id) {
+      toast({
+        title: "Success",
+        description: "Workout saved successfully!",
+      });
+      
+      // Navigate to the workout detail page if it's a new workout
+      if (id !== result.id) {
+        navigate(`/workouts/${result.id}`);
+      }
+    }
   };
 
   const handleCreateTemplate = async () => {
@@ -70,7 +82,13 @@ const WorkoutBuilder = () => {
   const handleSelectTemplate = async (templateId: string) => {
     if (loadTemplateFromPreparedWorkout) {
       await loadTemplateFromPreparedWorkout(templateId);
+      setIsTemplateDialogOpen(false);
     }
+  };
+
+  // Wrapper function for WorkoutBuilderDetailsForm's onUpdate prop
+  const handleUpdateWorkoutInfo = (info: Partial<WorkoutDetail>) => {
+    setWorkoutInfo(info);
   };
   
   return (
@@ -89,7 +107,7 @@ const WorkoutBuilder = () => {
           <div className="lg:col-span-2 space-y-6">
             <WorkoutBuilderDetailsForm 
               workout={workout} 
-              onUpdate={setWorkoutInfo} 
+              onUpdate={handleUpdateWorkoutInfo} 
               isLoading={isLoading}
             />
             

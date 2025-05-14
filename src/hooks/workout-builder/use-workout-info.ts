@@ -25,8 +25,7 @@ export const useWorkoutInfo = ({ workout, setWorkout }: WorkoutInfoProps) => {
       difficulty: 'Beginner',
       category: 'General',
       duration_minutes: 30,
-      exercises: [], // Always initialize with empty array
-      is_template: false
+      exercises: [] // Initialize with empty array
     });
   }, [setWorkout]);
   

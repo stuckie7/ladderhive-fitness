@@ -1,9 +1,10 @@
+
 // Update the WorkoutTemplate interface to align with Supabase table structure
 export interface WorkoutExerciseDetail {
   id: string;
   name: string;
   sets: number;
-  reps: string;
+  reps: string | number;
   weight?: string;
   rest_seconds?: number;
   notes?: string;
@@ -19,11 +20,11 @@ export interface WorkoutDetail {
   difficulty: string;
   duration?: number;  // Use this for backwards compatibility
   duration_minutes?: number;  // Add this for new code
-  exercises: WorkoutExerciseDetail[]; // Always use array of exercises, not number
+  exercises: WorkoutExerciseDetail[]; // Always use array of exercises
   category?: string;
   created_at?: string;
   updated_at?: string;
-  is_template?: boolean; 
+  is_template?: boolean;
   thumbnail_url?: string;
   trainer?: string;
   is_new?: boolean;
@@ -34,7 +35,7 @@ export interface WorkoutDetail {
 // Updated WorkoutTemplate to align with prepared_workouts table
 export interface WorkoutTemplate {
   id: string;
-  name: string;         // For backward compatibility
+  name?: string;         // For backward compatibility
   title: string;        // Matches prepared_workouts table
   exercises: TemplateExercise[];
   isCircuit?: boolean;
@@ -43,12 +44,13 @@ export interface WorkoutTemplate {
   created_at?: string;  // Added to match prepared_workouts
   description?: string; // Add this field to match the table and fix errors
   source_wod_id?: string; // Add this field for WOD references
+  is_template?: boolean; // Add this field for template flag
 }
 
 // Break recursive dependency to fix infinite type instantiation error
 export type SimplifiedWorkoutTemplate = {
   id: string;
-  name: string;
+  name?: string;
   title: string;
   category?: string;
   difficulty?: string;
