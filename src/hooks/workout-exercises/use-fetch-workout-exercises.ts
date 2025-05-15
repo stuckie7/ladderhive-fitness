@@ -59,7 +59,7 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
             difficulty: ex.exercises_full.difficulty,
             youtube_thumbnail_url: ex.exercises_full.youtube_thumbnail_url,
             video_demonstration_url: ex.exercises_full.video_demonstration_url || ex.exercises_full.short_youtube_demo
-          } as Exercise
+          } as Exercise : undefined
         }));
 
         setWorkoutExercises(mappedExercises);
@@ -96,7 +96,7 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
               difficulty: ex.exercises_full.difficulty,
               youtube_thumbnail_url: ex.exercises_full.youtube_thumbnail_url,
               video_demonstration_url: ex.exercises_full.video_demonstration_url || ex.exercises_full.short_youtube_demo
-            } as Exercise
+            } as Exercise : undefined
           }));
 
           setWorkoutExercises(mappedExercises);
