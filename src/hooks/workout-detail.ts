@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export const useWorkoutDetail = (workoutId: string) => {
   const { workout, isLoading: workoutLoading, error } = useWorkoutFetch(workoutId);
-  const { workoutExercises, isLoading: exercisesLoading, fetchExercises } = useFetchWorkoutExercises();
+  const { workoutExercises, exercises, isLoading: exercisesLoading, fetchExercises } = useFetchWorkoutExercises();
   const { isSaved, handleSaveWorkout, handleCompleteWorkout } = useWorkoutActions(workoutId);
   const [isLoading, setIsLoading] = useState(workoutLoading);
   const { toast } = useToast();
@@ -45,7 +45,7 @@ export const useWorkoutDetail = (workoutId: string) => {
     isLoading: workoutLoading || exercisesLoading,
     isSaved,
     workoutExercises, // This is the array of exercises
-    exercises: workoutExercises, // Add this alias for compatibility
+    exercises, // Using the alias provided by useFetchWorkoutExercises
     exercisesLoading,
     error,
     handleAddExercise,

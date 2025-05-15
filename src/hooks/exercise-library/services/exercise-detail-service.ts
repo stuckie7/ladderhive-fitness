@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ExerciseFull } from '@/types/exercise';
 
@@ -27,16 +28,15 @@ export const getExerciseFullById = async (
     
     // Create a typed ExerciseFull object with default values for missing properties
     const exerciseFull: ExerciseFull = {
-      ...data,
-      // Add description with a default if it doesn't exist
-      description: data.description || data.name || '',
-      // Add other potentially missing fields with defaults
       id: data.id,
       name: data.name || 'Unknown Exercise',
-      // Ensure all required properties have fallbacks
+      // Add properties that might be missing in the database
+      description: data.description || data.name || '',
       target_muscle_group: data.target_muscle_group || data.prime_mover_muscle || '',
       video_demonstration_url: data.video_demonstration_url || data.short_youtube_demo || '',
-      video_explanation_url: data.video_explanation_url || data.in_depth_youtube_exp || ''
+      video_explanation_url: data.video_explanation_url || data.in_depth_youtube_exp || '',
+      // Add all other properties from data
+      ...data
     };
     
     return exerciseFull;

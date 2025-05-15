@@ -9,6 +9,7 @@ export interface FetchWorkoutExercisesReturn {
   isLoading: boolean;
   error: string;
   fetchExercises: (workoutId: string) => Promise<void>;
+  exercises: WorkoutExercise[]; // Adding alias for backward compatibility
 }
 
 export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
@@ -136,7 +137,8 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
     workoutExercises,
     isLoading,
     error,
-    fetchExercises
+    fetchExercises,
+    exercises: workoutExercises // Add the alias for backward compatibility
   };
 };
 

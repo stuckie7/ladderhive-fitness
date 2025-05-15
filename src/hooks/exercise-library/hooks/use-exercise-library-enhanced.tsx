@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { ExerciseFull } from "@/types/exercise";
 import { useToast } from "@/components/ui/use-toast";
@@ -93,8 +94,7 @@ export const useExerciseLibraryEnhanced = () => {
     // Reload filter options and exercise data
     const refreshData = async () => {
       try {
-        const options = await loadFilterOptions();
-        // Update filter options
+        await loadFilterOptions(); // Remove the argument here
         // We intentionally don't update the state here to avoid triggering
         // multiple rerenders, the loadExerciseDataWithState will handle it
         loadExerciseDataWithState();

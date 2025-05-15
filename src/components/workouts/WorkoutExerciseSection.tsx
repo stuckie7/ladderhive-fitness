@@ -15,7 +15,7 @@ interface ExerciseListItem {
   name: string;
   sets: number;
   reps: string | number;
-  weight?: string;
+  weight?: string; // Changed from string | number to just string
   restTime?: number;
   description?: string;
   demonstration?: string;
@@ -46,9 +46,9 @@ const WorkoutExerciseSection = ({
     id: we.id,
     name: we.exercise?.name || "Unknown Exercise",
     sets: we.sets,
-    reps: we.reps, // This will be string or number already
-    weight: we.weight,
-    restTime: we.rest_time,
+    reps: we.reps,
+    weight: we.weight ? String(we.weight) : undefined, // Ensure weight is a string
+    restTime: we.rest_time || we.rest_seconds,
     description: we.exercise?.description,
     demonstration: we.exercise?.video_demonstration_url || 
                   we.exercise?.video_url || 

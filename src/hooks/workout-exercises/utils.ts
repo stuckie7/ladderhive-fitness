@@ -1,25 +1,22 @@
 
-import { Exercise } from "@/types/exercise";
-
-// Ensure all required properties are included in the type definition
+// Define types for workout exercises
 export interface WorkoutExercise {
   id: string;
   workout_id: string;
-  exercise_id: string | number; // Make it accept both string and number
+  exercise_id: string;
   sets: number;
-  reps: string | number; // Support both string and number formats for reps
+  reps: string;
   rest_time?: number;
-  rest_seconds?: number; // Add rest_seconds as optional
+  rest_seconds?: number;
   order_index: number;
-  weight?: string | number; // Make weight optional and support both string and number
-  notes?: string; // Make notes optional
-  exercise?: Exercise;
+  weight?: string;
+  notes?: string;
+  exercise?: any;
 }
 
-// Utility function to ensure reps are always strings
-export const ensureStringReps = (reps: string | number): string => {
-  if (typeof reps === 'number') {
-    return reps.toString();
-  }
-  return reps;
+// Helper to ensure reps is always a string
+export const ensureStringReps = (reps: string | number | null | undefined): string => {
+  if (reps === null || reps === undefined) return '10';
+  return String(reps);
 };
+
