@@ -44,7 +44,8 @@ export const useWorkoutDetail = (workoutId: string) => {
     workout,
     isLoading: workoutLoading || exercisesLoading,
     isSaved,
-    workoutExercises,
+    workoutExercises, // This is the array of exercises
+    exercises: workoutExercises, // Add this alias for compatibility
     exercisesLoading,
     error,
     handleAddExercise,

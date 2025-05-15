@@ -15,10 +15,13 @@ export const useExerciseCrud = () => {
       // Map to full exercise format
       const fullExercise = mapExerciseToExerciseFull(exercise);
       
+      // Remove id property if it exists to let Supabase generate one
+      const { id, ...exerciseWithoutId } = fullExercise;
+      
       // Insert into exercises_full table
       const { error } = await supabase
         .from('exercises_full')
-        .insert([fullExercise]);
+        .insert([exerciseWithoutId]);
 
       if (error) throw error;
 
@@ -46,13 +49,20 @@ export const useExerciseCrud = () => {
       // Ensure numeric ID for Supabase query
       const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
       
+      if (isNaN(Number(numericId))) {
+        throw new Error(`Invalid exercise ID: ${numericId}`);
+      }
+      
       // Map to full exercise format
       const fullExercise = mapExerciseToExerciseFull(exercise);
+      
+      // Remove id property for update operation
+      const { id: _, ...updateData } = fullExercise;
       
       // Update exercises_full table
       const { error } = await supabase
         .from('exercises_full')
-        .update(fullExercise)
+        .update(updateData)
         .eq('id', numericId);
 
       if (error) throw error;
@@ -80,6 +90,10 @@ export const useExerciseCrud = () => {
     try {
       // Ensure numeric ID for Supabase query
       const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      
+      if (isNaN(Number(numericId))) {
+        throw new Error(`Invalid exercise ID: ${numericId}`);
+      }
       
       // Delete from exercises_full table
       const { error } = await supabase

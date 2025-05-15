@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Exercise } from '@/types/exercise';
@@ -134,6 +135,9 @@ export const useManageWorkoutExercises = () => {
         exerciseId = exercise.exercise_id as number;
       }
 
+      // Ensure we have rest_seconds (use rest_time as fallback)
+      const restSeconds = exercise.rest_seconds || exercise.rest_time;
+
       if (userData) {
         // If found in user workouts, update there
         const { error } = await supabase
@@ -141,7 +145,7 @@ export const useManageWorkoutExercises = () => {
           .update({
             sets: exercise.sets,
             reps: exercise.reps.toString(),
-            rest_seconds: exercise.rest_seconds || exercise.rest_time,
+            rest_seconds: restSeconds,
             order_index: exercise.order_index,
             notes: exercise.notes,
             weight: exercise.weight
@@ -156,7 +160,7 @@ export const useManageWorkoutExercises = () => {
           .update({
             sets: exercise.sets,
             reps: exercise.reps.toString(),
-            rest_seconds: exercise.rest_seconds || exercise.rest_time,
+            rest_seconds: restSeconds,
             order_index: exercise.order_index,
             notes: exercise.notes
           })

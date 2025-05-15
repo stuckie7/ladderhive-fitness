@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { ExerciseFull } from "@/types/exercise";
 import { useToast } from "@/components/ui/use-toast";
@@ -6,6 +5,7 @@ import { checkExercisesFullTableExists } from "@/hooks/exercise-library/services
 import { useExerciseFiltersState } from "./use-exercise-filters-state";
 import { useExerciseCrud } from "./use-exercise-crud";
 import { loadExerciseData, getExercisesCount, loadFilterOptions } from "../services/exercise-enhanced-service";
+import { useExercisesFull } from './use-exercises-full';
 
 const ITEMS_PER_PAGE = 12;
 

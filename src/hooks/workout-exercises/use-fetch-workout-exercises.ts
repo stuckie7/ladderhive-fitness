@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Exercise } from '@/types/exercise';
-import { WorkoutExercise } from './utils';
+import { WorkoutExercise, ensureStringReps } from './utils';
 
 export interface FetchWorkoutExercisesReturn {
   workoutExercises: WorkoutExercise[];
@@ -39,28 +39,37 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
 
       // If user exercises exist, use them
       if (userWorkoutExercises && userWorkoutExercises.length > 0) {
-        const mappedExercises: WorkoutExercise[] = userWorkoutExercises.map((ex) => ({
-          id: ex.id,
-          workout_id: ex.workout_id,
-          exercise_id: ex.exercise_id,
-          sets: ex.sets,
-          reps: ex.reps,
-          rest_time: ex.rest_seconds,
-          rest_seconds: ex.rest_seconds,
-          order_index: ex.order_index,
-          weight: ex.weight || undefined,
-          notes: ex.notes || undefined,
-          exercise: ex.exercises_full ? {
-            id: ex.exercises_full.id.toString(),
-            name: ex.exercises_full.name,
-            description: ex.exercises_full.description || "",
-            prime_mover_muscle: ex.exercises_full.prime_mover_muscle,
-            primary_equipment: ex.exercises_full.primary_equipment,
-            difficulty: ex.exercises_full.difficulty,
-            youtube_thumbnail_url: ex.exercises_full.youtube_thumbnail_url,
-            video_demonstration_url: ex.exercises_full.video_demonstration_url || ex.exercises_full.short_youtube_demo
-          } as Exercise : undefined
-        }));
+        const mappedExercises = userWorkoutExercises.map((ex) => {
+          // Create exercise object only if exercises_full exists and has data
+          let exerciseObj: Exercise | undefined = undefined;
+          
+          if (ex.exercises_full && typeof ex.exercises_full === 'object' && 'id' in ex.exercises_full) {
+            exerciseObj = {
+              id: ex.exercises_full.id.toString(),
+              name: ex.exercises_full.name || '',
+              description: ex.exercises_full.description || "",
+              prime_mover_muscle: ex.exercises_full.prime_mover_muscle,
+              primary_equipment: ex.exercises_full.primary_equipment,
+              difficulty: ex.exercises_full.difficulty,
+              youtube_thumbnail_url: ex.exercises_full.youtube_thumbnail_url,
+              video_demonstration_url: ex.exercises_full.video_demonstration_url || ex.exercises_full.short_youtube_demo
+            } as Exercise;
+          }
+          
+          return {
+            id: ex.id,
+            workout_id: ex.workout_id,
+            exercise_id: ex.exercise_id.toString(), // Convert to string to match type
+            sets: ex.sets,
+            reps: ensureStringReps(ex.reps),
+            rest_time: ex.rest_seconds,
+            rest_seconds: ex.rest_seconds,
+            order_index: ex.order_index,
+            weight: ex.weight || undefined,
+            notes: ex.notes || undefined,
+            exercise: exerciseObj
+          } as WorkoutExercise;
+        });
 
         setWorkoutExercises(mappedExercises);
       } else {
@@ -77,27 +86,37 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
 
         // Map the prepared exercises
         if (preparedExercises && preparedExercises.length > 0) {
-          const mappedExercises: WorkoutExercise[] = preparedExercises.map((ex) => ({
-            id: ex.id,
-            workout_id: ex.workout_id,
-            exercise_id: ex.exercise_id,
-            sets: ex.sets,
-            reps: ex.reps,
-            rest_time: ex.rest_seconds,
-            rest_seconds: ex.rest_seconds,
-            order_index: ex.order_index,
-            notes: ex.notes || undefined,
-            exercise: ex.exercises_full ? {
-              id: ex.exercises_full.id.toString(),
-              name: ex.exercises_full.name,
-              description: ex.exercises_full.description || "",
-              prime_mover_muscle: ex.exercises_full.prime_mover_muscle,
-              primary_equipment: ex.exercises_full.primary_equipment,
-              difficulty: ex.exercises_full.difficulty,
-              youtube_thumbnail_url: ex.exercises_full.youtube_thumbnail_url,
-              video_demonstration_url: ex.exercises_full.video_demonstration_url || ex.exercises_full.short_youtube_demo
-            } as Exercise : undefined
-          }));
+          const mappedExercises = preparedExercises.map((ex) => {
+            // Create exercise object only if exercises_full exists and has data
+            let exerciseObj: Exercise | undefined = undefined;
+            
+            if (ex.exercises_full && typeof ex.exercises_full === 'object' && 'id' in ex.exercises_full) {
+              exerciseObj = {
+                id: ex.exercises_full.id.toString(),
+                name: ex.exercises_full.name || '',
+                description: ex.exercises_full.description || "",
+                prime_mover_muscle: ex.exercises_full.prime_mover_muscle,
+                primary_equipment: ex.exercises_full.primary_equipment,
+                difficulty: ex.exercises_full.difficulty,
+                youtube_thumbnail_url: ex.exercises_full.youtube_thumbnail_url,
+                video_demonstration_url: ex.exercises_full.video_demonstration_url || ex.exercises_full.short_youtube_demo
+              } as Exercise;
+            }
+            
+            return {
+              id: ex.id,
+              workout_id: ex.workout_id,
+              exercise_id: ex.exercise_id.toString(), // Convert to string to match type
+              sets: ex.sets,
+              reps: ensureStringReps(ex.reps),
+              rest_time: ex.rest_seconds,
+              rest_seconds: ex.rest_seconds,
+              order_index: ex.order_index,
+              weight: undefined, // Add weight property with undefined
+              notes: ex.notes || undefined,
+              exercise: exerciseObj
+            } as WorkoutExercise;
+          });
 
           setWorkoutExercises(mappedExercises);
         } else {
@@ -112,15 +131,13 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
     }
   }, []);
 
-  // Alias the function for backward compatibility
-  const workoutExercisesData = {
+  // Return the workoutExercises data
+  return {
     workoutExercises,
     isLoading,
     error,
     fetchExercises
   };
-
-  return workoutExercisesData;
 };
 
 // For backward compatibility

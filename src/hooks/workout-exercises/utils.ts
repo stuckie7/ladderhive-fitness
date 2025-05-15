@@ -1,36 +1,25 @@
 
 import { Exercise } from "@/types/exercise";
 
+// Ensure all required properties are included in the type definition
 export interface WorkoutExercise {
   id: string;
   workout_id: string;
-  exercise_id: string;
+  exercise_id: string | number; // Make it accept both string and number
   sets: number;
-  reps: string; // Must be string to handle ranges like "8-12"
-  weight: string | null;
-  rest_time: number;
+  reps: string | number; // Support both string and number formats for reps
+  rest_time?: number;
+  rest_seconds?: number; // Add rest_seconds as optional
   order_index: number;
+  weight?: string | number; // Make weight optional and support both string and number
+  notes?: string; // Make notes optional
   exercise?: Exercise;
 }
 
-// Helper function to ensure reps is always a string
-export const ensureStringReps = (reps: string | number | undefined): string => {
-  if (typeof reps === 'undefined') return '10';
-  return typeof reps === 'string' ? reps : String(reps);
-};
-
-// Helper to map a Supabase exercise result to our Exercise type
-export const mapSupabaseExerciseToExercise = (exerciseData: any): Exercise => {
-  return {
-    id: String(exerciseData.id), // Ensure ID is a string
-    name: exerciseData.name || '',
-    description: exerciseData.description || '',
-    muscle_group: exerciseData.prime_mover_muscle || exerciseData.target_muscle_group || exerciseData.muscle_group || '',
-    equipment: exerciseData.primary_equipment || exerciseData.equipment || '',
-    difficulty: exerciseData.difficulty || '',
-    video_url: exerciseData.video_url || exerciseData.short_youtube_demo || '',
-    image_url: exerciseData.image_url || exerciseData.youtube_thumbnail_url || '',
-    video_demonstration_url: exerciseData.video_demonstration_url || exerciseData.short_youtube_demo || '',
-    // Map other fields as needed
-  };
+// Utility function to ensure reps are always strings
+export const ensureStringReps = (reps: string | number): string => {
+  if (typeof reps === 'number') {
+    return reps.toString();
+  }
+  return reps;
 };
