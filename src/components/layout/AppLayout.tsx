@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useExerciseLibraryNavigation } from '@/hooks/use-exercise-library-navigation';
 
 type NavItem = {
   label: string;
@@ -28,6 +29,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const exerciseNav = useExerciseLibraryNavigation();
   
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -36,6 +38,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
+  };
+
+  const handleExerciseClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    exerciseNav.goToExerciseLibrary();
   };
 
   const navItems: NavItem[] = [
@@ -51,6 +58,25 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   const NavItem = ({ item }: { item: NavItem }) => {
     const active = isActive(item.href);
+    
+    // Special case for Exercise link to use our navigation hook
+    if (item.label === 'Exercises') {
+      return (
+        <a 
+          href={item.href}
+          onClick={handleExerciseClick}
+          className={`flex items-center gap-2 px-3 py-2 rounded-md ${
+            active 
+              ? 'bg-primary text-primary-foreground font-medium' 
+              : 'hover:bg-secondary'
+          }`}
+        >
+          {item.icon}
+          <span>{item.label}</span>
+        </a>
+      );
+    }
+    
     return (
       <Link 
         to={item.href} 

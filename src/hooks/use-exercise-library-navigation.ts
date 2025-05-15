@@ -5,7 +5,23 @@ export const useExerciseLibraryNavigation = () => {
   const navigate = useNavigate();
   
   const goToExerciseLibrary = () => {
-    navigate("/exercise-library");
+    navigate("/exercises");
+  };
+  
+  const goToEnhancedLibrary = () => {
+    navigate("/exercises/enhanced");
+  };
+  
+  const goToSimpleLibrary = () => {
+    navigate("/exercises/simple");
+  };
+  
+  const goToExerciseDetail = (exerciseId: string | number) => {
+    navigate(`/exercises/${exerciseId}`);
+  };
+  
+  const goToEnhancedExerciseDetail = (exerciseId: string | number) => {
+    navigate(`/exercises/enhanced/${exerciseId}`);
   };
   
   const goToWorkoutBuilder = () => {
@@ -18,6 +34,10 @@ export const useExerciseLibraryNavigation = () => {
   
   return {
     goToExerciseLibrary,
+    goToEnhancedLibrary,
+    goToSimpleLibrary,
+    goToExerciseDetail,
+    goToEnhancedExerciseDetail,
     goToWorkoutBuilder,
     goToWorkoutDetail
   };

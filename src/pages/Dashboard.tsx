@@ -1,10 +1,10 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import AppLayout from "@/components/layout/AppLayout";
 import { Activity, Award, Calendar, Dumbbell, Plus, Zap } from "lucide-react";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useExerciseLibraryNavigation } from "@/hooks/use-exercise-library-navigation";
 
 // Import dashboard components
 import WorkoutHistory from "@/components/dashboard/WorkoutHistory";
@@ -43,6 +43,9 @@ const Dashboard = () => {
   // Combine the dashboard metrics with real activity data
   const [metrics, setMetrics] = useState(dashboardMetrics);
   const [weeklyChartData, setWeeklyChartData] = useState(initialChartData);
+  
+  // Add exercise library navigation
+  const exerciseNav = useExerciseLibraryNavigation();
   
   // Update metrics when both data sources are available
   useEffect(() => {
@@ -108,6 +111,10 @@ const Dashboard = () => {
       title: "Quick Schedule",
       description: "Workout scheduling feature coming soon",
     });
+  };
+
+  const handleGoToExerciseLibrary = () => {
+    exerciseNav.goToExerciseLibrary();
   };
 
   // Handle start workout functionality
@@ -222,11 +229,13 @@ const Dashboard = () => {
                   <Calendar className="mr-2 h-5 w-5 text-fitness-secondary group-hover:animate-pulse-soft" /> Schedule
                 </Button>
               </Link>
-              <Link to="/exercise-library">
-                <Button variant="outline" className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-orange group">
-                  <Dumbbell className="mr-2 h-5 w-5 text-fitness-orange group-hover:animate-pulse-soft" /> Exercise Library
-                </Button>
-              </Link>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-orange group"
+                onClick={handleGoToExerciseLibrary}
+              >
+                <Dumbbell className="mr-2 h-5 w-5 text-fitness-orange group-hover:animate-pulse-soft" /> Exercise Library
+              </Button>
             </CardContent>
           </Card>
           
