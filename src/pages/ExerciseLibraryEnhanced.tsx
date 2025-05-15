@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useExerciseLibraryEnhanced } from "@/hooks/exercise-library/hooks/use-exercise-library-enhanced";
+import { ExerciseFormState } from "@/hooks/exercise-library/hooks/use-exercise-crud";
 import ExercisesEnhancedNavigation from "@/components/exercises/ExercisesEnhancedNavigation";
 import ExerciseSearchAndFilters from "@/components/exercises/ExerciseSearchAndFilters";
 import ExerciseCardGrid from "@/components/exercises/ExerciseCardGrid";
@@ -133,7 +134,7 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setIsAddDialogOpen}
         title="Add New Exercise"
         description="Create a new exercise in your database"
-        formState={formState}
+        formState={formState as ExerciseFormState}
         onFormChange={handleFormChange}
         onSubmit={handleAddExercise}
         submitLabel="Add Exercise"
@@ -147,7 +148,7 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setIsEditDialogOpen}
         title="Edit Exercise"
         description="Update the exercise details"
-        formState={formState}
+        formState={formState as ExerciseFormState}
         onFormChange={handleFormChange}
         onSubmit={handleEditExercise}
         submitLabel="Save Changes"

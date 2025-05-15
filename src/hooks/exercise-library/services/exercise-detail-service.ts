@@ -7,11 +7,19 @@ export type ExerciseDetailService = {
   updateExercise: (id: string | number, exerciseData: Partial<ExerciseFull>) => Promise<ExerciseFull | null>;
 };
 
+// Utility function to ensure numeric ID
+const ensureNumericId = (id: string | number): number => {
+  if (typeof id === 'string') {
+    return parseInt(id, 10);
+  }
+  return id;
+};
+
 // Export this function directly for component use
 export const getExerciseFullById = async (id: string | number): Promise<ExerciseFull | null> => {
   try {
-    // Convert ID to string to ensure compatibility
-    const exerciseId = id.toString();
+    // Convert ID to number for database query
+    const exerciseId = ensureNumericId(id);
     
     // Fetch the exercise details
     const { data: exerciseData, error } = await supabase
@@ -30,8 +38,20 @@ export const getExerciseFullById = async (id: string | number): Promise<Exercise
       return null;
     }
     
+    // Ensure description and instructions fields are available
+    const enhancedExerciseData: ExerciseFull = {
+      ...exerciseData,
+      description: exerciseData.description || '',
+      instructions: exerciseData.instructions ? 
+        Array.isArray(exerciseData.instructions) ? 
+          exerciseData.instructions : 
+          [exerciseData.instructions] 
+        : [],
+      video_url: exerciseData.short_youtube_demo || exerciseData.video_demonstration_url,
+    };
+    
     // Return the exercise data
-    return exerciseData as ExerciseFull;
+    return enhancedExerciseData;
     
   } catch (error) {
     console.error('Unexpected error in getExerciseFullById:', error);
@@ -58,8 +78,8 @@ export const createExerciseDetailService = (): ExerciseDetailService => {
         updatePayload.instructions = updatePayload.instructions.join('\n');
       }
       
-      // Convert ID to string
-      const exerciseId = id.toString();
+      // Convert ID to number for database query
+      const exerciseId = ensureNumericId(id);
       
       const { data, error } = await supabase
         .from('exercises_full')

@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
-import { Exercise } from '@/types/exercise';
+import { Exercise, ExerciseFull } from '@/types/exercise';
 import { supabase } from '@/integrations/supabase/client';
+import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 
 // Components
 import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
@@ -25,48 +26,44 @@ export default function ExerciseDetail() {
       try {
         console.log(`Fetching exercise with ID: ${id}`);
         
-        // Try fetching from exercises_full first (more detailed data)
-        let { data: fullData, error: fullError } = await supabase
-          .from('exercises_full')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (fullData) {
-          console.log('Found exercise in exercises_full:', fullData);
+        // Try fetching from enhanced service first
+        const fullExercise = await getExerciseFullById(id);
+        
+        if (fullExercise) {
+          console.log('Found exercise in enhanced library:', fullExercise);
           
-          // Create description from available data if missing
-          const description = fullData.description || 
-            `${fullData.prime_mover_muscle || ''} exercise using ${fullData.primary_equipment || 'bodyweight'}`;
-            
-          // Map the full exercise data to our Exercise type
+          // Create compatible Exercise object from ExerciseFull
           const exerciseData: Exercise = {
-            id: fullData.id,
-            name: fullData.name,
-            description: description,
-            muscle_group: fullData.prime_mover_muscle || '',
-            equipment: fullData.primary_equipment || '',
-            difficulty: fullData.difficulty || '',
-            instructions: fullData.instructions ? [fullData.instructions] : [],
-            video_url: fullData.short_youtube_demo || '',
-            image_url: fullData.youtube_thumbnail_url || '',
-            bodyPart: fullData.body_region || '',
-            target: fullData.prime_mover_muscle || '',
-            secondaryMuscles: fullData.secondary_muscle ? [fullData.secondary_muscle] : [],
-            gifUrl: fullData.youtube_thumbnail_url || '',
-            mechanics: fullData.mechanics || '',
-            force_type: fullData.force_type || '',
-            posture: fullData.posture || '',
-            laterality: fullData.laterality || '',
-            tertiary_muscle: fullData.tertiary_muscle || '',
-            video_demonstration_url: fullData.short_youtube_demo || '',
+            id: fullExercise.id,
+            name: fullExercise.name,
+            description: fullExercise.description || '',
+            muscle_group: fullExercise.prime_mover_muscle || '',
+            equipment: fullExercise.primary_equipment || '',
+            difficulty: fullExercise.difficulty || '',
+            instructions: fullExercise.instructions || [],
+            video_url: fullExercise.short_youtube_demo || fullExercise.video_demonstration_url || '',
+            image_url: fullExercise.youtube_thumbnail_url || fullExercise.image_url || '',
+            bodyPart: fullExercise.body_region || '',
+            target: fullExercise.target_muscle_group || fullExercise.prime_mover_muscle || '',
+            secondaryMuscles: fullExercise.secondary_muscle ? [fullExercise.secondary_muscle] : [],
+            prime_mover_muscle: fullExercise.prime_mover_muscle,
+            secondary_muscle: fullExercise.secondary_muscle,
+            tertiary_muscle: fullExercise.tertiary_muscle,
+            primary_equipment: fullExercise.primary_equipment,
+            secondary_equipment: fullExercise.secondary_equipment,
+            body_region: fullExercise.body_region,
+            mechanics: fullExercise.mechanics,
+            force_type: fullExercise.force_type,
+            posture: fullExercise.posture,
+            laterality: fullExercise.laterality,
+            youtube_thumbnail_url: fullExercise.youtube_thumbnail_url
           };
           
           setExercise(exerciseData);
         } 
         // If not found in exercises_full, try regular exercises table
         else {
-          console.log('Exercise not found in exercises_full, trying exercises table');
+          console.log('Exercise not found in enhanced library, trying exercises table');
           
           let { data, error } = await supabase
             .from('exercises')

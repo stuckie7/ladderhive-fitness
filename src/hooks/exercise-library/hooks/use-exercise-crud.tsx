@@ -1,358 +1,325 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Exercise, ExerciseFull } from "@/types/exercise";
-import { ensureIdFormat } from "@/hooks/workout-exercises/utils";
+import { ExerciseFull } from "@/types/exercise";
+import { supabase } from "@/integrations/supabase/client";
+import { toNumericId } from "@/utils/id-conversion";
 
-// Initial form state for new exercises
+// Exercise form state type for consistent form handling
 export interface ExerciseFormState {
+  id?: string | number;
   name: string;
   description: string;
-  muscle_group: string;
-  primary_equipment: string;
-  difficulty: string;
-  body_region: string;
-  instructions: string;
-  video_url: string;
-  image_url: string;
+  difficulty?: string;
   prime_mover_muscle?: string;
+  secondary_muscle?: string;
+  tertiary_muscle?: string;
+  primary_equipment?: string;
+  secondary_equipment?: string;
+  body_region?: string;
+  mechanics?: string;
+  force_type?: string;
+  posture?: string;
+  laterality?: string;
+  instructions: string;
   short_youtube_demo?: string;
+  in_depth_youtube_exp?: string;
+  image_url: string;
 }
 
-const initialFormState: ExerciseFormState = {
+// Default form state
+export const defaultFormState: ExerciseFormState = {
   name: "",
   description: "",
-  muscle_group: "",
-  primary_equipment: "",
-  difficulty: "",
-  body_region: "",
-  instructions: "",
-  video_url: "",
-  image_url: "",
+  difficulty: "Beginner",
   prime_mover_muscle: "",
-  short_youtube_demo: ""
+  secondary_muscle: "",
+  primary_equipment: "Bodyweight",
+  body_region: "Full Body",
+  instructions: "",
+  image_url: "",
 };
 
-export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
-  const [formState, setFormState] = useState<ExerciseFormState>(initialFormState);
-  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
+// Exercise CRUD operations hook
+export const useExerciseCrud = (onSuccess?: () => void) => {
+  const [currentExercise, setCurrentExercise] = useState<ExerciseFull | null>(null);
+  const [formState, setFormState] = useState<ExerciseFormState>(defaultFormState);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Import multiple exercises
-  const addExercises = async (exercisesToAdd: Exercise[]): Promise<boolean> => {
+  // Initialize the form with current exercise data
+  const openEditDialog = useCallback((exercise: ExerciseFull) => {
+    setCurrentExercise(exercise);
+    
+    // Map from ExerciseFull to form state
+    setFormState({
+      id: exercise.id,
+      name: exercise.name || "",
+      description: exercise.description || "",
+      difficulty: exercise.difficulty || "Beginner",
+      prime_mover_muscle: exercise.prime_mover_muscle || "",
+      secondary_muscle: exercise.secondary_muscle || "",
+      tertiary_muscle: exercise.tertiary_muscle || "",
+      primary_equipment: exercise.primary_equipment || "Bodyweight",
+      secondary_equipment: exercise.secondary_equipment || "",
+      body_region: exercise.body_region || "Full Body",
+      mechanics: exercise.mechanics || "",
+      force_type: exercise.force_type || "",
+      posture: exercise.posture || "",
+      laterality: exercise.laterality || "",
+      instructions: Array.isArray(exercise.instructions) 
+        ? exercise.instructions.join("\n") 
+        : (exercise.instructions || ""),
+      short_youtube_demo: exercise.short_youtube_demo || "",
+      in_depth_youtube_exp: exercise.in_depth_youtube_exp || "",
+      image_url: exercise.image_url || exercise.youtube_thumbnail_url || "",
+    });
+  }, []);
+
+  // Initialize the delete dialog
+  const openDeleteDialog = useCallback((exercise: ExerciseFull) => {
+    setCurrentExercise(exercise);
+  }, []);
+
+  // Handle form field changes
+  const handleFormChange = useCallback((fieldName: keyof ExerciseFormState, value: any) => {
+    setFormState(prev => ({
+      ...prev,
+      [fieldName]: value,
+    }));
+  }, []);
+
+  // Add a new exercise
+  const handleAddExercise = useCallback(async () => {
+    setIsProcessing(true);
+
     try {
-      // Convert exercises to the format expected by the exercises table
-      const formattedExercises = exercisesToAdd.map(ex => ({
-        id: typeof ex.id === 'number' ? ex.id.toString() : ex.id as string,
-        name: ex.name,
-        muscle_group: ex.target || ex.bodyPart || "",
-        equipment: ex.equipment || "",
-        description: `${ex.name} exercise targeting ${ex.target || "muscles"}`,
-        video_url: ex.gifUrl || "",
-        image_url: ex.gifUrl || "",
-      }));
-
-      // Insert each exercise individually to handle different types
-      for (const exercise of formattedExercises) {
-        const { error } = await supabase
-          .from("exercises")
-          .upsert(exercise, {
-            onConflict: "id"
-          });
-
-        if (error) {
-          console.error("Error adding exercise:", error);
-          throw error;
-        }
-      }
-
-      toast({
-        title: "Success",
-        description: `${exercisesToAdd.length} exercises added successfully`,
-      });
-      
-      onSuccess();
-      return true;
-    } catch (error) {
-      console.error("Error in addExercises:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  // Add a single exercise
-  const addExercise = async (exercise: Exercise): Promise<boolean> => {
-    try {
-      // Create a correctly typed exercise object
-      const newExercise = {
-        name: exercise.name,
-        description: exercise.description || "",
-        muscle_group: exercise.muscle_group || exercise.target || "",
-        equipment: exercise.equipment || exercise.primary_equipment || "",
-        difficulty: exercise.difficulty || "",
-        video_url: exercise.video_url || exercise.gifUrl || "",
-        image_url: exercise.image_url || exercise.gifUrl || "",
-        instructions: exercise.instructions?.join("\n") || "",
+      // Prepare data for insertion
+      const newExerciseData = {
+        name: formState.name,
+        description: formState.description,
+        difficulty: formState.difficulty,
+        prime_mover_muscle: formState.prime_mover_muscle,
+        secondary_muscle: formState.secondary_muscle,
+        tertiary_muscle: formState.tertiary_muscle,
+        primary_equipment: formState.primary_equipment,
+        secondary_equipment: formState.secondary_equipment,
+        body_region: formState.body_region,
+        mechanics: formState.mechanics,
+        force_type: formState.force_type,
+        posture: formState.posture,
+        laterality: formState.laterality,
+        instructions: formState.instructions,
+        short_youtube_demo: formState.short_youtube_demo,
+        in_depth_youtube_exp: formState.in_depth_youtube_exp,
+        image_url: formState.image_url,
       };
-      
-      const { error } = await supabase
-        .from("exercises")
-        .insert(newExercise);
+
+      // Insert the new exercise
+      const { data, error } = await supabase
+        .from("exercises_full")
+        .insert(newExerciseData)
+        .select();
 
       if (error) {
+        console.error("Error adding exercise:", error);
         toast({
           title: "Error",
-          description: `Failed to add exercise: ${error.message}`,
-          variant: "destructive"
+          description: "Failed to add exercise: " + error.message,
+          variant: "destructive",
         });
-        return false;
+        return;
       }
 
       toast({
         title: "Success",
-        description: `Exercise "${exercise.name}" added successfully`,
+        description: "Exercise added successfully",
       });
+
+      // Reset form
+      setFormState(defaultFormState);
       
-      onSuccess();
-      return true;
+      // Trigger refresh if callback provided
+      if (onSuccess) onSuccess();
+      
     } catch (error) {
-      console.error("Error in addExercise:", error);
+      console.error("Error in handleAddExercise:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
-        variant: "destructive"
+        variant: "destructive",
       });
-      return false;
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, [formState, toast, onSuccess]);
 
-  // Update an exercise
-  const updateExercise = async (id: string | number, exercise: Partial<ExerciseFull>): Promise<boolean> => {
-    try {
-      // Convert id to string for database queries
-      const exerciseId = id.toString();
-      
-      // Create a clean exercise object for update
-      const updateData: any = {
-        name: exercise.name,
-        description: exercise.description,
-        prime_mover_muscle: exercise.prime_mover_muscle || exercise.muscle_group,
-        primary_equipment: exercise.primary_equipment || exercise.equipment,
-        difficulty: exercise.difficulty,
-        body_region: exercise.body_region || exercise.bodyPart,
-        // Include other fields as needed
-      };
-      
-      // Remove undefined fields
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === undefined) {
-          delete updateData[key];
-        }
+  // Edit an existing exercise
+  const handleEditExercise = useCallback(async () => {
+    if (!currentExercise || !formState.id) {
+      toast({
+        title: "Error",
+        description: "No exercise selected for editing",
+        variant: "destructive",
       });
-      
-      const { error } = await supabase
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Prepare update data
+      const updateData = {
+        name: formState.name,
+        description: formState.description,
+        difficulty: formState.difficulty,
+        prime_mover_muscle: formState.prime_mover_muscle,
+        secondary_muscle: formState.secondary_muscle,
+        tertiary_muscle: formState.tertiary_muscle,
+        primary_equipment: formState.primary_equipment,
+        secondary_equipment: formState.secondary_equipment,
+        body_region: formState.body_region,
+        mechanics: formState.mechanics,
+        force_type: formState.force_type,
+        posture: formState.posture,
+        laterality: formState.laterality,
+        instructions: formState.instructions,
+        short_youtube_demo: formState.short_youtube_demo,
+        in_depth_youtube_exp: formState.in_depth_youtube_exp,
+        image_url: formState.image_url,
+      };
+
+      // Convert ID to numeric for database query
+      const numericId = toNumericId(formState.id);
+
+      // Update the exercise
+      const { data, error } = await supabase
         .from("exercises_full")
         .update(updateData)
-        .eq("id", exerciseId);
+        .eq("id", numericId)
+        .select();
 
       if (error) {
+        console.error("Error updating exercise:", error);
         toast({
           title: "Error",
-          description: `Failed to update exercise: ${error.message}`,
-          variant: "destructive"
+          description: "Failed to update exercise: " + error.message,
+          variant: "destructive",
         });
-        return false;
+        return;
       }
 
       toast({
         title: "Success",
-        description: `Exercise updated successfully`,
+        description: "Exercise updated successfully",
       });
+
+      // Reset form
+      setFormState(defaultFormState);
+      setCurrentExercise(null);
       
-      onSuccess();
-      return true;
+      // Trigger refresh if callback provided
+      if (onSuccess) onSuccess();
+      
     } catch (error) {
-      console.error("Error in updateExercise:", error);
+      console.error("Error in handleEditExercise:", error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred while updating",
-        variant: "destructive"
+        description: "An unexpected error occurred",
+        variant: "destructive",
       });
-      return false;
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, [currentExercise, formState, toast, onSuccess]);
 
   // Delete an exercise
-  const deleteExercise = async (id: string | number): Promise<boolean> => {
+  const handleDeleteExercise = useCallback(async () => {
+    if (!currentExercise) {
+      toast({
+        title: "Error",
+        description: "No exercise selected for deletion",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
     try {
-      // Convert id to string for database queries
-      const exerciseId = id.toString();
-      
+      // Convert ID to numeric for database query
+      const numericId = toNumericId(currentExercise.id);
+
+      // Delete the exercise
       const { error } = await supabase
         .from("exercises_full")
         .delete()
-        .eq("id", exerciseId);
+        .eq("id", numericId);
 
       if (error) {
+        console.error("Error deleting exercise:", error);
         toast({
           title: "Error",
-          description: `Failed to delete exercise: ${error.message}`,
-          variant: "destructive"
+          description: "Failed to delete exercise: " + error.message,
+          variant: "destructive",
         });
-        return false;
+        return;
       }
 
       toast({
         title: "Success",
-        description: `Exercise deleted successfully`,
+        description: "Exercise deleted successfully",
       });
+
+      // Reset current exercise
+      setCurrentExercise(null);
       
-      onSuccess();
-      return true;
+      // Trigger refresh if callback provided
+      if (onSuccess) onSuccess();
+      
     } catch (error) {
-      console.error("Error in deleteExercise:", error);
+      console.error("Error in handleDeleteExercise:", error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred while deleting",
-        variant: "destructive"
+        description: "An unexpected error occurred",
+        variant: "destructive",
       });
-      return false;
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, [currentExercise, toast, onSuccess]);
 
-  // Form handling
-  const handleFormChange = (field: string, value: string | number | boolean) => {
-    setFormState(prev => ({ ...prev, [field]: value }));
-  };
-
-  // Set up form for adding new exercise
-  const openAddDialog = () => {
-    setFormState(initialFormState);
-    setCurrentExercise(null);
-  };
-
-  // Set up form for editing an exercise
-  const openEditDialog = (exercise: Exercise | ExerciseFull) => {
-    setFormState({
-      name: exercise.name || "",
-      description: exercise.description || "",
-      muscle_group: getMuscleGroup(exercise),
-      primary_equipment: getEquipment(exercise),
-      difficulty: exercise.difficulty || "",
-      body_region: getBodyRegion(exercise),
-      instructions: Array.isArray(exercise.instructions) 
-        ? exercise.instructions.join("\n") 
-        : exercise.instructions as string || "",
-      video_url: getVideoUrl(exercise),
-      image_url: getImageUrl(exercise),
-      prime_mover_muscle: exercise.prime_mover_muscle || "",
-      short_youtube_demo: exercise.short_youtube_demo || ""
-    });
-    setCurrentExercise(exercise as Exercise);
-  };
-
-  // Helper functions to get values with fallbacks
-  const getMuscleGroup = (exercise: Exercise | ExerciseFull): string => {
-    return exercise.muscle_group || 
-           exercise.prime_mover_muscle || 
-           exercise.target || 
-           "";
-  };
-
-  const getEquipment = (exercise: Exercise | ExerciseFull): string => {
-    return exercise.primary_equipment || 
-           exercise.equipment || 
-           "";
-  };
-
-  const getBodyRegion = (exercise: Exercise | ExerciseFull): string => {
-    return exercise.body_region || 
-           exercise.bodyPart || 
-           "";
-  };
-
-  const getVideoUrl = (exercise: Exercise | ExerciseFull): string => {
-    return exercise.video_url || 
-           exercise.short_youtube_demo || 
-           exercise.video_demonstration_url || 
-           "";
-  };
-
-  const getImageUrl = (exercise: Exercise | ExerciseFull): string => {
-    return exercise.image_url || 
-           exercise.youtube_thumbnail_url || 
-           exercise.gifUrl || 
-           "";
-  };
-
-  // Set up for deleting an exercise
-  const openDeleteDialog = (exercise: Exercise | ExerciseFull) => {
-    setCurrentExercise(exercise as Exercise);
-  };
-
-  // Handle form submission for adding an exercise
-  const handleAddExercise = async () => {
-    const newExercise: Exercise = {
-      id: Date.now().toString(),
-      name: formState.name,
-      description: formState.description,
-      muscle_group: formState.muscle_group,
-      equipment: formState.primary_equipment,
-      difficulty: formState.difficulty,
-      instructions: formState.instructions ? [formState.instructions] : [],
-      video_url: formState.video_url,
-      image_url: formState.image_url,
-      bodyPart: formState.body_region,
-      prime_mover_muscle: formState.prime_mover_muscle,
-      short_youtube_demo: formState.short_youtube_demo
+  // Map ExerciseFull to Exercise for components that expect Exercise type
+  const mapToExercise = useCallback((exerciseFull: ExerciseFull) => {
+    return {
+      id: exerciseFull.id,
+      name: exerciseFull.name,
+      description: exerciseFull.description || "",
+      muscle_group: exerciseFull.prime_mover_muscle || "",
+      equipment: exerciseFull.primary_equipment || "",
+      difficulty: exerciseFull.difficulty || "",
+      instructions: exerciseFull.instructions ? 
+        (Array.isArray(exerciseFull.instructions) ? 
+          exerciseFull.instructions : 
+          [exerciseFull.instructions]) : 
+        [],
+      video_url: exerciseFull.short_youtube_demo || "",
+      image_url: exerciseFull.image_url || exerciseFull.youtube_thumbnail_url || "",
+      bodyPart: exerciseFull.body_region || "",
+      target: exerciseFull.prime_mover_muscle || "",
     };
-    
-    return addExercise(newExercise);
-  };
-
-  // Handle form submission for editing an exercise
-  const handleEditExercise = async () => {
-    if (!currentExercise) return false;
-    
-    const updatedExercise: Partial<ExerciseFull> = {
-      name: formState.name,
-      description: formState.description,
-      prime_mover_muscle: formState.prime_mover_muscle || formState.muscle_group,
-      primary_equipment: formState.primary_equipment,
-      difficulty: formState.difficulty,
-      body_region: formState.body_region,
-      short_youtube_demo: formState.short_youtube_demo || formState.video_url,
-      youtube_thumbnail_url: formState.image_url
-    };
-    
-    return updateExercise(currentExercise.id, updatedExercise);
-  };
-
-  // Handle exercise deletion
-  const handleDeleteExercise = async () => {
-    if (!currentExercise) return false;
-    
-    return deleteExercise(currentExercise.id);
-  };
+  }, []);
 
   return {
-    formState,
     currentExercise,
-    addExercise,
-    addExercises,
-    updateExercise,
-    deleteExercise,
+    formState,
+    isProcessing,
     handleFormChange,
     handleAddExercise,
     handleEditExercise,
     handleDeleteExercise,
-    openAddDialog,
     openEditDialog,
-    openDeleteDialog
+    openDeleteDialog,
+    mapToExercise,
   };
 };
