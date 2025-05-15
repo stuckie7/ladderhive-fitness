@@ -79,7 +79,8 @@ export const useWorkoutBuilder = (workoutId?: string) => {
     
     // Template management
     saveAsTemplate: templateManagement.saveAsTemplate,
-    loadTemplate: workoutPersistence.loadTemplate,
+    // Update here: use templateManagement.loadTemplateFromPreparedWorkout instead of workoutPersistence.loadTemplate
+    loadTemplate: templateManagement.loadTemplateFromPreparedWorkout,
     loadTemplateFromWod: templateManagement.loadTemplateFromWod,
     loadTemplateFromPreparedWorkout: templateManagement.loadTemplateFromPreparedWorkout,
     deleteTemplate: templateManagement.deleteTemplate,

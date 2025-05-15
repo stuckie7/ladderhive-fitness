@@ -7,7 +7,7 @@ import { useWorkoutDetail } from '../workout-detail';
 
 // Re-export the hooks
 export {
-  useWorkoutsFetch as useWorkouts,
+  useWorkoutsFetch, // Export without alias in the index file
   useWorkoutsActions,
   usePreparedWorkouts,
   useSavedWorkouts,
