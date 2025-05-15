@@ -24,11 +24,11 @@ export const useSuggestedExercises = () => {
         const mappedData: ExerciseFull[] = data.map(exercise => ({
           id: exercise.id,
           name: exercise.name,
-          // Map all the required properties
-          description: "",
+          // Include required ExerciseFull properties
           target_muscle_group: exercise.prime_mover_muscle || "",
           video_demonstration_url: exercise.short_youtube_demo || "",
           video_explanation_url: exercise.in_depth_youtube_exp || "",
+          description: exercise.description || "",
           image_url: exercise.youtube_thumbnail_url || "",
           // Include all other properties from the original data
           ...exercise

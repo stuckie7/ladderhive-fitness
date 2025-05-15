@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -142,7 +141,10 @@ const WorkoutDetailEnhanced: React.FC = () => {
             />
             
             {/* Exercise Circuit */}
-            <WorkoutCircuit exercises={workout.exercises || []} />
+            <WorkoutCircuit 
+              exercises={workout.exercises || []} 
+              isLoading={isLoading}
+            />
             
             {/* Additional Info */}
             <WorkoutAdditionalInfo

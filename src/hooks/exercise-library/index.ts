@@ -4,4 +4,4 @@ export { useExerciseLibraryEnhanced } from './hooks/use-exercise-library-enhance
 export { useExercisesFull } from './hooks/use-exercises-full';
 export { useExerciseFiltersState } from './hooks/use-exercise-filters-state';
 export { useExerciseLibraryImpl as useExerciseLibrary } from './hooks/use-exercise-library';
-
+export { mapExerciseFullToExercise } from './mappers';

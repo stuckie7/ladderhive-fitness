@@ -2,14 +2,17 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ExerciseFull } from '@/types/exercise';
 
-export const getExerciseFullById = async (id: number): Promise<ExerciseFull | null> => {
+export const getExerciseFullById = async (id: number | string): Promise<ExerciseFull | null> => {
   try {
     console.log(`Fetching exercise with ID ${id}`);
+    
+    // Ensure numeric ID for Supabase query
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     
     const response = await supabase
       .from('exercises_full')
       .select('*')
-      .eq('id', id)
+      .eq('id', numericId)
       .single();
     
     if (response.error) {
@@ -41,8 +44,9 @@ export const getExerciseFullById = async (id: number): Promise<ExerciseFull | nu
         in_depth_youtube_exp: cleanYoutubeUrls(data.in_depth_youtube_exp),
         target_muscle_group: data.prime_mover_muscle || null,
         video_demonstration_url: cleanYoutubeUrls(data.short_youtube_demo),
-        video_explanation_url: cleanYoutubeUrls(data.in_depth_youtube_exp)
-      } as ExerciseFull;
+        video_explanation_url: cleanYoutubeUrls(data.in_depth_youtube_exp),
+        description: data.description || `${data.prime_mover_muscle || ''} exercise using ${data.primary_equipment || 'bodyweight'}` 
+      };
       return exerciseData;
     }
     

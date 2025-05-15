@@ -25,13 +25,16 @@ export default function ExerciseDetailEnhanced() {
       setLoading(true);
       
       try {
-        // Convert id to number for ExerciseFull type
-        const exerciseId = parseInt(id, 10);
-        if (isNaN(exerciseId)) {
-          throw new Error('Invalid exercise ID');
-        }
+        // Handle both numeric and string IDs
+        const exerciseId = typeof id === 'string' && !isNaN(parseInt(id)) 
+          ? parseInt(id, 10) 
+          : id;
+          
+        console.log(`Fetching exercise with ID: ${exerciseId}`);
         
         const exerciseData = await getExerciseFullById(exerciseId);
+        console.log("Exercise data fetched:", exerciseData);
+        
         setExercise(exerciseData);
       } catch (error) {
         console.error('Error fetching exercise:', error);

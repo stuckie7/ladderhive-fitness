@@ -15,6 +15,22 @@ export interface Exercise {
   secondaryMuscles?: string[];
   equipment_needed?: string;
   video_demonstration_url?: string;
+  video_explanation_url?: string;
+  // Add properties needed by components
+  short_youtube_demo?: string;
+  in_depth_youtube_exp?: string;
+  prime_mover_muscle?: string;
+  secondary_muscle?: string;
+  tertiary_muscle?: string;
+  primary_equipment?: string;
+  secondary_equipment?: string;
+  target_muscle_group?: string;
+  gifUrl?: string;
+  mechanics?: string;
+  force_type?: string;
+  posture?: string;
+  laterality?: string;
+  difficulty_level?: string;
 }
 
 export interface ExerciseFull {
@@ -73,4 +89,10 @@ export interface SuggestedExercise {
   bodyPart?: string;
   equipment?: string;
   gifUrl?: string;
+}
+
+export interface ExerciseFilters {
+  muscleGroup: string;
+  equipment: string;
+  difficulty: string;
 }
