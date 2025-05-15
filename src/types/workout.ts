@@ -10,6 +10,7 @@ export interface Workout {
   date?: string;
   isSaved?: boolean;
   category?: string; // Add optional category property
+  thumbnail_url?: string; // Add thumbnail_url property
 }
 
 export interface WorkoutDetail extends Workout {

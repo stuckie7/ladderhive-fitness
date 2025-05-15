@@ -1,5 +1,5 @@
 
-import { useWorkoutDetailData } from './use-workout-details-data';
+import { useWorkoutDetailsData } from './use-workout-details-data';
 import { useWorkoutsFetch } from './use-workouts-fetch';
 import { useWorkoutsActions } from './use-workouts-actions';
 import { usePreparedWorkouts } from './use-prepared-workouts';
@@ -23,5 +23,5 @@ export const useWorkouts = () => {
 
 export { usePreparedWorkouts } from './use-prepared-workouts';
 export { useSavedWorkouts } from './use-saved-workouts';
-export { useWorkoutDetailData } from './use-workout-details-data';
-export type { PreparedWorkout } from './use-prepared-workouts';
+export { useWorkoutDetailsData } from './use-workout-details-data';
+export type { PreparedWorkout } from './types';

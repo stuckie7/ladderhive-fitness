@@ -1,95 +1,118 @@
 
-// Re-export everything from use-fetch-workout
-export * from './use-fetch-workout';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Workout, WorkoutDetail } from '@/types/workout';
+import { useToast } from '@/hooks/use-toast';
 
-// Re-export everything from use-workout-actions
-export * from './use-workout-actions';
-
-// Import and export the workout exercises hook with correct variable names
-import { useManageWorkoutExercises } from '../workout-exercises/use-manage-workout-exercises';
-import { Exercise } from '@/types/exercise'; 
-import { useWorkoutFetch } from './use-fetch-workout';
-import { useWorkoutActions } from './use-workout-actions';
-
-// Export the useWorkoutDetail composite hook
 export const useWorkoutDetail = (workoutId: string) => {
-  // Validate UUID format to prevent invalid API calls
-  const validWorkoutId = (() => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(workoutId) ? workoutId : '';
-  })();
-  
-  const { 
-    workout, 
-    isLoading: workoutLoading, 
-    error: fetchError,
-    fetchWorkout 
-  } = useWorkoutFetch(validWorkoutId);
-  
-  const {
-    isSaved,
-    error: actionsError,
-    handleSaveWorkout,
-    handleCompleteWorkout
-  } = useWorkoutActions(validWorkoutId);
-  
-  const {
-    exercises: workoutExercises,
-    isLoading: exercisesLoading,
-    addExercise,
-    removeExercise,
-  } = useManageWorkoutExercises(validWorkoutId);
+  const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Combine error states
-  const error = fetchError || actionsError;
+  useEffect(() => {
+    const fetchWorkout = async () => {
+      if (!workoutId) {
+        setIsLoading(false);
+        return;
+      }
 
-  // Handle adding an exercise with proper typing
-  const handleAddExercise = async (exercise: Exercise) => {
-    return await addExercise(exercise);
-  };
+      setIsLoading(true);
+      setError(null);
 
-  // Combine all hooks into a single API
+      try {
+        // Try to fetch from user_created_workouts first
+        let { data: userWorkout, error: userWorkoutError } = await supabase
+          .from('user_created_workouts')
+          .select('*')
+          .eq('id', workoutId)
+          .single();
+
+        if (!userWorkoutError && userWorkout) {
+          // Format user workout to match the WorkoutDetail interface
+          setWorkout({
+            id: userWorkout.id,
+            title: userWorkout.title,
+            description: userWorkout.description || '',
+            duration: userWorkout.duration_minutes,
+            exercises: 0, // Will be updated after fetching exercises
+            difficulty: userWorkout.difficulty,
+            category: userWorkout.category,
+            date: new Date(userWorkout.created_at).toLocaleDateString()
+          });
+
+          // Fetch exercises for this workout
+          const { data: exercises, error: exercisesError } = await supabase
+            .from('user_created_workout_exercises')
+            .select('*')
+            .eq('workout_id', workoutId);
+
+          if (!exercisesError && exercises) {
+            setWorkout(prev => ({
+              ...prev!,
+              exercises: exercises.length
+            }));
+          }
+          
+          return;
+        }
+
+        // If not found in user workouts, try prepared workouts
+        const { data: preparedWorkout, error: preparedWorkoutError } = await supabase
+          .from('prepared_workouts')
+          .select('*')
+          .eq('id', workoutId)
+          .single();
+
+        if (!preparedWorkoutError && preparedWorkout) {
+          // Format prepared workout to match the WorkoutDetail interface
+          setWorkout({
+            id: preparedWorkout.id,
+            title: preparedWorkout.title,
+            description: preparedWorkout.description || '',
+            duration: preparedWorkout.duration_minutes,
+            exercises: 0, // Will be updated after fetching exercises
+            difficulty: preparedWorkout.difficulty,
+            category: preparedWorkout.category,
+            date: new Date(preparedWorkout.created_at).toLocaleDateString()
+          });
+
+          // Fetch exercises for this workout
+          const { data: exercises, error: exercisesError } = await supabase
+            .from('prepared_workout_exercises')
+            .select('*')
+            .eq('workout_id', workoutId);
+
+          if (!exercisesError && exercises) {
+            setWorkout(prev => ({
+              ...prev!,
+              exercises: exercises.length
+            }));
+          }
+          
+          return;
+        }
+
+        // If not found in both tables, throw an error
+        throw new Error('Workout not found');
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch workout details');
+        toast({
+          title: 'Error',
+          description: err.message || 'Failed to fetch workout details',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWorkout();
+  }, [workoutId, toast]);
+
   return {
     workout,
-    isLoading: workoutLoading,
-    isSaved,
-    workoutExercises,
-    exercisesLoading,
-    error,
-    handleAddExercise,
-    handleSaveWorkout,
-    handleCompleteWorkout,
-    removeExerciseFromWorkout: removeExercise,
-    fetchWorkout
-  };
-};
-
-// Export the workout exercises hook for use in workout detail pages
-// Use the correct method names from the useManageWorkoutExercises hook
-export const useWorkoutExercises = (workoutId: string) => {
-  // Validate UUID format to prevent invalid API calls
-  const validWorkoutId = (() => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(workoutId) ? workoutId : '';
-  })();
-  
-  const {
-    exercises,
     isLoading,
-    isSaving,
-    fetchExercises,
-    addExercise,
-    updateExercise,
-    removeExercise
-  } = useManageWorkoutExercises(validWorkoutId);
-  
-  return {
-    exercises,
-    isLoading,
-    isAdding: isSaving,
-    fetchWorkoutExercises: fetchExercises,
-    addExerciseToWorkout: addExercise,
-    removeExerciseFromWorkout: removeExercise,
-    updateExerciseDetails: updateExercise
+    error
   };
 };
