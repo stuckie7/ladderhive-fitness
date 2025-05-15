@@ -38,7 +38,10 @@ export default function ExerciseSidebarContent({ exercise, loading = false }: Ex
 
   // Helper to safely access potentially undefined property
   const getThumbnailUrl = (exercise: Exercise): string | undefined => {
-    return (exercise as any).youtube_thumbnail_url || exercise.image_url;
+    // Check if it's an ExerciseFull type with youtube_thumbnail_url
+    return ('youtube_thumbnail_url' in exercise) ? 
+      exercise.youtube_thumbnail_url as string : 
+      exercise.image_url;
   };
 
   return (

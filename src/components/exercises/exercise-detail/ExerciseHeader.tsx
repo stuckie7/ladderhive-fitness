@@ -29,6 +29,22 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
     name: exercise.name
   };
 
+  // Helper function to get exercise properties based on type
+  const getExerciseProperty = (prop: string): string | null => {
+    if ('bodyPart' in exercise && prop === 'bodyPart') return exercise.bodyPart || null;
+    if ('body_region' in exercise && prop === 'bodyPart') return exercise.body_region || null;
+    
+    if ('target' in exercise && prop === 'target') return exercise.target || null;
+    if ('prime_mover_muscle' in exercise && prop === 'target') return exercise.prime_mover_muscle || null;
+    
+    if ('equipment' in exercise && prop === 'equipment') return exercise.equipment || null;
+    if ('primary_equipment' in exercise && prop === 'equipment') return exercise.primary_equipment || null;
+    
+    if ('difficulty' in exercise) return exercise.difficulty || null;
+
+    return null;
+  };
+
   return (
     <>
       <Button variant="outline" className="mb-6" onClick={onBackClick}>
@@ -40,10 +56,10 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
         <div>
           <h1 className="text-3xl font-bold mb-2">{exercise.name}</h1>
           <p className="text-muted-foreground text-sm">
-            {exercise.bodyPart && `${exercise.bodyPart} `}
-            {exercise.target && exercise.target !== exercise.bodyPart && `· ${exercise.target} `}
-            {exercise.equipment && `· Equipment: ${exercise.equipment} `}
-            {exercise.difficulty && `· Difficulty: ${exercise.difficulty}`}
+            {getExerciseProperty('bodyPart') && `${getExerciseProperty('bodyPart')} `}
+            {getExerciseProperty('target') && getExerciseProperty('target') !== getExerciseProperty('bodyPart') && `· ${getExerciseProperty('target')} `}
+            {getExerciseProperty('equipment') && `· Equipment: ${getExerciseProperty('equipment')} `}
+            {getExerciseProperty('difficulty') && `· Difficulty: ${getExerciseProperty('difficulty')}`}
           </p>
         </div>
 

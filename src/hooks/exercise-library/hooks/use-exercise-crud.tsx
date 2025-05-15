@@ -66,13 +66,19 @@ export const useExerciseCrud = (onSuccess: () => void) => {
       // Convert id to number if it's a string number
       const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
       
+      // Extract the primary equipment from appropriate properties
+      const primaryEquipment = exercise.primary_equipment || 
+                              (exercise as any).equipment_needed || 
+                              (exercise as any).equipment || 
+                              null;
+      
       const { error } = await supabase
         .from("exercises_full")
         .update({
           name: exercise.name,
           difficulty: exercise.difficulty,
           prime_mover_muscle: exercise.prime_mover_muscle || exercise.target_muscle_group,
-          primary_equipment: exercise.primary_equipment || exercise.equipment,
+          primary_equipment: primaryEquipment,
           short_youtube_demo: exercise.short_youtube_demo || exercise.video_demonstration_url,
           in_depth_youtube_exp: exercise.in_depth_youtube_exp || exercise.video_explanation_url,
           description: exercise.description

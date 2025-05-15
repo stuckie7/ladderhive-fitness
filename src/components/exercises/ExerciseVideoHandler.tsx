@@ -5,7 +5,7 @@ interface ExerciseVideoHandlerProps {
   url: string | null;
   title: string;
   className?: string;
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | null;
   showPlaceholder?: boolean;
 }
 

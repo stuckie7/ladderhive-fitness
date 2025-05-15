@@ -29,16 +29,21 @@ export default function ExerciseDetail() {
         let { data: fullData, error: fullError } = await supabase
           .from('exercises_full')
           .select('*')
-          .eq('id', id)
+          .eq('id', parseInt(id, 10))
           .single();
 
         if (fullData) {
           console.log('Found exercise in exercises_full:', fullData);
+          
+          // Create description from available data if missing
+          const description = fullData.description || 
+            `${fullData.prime_mover_muscle || ''} exercise using ${fullData.primary_equipment || 'bodyweight'}`;
+            
           // Map the full exercise data to our Exercise type
           const exerciseData: Exercise = {
             id: fullData.id,
             name: fullData.name,
-            description: fullData.description || `${fullData.prime_mover_muscle || ''} exercise using ${fullData.primary_equipment || 'bodyweight'}`,
+            description: description,
             muscle_group: fullData.prime_mover_muscle || '',
             equipment: fullData.primary_equipment || '',
             difficulty: fullData.difficulty || '',

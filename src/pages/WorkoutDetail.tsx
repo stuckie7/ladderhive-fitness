@@ -1,156 +1,126 @@
-
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { useWorkoutDetail } from '@/hooks/workout-detail';
-import WorkoutDetailLayout from '@/components/workouts/WorkoutDetailLayout';
-import WorkoutDetailStats from '@/components/workouts/WorkoutDetailStats';
 import WorkoutDetailHeader from '@/components/workouts/WorkoutDetailHeader';
 import WorkoutExerciseSection from '@/components/workouts/WorkoutExerciseSection';
+import { useWorkoutDetail } from '@/hooks/workout-detail/use-workout-detail';
 import { Exercise } from '@/types/exercise';
-import { toast } from '@/components/ui/use-toast';
+import { useManageWorkoutExercises } from '@/hooks/workout-exercises/use-manage-workout-exercises';
+import { Spinner } from '@/components/ui/spinner';
 
-const WorkoutDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+const WorkoutDetail = () => {
+  const { workoutId } = useParams();
   const navigate = useNavigate();
-  
-  // Validate UUID format before using it
-  const validWorkoutId = (() => {
-    if (!id) return "";
-    
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      // Show toast for invalid ID format
-      toast({
-        title: "Invalid Workout ID",
-        description: "The workout ID format is invalid.",
-        variant: "destructive",
-      });
-      return "";
-    }
-    return id;
-  })();
-  
-  // Safely use the hook with nullish coalescing to provide a default empty string if id is undefined
+  const [isSaved, setIsSaved] = useState(false);
+
   const {
     workout,
-    isLoading,
-    isSaved,
     workoutExercises,
-    exercisesLoading,
-    error,
+    isLoadingWorkout,
+    isLoadingExercises,
+    workoutError,
+    exercisesError,
+    toggleSaveWorkout,
+    isActionLoading,
+    handleStartWorkout,
+    isStarting,
     handleAddExercise,
-    handleSaveWorkout,
-    handleCompleteWorkout,
-    removeExerciseFromWorkout
-  } = useWorkoutDetail(validWorkoutId);
-  
+    refetchExercises
+  } = useWorkoutDetail(workoutId);
+
+  const {
+    addExerciseToWorkout,
+    isLoading: isAddingExercise,
+    error: addExerciseError
+  } = useManageWorkoutExercises(workoutId);
+
   useEffect(() => {
-    // If we have an invalid ID, redirect to workouts page
-    if (!validWorkoutId && id) {
-      navigate('/workouts');
+    if (workout) {
+      setIsSaved(workout.is_saved);
+    }
+  }, [workout]);
+
+  const handleToggleSave = async () => {
+    if (!workout) return;
+
+    try {
+      await toggleSaveWorkout();
+      setIsSaved(!isSaved); // Optimistically update the local state
+    } catch (error) {
+      console.error("Error toggling save:", error);
+      // Optionally, revert the local state if the toggle fails
+      setIsSaved(isSaved);
+    }
+  };
+
+  const onAddExercise = async (exercise: Exercise) => {
+    if (!workoutId) {
+      console.error("Workout ID is missing.");
       return;
     }
-    
-    // If we're still loading, don't do anything yet
-    if (isLoading) return;
-    
-    // If no workout was found, and we're not loading, try the enhanced view
-    if (!workout && !isLoading && validWorkoutId) {
-      navigate(`/workout-enhanced/${validWorkoutId}`);
+
+    try {
+      await addExerciseToWorkout(workoutId, exercise);
+      await refetchExercises();
+    } catch (error) {
+      console.error("Error adding exercise:", error);
     }
-  }, [workout, isLoading, id, validWorkoutId, navigate]);
-  
-  const handleBack = () => {
-    navigate(-1);
   };
-  
-  if (isLoading) {
+
+  if (isLoadingWorkout) {
     return (
       <AppLayout>
-        <div className="container mx-auto px-4 py-6">
-          <Button variant="ghost" className="mb-6" onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-1/3" />
-            <Skeleton className="h-6 w-1/4" />
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-60 w-full" />
+        <div className="container mx-auto p-4">
+          <div className="text-center">
+            <Spinner size="lg" />
+            <p className="mt-2">Loading workout details...</p>
           </div>
         </div>
       </AppLayout>
     );
   }
-  
-  if (!workout || !validWorkoutId) {
+
+  if (workoutError) {
     return (
       <AppLayout>
-        <div className="container mx-auto px-4 py-6">
-          <Button variant="ghost" className="mb-6" onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          
-          <div className="text-center py-12">
-            <h2 className="text-xl font-semibold mb-2">Workout Not Found</h2>
-            <p className="text-muted-foreground mb-6">
-              The workout you're looking for doesn't exist or has been removed.
-            </p>
-            <Button onClick={() => navigate('/workouts')}>
-              Return to Workouts
-            </Button>
+        <div className="container mx-auto p-4">
+          <div className="text-center">
+            <p className="text-red-500">Error: {workoutError.message}</p>
           </div>
         </div>
       </AppLayout>
     );
   }
-  
-  // Create an exercise handler that matches the expected signature
-  const onAddExercise = async (exercise: Exercise): Promise<void> => {
-    await handleAddExercise(exercise);
-  };
-  
+
+  if (!workout) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto p-4">
+          <div className="text-center">
+            <p>Workout not found.</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6">
-        <Button variant="ghost" className="mb-6" onClick={handleBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        
-        <WorkoutDetailLayout
-          header={
-            <WorkoutDetailHeader
-              title={workout.title}
-              description={workout.description}
-              isSaved={isSaved || false}
-              isLoading={false}
-              onToggleSave={() => handleSaveWorkout(isSaved || false)}
-              onStartWorkout={handleCompleteWorkout}
-            />
-          }
-          stats={
-            <WorkoutDetailStats
-              duration={workout.duration}
-              exercises={workout.exercises}
-              difficulty={workout.difficulty}
-              category={workout.difficulty} // Fallback to using difficulty as category
-            />
-          }
-          content={
-            <WorkoutExerciseSection
-              exercises={workoutExercises || []}
-              isLoading={exercisesLoading || false}
-              onAddExercise={onAddExercise}
-              workoutId={validWorkoutId}
-            />
-          }
+      <div className="container mx-auto p-4">
+        <WorkoutDetailHeader
+          title={workout.name}
+          description={workout.description}
+          isSaved={isSaved}
+          isLoading={isActionLoading}
+          onToggleSave={handleToggleSave}
+          onStartWorkout={handleStartWorkout}
+        />
+
+        <WorkoutExerciseSection
+          workoutId={workoutId}
+          exercises={workoutExercises as any[]} // Type assertion to satisfy the compiler
+          isLoading={isLoadingExercises}
+          onAddExercise={onAddExercise}
         />
       </div>
     </AppLayout>

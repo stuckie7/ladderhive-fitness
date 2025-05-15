@@ -23,7 +23,7 @@ export const useSuggestedExercises = () => {
         // Map the data to ensure it matches ExerciseFull type
         const mappedData: ExerciseFull[] = data.map(exercise => {
           // Create description from available data if missing
-          const description = (exercise as any).description || 
+          const description = exercise.description || 
             `${exercise.prime_mover_muscle || 'Muscle'} exercise using ${exercise.primary_equipment || 'equipment'}`;
           
           // Create a properly structured ExerciseFull object
@@ -36,7 +36,7 @@ export const useSuggestedExercises = () => {
             video_demonstration_url: exercise.short_youtube_demo || "",
             video_explanation_url: exercise.in_depth_youtube_exp || "",
             description,
-            image_url: exercise.youtube_thumbnail_url || ""
+            image_url: exercise.youtube_thumbnail_url || "",
           } as ExerciseFull;
         });
 

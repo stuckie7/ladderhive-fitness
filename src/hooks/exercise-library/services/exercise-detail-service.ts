@@ -38,13 +38,13 @@ export const getExerciseFullById = async (id: number | string): Promise<Exercise
       };
       
       // Create a description if it doesn't exist
-      const description = (data as any).description || 
+      const description = data.description || 
         `${data.prime_mover_muscle || 'Muscle'} exercise using ${data.primary_equipment || 'equipment'}`;
       
       // Cast to ExerciseFull and add necessary properties
       const exerciseData: ExerciseFull = {
         ...data,
-        // Add required properties for ExerciseFull type
+        // Add any required properties that might be missing in the ExerciseFull type
         description,
         target_muscle_group: data.prime_mover_muscle || null,
         video_demonstration_url: cleanYoutubeUrls(data.short_youtube_demo) || null,
@@ -52,8 +52,7 @@ export const getExerciseFullById = async (id: number | string): Promise<Exercise
         // Clean and map properties correctly, providing fallbacks for missing fields
         short_youtube_demo: cleanYoutubeUrls(data.short_youtube_demo),
         in_depth_youtube_exp: cleanYoutubeUrls(data.in_depth_youtube_exp),
-        instructions: [] // Initialize as empty array, which is safer than null
-      };
+      } as ExerciseFull; // Use type assertion here
       
       return exerciseData;
     }
