@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { ActivityData } from '@/types/activity';
 import { getLastNDays, formatActivityData } from './utils';
+import { format } from 'date-fns';
 
 export const useWeeklyData = () => {
   const [weeklyData, setWeeklyData] = useState<ActivityData[]>([]);
