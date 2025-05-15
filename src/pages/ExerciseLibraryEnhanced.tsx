@@ -12,6 +12,7 @@ import ExerciseDeleteDialog from "@/components/exercises/ExerciseDeleteDialog";
 import EnhancedExerciseHeader from "@/components/exercises/EnhancedExerciseHeader";
 import ExerciseTableNotFoundError from "@/components/exercises/ExerciseTableNotFoundError";
 import ExerciseCountDisplay from "@/components/exercises/ExerciseCountDisplay";
+import { Exercise } from "@/types/exercise";
 
 const ExerciseLibraryEnhanced = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -50,14 +51,30 @@ const ExerciseLibraryEnhanced = () => {
   // Wrapper functions to handle dialog states
   const handleOpenAddDialog = () => setIsAddDialogOpen(true);
   
-  const handleOpenEditDialog = (exercise: any) => {
+  const handleOpenEditDialog = (exercise: Exercise) => {
     openEditDialog(exercise);
     setIsEditDialogOpen(true);
   };
   
-  const handleOpenDeleteDialog = (exercise: any) => {
+  const handleOpenDeleteDialog = (exercise: Exercise) => {
     openDeleteDialog(exercise);
     setIsDeleteDialogOpen(true);
+  };
+
+  // Convert form change handler to match form dialog component
+  const adaptedFormChangeHandler = (field: string, value: string) => {
+    const mockEvent = {
+      target: { name: field, value }
+    } as React.ChangeEvent<HTMLInputElement>;
+    handleFormChange(mockEvent);
+  };
+
+  // Adapt the delete handler to match the expected signature
+  const handleDeleteConfirm = () => {
+    if (currentExercise) {
+      handleDeleteExercise(currentExercise);
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   // Render error state if table doesn't exist
@@ -134,8 +151,8 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setIsAddDialogOpen}
         title="Add New Exercise"
         description="Create a new exercise in your database"
-        formState={formState as ExerciseFormState}
-        onFormChange={handleFormChange}
+        formState={formState as unknown as ExerciseFormState}
+        onFormChange={adaptedFormChangeHandler}
         onSubmit={handleAddExercise}
         submitLabel="Add Exercise"
         muscleGroups={muscleGroups}
@@ -148,8 +165,8 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setIsEditDialogOpen}
         title="Edit Exercise"
         description="Update the exercise details"
-        formState={formState as ExerciseFormState}
-        onFormChange={handleFormChange}
+        formState={formState as unknown as ExerciseFormState}
+        onFormChange={adaptedFormChangeHandler}
         onSubmit={handleEditExercise}
         submitLabel="Save Changes"
         muscleGroups={muscleGroups}
@@ -161,7 +178,7 @@ const ExerciseLibraryEnhanced = () => {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         exercise={currentExercise}
-        onConfirmDelete={handleDeleteExercise}
+        onConfirmDelete={handleDeleteConfirm}
       />
     </AppLayout>
   );

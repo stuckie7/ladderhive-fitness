@@ -44,7 +44,7 @@ export default function ExerciseDetail() {
             video_url: fullExercise.short_youtube_demo || fullExercise.video_demonstration_url || '',
             image_url: fullExercise.youtube_thumbnail_url || fullExercise.image_url || '',
             bodyPart: fullExercise.body_region || '',
-            target: fullExercise.target_muscle_group || fullExercise.prime_mover_muscle || '',
+            target: fullExercise.prime_mover_muscle || '',
             secondaryMuscles: fullExercise.secondary_muscle ? [fullExercise.secondary_muscle] : [],
             prime_mover_muscle: fullExercise.prime_mover_muscle,
             secondary_muscle: fullExercise.secondary_muscle,

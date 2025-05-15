@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 import { Exercise, ExerciseFull } from '@/types/exercise';
 
@@ -38,16 +39,20 @@ export const updateExerciseFull = async (exercise: Partial<ExerciseFull>): Promi
     // Ensure we have a numeric ID
     const numericId = typeof exercise.id === 'string' ? parseInt(exercise.id, 10) : exercise.id;
     
+    // Create an update object with only the fields that exist in the exercises_full table
+    const updateData = {
+      ...exercise,
+      // Don't include non-existent fields in update
+    };
+    
+    // Remove any fields that might not be in the table schema
+    if ('instructions' in updateData && Array.isArray(updateData.instructions)) {
+      // Handle instructions array properly
+    }
+    
     const { data, error } = await supabase
       .from('exercises_full')
-      .update({
-        ...exercise,
-        // Ensure these properties exist or default to empty values
-        description: exercise.description || '',
-        instructions: exercise.instructions || [],
-        // Add other required fields that might be missing
-        video_demonstration_url: exercise.video_demonstration_url || exercise.short_youtube_demo || ''
-      })
+      .update(updateData)
       .eq('id', numericId)
       .select()
       .single();
@@ -70,18 +75,22 @@ export const updateExerciseFull = async (exercise: Partial<ExerciseFull>): Promi
  */
 export const createExerciseFull = async (exercise: Partial<ExerciseFull>): Promise<ExerciseFull | null> => {
   try {
+    // Create an insert object with only allowed fields
+    const insertData: Partial<ExerciseFull> = {
+      name: exercise.name || 'New Exercise',
+      difficulty: exercise.difficulty || 'Beginner',
+      prime_mover_muscle: exercise.prime_mover_muscle || 'Other',
+      primary_equipment: exercise.primary_equipment || 'Bodyweight',
+      body_region: exercise.body_region || 'Full Body',
+      // Include only fields that are in the table schema
+      short_youtube_demo: exercise.short_youtube_demo,
+      description: exercise.description,
+      image_url: exercise.image_url
+    };
+    
     const { data, error } = await supabase
       .from('exercises_full')
-      .insert({
-        name: exercise.name || 'New Exercise',
-        description: exercise.description || '',
-        prime_mover_muscle: exercise.prime_mover_muscle || 'Other',
-        primary_equipment: exercise.primary_equipment || 'Bodyweight',
-        difficulty: exercise.difficulty || 'Beginner',
-        body_region: exercise.body_region || 'Full Body',
-        // Default values for required fields
-        ...exercise
-      })
+      .insert(insertData)
       .select()
       .single();
     

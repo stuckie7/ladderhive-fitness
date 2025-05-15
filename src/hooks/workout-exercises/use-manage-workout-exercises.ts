@@ -4,10 +4,11 @@ import { Exercise } from "@/types/exercise";
 import { WorkoutExercise } from "@/types/workout";
 import { reorderExercises, ensureStringReps } from "./utils";
 import { useToast } from "@/components/ui/use-toast";
+import { useFetchWorkoutExercises } from "./use-fetch-workout-exercises";
 
 export const useManageWorkoutExercises = (workoutId?: string) => {
   const { toast } = useToast();
-  const { exercises, refetch, isLoading } = useFetchWorkoutExercises(workoutId);
+  const { exercises, refetch, isLoading, error } = useFetchWorkoutExercises(workoutId);
   
   // Add an exercise to a workout
   const addExerciseToWorkout = useCallback(async (
@@ -264,27 +265,31 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
     }
   }, [workoutId, refetch, toast]);
   
-  // Update this function to handle the reordering correctly
+  // Update this function to handle the full update data correctly
   const reorderExercisesInDB = async (exercises: WorkoutExercise[]): Promise<boolean> => {
     try {
-      // Transform exercises to just include id and order_index
-      const updates = exercises.map((exercise, index) => ({
-        id: exercise.id,
-        order_index: index,
-        workout_id: exercise.workout_id,
-        exercise_id: exercise.exercise_id,
-        sets: exercise.sets,
-        reps: exercise.reps,
-        rest_seconds: exercise.rest_seconds
-      }));
-      
-      const { error } = await supabase
-        .from('user_workout_exercises')
-        .upsert(updates);
-        
-      if (error) {
-        console.error("Error updating exercise order:", error);
+      if (!exercises || exercises.length === 0) {
         return false;
+      }
+
+      // Process each exercise update individually to ensure all fields are included
+      for (const exercise of exercises) {
+        const { error } = await supabase
+          .from('user_workout_exercises')
+          .update({
+            order_index: exercise.order_index,
+            workout_id: exercise.workout_id,
+            exercise_id: exercise.exercise_id,
+            sets: exercise.sets,
+            reps: exercise.reps,
+            rest_seconds: exercise.rest_seconds
+          })
+          .eq('id', exercise.id);
+          
+        if (error) {
+          console.error("Error updating exercise order:", error);
+          return false;
+        }
       }
       
       return true;
@@ -297,6 +302,7 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
   return {
     exercises,
     isLoading,
+    error,
     addExerciseToWorkout,
     updateWorkoutExercise,
     removeExerciseFromWorkout,

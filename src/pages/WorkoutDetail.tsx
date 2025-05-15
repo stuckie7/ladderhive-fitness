@@ -2,8 +2,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWorkoutDetail } from '@/hooks/workout-detail';
-import { useFetchWorkoutExercises } from '@/hooks/workout-exercises/use-fetch-workout-exercises';
-import { useManageWorkoutExercises } from '@/hooks/workout-exercises/use-manage-workout-exercises';
 import { Exercise } from '@/types/exercise';
 import AppLayout from '@/components/layout/AppLayout';
 
@@ -99,11 +97,6 @@ export default function WorkoutDetail() {
     }
   };
   
-  // Handle adding an exercise to workout with Promise
-  const addExercise = async (exerciseObj: Exercise): Promise<void> => {
-    return handleAddExercise(exerciseObj);
-  };
-  
   // Handle back navigation
   const handleBackClick = () => {
     navigate('/workouts');
@@ -153,18 +146,14 @@ export default function WorkoutDetail() {
   return (
     <AppLayout>
       <WorkoutDetailLayout 
-        header={
-          <WorkoutDetailHeader {...headerProps} />
-        }
-        stats={
-          <WorkoutDetailStats {...statsProps} />
-        }
+        header={<WorkoutDetailHeader {...headerProps} />}
+        stats={<WorkoutDetailStats {...statsProps} />}
         content={
           <WorkoutExerciseSection 
             workoutId={id}
             exercises={workoutExercises || []}
             isLoading={exercisesLoading}
-            onAddExercise={addExercise}
+            onAddExercise={handleAddExercise}
             onRemoveExercise={removeExerciseFromWorkout}
           />
         }

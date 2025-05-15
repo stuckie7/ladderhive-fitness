@@ -1,3 +1,4 @@
+
 // Only updating the ExerciseFormState interface to align with what's used in ExerciseLibraryEnhanced
 
 import { useState } from "react";
@@ -17,7 +18,7 @@ export interface ExerciseFormState {
   instructions?: string;
   video_url?: string;
   image_url?: string;
-  prime_mover_muscle?: string; // Make this optional
+  prime_mover_muscle?: string;
   primary_equipment?: string;
   short_youtube_demo?: string;
 }
@@ -30,6 +31,7 @@ interface UseExerciseCrudResult {
   handleDeleteExercise: (exercise: Exercise) => Promise<void>;
   openEditDialog: (exercise: Exercise) => void;
   openDeleteDialog: (exercise: Exercise) => void;
+  currentExercise?: Exercise;
 }
 
 export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResult => {
@@ -47,6 +49,7 @@ export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResul
     primary_equipment: '',
     short_youtube_demo: ''
   });
+  const [currentExercise, setCurrentExercise] = useState<Exercise>();
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -87,10 +90,13 @@ export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResul
     }
     
     try {
+      // Convert string ID to number if needed
+      const numericId = typeof formState.id === 'string' ? parseInt(formState.id) : formState.id;
+      
       const { data, error } = await supabase
         .from('exercises_full')
         .update(formState)
-        .eq('id', formState.id)
+        .eq('id', numericId)
         .select()
         .single();
       
@@ -114,10 +120,13 @@ export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResul
     }
     
     try {
+      // Convert string ID to number if needed
+      const numericId = typeof exercise.id === 'string' ? parseInt(exercise.id) : exercise.id;
+      
       const { error } = await supabase
         .from('exercises_full')
         .delete()
-        .eq('id', exercise.id);
+        .eq('id', numericId);
       
       if (error) {
         console.error("Error deleting exercise:", error);
@@ -133,6 +142,7 @@ export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResul
   };
 
   const openEditDialog = (exercise: Exercise) => {
+    setCurrentExercise(exercise);
     setFormState({
       id: exercise.id,
       name: exercise.name,
@@ -151,7 +161,7 @@ export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResul
   };
 
   const openDeleteDialog = (exercise: Exercise) => {
-    // No specific action needed here, the state is managed in the parent component
+    setCurrentExercise(exercise);
   };
 
   const resetForm = () => {
@@ -169,6 +179,7 @@ export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResul
       primary_equipment: '',
       short_youtube_demo: ''
     });
+    setCurrentExercise(undefined);
   };
 
   return {
@@ -178,6 +189,7 @@ export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResul
     handleEditExercise,
     handleDeleteExercise,
     openEditDialog,
-    openDeleteDialog
+    openDeleteDialog,
+    currentExercise
   };
 };

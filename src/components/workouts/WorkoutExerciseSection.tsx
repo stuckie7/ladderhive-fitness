@@ -83,10 +83,28 @@ const WorkoutExerciseSection = ({
       {isLoading ? (
         <WorkoutExerciseSkeleton />
       ) : exercises.length > 0 ? (
-        <ExerciseList 
-          exercises={exerciseListItems} 
-          onRemove={onRemoveExercise}
-        />
+        <div className="exercise-list">
+          {exerciseListItems.map((exercise) => (
+            <div key={exercise.id} className="exercise-item mb-4">
+              <h3 className="text-lg font-medium">{exercise.name}</h3>
+              <div className="flex text-sm text-muted-foreground gap-4 mb-2">
+                <span>{exercise.sets} sets</span>
+                <span>{exercise.reps} reps</span>
+                {exercise.weight && <span>{exercise.weight}</span>}
+                <span>{exercise.restTime}s rest</span>
+              </div>
+              {onRemoveExercise && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onRemoveExercise(exercise.id)}
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-6">

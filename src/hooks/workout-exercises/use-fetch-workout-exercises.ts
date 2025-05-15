@@ -1,8 +1,7 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from '@/integrations/supabase/client';
 import { Exercise, ExerciseFull } from "@/types/exercise";
-import { WorkoutExercise } from "./utils";
+import { WorkoutExercise } from "@/types/workout";
 
 export type FetchWorkoutExercisesReturn = {
   exercises: WorkoutExercise[] | null;
