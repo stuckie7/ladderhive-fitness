@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useSavedWorkouts } from "@/hooks/workouts/use-saved-workouts";
 import SavedWorkoutCard from "@/components/workouts/SavedWorkoutCard";

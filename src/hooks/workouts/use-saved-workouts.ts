@@ -1,133 +1,117 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { Workout, UserWorkout } from '@/types/workout';
+import { useToast } from '@/components/ui/use-toast';
+import { UserWorkout, Workout } from '@/types/workout';
 
 export const useSavedWorkouts = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const [savedWorkouts, setSavedWorkouts] = useState<UserWorkout[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchSavedWorkouts = useCallback(async () => {
-    if (!user) return [];
-    
+    if (!user) {
+      setSavedWorkouts([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('user_workouts')
-        .select(`
-          id,
-          user_id,
-          workout_id,
-          status,
-          completed_at,
-          planned_for,
-          workout:workouts(*)
-        `)
+      
+      // Fetch user-created workouts
+      const { data: userCreatedWorkouts, error: userCreatedError } = await supabase
+        .from('user_created_workouts')
+        .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'saved');
-      
-      if (error) throw error;
-      
-      // Process data to normalize workout structure
-      const processedWorkouts = (data || []).map(item => {
-        // Check if workouts data exists
-        if (!item.workout) return null;
-        
-        const workoutData = item.workout;
-        
-        // Create the workout object with properties that definitely exist
-        const workout: Workout = {
-          id: item.workout_id,
-          title: workoutData.title,
-          description: workoutData.description || '',
-          duration: workoutData.duration || 0,
-          exercises: workoutData.exercises || 0,
-          difficulty: workoutData.difficulty || 'Beginner',
+        .order('updated_at', { ascending: false });
+
+      if (userCreatedError) throw userCreatedError;
+
+      // Format user-created workouts to match the UserWorkout interface
+      const formattedWorkouts: UserWorkout[] = userCreatedWorkouts.map(workout => ({
+        id: `user-${workout.id}`, // Prefix to identify source
+        user_id: workout.user_id,
+        workout_id: workout.id,
+        status: 'saved',
+        completed_at: null,
+        planned_for: null,
+        date: new Date(workout.created_at).toLocaleDateString(),
+        workout: {
+          id: workout.id,
+          title: workout.title,
+          description: workout.description || '',
+          duration: workout.duration_minutes,
+          difficulty: workout.difficulty,
+          exercises: 0, // Will be populated later if needed
+          category: workout.category,
           isSaved: true
-        };
-        
-        // Safely add category if it exists using type assertion
-        // This works because we're first checking if the property exists on the object
-        if ('category' in workoutData && typeof workoutData.category === 'string') {
-          (workout as Workout & { category: string }).category = workoutData.category;
         }
-        
-        return {
-          id: item.id,
-          user_id: item.user_id,
-          workout_id: item.workout_id,
-          status: item.status,
-          completed_at: item.completed_at,
-          planned_for: item.planned_for,
-          workout
-        } as UserWorkout;
-      }).filter(Boolean) as UserWorkout[];
-      
-      setSavedWorkouts(processedWorkouts);
-      return processedWorkouts;
-    } catch (error: any) {
-      console.error("Error fetching saved workouts:", error);
+      }));
+
+      setSavedWorkouts(formattedWorkouts);
+    } catch (error) {
+      console.error('Error fetching saved workouts:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to load saved workouts",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load your saved workouts.',
+        variant: 'destructive'
       });
-      return [];
     } finally {
       setIsLoading(false);
     }
   }, [user, toast]);
 
-  const removeFromSaved = useCallback(async (userWorkoutId: string) => {
-    if (!user) return false;
-    
+  const removeFromSaved = useCallback(async (userWorkout: UserWorkout) => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to manage workouts.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
-      setIsLoading(true);
+      // Extract the actual workout ID (remove prefix if necessary)
+      const workoutId = userWorkout.workout_id || userWorkout.workout.id;
+      
+      // Delete from user_created_workouts
       const { error } = await supabase
-        .from('user_workouts')
+        .from('user_created_workouts')
         .delete()
-        .eq('id', userWorkoutId)
+        .eq('id', workoutId)
         .eq('user_id', user.id);
-      
+
       if (error) throw error;
-      
-      // Update the local state
-      setSavedWorkouts(prev => prev.filter(item => item.id !== userWorkoutId));
-      
+
       toast({
-        title: "Success",
-        description: "Workout removed from saved workouts",
+        title: 'Workout Removed',
+        description: 'The workout has been removed from your saved workouts.'
       });
-      
-      return true;
-    } catch (error: any) {
-      console.error("Error removing workout:", error);
+
+      // Update local state
+      setSavedWorkouts(prev => prev.filter(w => w.id !== userWorkout.id));
+    } catch (error) {
+      console.error('Error removing workout:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to remove workout",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to remove the workout.',
+        variant: 'destructive'
       });
-      return false;
-    } finally {
-      setIsLoading(false);
     }
   }, [user, toast]);
 
-  // Initial fetch
   useEffect(() => {
-    if (user) {
-      fetchSavedWorkouts();
-    }
-  }, [user, fetchSavedWorkouts]);
+    fetchSavedWorkouts();
+  }, [fetchSavedWorkouts]);
 
   return {
-    isLoading,
     savedWorkouts,
-    fetchSavedWorkouts,
-    removeFromSaved
+    isLoading,
+    removeFromSaved,
+    fetchSavedWorkouts
   };
 };

@@ -1,64 +1,154 @@
 
-import { Routes, Route } from "react-router-dom";
-import Dashboard from "@/pages/Dashboard";
-import NotFound from "@/pages/NotFound";
-import ExercisesPage from "@/pages/ExerciseLibraryEnhanced";
-import ExerciseDetailPage from "@/pages/ExerciseDetailEnhanced";
-import WorkoutBuilder from "@/pages/WorkoutBuilder";
-import WorkoutDetail from "@/pages/WorkoutDetail";
-import SignupPage from "@/pages/Signup";
-import LoginPage from "@/pages/Login";
-import ProfilePage from "@/pages/Profile";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import OnboardingPage from "@/pages/Onboarding";
-import WorkoutsPage from "@/pages/Workouts";
-import ProgressPage from "@/pages/Progress";
-import WodsPage from "@/pages/Wods";
-import WodDetailPage from "@/pages/WodDetail";
-import NutritionPage from "@/pages/NotFound"; // Temporary fallback
-import WorkoutDetailEnhanced from "@/pages/WorkoutDetailEnhanced";
-import MindfulnessPage from "@/pages/MindfulnessPage";
-import YogaRoutineDetailPage from "@/pages/YogaRoutineDetailPage";
-import YogaPage from "@/pages/YogaPage";
-import MindfulMovementPage from "@/pages/MindfulMovementPage";
-import SavedWorkouts from "@/pages/SavedWorkouts";
+import { createBrowserRouter } from "react-router-dom";
+import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
+import Progress from "./pages/Progress";
+import Schedule from "./pages/Schedule";
+import Settings from "./pages/Settings";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import ExerciseLibrary from "./pages/ExerciseLibrary";
+import ExerciseLibraryEnhanced from "./pages/ExerciseLibraryEnhanced";
+import ExerciseLibrarySimple from "./pages/ExerciseLibrarySimple";
+import ExerciseDetail from "./pages/ExerciseDetail";
+import ExerciseDetailEnhanced from "./pages/ExerciseDetailEnhanced";
+import ExercisesFullData from "./pages/ExercisesFullData";
+import AdvancedExercises from "./pages/AdvancedExercises";
+import Workouts from "./pages/Workouts";
+import SavedWorkouts from "./pages/SavedWorkouts"; // Import the new page
+import WorkoutDetail from "./pages/WorkoutDetail";
+import WorkoutDetailEnhanced from "./pages/WorkoutDetailEnhanced";
+import WorkoutBuilder from "./pages/WorkoutBuilder";
+import Wods from "./pages/Wods";
+import WodDetail from "./pages/WodDetail";
+import MindfulnessPage from "./pages/MindfulnessPage";
+import MindfulMovementPage from "./pages/MindfulMovementPage";
+import YogaPage from "./pages/YogaPage";
+import YogaRoutineDetailPage from "./pages/YogaRoutineDetailPage";
+import Onboarding from "./pages/Onboarding";
 
-const AppRoutes = () => {
-  return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      
-      {/* Protected routes */}
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/exercises" element={<ProtectedRoute><ExercisesPage /></ProtectedRoute>} />
-      <Route path="/exercises/:id" element={<ProtectedRoute><ExerciseDetailPage /></ProtectedRoute>} />
-      <Route path="/workouts" element={<ProtectedRoute><WorkoutsPage /></ProtectedRoute>} />
-      <Route path="/workouts/:id" element={<ProtectedRoute><WorkoutDetail /></ProtectedRoute>} />
-      <Route path="/workouts/enhanced/:id" element={<ProtectedRoute><WorkoutDetailEnhanced /></ProtectedRoute>} />
-      <Route path="/workout-builder" element={<ProtectedRoute><WorkoutBuilder /></ProtectedRoute>} />
-      <Route path="/saved-workouts" element={<ProtectedRoute><SavedWorkouts /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-      <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-      <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
-      <Route path="/wods" element={<ProtectedRoute><WodsPage /></ProtectedRoute>} />
-      <Route path="/wods/:id" element={<ProtectedRoute><WodDetailPage /></ProtectedRoute>} />
-      <Route path="/nutrition" element={<ProtectedRoute><NutritionPage /></ProtectedRoute>} />
-      
-      {/* Mindfulness and Yoga routes */}
-      <Route path="/mindfulness" element={<ProtectedRoute><MindfulnessPage /></ProtectedRoute>} />
-      <Route path="/mindfulness/routine/:id" element={<ProtectedRoute><YogaRoutineDetailPage /></ProtectedRoute>} />
-      <Route path="/yoga" element={<ProtectedRoute><YogaPage /></ProtectedRoute>} />
-      
-      {/* Mindful Movement route */}
-      <Route path="/mindful-movement" element={<ProtectedRoute><MindfulMovementPage /></ProtectedRoute>} />
-      
-      {/* 404 page */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
-};
+// Create a router with all routes
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Index />,
+    errorElement: <NotFound />
+  },
+  {
+    path: "/login",
+    element: <Login />
+  },
+  {
+    path: "/signup",
+    element: <Signup />
+  },
+  {
+    path: "/onboarding",
+    element: <ProtectedRoute><Onboarding /></ProtectedRoute>
+  },
+  {
+    path: "/dashboard",
+    element: <ProtectedRoute><Dashboard /></ProtectedRoute>
+  },
+  {
+    path: "/profile",
+    element: <ProtectedRoute><Profile /></ProtectedRoute>
+  },
+  {
+    path: "/progress",
+    element: <ProtectedRoute><Progress /></ProtectedRoute>
+  },
+  {
+    path: "/schedule",
+    element: <ProtectedRoute><Schedule /></ProtectedRoute>
+  },
+  {
+    path: "/settings",
+    element: <ProtectedRoute><Settings /></ProtectedRoute>
+  },
+  // Exercise routes
+  {
+    path: "/exercises",
+    element: <ExerciseLibrary />
+  },
+  {
+    path: "/exercises/enhanced",
+    element: <ExerciseLibraryEnhanced />
+  },
+  {
+    path: "/exercises/simple",
+    element: <ExerciseLibrarySimple />
+  },
+  {
+    path: "/exercises/:id",
+    element: <ExerciseDetail />
+  },
+  {
+    path: "/exercises/enhanced/:id",
+    element: <ExerciseDetailEnhanced />
+  },
+  {
+    path: "/exercises/full-data",
+    element: <ExercisesFullData />
+  },
+  {
+    path: "/exercises/advanced",
+    element: <AdvancedExercises />
+  },
+  // Workout routes
+  {
+    path: "/workouts",
+    element: <Workouts />
+  },
+  {
+    path: "/saved-workouts",
+    element: <ProtectedRoute><SavedWorkouts /></ProtectedRoute>
+  },
+  {
+    path: "/workouts/:id",
+    element: <WorkoutDetail />
+  },
+  {
+    path: "/workouts/enhanced/:id",
+    element: <WorkoutDetailEnhanced />
+  },
+  {
+    path: "/workout-builder",
+    element: <ProtectedRoute><WorkoutBuilder /></ProtectedRoute>
+  },
+  {
+    path: "/workout-builder/:id",
+    element: <ProtectedRoute><WorkoutBuilder /></ProtectedRoute>
+  },
+  // WOD routes
+  {
+    path: "/wods",
+    element: <Wods />
+  },
+  {
+    path: "/wods/:id",
+    element: <WodDetail />
+  },
+  // Mindfulness and Yoga
+  {
+    path: "/mindfulness",
+    element: <MindfulnessPage />
+  },
+  {
+    path: "/mindful-movement",
+    element: <MindfulMovementPage />
+  },
+  {
+    path: "/yoga",
+    element: <YogaPage />
+  },
+  {
+    path: "/yoga/:id",
+    element: <YogaRoutineDetailPage />
+  }
+]);
 
-export default AppRoutes;
+export default router;

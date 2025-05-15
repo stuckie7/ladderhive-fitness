@@ -23,22 +23,35 @@ export const useWorkoutLoader = ({
     
     setIsLoading(true);
     try {
-      // Fetch workout details
-      const { data: workoutData, error: workoutError } = await supabase
+      // First try to load from prepared_workouts
+      let { data: workoutData, error: preparedError } = await supabase
         .from('prepared_workouts')
         .select('*')
         .eq('id', workoutId)
         .single();
       
-      if (workoutError) throw workoutError;
+      // If not found in prepared_workouts, check user_created_workouts
+      if (preparedError) {
+        const { data: userWorkoutData, error: userWorkoutError } = await supabase
+          .from('user_created_workouts')
+          .select('*')
+          .eq('id', workoutId)
+          .single();
+        
+        if (userWorkoutError) throw new Error("Workout not found");
+        workoutData = userWorkoutData;
+      }
       
       if (!workoutData) {
         throw new Error("Workout not found");
       }
       
-      // Fetch workout exercises
+      // Determine which table to query for exercises based on where the workout was found
+      const isUserCreated = 'user_id' in workoutData;
+      
+      // Fetch workout exercises from the appropriate table
       const { data: exercisesData, error: exercisesError } = await supabase
-        .from('prepared_workout_exercises')
+        .from(isUserCreated ? 'user_created_workout_exercises' : 'prepared_workout_exercises')
         .select(`
           *,
           exercise:exercises_full(*)
@@ -48,17 +61,16 @@ export const useWorkoutLoader = ({
       
       if (exercisesError) throw exercisesError;
       
-      // Set workout data - safely check if is_template exists
-      const hasIsTemplate = workoutData && typeof workoutData === 'object' && 'is_template' in workoutData;
-      
+      // Set workout data
       setWorkout({
         id: workoutData.id,
         title: workoutData.title || "Unnamed Workout",
         description: workoutData.description || "",
         difficulty: workoutData.difficulty || "Beginner",
         category: workoutData.category || "General",
+        goal: workoutData.goal || "General",
         duration_minutes: workoutData.duration_minutes || 30,
-        is_template: hasIsTemplate ? Boolean(workoutData.is_template) : false,
+        is_template: workoutData.is_template || false,
         exercises: []  // We'll set exercises separately
       });
       
@@ -75,9 +87,9 @@ export const useWorkoutLoader = ({
         return {
           id: ex.id || `temp-${Date.now()}-${Math.random()}`,
           exercise_id: ex.exercise_id,
-          name: exerciseName, // Now guaranteed to be a string
+          name: exerciseName,
           sets: ex.sets || 3,
-          reps: ex.reps || "10", // Convert to string
+          reps: ex.reps || "10",
           rest_seconds: ex.rest_seconds || 60,
           notes: ex.notes || "",
           order_index: ex.order_index,
@@ -121,6 +133,7 @@ export const useWorkoutLoader = ({
         difficulty: template.difficulty || "Beginner",
         category: template.category || "General",
         duration_minutes: 30, // Default duration
+        goal: template.category || "General",
         exercises: [] // We'll set exercises separately
       });
       
@@ -130,7 +143,7 @@ export const useWorkoutLoader = ({
         exercise_id: ex.exerciseId,
         name: ex.name || "Unknown Exercise",
         sets: ex.sets || 3,
-        reps: String(ex.reps || "10"), // Convert to string explicitly
+        reps: String(ex.reps || "10"),
         rest_seconds: ex.rest_seconds || 60,
         notes: ex.notes || "",
         order_index: index,

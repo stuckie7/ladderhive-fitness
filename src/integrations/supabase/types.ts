@@ -680,6 +680,98 @@ export type Database = {
         }
         Relationships: []
       }
+      user_created_workout_exercises: {
+        Row: {
+          created_at: string | null
+          exercise_id: number
+          id: string
+          notes: string | null
+          order_index: number
+          reps: string
+          rest_seconds: number
+          sets: number
+          updated_at: string | null
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          exercise_id: number
+          id?: string
+          notes?: string | null
+          order_index: number
+          reps?: string
+          rest_seconds?: number
+          sets?: number
+          updated_at?: string | null
+          workout_id: string
+        }
+        Update: {
+          created_at?: string | null
+          exercise_id?: number
+          id?: string
+          notes?: string | null
+          order_index?: number
+          reps?: string
+          rest_seconds?: number
+          sets?: number
+          updated_at?: string | null
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_created_workout_exercises_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "user_created_workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_created_workouts: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          difficulty: string
+          duration_minutes: number
+          goal: string | null
+          id: string
+          is_template: boolean | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty: string
+          duration_minutes?: number
+          goal?: string | null
+          id?: string
+          is_template?: boolean | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string
+          duration_minutes?: number
+          goal?: string | null
+          id?: string
+          is_template?: boolean | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_favorite_wods: {
         Row: {
           created_at: string | null

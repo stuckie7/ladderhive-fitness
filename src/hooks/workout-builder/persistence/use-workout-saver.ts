@@ -54,9 +54,10 @@ export const useWorkoutSaver = (
       // Save or update workout info
       if (isNewWorkout) {
         const { data: workoutData, error: workoutError } = await supabase
-          .from('prepared_workouts')
+          .from('user_created_workouts')
           .insert({
-            title: workout.title || "Untitled Workout", // Ensure we have a title
+            user_id: user.id,
+            title: workout.title || "Untitled Workout",
             description: workout.description || "",
             difficulty: workout.difficulty || "Intermediate",
             category: workout.category || "General",
@@ -70,7 +71,7 @@ export const useWorkoutSaver = (
         workoutId = workoutData?.[0]?.id;
       } else {
         const { error: workoutError } = await supabase
-          .from('prepared_workouts')
+          .from('user_created_workouts')
           .update({
             title: workout.title || "Untitled Workout",
             description: workout.description || "",
@@ -81,7 +82,8 @@ export const useWorkoutSaver = (
             is_template: workout.is_template || false,
             updated_at: new Date().toISOString()
           })
-          .eq('id', workoutId);
+          .eq('id', workoutId)
+          .eq('user_id', user.id);
         
         if (workoutError) throw workoutError;
       }
@@ -91,7 +93,7 @@ export const useWorkoutSaver = (
       // If updating, delete existing exercise entries first
       if (!isNewWorkout) {
         const { error: deleteError } = await supabase
-          .from('prepared_workout_exercises')
+          .from('user_created_workout_exercises')
           .delete()
           .eq('workout_id', workoutId);
           
@@ -111,17 +113,22 @@ export const useWorkoutSaver = (
       
       if (exercisesToInsert.length > 0) {
         const { error: exerciseError } = await supabase
-          .from('prepared_workout_exercises')
+          .from('user_created_workout_exercises')
           .insert(exercisesToInsert);
         
         if (exerciseError) throw exerciseError;
       }
       
+      toast({
+        title: "Success",
+        description: isNewWorkout ? "Workout created successfully!" : "Workout updated successfully!",
+      });
+      
       // Return updated workout with ID for navigation
       return {
         ...workout,
         id: workoutId,
-        exercises: exercises // Return actual exercises array
+        exercises: exercises
       };
       
     } catch (error) {
