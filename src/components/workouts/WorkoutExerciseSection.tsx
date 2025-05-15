@@ -8,6 +8,7 @@ import ExerciseSearchModal from "@/components/exercises/ExerciseSearchModal";
 import WorkoutExerciseSkeleton from "@/components/workouts/WorkoutExerciseSkeleton";
 import { Exercise } from "@/types/exercise";
 import { WorkoutExercise } from "@/types/workout";
+import WorkoutCircuit from "@/components/workouts/detail/WorkoutCircuit";
 
 // Define the interface for the exercise list items to match ExerciseList component
 interface ExerciseListItem {
@@ -28,6 +29,7 @@ interface WorkoutExerciseSectionProps {
   isLoading: boolean;
   onAddExercise: (exercise: Exercise) => Promise<void>;
   onRemoveExercise?: (exerciseId: string) => void;
+  viewMode?: "list" | "circuit"; // Add view mode prop
 }
 
 const WorkoutExerciseSection = ({ 
@@ -35,9 +37,11 @@ const WorkoutExerciseSection = ({
   exercises, 
   isLoading, 
   onAddExercise,
-  onRemoveExercise
+  onRemoveExercise,
+  viewMode = "list" // Default to list view
 }: WorkoutExerciseSectionProps) => {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [currentViewMode, setCurrentViewMode] = useState<"list" | "circuit">(viewMode);
 
   const handleAddExercise = async (exercise: Exercise): Promise<void> => {
     await onAddExercise(exercise);
@@ -67,27 +71,48 @@ const WorkoutExerciseSection = ({
                  we.exercise?.image_url
   }));
 
+  const toggleViewMode = () => {
+    setCurrentViewMode(current => current === "list" ? "circuit" : "list");
+  };
+
   return (
     <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Workout Exercises</h2>
-        <Button 
-          onClick={() => setSearchModalOpen(true)}
-          className="bg-fitness-primary hover:bg-fitness-primary/90"
-        >
-          <Search className="h-4 w-4 mr-2" />
-          Search & Add Exercise
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={toggleViewMode}
+            className="hidden sm:flex"
+          >
+            {currentViewMode === "list" ? "Circuit View" : "List View"}
+          </Button>
+          <Button 
+            onClick={() => setSearchModalOpen(true)}
+            className="bg-fitness-primary hover:bg-fitness-primary/90"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Search & Add Exercise
+          </Button>
+        </div>
       </div>
       
       {isLoading ? (
         <WorkoutExerciseSkeleton />
       ) : exercises.length > 0 ? (
         <div className="exercise-list">
-          <ExerciseList 
-            exercises={exerciseListItems} 
-            onRemove={onRemoveExercise}
-          />
+          {currentViewMode === "list" ? (
+            <ExerciseList 
+              exercises={exerciseListItems} 
+              onRemove={onRemoveExercise}
+            />
+          ) : (
+            <WorkoutCircuit 
+              exercises={exercises} 
+              isLoading={false}
+            />
+          )}
         </div>
       ) : (
         <Card>
