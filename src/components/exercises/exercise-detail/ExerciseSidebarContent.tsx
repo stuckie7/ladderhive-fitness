@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Exercise } from "@/types/exercise";
 import ExerciseSpecItem from "./ExerciseSpecItem";
@@ -64,15 +63,23 @@ export default function ExerciseSidebarContent({ exercise, loading = false }: Ex
           <CardTitle>Specifications</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {exercise.mechanics && <ExerciseSpecItem label="Mechanics" value={exercise.mechanics} />}
-            {exercise.force_type && <ExerciseSpecItem label="Force Type" value={exercise.force_type} />}
-            {exercise.posture && <ExerciseSpecItem label="Posture" value={exercise.posture} />}
-            {exercise.laterality && <ExerciseSpecItem label="Laterality" value={exercise.laterality} />}
-            {exercise.secondaryMuscles?.length > 0 && (
-              <ExerciseSpecItem label="Secondary Muscles" value={exercise.secondaryMuscles.join(', ')} />
-            )}
-            {exercise.tertiary_muscle && <ExerciseSpecItem label="Tertiary Muscles" value={exercise.tertiary_muscle} />}
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-1">Movement Type</h4>
+              {exercise.mechanics && <ExerciseSpecItem label="Mechanics" value={exercise.mechanics} />}
+              {exercise.force_type && <ExerciseSpecItem label="Force Type" value={exercise.force_type} />}
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-1">Muscles</h4>
+              {exercise.posture && <ExerciseSpecItem label="Posture" value={exercise.posture} />}
+              {exercise.laterality && <ExerciseSpecItem label="Laterality" value={exercise.laterality} />}
+              {exercise.secondaryMuscles?.length > 0 && (
+                <ExerciseSpecItem label="Secondary Muscles" value={exercise.secondaryMuscles.join(', ')} />
+              )}
+              {exercise.tertiary_muscle && (
+                <ExerciseSpecItem label="Tertiary Muscles" value={exercise.tertiary_muscle} />
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
