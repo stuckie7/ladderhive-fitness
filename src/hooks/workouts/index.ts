@@ -1,4 +1,5 @@
 
+// Import all workout-related hooks
 import { useWorkoutsFetch } from './use-workouts-fetch';
 import { useWorkoutsActions } from './use-workouts-actions';
 import { usePreparedWorkouts } from './use-prepared-workouts';
@@ -7,12 +8,9 @@ import { useWorkoutDetail } from '../workout-detail';
 
 // Re-export the hooks
 export {
-  useWorkoutsFetch, // Export without alias in the index file
+  useWorkoutsFetch,
   useWorkoutsActions,
   usePreparedWorkouts,
   useSavedWorkouts,
-  useWorkoutDetail,
+  useWorkoutDetail
 };
-
-// Export types
-export * from './types';
