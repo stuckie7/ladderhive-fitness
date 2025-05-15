@@ -29,7 +29,7 @@ export default function ExerciseDetail() {
         let { data: fullData, error: fullError } = await supabase
           .from('exercises_full')
           .select('*')
-          .eq('id', id)
+          .eq('id', parseInt(id, 10))
           .single();
 
         if (fullData) {
@@ -37,7 +37,7 @@ export default function ExerciseDetail() {
           // Map the full exercise data to our Exercise type
           const exerciseData: Exercise = {
             id: fullData.id,
-            name: fullData.name,
+            name: fullData.name || '',
             description: fullData.description || `${fullData.prime_mover_muscle || ''} exercise using ${fullData.primary_equipment || 'bodyweight'}`,
             muscle_group: fullData.prime_mover_muscle || '',
             equipment: fullData.primary_equipment || '',
@@ -55,6 +55,7 @@ export default function ExerciseDetail() {
             laterality: fullData.laterality || '',
             tertiary_muscle: fullData.tertiary_muscle || '',
             video_demonstration_url: fullData.short_youtube_demo || '',
+            youtube_thumbnail_url: fullData.youtube_thumbnail_url || '',
           };
           
           setExercise(exerciseData);
@@ -79,7 +80,7 @@ export default function ExerciseDetail() {
             // Transform the raw data to match our Exercise type
             const exerciseData: Exercise = {
               id: data.id,
-              name: data.name,
+              name: data.name || '',
               description: data.description || '',
               muscle_group: data.muscle_group || '',
               equipment: data.equipment || '',
@@ -89,6 +90,7 @@ export default function ExerciseDetail() {
               image_url: data.image_url || '',
               bodyPart: data.muscle_group || '',
               target: data.muscle_group || '',
+              youtube_thumbnail_url: data.image_url || '',
             };
             
             setExercise(exerciseData);

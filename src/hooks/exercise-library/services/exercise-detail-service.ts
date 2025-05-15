@@ -38,14 +38,15 @@ export const getExerciseFullById = async (id: number | string): Promise<Exercise
       };
       
       const exerciseData: ExerciseFull = {
-        ...data,
+        ...data as any,
+        // Generate a description if none exists
+        description: data.description || `${data.prime_mover_muscle || ''} exercise using ${data.primary_equipment || 'bodyweight'}`,
         // Clean and map properties correctly using optional chaining
         short_youtube_demo: cleanYoutubeUrls(data.short_youtube_demo),
         in_depth_youtube_exp: cleanYoutubeUrls(data.in_depth_youtube_exp),
         target_muscle_group: data.prime_mover_muscle || null,
         video_demonstration_url: cleanYoutubeUrls(data.short_youtube_demo),
-        video_explanation_url: cleanYoutubeUrls(data.in_depth_youtube_exp),
-        description: data.description || `${data.prime_mover_muscle || ''} exercise using ${data.primary_equipment || 'bodyweight'}` 
+        video_explanation_url: cleanYoutubeUrls(data.in_depth_youtube_exp)
       };
       return exerciseData;
     }

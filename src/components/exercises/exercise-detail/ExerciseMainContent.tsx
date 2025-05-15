@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Exercise } from "@/types/exercise";
@@ -28,7 +29,9 @@ export default function ExerciseMainContent({ exercise, loading = false }: Exerc
     );
   }
 
-  const hasVideo = Boolean(exercise.video_url || exercise.video_demonstration_url);
+  // Check if there's a video available
+  const videoUrl = exercise.video_url || exercise.video_demonstration_url;
+  const hasVideo = Boolean(videoUrl);
 
   return (
     <div className="lg:col-span-2">
@@ -65,7 +68,7 @@ export default function ExerciseMainContent({ exercise, loading = false }: Exerc
             {hasVideo && (
               <TabsContent value="video">
                 <ExerciseVideoPlayer 
-                  url={exercise.video_url || exercise.video_demonstration_url || ''} 
+                  url={videoUrl || ''} 
                   title={`${exercise.name} demonstration`} 
                 />
               </TabsContent>

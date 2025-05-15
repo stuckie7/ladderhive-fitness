@@ -113,7 +113,11 @@ export default function AddToWorkoutModal({
                                workouts.some(w => w.id === selectedWorkoutId && 'difficulty' in w);
       
       // Convert exerciseId to number if it's numeric
-      const exerciseIdValue = !isNaN(Number(exerciseId)) ? Number(exerciseId) : exerciseId;
+      const exerciseIdValue = !isNaN(Number(exerciseId)) ? Number(exerciseId) : null;
+      
+      if (!exerciseIdValue) {
+        throw new Error("Invalid exercise ID");
+      }
       
       // Get the order index (number of existing exercises)
       let existingExercisesCount = 0;
@@ -133,25 +137,29 @@ export default function AddToWorkoutModal({
 
       // Add exercise to the appropriate table
       if (isPreparedWorkout) {
-        const { error } = await supabase.from("prepared_workout_exercises").insert({
-          workout_id: selectedWorkoutId,
-          exercise_id: exerciseIdValue,
-          sets: parseInt(sets),
-          reps: reps,
-          rest_seconds: 60, // Default rest time
-          order_index: existingExercisesCount,
-        });
+        const { error } = await supabase
+          .from("prepared_workout_exercises")
+          .insert({
+            workout_id: selectedWorkoutId,
+            exercise_id: exerciseIdValue,
+            sets: parseInt(sets),
+            reps: reps,
+            rest_seconds: 60, // Default rest time
+            order_index: existingExercisesCount
+          });
 
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("user_created_workout_exercises").insert({
-          workout_id: selectedWorkoutId,
-          exercise_id: exerciseIdValue,
-          sets: parseInt(sets),
-          reps: reps,
-          rest_seconds: 60, // Default rest time
-          order_index: existingExercisesCount,
-        });
+        const { error } = await supabase
+          .from("user_created_workout_exercises")
+          .insert({
+            workout_id: selectedWorkoutId,
+            exercise_id: exerciseIdValue,
+            sets: parseInt(sets),
+            reps: reps,
+            rest_seconds: 60, // Default rest time
+            order_index: existingExercisesCount
+          });
 
         if (error) throw error;
       }

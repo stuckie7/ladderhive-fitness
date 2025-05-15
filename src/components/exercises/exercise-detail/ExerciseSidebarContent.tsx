@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Exercise } from "@/types/exercise";
 import ExerciseSpecItem from "./ExerciseSpecItem";
@@ -35,6 +36,9 @@ export default function ExerciseSidebarContent({ exercise, loading = false }: Ex
     );
   }
 
+  // Get image sources with fallbacks
+  const imageUrl = exercise.gifUrl || exercise.image_url || exercise.youtube_thumbnail_url;
+
   return (
     <div>
       <Card className="mb-6">
@@ -42,10 +46,10 @@ export default function ExerciseSidebarContent({ exercise, loading = false }: Ex
           <CardTitle>Exercise Image</CardTitle>
         </CardHeader>
         <CardContent>
-          {exercise.gifUrl || exercise.image_url ? (
+          {imageUrl ? (
             <div className="aspect-square rounded-md overflow-hidden">
               <img 
-                src={exercise.gifUrl || exercise.image_url || exercise.youtube_thumbnail_url} 
+                src={imageUrl} 
                 alt={exercise.name}
                 className="object-cover w-full h-full" 
               />

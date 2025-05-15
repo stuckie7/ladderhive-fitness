@@ -22,16 +22,14 @@ export const useSuggestedExercises = () => {
 
         // Map the data to ensure it matches ExerciseFull type
         const mappedData: ExerciseFull[] = data.map(exercise => ({
-          id: exercise.id,
-          name: exercise.name,
+          ...exercise as any,
+          // Generate a description if none exists
+          description: exercise.description || `${exercise.prime_mover_muscle || ''} exercise using ${exercise.primary_equipment || 'bodyweight'}`,
           // Include required ExerciseFull properties
           target_muscle_group: exercise.prime_mover_muscle || "",
           video_demonstration_url: exercise.short_youtube_demo || "",
           video_explanation_url: exercise.in_depth_youtube_exp || "",
-          description: exercise.description || "",
-          image_url: exercise.youtube_thumbnail_url || "",
-          // Include all other properties from the original data
-          ...exercise
+          image_url: exercise.youtube_thumbnail_url || ""
         }));
 
         setSuggestedExercises(mappedData);
