@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useFetchWorkoutExercises } from '../workout-exercises';
 import { useWorkoutActions } from './use-workout-actions';
-// Import directly from the file, not using an alias
 import { fetchWorkoutById } from './use-fetch-workout';
 
 export type WorkoutDetailHookReturn = ReturnType<typeof useWorkoutDetail>;
@@ -12,6 +11,7 @@ export const useWorkoutDetail = (id?: string) => {
   const [workout, setWorkout] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCompletingWorkout, setIsCompletingWorkout] = useState<boolean>(false);
 
   const { toast } = useToast();
   
@@ -19,7 +19,7 @@ export const useWorkoutDetail = (id?: string) => {
   const { exercises, isLoading: exercisesLoading, refetch: refetchExercises } = useFetchWorkoutExercises(id);
   
   // Use workout actions
-  const { completeWorkout, isCompletingWorkout } = useWorkoutActions();
+  const { handleSaveWorkout, handleCompleteWorkout } = useWorkoutActions(id);
 
   // Fetch workout details
   useEffect(() => {
@@ -66,11 +66,13 @@ export const useWorkoutDetail = (id?: string) => {
   }, [id, exercises, toast]);
 
   // Handle workout completion
-  const handleCompleteWorkout = async () => {
+  const completeWorkout = async () => {
     if (!workout) return;
     
+    setIsCompletingWorkout(true);
+    
     try {
-      await completeWorkout(workout.id);
+      await handleCompleteWorkout();
       toast({
         title: 'Workout completed',
         description: 'Great job! Your workout has been marked as completed.',
@@ -82,6 +84,8 @@ export const useWorkoutDetail = (id?: string) => {
         description: 'Failed to mark workout as completed',
         variant: 'destructive',
       });
+    } finally {
+      setIsCompletingWorkout(false);
     }
   };
 
@@ -117,7 +121,7 @@ export const useWorkoutDetail = (id?: string) => {
     workout,
     isLoading: isLoading || exercisesLoading,
     error,
-    completeWorkout: handleCompleteWorkout,
+    completeWorkout,
     isCompletingWorkout,
     refreshWorkout
   };

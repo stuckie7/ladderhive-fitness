@@ -1,4 +1,3 @@
-
 // Export type definitions
 export interface Exercise {
   id: string | number;
@@ -32,6 +31,7 @@ export interface Exercise {
   laterality?: string;
   difficulty_level?: string;
   youtube_thumbnail_url?: string;
+  body_region?: string;
 }
 
 export interface ExerciseFull {
@@ -80,6 +80,8 @@ export interface ExerciseFull {
   target?: string;
   instructions?: string[];
   gifUrl?: string;
+  muscle_group?: string;
+  video_url?: string;
 }
 
 export interface FilterOptions {

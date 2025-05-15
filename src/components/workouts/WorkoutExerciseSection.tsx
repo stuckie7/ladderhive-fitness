@@ -47,11 +47,12 @@ const WorkoutExerciseSection = ({
     name: we.exercise?.name || "Unknown Exercise",
     sets: we.sets,
     reps: we.reps, // This will be string or number already
-    weight: we.weight,
-    restTime: we.rest_time,
+    weight: we.weight ? String(we.weight) : undefined, // Convert weight to string
+    restTime: we.rest_seconds || we.rest_time, // Use rest_seconds with fallback to rest_time
     description: we.exercise?.description,
     demonstration: we.exercise?.video_demonstration_url || 
                   we.exercise?.video_url || 
+                  we.exercise?.short_youtube_demo ||
                   we.exercise?.image_url
   }));
 

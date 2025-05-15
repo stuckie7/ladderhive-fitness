@@ -46,13 +46,21 @@ export const createExerciseDetailService = (): ExerciseDetailService => {
   
   const updateExercise = async (id: string | number, exerciseData: Partial<ExerciseFull>): Promise<ExerciseFull | null> => {
     try {
+      // Convert the exerciseData to a simple object without any complex types
+      const updatePayload: any = {
+        ...exerciseData,
+        // Handle specific fields if needed
+        primary_equipment: exerciseData.primary_equipment || undefined,
+      };
+      
+      // Remove any properties that shouldn't be sent to Supabase
+      if (updatePayload.instructions && Array.isArray(updatePayload.instructions)) {
+        updatePayload.instructions = updatePayload.instructions.join('\n');
+      }
+      
       const { data, error } = await supabase
         .from('exercises_full')
-        .update({
-          ...exerciseData,
-          // Handle specific fields if needed
-          primary_equipment: exerciseData.primary_equipment || undefined,
-        })
+        .update(updatePayload)
         .eq('id', id.toString())
         .select()
         .single();

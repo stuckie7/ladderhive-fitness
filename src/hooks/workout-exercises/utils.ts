@@ -1,3 +1,4 @@
+
 import { Exercise, ExerciseFull } from "@/types/exercise";
 
 export interface WorkoutExercise {
@@ -11,6 +12,7 @@ export interface WorkoutExercise {
   order_index: number;
   notes?: string;
   weight?: string | number;
+  rest_time?: number; // Add for backward compatibility
 }
 
 export const formatExerciseName = (exercise: Exercise | ExerciseFull | undefined): string => {
@@ -31,6 +33,15 @@ export const formatExerciseName = (exercise: Exercise | ExerciseFull | undefined
   
   // Otherwise just return the name
   return name;
+};
+
+// Convert reps value to string for consistent handling
+export const ensureStringReps = (reps: string | number | undefined): string => {
+  if (reps === undefined || reps === null) {
+    return '10';
+  }
+  
+  return typeof reps === 'string' ? reps : reps.toString();
 };
 
 // More utils as needed

@@ -1,24 +1,48 @@
 
-import { useWorkoutActions } from './workout-detail/use-workout-actions';
-import { useFetchWorkout } from './workout-detail/use-fetch-workout';
-import { useFetchWorkoutExercises } from './workout-exercises/use-fetch-workout-exercises';
-import { Exercise } from '@/types/exercise';
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { fetchWorkoutById } from './workout-detail/use-fetch-workout';
+import { useWorkoutActions } from './workout-detail/use-workout-actions';
+import { useFetchWorkoutExercises } from './workout-exercises/use-fetch-workout-exercises';
+import { Exercise } from '@/types/exercise';
 
 export const useWorkoutDetail = (workoutId?: string) => {
-  const { workout, isLoading: workoutLoading, error } = useFetchWorkout(workoutId);
+  const [workout, setWorkout] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const { exercises: workoutExercises, isLoading: exercisesLoading, refetch: fetchExercises } = useFetchWorkoutExercises(workoutId);
   const { isSaved, handleSaveWorkout, handleCompleteWorkout } = useWorkoutActions(workoutId);
-  const [isLoading, setIsLoading] = useState(workoutLoading);
   const { toast } = useToast();
   
-  // Fetch exercises when workout ID changes
+  // Fetch workout details on initial load
   useEffect(() => {
-    if (workoutId) {
-      fetchExercises();
-    }
-  }, [workoutId, fetchExercises]);
+    const loadWorkout = async () => {
+      if (!workoutId) {
+        setError('No workout ID provided');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      
+      try {
+        const workoutData = await fetchWorkoutById(workoutId);
+        if (workoutData) {
+          setWorkout(workoutData);
+        } else {
+          setError('Workout not found');
+        }
+      } catch (err) {
+        console.error('Error loading workout details:', err);
+        setError('Failed to load workout details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadWorkout();
+  }, [workoutId]);
 
   // Function to add an exercise to the workout
   const handleAddExercise = useCallback(async (exercise: Exercise): Promise<void> => {
@@ -42,7 +66,7 @@ export const useWorkoutDetail = (workoutId?: string) => {
 
   return {
     workout,
-    isLoading: workoutLoading || exercisesLoading,
+    isLoading: isLoading || exercisesLoading,
     isSaved,
     workoutExercises,
     exercisesLoading,

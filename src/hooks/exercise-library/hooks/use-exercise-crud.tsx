@@ -27,7 +27,7 @@ export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
     try {
       // Convert exercises to the format expected by the exercises table
       const formattedExercises = exercisesToAdd.map(ex => ({
-        id: typeof ex.id === 'number' ? ex.id : parseInt(ex.id as string, 10),
+        id: typeof ex.id === 'number' ? ex.id.toString() : ex.id as string,
         name: ex.name,
         muscle_group: ex.target || ex.bodyPart || "",
         equipment: ex.equipment || "",
@@ -123,7 +123,7 @@ export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
       const exerciseId = id.toString();
       
       // Create a clean exercise object for update
-      const updateData: Partial<ExerciseFull> = {
+      const updateData: any = {
         name: exercise.name,
         description: exercise.description,
         prime_mover_muscle: exercise.prime_mover_muscle,
@@ -135,8 +135,8 @@ export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
       
       // Remove undefined fields
       Object.keys(updateData).forEach(key => {
-        if (updateData[key as keyof typeof updateData] === undefined) {
-          delete updateData[key as keyof typeof updateData];
+        if (updateData[key] === undefined) {
+          delete updateData[key];
         }
       });
       

@@ -109,6 +109,7 @@ export const usePreparedWorkouts = (currentWorkoutId: string | null = null) => {
         reps: ensureStringReps(item.reps), // Convert to string
         weight: item.weight,
         rest_time: item.rest_time,
+        rest_seconds: item.rest_time || 60, // Map rest_time to rest_seconds
         order_index: item.order_index,
         exercise: item.exercise ? mapSupabaseExerciseToExercise(item.exercise) : undefined
       }));
