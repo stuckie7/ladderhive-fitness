@@ -1,4 +1,3 @@
-
 // Export type definitions
 export interface Exercise {
   id: string | number;
@@ -85,6 +84,7 @@ export interface ExerciseFull {
   target_muscle_group?: string;
 }
 
+// Keep the rest of the interfaces the same
 export interface FilterOptions {
   muscleGroups: string[];
   equipment: string[];

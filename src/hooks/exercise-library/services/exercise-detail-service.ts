@@ -39,13 +39,8 @@ export const updateExerciseFull = async (exercise: Partial<ExerciseFull>): Promi
     // Ensure we have a numeric ID
     const numericId = typeof exercise.id === 'string' ? parseInt(exercise.id, 10) : exercise.id;
     
-    // Create an update object with only the fields that exist in the exercises_full table
-    const updateData = {
-      ...exercise,
-      id: numericId,
-      description: exercise.description || null,
-      instructions: Array.isArray(exercise.instructions) ? exercise.instructions : null
-    };
+    // Create an update object without the id field to avoid type errors
+    const { id, ...updateData } = exercise;
     
     // Handle instructions formatting if needed
     const { data, error } = await supabase
@@ -73,18 +68,8 @@ export const updateExerciseFull = async (exercise: Partial<ExerciseFull>): Promi
  */
 export const createExerciseFull = async (exercise: Partial<ExerciseFull>): Promise<ExerciseFull | null> => {
   try {
-    // Create an insert object with only allowed fields
-    const insertData: Partial<ExerciseFull> = {
-      name: exercise.name || 'New Exercise',
-      difficulty: exercise.difficulty || 'Beginner',
-      prime_mover_muscle: exercise.prime_mover_muscle || 'Other',
-      primary_equipment: exercise.primary_equipment || 'Bodyweight',
-      body_region: exercise.body_region || 'Full Body',
-      // Include only fields that are in the table schema
-      short_youtube_demo: exercise.short_youtube_demo,
-      description: exercise.description,
-      image_url: exercise.image_url,
-    };
+    // Create an insert object without id to avoid type errors
+    const { id, ...insertData } = exercise;
     
     const { data, error } = await supabase
       .from('exercises_full')

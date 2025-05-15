@@ -86,7 +86,7 @@ const WorkoutExerciseSection = ({
         <div className="exercise-list">
           <ExerciseList 
             exercises={exerciseListItems} 
-            onRemove={onRemoveExercise ? (id) => onRemoveExercise(id) : undefined}
+            onRemove={onRemoveExercise}
           />
         </div>
       ) : (

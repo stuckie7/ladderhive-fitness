@@ -4,8 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Exercise } from "@/types/exercise";
 import { useToast } from "@/components/ui/use-toast";
 
-// Make sure to use the Exercise type from types/exercise.ts
-
 export const useExercises = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();

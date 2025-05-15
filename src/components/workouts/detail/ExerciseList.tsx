@@ -27,9 +27,10 @@ interface ExerciseListItem {
 
 interface ExerciseListProps {
   exercises: ExerciseListItem[];
+  onRemove?: (id: string) => void;
 }
 
-const ExerciseList: React.FC<ExerciseListProps> = ({ exercises }) => {
+const ExerciseList: React.FC<ExerciseListProps> = ({ exercises, onRemove }) => {
   return (
     <Card>
       <CardHeader>
@@ -44,6 +45,7 @@ const ExerciseList: React.FC<ExerciseListProps> = ({ exercises }) => {
               <TableHead>Reps</TableHead>
               <TableHead>Weight</TableHead>
               <TableHead>Rest Time</TableHead>
+              {onRemove && <TableHead className="w-[80px]">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -64,6 +66,16 @@ const ExerciseList: React.FC<ExerciseListProps> = ({ exercises }) => {
                 <TableCell>{exercise.reps}</TableCell>
                 <TableCell>{exercise.weight || '-'}</TableCell>
                 <TableCell>{exercise.restTime || '-'}</TableCell>
+                {onRemove && (
+                  <TableCell>
+                    <button 
+                      onClick={() => onRemove(exercise.id)}
+                      className="text-red-500 hover:text-red-700 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

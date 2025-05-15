@@ -93,9 +93,12 @@ export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResul
       // Convert string ID to number if needed
       const numericId = typeof formState.id === 'string' ? parseInt(formState.id) : formState.id;
       
+      // Prepare the update data without the id field
+      const { id, ...updateData } = formState;
+      
       const { data, error } = await supabase
         .from('exercises_full')
-        .update(formState)
+        .update(updateData)
         .eq('id', numericId)
         .select()
         .single();
