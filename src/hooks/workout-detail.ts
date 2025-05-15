@@ -3,7 +3,7 @@ import { useWorkoutActions } from './workout-detail/use-workout-actions';
 import { useWorkoutFetch } from './workout-detail/use-fetch-workout';
 import { useWorkoutExercises } from './workout-exercises/use-fetch-workout-exercises';
 import { Exercise } from '@/types/exercise';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export const useWorkoutDetail = (workoutId: string) => {
@@ -12,9 +12,9 @@ export const useWorkoutDetail = (workoutId: string) => {
   const { isSaved, handleSaveWorkout, handleCompleteWorkout } = useWorkoutActions(workoutId);
   const [isLoading, setIsLoading] = useState(workoutLoading);
   const { toast } = useToast();
-
+  
   // Fetch exercises when workout ID changes
-  useCallback(() => {
+  useEffect(() => {
     if (workoutId) {
       fetchExercises(workoutId);
     }
@@ -50,6 +50,8 @@ export const useWorkoutDetail = (workoutId: string) => {
     handleAddExercise,
     handleSaveWorkout,
     handleCompleteWorkout,
-    removeExerciseFromWorkout
+    removeExerciseFromWorkout,
+    // Add an alias for exercises property to maintain compatibility
+    exercises: workoutExercises
   };
 };

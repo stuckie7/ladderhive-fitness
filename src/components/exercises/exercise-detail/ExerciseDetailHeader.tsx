@@ -1,23 +1,23 @@
 
+import { ExerciseFull } from "@/types/exercise";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExerciseFull } from "@/types/exercise";
-import { ArrowLeft, Edit } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import AddToWorkoutButton from "../AddToWorkoutButton";
+import { ArrowLeft } from "lucide-react";
 
 interface ExerciseDetailHeaderProps {
   exercise: ExerciseFull;
-  onBackClick: () => void;
+  onBackClick?: () => void;
+  showBackButton?: boolean;
 }
 
-export default function ExerciseDetailHeader({
-  exercise,
+export default function ExerciseDetailHeader({ 
+  exercise, 
   onBackClick,
+  showBackButton = true
 }: ExerciseDetailHeaderProps) {
   // Helper function to determine difficulty badge class
-  const getDifficultyBadgeClass = (difficulty: string | null) => {
-    if (!difficulty) return "bg-gray-100 text-gray-800";
+  const getDifficultyBadgeClass = (difficulty: string | null | undefined) => {
+    if (!difficulty) return "";
     
     switch(difficulty.toLowerCase()) {
       case 'beginner':
@@ -27,48 +27,38 @@ export default function ExerciseDetailHeader({
       case 'advanced':
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "";
     }
   };
 
   return (
-    <>
-      {/* Back Button */}
-      <Button variant="outline" className="mb-6" onClick={onBackClick}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Exercises
-      </Button>
+    <div className="mb-6">
+      {showBackButton && onBackClick && (
+        <Button variant="ghost" onClick={onBackClick} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      )}
       
-      {/* Exercise Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start mb-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{exercise.name}</h1>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {exercise.prime_mover_muscle && (
-              <Badge variant="outline">{exercise.prime_mover_muscle}</Badge>
-            )}
-            {exercise.body_region && exercise.body_region !== exercise.prime_mover_muscle && (
-              <Badge variant="outline">{exercise.body_region}</Badge>
-            )}
-            {exercise.primary_equipment && (
-              <Badge variant="secondary">{exercise.primary_equipment}</Badge>
-            )}
-            {exercise.difficulty && (
-              <Badge className={getDifficultyBadgeClass(exercise.difficulty)}>
-                {exercise.difficulty}
-              </Badge>
-            )}
-          </div>
-        </div>
-        
-        <div className="flex gap-2 mt-4 md:mt-0">
-          <Button variant="outline">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <AddToWorkoutButton exercise={exercise as any} />
-        </div>
+      <div className="flex items-center gap-2 mb-2">
+        {exercise.difficulty && (
+          <Badge className={getDifficultyBadgeClass(exercise.difficulty)}>
+            {exercise.difficulty}
+          </Badge>
+        )}
+        {exercise.prime_mover_muscle && (
+          <Badge variant="outline" className="bg-muted/50">
+            {exercise.prime_mover_muscle}
+          </Badge>
+        )}
+        {exercise.primary_equipment && (
+          <Badge variant="outline" className="bg-muted/50">
+            {exercise.primary_equipment}
+          </Badge>
+        )}
       </div>
-    </>
+      
+      <h1 className="text-3xl font-bold">{exercise.name}</h1>
+    </div>
   );
 }

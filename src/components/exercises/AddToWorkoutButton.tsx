@@ -3,18 +3,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import AddToWorkoutModal from "./AddToWorkoutModal";
-import { Exercise } from "@/types/exercise";
+import { Exercise, ExerciseFull } from "@/types/exercise";
 
 interface AddToWorkoutButtonProps {
-  exerciseId: string;
-  exerciseName: string;
+  exercise: Exercise | ExerciseFull;
   variant?: "default" | "outline";
   className?: string;
 }
 
 export default function AddToWorkoutButton({
-  exerciseId,
-  exerciseName,
+  exercise,
   variant = "default",
   className = ""
 }: AddToWorkoutButtonProps) {
@@ -22,10 +20,6 @@ export default function AddToWorkoutButton({
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
   };
 
   return (
@@ -38,8 +32,8 @@ export default function AddToWorkoutButton({
       <AddToWorkoutModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
-        exerciseId={exerciseId}
-        exerciseName={exerciseName}
+        exerciseId={exercise.id.toString()} 
+        exerciseName={exercise.name}
       />
     </>
   );

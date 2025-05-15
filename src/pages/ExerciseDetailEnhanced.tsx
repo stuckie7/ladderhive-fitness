@@ -4,6 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ExerciseFull } from '@/types/exercise';
 import AppLayout from '@/components/layout/AppLayout';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Bookmark, BookmarkCheck } from 'lucide-react';
 
 // Components
 import ExerciseDetailHeader from '@/components/exercises/exercise-detail/ExerciseDetailHeader';
@@ -11,12 +13,16 @@ import ExerciseDetailSkeleton from '@/components/exercises/exercise-detail/Exerc
 import ExerciseNotFound from '@/components/exercises/exercise-detail/ExerciseNotFound';
 import ExerciseMainDetails from '@/components/exercises/exercise-detail/ExerciseMainDetails';
 import ExerciseSidebarInfo from '@/components/exercises/exercise-detail/ExerciseSidebarInfo';
+import AddToWorkoutButton from '@/components/exercises/AddToWorkoutButton';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function ExerciseDetailEnhanced() {
   const [exercise, setExercise] = useState<ExerciseFull | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSaved, setIsSaved] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchExerciseDetails = async () => {
@@ -50,6 +56,15 @@ export default function ExerciseDetailEnhanced() {
     navigate('/exercise-library-enhanced');
   };
 
+  const handleToggleSave = () => {
+    setIsSaved(!isSaved);
+    
+    toast({
+      title: isSaved ? "Exercise removed from favorites" : "Exercise saved to favorites",
+      description: isSaved ? "The exercise has been removed from your favorites" : "The exercise has been added to your favorites",
+    });
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -69,13 +84,47 @@ export default function ExerciseDetailEnhanced() {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-between items-center mb-6">
+          <Button variant="ghost" onClick={handleBackClick} className="flex items-center gap-1">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Library
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline"
+              onClick={handleToggleSave}
+              className="flex items-center gap-1"
+            >
+              {isSaved ? (
+                <>
+                  <BookmarkCheck className="h-4 w-4 text-primary" />
+                  Saved
+                </>
+              ) : (
+                <>
+                  <Bookmark className="h-4 w-4" />
+                  Save
+                </>
+              )}
+            </Button>
+            
+            {exercise && (
+              <AddToWorkoutButton 
+                exercise={exercise}
+                variant="default"
+              />
+            )}
+          </div>
+        </div>
+        
         <ExerciseDetailHeader 
           exercise={exercise} 
-          onBackClick={handleBackClick} 
+          showBackButton={false}
         />
         
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Left Column - Main Details */}
           <div className="lg:col-span-2">
             <ExerciseMainDetails exercise={exercise} />

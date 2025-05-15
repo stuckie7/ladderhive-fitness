@@ -16,9 +16,17 @@ export interface WorkoutExercise {
   exercise?: any;
 }
 
+// Interface for the hook return value
+export interface FetchWorkoutExercisesReturn {
+  workoutExercises: WorkoutExercise[];
+  isLoading: boolean;
+  error: string | null;
+  fetchExercises: (workoutId: string) => Promise<void>;
+}
+
 // The main hook export
-export const useFetchWorkoutExercises = () => {
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
+  const [workoutExercises, setWorkoutExercises] = useState<WorkoutExercise[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,49 +45,94 @@ export const useFetchWorkoutExercises = () => {
                                await checkIfPreparedWorkout(workoutId);
       
       // Fetch from the appropriate table
-      let { data: workoutExercises, error: exercisesError } = isPreparedWorkout
+      let { data: rawWorkoutExercises, error: exercisesError } = isPreparedWorkout
         ? await fetchPreparedWorkoutExercises(workoutId)
         : await fetchUserWorkoutExercises(workoutId);
         
       if (exercisesError) throw exercisesError;
       
-      if (!workoutExercises || workoutExercises.length === 0) {
+      if (!rawWorkoutExercises || rawWorkoutExercises.length === 0) {
         console.log("No exercises found for this workout");
-        setExercises([]);
+        setWorkoutExercises([]);
         return;
       }
       
-      console.log(`Found ${workoutExercises.length} exercises`);
+      console.log(`Found ${rawWorkoutExercises.length} exercises`);
       
       // Get full exercise details for each exercise
       const exercisesWithDetails = await Promise.all(
-        workoutExercises.map(async (we) => {
-          // Try exercises_full first (more detail)
-          let { data: exerciseData } = await supabase
-            .from("exercises_full")
-            .select("*")
-            .eq("id", we.exercise_id)
-            .single();
-            
-          // If not found, try regular exercises table
-          if (!exerciseData) {
-            const { data } = await supabase
-              .from("exercises")
+        rawWorkoutExercises.map(async (we) => {
+          // Create a safe base object with default values
+          const safeExerciseData = {
+            id: typeof we.exercise_id === 'number' ? we.exercise_id.toString() : we.exercise_id.toString(),
+            name: "Unknown Exercise",
+            description: "",
+            prime_mover_muscle: "",
+            primary_equipment: "",
+            difficulty: "",
+            youtube_thumbnail_url: "",
+            video_demonstration_url: "",
+            short_youtube_demo: ""
+          };
+          
+          try {
+            // Try exercises_full first (more detail)
+            const { data: exerciseData } = await supabase
+              .from("exercises_full")
               .select("*")
               .eq("id", we.exercise_id)
               .single();
               
-            exerciseData = data;
+            // If found, use this data
+            if (exerciseData) {
+              safeExerciseData.id = exerciseData.id?.toString() || safeExerciseData.id;
+              safeExerciseData.name = exerciseData.name || safeExerciseData.name;
+              safeExerciseData.description = exerciseData.description || safeExerciseData.description;
+              safeExerciseData.prime_mover_muscle = exerciseData.prime_mover_muscle || safeExerciseData.prime_mover_muscle;
+              safeExerciseData.primary_equipment = exerciseData.primary_equipment || safeExerciseData.primary_equipment;
+              safeExerciseData.difficulty = exerciseData.difficulty || safeExerciseData.difficulty;
+              safeExerciseData.youtube_thumbnail_url = exerciseData.youtube_thumbnail_url || safeExerciseData.youtube_thumbnail_url;
+              safeExerciseData.video_demonstration_url = exerciseData.video_demonstration_url || exerciseData.short_youtube_demo || safeExerciseData.video_demonstration_url;
+            } else {
+              // If not found in exercises_full, try regular exercises table
+              const { data } = await supabase
+                .from("exercises")
+                .select("*")
+                .eq("id", we.exercise_id)
+                .single();
+                
+              if (data) {
+                safeExerciseData.id = data.id?.toString() || safeExerciseData.id;
+                safeExerciseData.name = data.name || safeExerciseData.name;
+                safeExerciseData.description = data.description || safeExerciseData.description;
+                safeExerciseData.prime_mover_muscle = data.muscle_group || safeExerciseData.prime_mover_muscle;
+                safeExerciseData.primary_equipment = data.equipment || safeExerciseData.primary_equipment;
+                safeExerciseData.difficulty = data.difficulty || safeExerciseData.difficulty;
+                safeExerciseData.video_demonstration_url = data.video_url || safeExerciseData.video_demonstration_url;
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching exercise details:", error);
           }
-          
+            
+          // Ensure we have all required fields with proper type handling
           return {
-            ...we,
-            exercise: exerciseData,
-          };
+            id: we.id,
+            workout_id: we.workout_id,
+            exercise_id: we.exercise_id,
+            sets: we.sets || 0,
+            reps: we.reps || "0",
+            rest_time: we.rest_seconds || we.rest_time || 0,
+            rest_seconds: we.rest_seconds || we.rest_time || 0,
+            order_index: we.order_index || 0,
+            weight: we.weight || "",
+            notes: we.notes || "",
+            exercise: safeExerciseData
+          } as WorkoutExercise;
         })
       );
       
-      setExercises(exercisesWithDetails);
+      setWorkoutExercises(exercisesWithDetails);
       
     } catch (error: any) {
       console.error("Error fetching workout exercises:", error);
@@ -118,7 +171,7 @@ export const useFetchWorkoutExercises = () => {
   };
 
   return {
-    workoutExercises: exercises,
+    workoutExercises,
     isLoading,
     error,
     fetchExercises,
