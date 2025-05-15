@@ -74,14 +74,14 @@ export interface ExerciseFull {
   video_demonstration_url?: string;
   video_explanation_url?: string;
   image_url?: string;
-  // Add compatible properties from Exercise interface for cross-compatibility
+  // Add compatible properties from Exercise interface
   equipment?: string;
   bodyPart?: string;
   target?: string;
-  instructions?: string[];
   gifUrl?: string;
   muscle_group?: string;
   video_url?: string;
+  target_muscle_group?: string;
 }
 
 export interface FilterOptions {

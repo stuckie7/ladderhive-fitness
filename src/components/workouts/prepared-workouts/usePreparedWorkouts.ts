@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Workout } from "@/types/workout";
-import { WorkoutExercise, ensureStringReps } from "@/hooks/workout-exercises/utils";
+import { WorkoutExercise } from "@/types/workout";
 import { Exercise } from "@/types/exercise";
 
 /**
@@ -29,6 +29,14 @@ const mapSupabaseExerciseToExercise = (exerciseData: any): Exercise => {
     ].filter(Boolean),
     video_demonstration_url: exerciseData.video_demonstration_url || exerciseData.short_youtube_demo,
   };
+};
+
+/**
+ * Ensures that the reps property is always a string
+ */
+const ensureStringReps = (reps: string | number | undefined): string => {
+  if (reps === undefined) return '';
+  return reps.toString();
 };
 
 export const usePreparedWorkouts = (currentWorkoutId: string | null = null) => {
@@ -106,10 +114,10 @@ export const usePreparedWorkouts = (currentWorkoutId: string | null = null) => {
         workout_id: item.workout_id,
         exercise_id: item.exercise_id.toString(),
         sets: item.sets,
-        reps: ensureStringReps(item.reps), // Convert to string
+        reps: ensureStringReps(item.reps),
         weight: item.weight ? item.weight.toString() : undefined,
+        rest_seconds: item.rest_time || 60,
         rest_time: item.rest_time,
-        rest_seconds: item.rest_time || 60, // Map rest_time to rest_seconds
         order_index: item.order_index,
         exercise: item.exercise ? mapSupabaseExerciseToExercise(item.exercise) : undefined
       }));

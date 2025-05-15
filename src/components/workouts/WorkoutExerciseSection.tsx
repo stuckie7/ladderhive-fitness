@@ -7,14 +7,14 @@ import ExerciseList from "@/components/workouts/detail/ExerciseList";
 import ExerciseSearchModal from "@/components/exercises/ExerciseSearchModal";
 import WorkoutExerciseSkeleton from "@/components/workouts/WorkoutExerciseSkeleton";
 import { Exercise } from "@/types/exercise";
-import { WorkoutExercise } from "@/hooks/workout-exercises/utils";
+import { WorkoutExercise } from "@/types/workout";
 
 // Define the interface for the exercise list items to match ExerciseList component
 interface ExerciseListItem {
   id: string;
   name: string;
   sets: number;
-  reps: string | number;
+  reps: string;
   weight?: string;
   restTime?: number;
   description?: string;
@@ -27,13 +27,15 @@ interface WorkoutExerciseSectionProps {
   exercises: WorkoutExercise[];
   isLoading: boolean;
   onAddExercise: (exercise: Exercise) => Promise<void>;
+  onRemoveExercise?: (exerciseId: string) => void;
 }
 
 const WorkoutExerciseSection = ({ 
   workoutId, 
   exercises, 
   isLoading, 
-  onAddExercise 
+  onAddExercise,
+  onRemoveExercise
 }: WorkoutExerciseSectionProps) => {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
 
@@ -42,14 +44,20 @@ const WorkoutExerciseSection = ({
     setSearchModalOpen(false);
   };
 
+  // Ensures any reps value is converted to string
+  const ensureStringReps = (reps: string | number | undefined): string => {
+    if (reps === undefined) return '';
+    return reps.toString();
+  };
+
   // Format exercises to match ExerciseListItem interface
   const exerciseListItems: ExerciseListItem[] = exercises.map(we => ({
     id: we.id,
     name: we.exercise?.name || "Unknown Exercise",
     sets: we.sets,
-    reps: we.reps, // This will be string or number already
+    reps: ensureStringReps(we.reps), // Convert reps to string
     weight: we.weight ? String(we.weight) : undefined, // Convert weight to string
-    restTime: we.rest_seconds || 60, // Prioritize rest_seconds field
+    restTime: we.rest_seconds || we.rest_time || 60, // Handle both properties
     description: we.exercise?.description,
     demonstration: we.exercise?.video_demonstration_url || 
                   we.exercise?.video_url || 
@@ -75,7 +83,10 @@ const WorkoutExerciseSection = ({
       {isLoading ? (
         <WorkoutExerciseSkeleton />
       ) : exercises.length > 0 ? (
-        <ExerciseList exercises={exerciseListItems} />
+        <ExerciseList 
+          exercises={exerciseListItems} 
+          onRemove={onRemoveExercise}
+        />
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-6">

@@ -99,9 +99,9 @@ export default function WorkoutDetail() {
     }
   };
   
-  // Handle adding an exercise to workout (stub for now)
-  const addExercise = (exerciseObj: Exercise) => {
-    handleAddExercise(exerciseObj);
+  // Handle adding an exercise to workout with Promise
+  const addExercise = async (exerciseObj: Exercise): Promise<void> => {
+    return handleAddExercise(exerciseObj);
   };
   
   // Handle back navigation
@@ -113,7 +113,7 @@ export default function WorkoutDetail() {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-8 flex justify-center items-center h-64">
-          <Spinner className="w-12 h-12" />
+          <Spinner />
         </div>
       </AppLayout>
     );
@@ -132,36 +132,43 @@ export default function WorkoutDetail() {
       </AppLayout>
     );
   }
+
+  // Prepare props for the components
+  const headerProps = {
+    title: workout.title,
+    description: workout.description,
+    isSaved: isSaved,
+    isLoading: isLoading,
+    onToggleSave: toggleSaveWorkout,
+    onStartWorkout: handleStartWorkout
+  };
+
+  const statsProps = {
+    duration: workout.duration || workout.duration_minutes || 0,
+    exercises: workoutExercises?.length || 0,
+    difficulty: workout.difficulty || "Not specified",
+    category: workout.category
+  };
   
   return (
     <AppLayout>
-      <WorkoutDetailLayout>
-        <WorkoutDetailHeader 
-          workout={workout}
-          isSaved={isSaved}
-          onBackClick={handleBackClick}
-          onSaveClick={toggleSaveWorkout}
-          onStartClick={handleStartWorkout}
-          onCompleteClick={completeWorkout}
-          isStarting={isStarting}
-          isCompletingWorkout={isCompletingWorkout}
-        />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          <div className="lg:col-span-2">
-            <WorkoutExerciseSection 
-              exercises={workoutExercises}
-              isLoading={exercisesLoading}
-              onAddExercise={addExercise}
-              onRemoveExercise={removeExerciseFromWorkout}
-            />
-          </div>
-          
-          <div className="lg:col-span-1">
-            <WorkoutDetailStats workout={workout} />
-          </div>
-        </div>
-      </WorkoutDetailLayout>
+      <WorkoutDetailLayout 
+        header={
+          <WorkoutDetailHeader {...headerProps} />
+        }
+        stats={
+          <WorkoutDetailStats {...statsProps} />
+        }
+        content={
+          <WorkoutExerciseSection 
+            workoutId={id}
+            exercises={workoutExercises || []}
+            isLoading={exercisesLoading}
+            onAddExercise={addExercise}
+            onRemoveExercise={removeExerciseFromWorkout}
+          />
+        }
+      />
     </AppLayout>
   );
 }

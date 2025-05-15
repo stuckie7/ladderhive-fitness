@@ -13,6 +13,12 @@ import { WorkoutDetail } from '@/hooks/workout-builder/types';
 import { WorkoutTemplate as WorkoutTemplateType } from '@/hooks/workout-builder/template-management/template-types';
 import { useToast } from '@/components/ui/use-toast';
 
+// Helper function to convert reps to string
+const ensureStringReps = (reps: string | number | undefined): string => {
+  if (reps === undefined) return '';
+  return reps.toString();
+};
+
 const WorkoutBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -180,6 +186,17 @@ const WorkoutBuilder = () => {
       }))
     : [];
   
+  // Prepare exercises with string reps for the component
+  const exercisesWithStringReps = exercises.map(exercise => ({
+    ...exercise,
+    reps: ensureStringReps(exercise.reps)
+  }));
+  
+  // Wrapper for exercise update to ensure type compatibility
+  const handleExerciseUpdate = (id: string, updates: any) => {
+    updateExerciseDetails(id, updates);
+  };
+  
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
@@ -201,9 +218,9 @@ const WorkoutBuilder = () => {
             />
             
             <WorkoutBuilderExerciseList 
-              exercises={exercises}
+              exercises={exercisesWithStringReps}
               onRemove={removeExerciseFromWorkout}
-              onUpdate={updateExerciseDetails}
+              onUpdate={handleExerciseUpdate}
               onMoveUp={moveExerciseUp}
               onMoveDown={moveExerciseDown}
               onReorder={reorderExercises}

@@ -2,108 +2,123 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Exercise, ExerciseFull } from '@/types/exercise';
 
-export type ExerciseDetailService = {
-  fetchExerciseById: (id: string | number) => Promise<ExerciseFull | null>;
-  updateExercise: (id: string | number, exerciseData: Partial<ExerciseFull>) => Promise<ExerciseFull | null>;
-};
-
-// Utility function to ensure numeric ID
-const ensureNumericId = (id: string | number): number => {
-  if (typeof id === 'string') {
-    return parseInt(id, 10);
-  }
-  return id;
-};
-
-// Export this function directly for component use
+/**
+ * Fetches an exercise by ID from the exercises_full table
+ * @param id - The exercise ID
+ */
 export const getExerciseFullById = async (id: string | number): Promise<ExerciseFull | null> => {
   try {
-    // Convert ID to number for database query
-    const exerciseId = ensureNumericId(id);
+    // Convert id to number if it's a string
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     
-    // Fetch the exercise details
-    const { data: exerciseData, error } = await supabase
+    const { data, error } = await supabase
       .from('exercises_full')
       .select('*')
-      .eq('id', exerciseId)
+      .eq('id', numericId)
       .single();
     
     if (error) {
-      console.error('Error fetching exercise:', error);
-      return null;
-    }
-
-    if (!exerciseData) {
-      console.warn('Exercise not found:', exerciseId);
+      console.error('Error fetching exercise full data:', error);
       return null;
     }
     
-    // Ensure description and instructions fields are available
-    const enhancedExerciseData: ExerciseFull = {
-      ...exerciseData,
-      description: exerciseData.description || '',
-      instructions: exerciseData.instructions ? 
-        Array.isArray(exerciseData.instructions) ? 
-          exerciseData.instructions : 
-          [exerciseData.instructions] 
-        : [],
-      video_url: exerciseData.short_youtube_demo || exerciseData.video_demonstration_url,
-    };
-    
-    // Return the exercise data
-    return enhancedExerciseData;
-    
+    return data as ExerciseFull;
   } catch (error) {
-    console.error('Unexpected error in getExerciseFullById:', error);
+    console.error('Exception fetching exercise full data:', error);
     return null;
   }
 };
 
-export const createExerciseDetailService = (): ExerciseDetailService => {
-  const fetchExerciseById = async (id: string | number): Promise<ExerciseFull | null> => {
-    return getExerciseFullById(id);
-  };
-  
-  const updateExercise = async (id: string | number, exerciseData: Partial<ExerciseFull>): Promise<ExerciseFull | null> => {
-    try {
-      // Convert the exerciseData to a simple object without any complex types
-      const updatePayload: any = {
-        ...exerciseData,
-        // Handle specific fields if needed
-        primary_equipment: exerciseData.primary_equipment || undefined,
-      };
-      
-      // Remove any properties that shouldn't be sent to Supabase
-      if (updatePayload.instructions && Array.isArray(updatePayload.instructions)) {
-        updatePayload.instructions = updatePayload.instructions.join('\n');
-      }
-      
-      // Convert ID to number for database query
-      const exerciseId = ensureNumericId(id);
-      
-      const { data, error } = await supabase
-        .from('exercises_full')
-        .update(updatePayload)
-        .eq('id', exerciseId)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error updating exercise:', error);
-        return null;
-      }
-      
-      return data as ExerciseFull;
-    } catch (error) {
-      console.error('Unexpected error in updateExercise:', error);
+/**
+ * Updates an exercise in the exercises_full table
+ * @param exercise - The exercise data to update
+ */
+export const updateExerciseFull = async (exercise: Partial<ExerciseFull>): Promise<ExerciseFull | null> => {
+  try {
+    // Ensure we have a numeric ID
+    const numericId = typeof exercise.id === 'string' ? parseInt(exercise.id, 10) : exercise.id;
+    
+    const { data, error } = await supabase
+      .from('exercises_full')
+      .update({
+        ...exercise,
+        // Ensure these properties exist or default to empty values
+        description: exercise.description || '',
+        instructions: exercise.instructions || [],
+        // Add other required fields that might be missing
+        video_demonstration_url: exercise.video_demonstration_url || exercise.short_youtube_demo || ''
+      })
+      .eq('id', numericId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating exercise full data:', error);
       return null;
     }
-  };
-  
-  return {
-    fetchExerciseById,
-    updateExercise,
-  };
+    
+    return data as ExerciseFull;
+  } catch (error) {
+    console.error('Exception updating exercise full data:', error);
+    return null;
+  }
 };
 
-export default createExerciseDetailService;
+/**
+ * Creates an exercise in the exercises_full table
+ * @param exercise - The exercise data to create
+ */
+export const createExerciseFull = async (exercise: Partial<ExerciseFull>): Promise<ExerciseFull | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('exercises_full')
+      .insert({
+        name: exercise.name || 'New Exercise',
+        description: exercise.description || '',
+        prime_mover_muscle: exercise.prime_mover_muscle || 'Other',
+        primary_equipment: exercise.primary_equipment || 'Bodyweight',
+        difficulty: exercise.difficulty || 'Beginner',
+        body_region: exercise.body_region || 'Full Body',
+        // Default values for required fields
+        ...exercise
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating exercise full data:', error);
+      return null;
+    }
+    
+    return data as ExerciseFull;
+  } catch (error) {
+    console.error('Exception creating exercise full data:', error);
+    return null;
+  }
+};
+
+/**
+ * Deletes an exercise from the exercises_full table
+ * @param id - The exercise ID
+ */
+export const deleteExerciseFull = async (id: string | number): Promise<boolean> => {
+  try {
+    // Convert id to number if it's a string
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    
+    const { error } = await supabase
+      .from('exercises_full')
+      .delete()
+      .eq('id', numericId);
+    
+    if (error) {
+      console.error('Error deleting exercise full data:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception deleting exercise full data:', error);
+    return false;
+  }
+};

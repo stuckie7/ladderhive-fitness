@@ -55,3 +55,18 @@ export interface PreparedWorkoutExercise {
   notes?: string;
   exercise?: any; // Will be populated with exercise data when fetched
 }
+
+// Add WorkoutExercise interface
+export interface WorkoutExercise {
+  id: string;
+  workout_id: string;
+  exercise_id: string;
+  sets: number;
+  reps: string;
+  weight?: string;
+  rest_seconds: number;
+  order_index: number;
+  notes?: string;
+  exercise?: any; // Exercise details
+  rest_time?: number; // For backward compatibility
+}
