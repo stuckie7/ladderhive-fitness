@@ -1,157 +1,83 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
-import { useFetchWorkoutExercises } from "../workout-exercises/use-fetch-workout-exercises";
-import { useManageWorkoutExercises } from "../workout-exercises/use-manage-workout-exercises";
-import { Exercise } from "@/types/exercise";
+import { useFetchWorkoutExercises } from '../workout-exercises/use-fetch-workout-exercises';
+import { useWorkoutActions } from './use-workout-actions';
 
-export const useWorkoutDetail = (workoutId?: string) => {
-  const [workout, setWorkout] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const { exercises, isLoading: isLoadingExercises, fetchExercises } = useFetchWorkoutExercises();
-  const { addExerciseToWorkout, removeExerciseFromWorkout, updateWorkoutExercise } = useManageWorkoutExercises();
-  
-  const navigate = useNavigate();
+export const useWorkoutDetail = () => {
+  const { id } = useParams();
   const { toast } = useToast();
-
+  const [loading, setLoading] = useState(true);
+  const [workout, setWorkout] = useState<any>(null);
+  
+  // Get workout exercises
+  const { workoutExercises, isLoading: exercisesLoading, fetchExercises } = useFetchWorkoutExercises();
+  // Alias exercises for backward compatibility
+  const exercises = workoutExercises;
+  
+  // Get workout actions
+  const workoutActions = useWorkoutActions();
+  
   // Fetch workout details
-  useEffect(() => {
-    if (!workoutId) {
-      setIsLoading(false);
-      setError("No workout ID provided");
-      return;
-    }
-
-    const fetchWorkoutDetails = async () => {
-      setIsLoading(true);
-      setError(null);
+  const fetchWorkoutDetails = useCallback(async () => {
+    if (!id) return;
+    
+    setLoading(true);
+    
+    try {
+      // First try user created workouts
+      let { data, error } = await supabase
+        .from('user_created_workouts')
+        .select('*')
+        .eq('id', id)
+        .single();
       
-      try {
-        let { data, error } = await supabase
-          .from("prepared_workouts")
-          .select("*")
-          .eq("id", workoutId)
+      if (error) {
+        // If not found in user workouts, try prepared workouts
+        const { data: preparedData, error: preparedError } = await supabase
+          .from('prepared_workouts')
+          .select('*')
+          .eq('id', id)
           .single();
-
-        if (error) throw error;
         
-        if (data) {
-          setWorkout(data);
-          await fetchExercises(workoutId);
-        } else {
-          setError("Workout not found");
+        if (preparedError) {
+          throw preparedError;
         }
-      } catch (error: any) {
-        console.error("Error fetching workout:", error);
-        setError(error.message || "Failed to fetch workout details");
-        toast({
-          title: "Error",
-          description: "Could not load workout details",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+        
+        data = preparedData;
       }
-    };
-
+      
+      if (!data) {
+        throw new Error('Workout not found');
+      }
+      
+      setWorkout(data);
+      
+      // Also fetch exercises for this workout
+      await fetchExercises(id);
+    } catch (error: any) {
+      console.error('Error fetching workout details:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load workout details",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [id, fetchExercises, toast]);
+  
+  useEffect(() => {
     fetchWorkoutDetails();
-  }, [workoutId, fetchExercises, toast]);
-
-  // Add exercise to workout
-  const addExercise = async (exercise: Exercise) => {
-    if (!workoutId) return;
-    
-    setIsSaving(true);
-    try {
-      await addExerciseToWorkout(
-        workoutId,
-        exercise,
-        3, // default sets
-        "10", // default reps
-        60, // default rest seconds
-        exercises.length // add to end of list
-      );
-      
-      await fetchExercises(workoutId);
-      
-      toast({
-        title: "Success",
-        description: `Added ${exercise.name} to workout`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to add exercise to workout",
-        variant: "destructive",
-      });
-      console.error("Error adding exercise:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Remove exercise from workout
-  const removeExercise = async (exerciseId: string) => {
-    if (!workoutId) return;
-    
-    setIsSaving(true);
-    try {
-      await removeExerciseFromWorkout(exerciseId);
-      await fetchExercises(workoutId);
-      
-      toast({
-        title: "Success",
-        description: "Exercise removed from workout",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to remove exercise",
-        variant: "destructive",
-      });
-      console.error("Error removing exercise:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Update exercise details
-  const updateExercise = async (updatedExercise: any) => {
-    if (!workoutId) return;
-    
-    setIsSaving(true);
-    try {
-      await updateWorkoutExercise(updatedExercise);
-      await fetchExercises(workoutId);
-      
-      toast({
-        title: "Success",
-        description: "Exercise updated",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to update exercise",
-        variant: "destructive",
-      });
-      console.error("Error updating exercise:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
+  }, [fetchWorkoutDetails]);
+  
   return {
     workout,
-    exercises,
-    isLoading: isLoading || isLoadingExercises,
-    isSaving,
-    error,
-    addExercise,
-    removeExercise,
-    updateExercise,
+    loading: loading || exercisesLoading,
+    exercises, // Use the alias
+    workoutExercises, // Keep the original property for compatibility
+    ...workoutActions
   };
 };

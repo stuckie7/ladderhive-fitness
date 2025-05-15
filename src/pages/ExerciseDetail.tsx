@@ -36,13 +36,13 @@ export default function ExerciseDetail() {
           console.log('Found exercise in exercises_full:', fullData);
           // Map the full exercise data to our Exercise type
           const exerciseData: Exercise = {
-            id: fullData.id,
+            id: fullData.id.toString(),
             name: fullData.name || '',
-            description: fullData.description || `${fullData.prime_mover_muscle || ''} exercise using ${fullData.primary_equipment || 'bodyweight'}`,
+            description: (fullData as any).description || `${fullData.prime_mover_muscle || ''} exercise using ${fullData.primary_equipment || 'bodyweight'}`,
             muscle_group: fullData.prime_mover_muscle || '',
             equipment: fullData.primary_equipment || '',
             difficulty: fullData.difficulty || '',
-            instructions: fullData.instructions ? [fullData.instructions] : [],
+            instructions: (fullData as any).instructions ? [(fullData as any).instructions] : [],
             video_url: fullData.short_youtube_demo || '',
             image_url: fullData.youtube_thumbnail_url || '',
             bodyPart: fullData.body_region || '',
@@ -54,7 +54,7 @@ export default function ExerciseDetail() {
             posture: fullData.posture || '',
             laterality: fullData.laterality || '',
             tertiary_muscle: fullData.tertiary_muscle || '',
-            video_demonstration_url: fullData.short_youtube_demo || '',
+            video_demonstration_url: (fullData as any).video_demonstration_url || fullData.short_youtube_demo || '',
             youtube_thumbnail_url: fullData.youtube_thumbnail_url || '',
           };
           

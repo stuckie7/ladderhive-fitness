@@ -38,15 +38,15 @@ export const useSuggestedExercises = (): UseSuggestedExercisesReturn => {
       const exercises = (data || []).map(item => ({
         id: item.id,
         name: item.name || 'Unknown Exercise',
-        description: item.description || '',
+        description: (item as any).description || '',
         muscle_group: item.prime_mover_muscle || '',
         equipment: item.primary_equipment || 'Bodyweight',
         difficulty: item.difficulty || 'Beginner',
-        target_muscle_group: item.target_muscle_group || item.prime_mover_muscle || '',
+        target_muscle_group: (item as any).target_muscle_group || item.prime_mover_muscle || '',
         prime_mover_muscle: item.prime_mover_muscle || '',
         primary_equipment: item.primary_equipment || '',
         youtube_thumbnail_url: item.youtube_thumbnail_url || '',
-        video_demonstration_url: item.video_demonstration_url || item.short_youtube_demo || '',
+        video_demonstration_url: (item as any).video_demonstration_url || item.short_youtube_demo || '',
         bodyPart: item.body_region || ''
       } as Exercise));
       

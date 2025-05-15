@@ -30,11 +30,11 @@ export const getExerciseFullById = async (
     const exerciseFull: ExerciseFull = {
       id: data.id,
       name: data.name || 'Unknown Exercise',
-      // Add properties that might be missing in the database
-      description: data.description || data.name || '',
-      target_muscle_group: data.target_muscle_group || data.prime_mover_muscle || '',
-      video_demonstration_url: data.video_demonstration_url || data.short_youtube_demo || '',
-      video_explanation_url: data.video_explanation_url || data.in_depth_youtube_exp || '',
+      // Add properties that might be missing in the database with typecasting to handle TS errors
+      description: (data as any).description || data.name || '',
+      target_muscle_group: (data as any).target_muscle_group || data.prime_mover_muscle || '',
+      video_demonstration_url: (data as any).video_demonstration_url || data.short_youtube_demo || '',
+      video_explanation_url: (data as any).video_explanation_url || data.in_depth_youtube_exp || '',
       // Add all other properties from data
       ...data
     };

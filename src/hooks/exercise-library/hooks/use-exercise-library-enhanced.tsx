@@ -94,7 +94,8 @@ export const useExerciseLibraryEnhanced = () => {
     // Reload filter options and exercise data
     const refreshData = async () => {
       try {
-        await loadFilterOptions(); // Remove the argument here
+        // Fixed by removing the argument
+        await loadFilterOptions(); 
         // We intentionally don't update the state here to avoid triggering
         // multiple rerenders, the loadExerciseDataWithState will handle it
         loadExerciseDataWithState();
