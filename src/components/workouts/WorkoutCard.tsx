@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, Dumbbell, Bookmark, BookmarkCheck, Play, MoreHorizontal } from "lucide-react";
@@ -107,11 +106,11 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
   };
 
   const handleStartWorkout = () => {
-    navigate(`/workout/${workout.id}`);
+    navigate(`/workouts/${workout.id}`);
   };
 
   const handleWorkoutDetails = () => {
-    navigate(`/workout/${workout.id}`);
+    navigate(`/workouts/${workout.id}`);
   };
 
   // Use YouTube video ID to get thumbnail if available, or fall back to thumbnail_url

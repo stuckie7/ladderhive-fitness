@@ -105,7 +105,7 @@ const UpcomingWorkouts = ({
     if (workout.type === 'wod') {
       return `/wods/${workout.id}`;
     } else {
-      return `/workout/${workout.id}`;
+      return `/workouts/${workout.id}`;
     }
   };
 

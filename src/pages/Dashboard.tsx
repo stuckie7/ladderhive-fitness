@@ -76,7 +76,13 @@ const Dashboard = () => {
     // Check if there are upcoming workouts to start
     if (upcomingWorkouts && upcomingWorkouts.length > 0) {
       const nextWorkout = upcomingWorkouts[0];
-      navigate(`/workout/${nextWorkout.id}`);
+      
+      // Use the correct navigation path based on workout type
+      const path = nextWorkout.type === 'wod' 
+        ? `/wods/${nextWorkout.id}` 
+        : `/workouts/${nextWorkout.id}`;
+      
+      navigate(path);
       toast({
         title: "Starting workout",
         description: `Loading ${nextWorkout.title}`,
