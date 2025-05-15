@@ -71,7 +71,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Sidebar */}
       <div className="w-64 bg-card border-r border-border hidden md:block p-4">
         <div className="mb-6 px-2">
-          <h1 className="font-bold text-xl">FitTrack Pro</h1>
+       <Link to="/" className="flex items-center gap-2 px-2">
+  <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
+  <h1 className="font-bold text-xl">FitTrack Pro</h1>
+</Link>
+
         </div>
 
         <nav className="space-y-1 mb-6">
@@ -108,10 +112,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile navigation */}
       <div className="md:hidden sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="p-4 flex justify-between items-center">
-<Link to="/" className="flex items-center gap-2 px-2">
-  <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
-  <h1 className="font-bold text-xl">FitTrack Pro</h1>
+<Link to="/" className="flex items-center gap-2">
+  <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-6 w-auto" />
+  <span className="font-bold">FitTrack Pro</span>
 </Link>
+
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
