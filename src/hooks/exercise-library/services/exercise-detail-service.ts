@@ -66,7 +66,7 @@ export const getExerciseFullById = async (id: string | number): Promise<Exercise
     
     // Set thumbnail URL with fallback
     if ('youtube_thumbnail_url' in data) {
-      exerciseData.image_url = String(data.image_url || data.youtube_thumbnail_url || '');
+      exerciseData.image_url = String(exerciseData.image_url || data.youtube_thumbnail_url || '');
     }
     
     if ('target_muscle_group' in data) {
