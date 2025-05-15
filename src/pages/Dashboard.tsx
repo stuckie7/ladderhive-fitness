@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,8 +14,9 @@ import AchievementCard from "@/components/dashboard/AchievementCard";
 import UpcomingWorkouts from "@/components/dashboard/UpcomingWorkouts";
 import DailyProgressCard from "@/components/progress/DailyProgressCard";
 import { useDailyProgress } from "@/hooks/use-daily-progress";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { useActivityProgress } from "@/hooks/activity-progress";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -23,24 +25,65 @@ const Dashboard = () => {
     upcomingWorkouts, 
     favoriteExercises,
     achievements,
-    metrics,
-    weeklyChartData, 
-    isLoading,
-    error,
+    metrics: dashboardMetrics,
+    weeklyChartData: initialChartData, 
+    isLoading: isDashboardLoading,
+    error: dashboardError,
     removeFavoriteExercise,
     refreshWorkouts
   } = useDashboardData();
   
-  const { progress, isLoading: progressLoading, error: progressError } = useDailyProgress();
+  // Use the activity progress hooks for real-time data
+  const { progress, isLoading: progressLoading, refreshProgress } = useDailyProgress();
+  const { weeklyData, monthlySummary, isLoading: activityLoading, refreshData: refreshActivity } = useActivityProgress();
+  
   const [selectedDate, setSelectedDate] = useState(new Date());
   const { toast } = useToast();
+  
+  // Combine the dashboard metrics with real activity data
+  const [metrics, setMetrics] = useState(dashboardMetrics);
+  const [weeklyChartData, setWeeklyChartData] = useState(initialChartData);
+  
+  // Update metrics when both data sources are available
+  useEffect(() => {
+    if (monthlySummary && !activityLoading) {
+      setMetrics(prevMetrics => ({
+        ...prevMetrics,
+        totalWorkouts: monthlySummary.totalWorkouts || prevMetrics.totalWorkouts,
+        workoutsThisWeek: weeklyData.reduce((sum, day) => sum + day.workouts, 0),
+        completionRate: monthlySummary.completionRate || prevMetrics.completionRate,
+        totalMinutes: monthlySummary.totalActiveMinutes || prevMetrics.totalMinutes,
+        currentStreak: prevMetrics.currentStreak, // Keep existing streak data
+        totalWeight: prevMetrics.totalWeight, // Keep existing weight data
+      }));
+      
+      // Format weekly data for chart display
+      const formattedChartData = weeklyData.map(day => ({
+        name: day.day,
+        minutes: day.active_minutes,
+        weight: Math.round(Math.random() * 1000) + 1000, // Placeholder for weight data
+      }));
+      
+      setWeeklyChartData(formattedChartData);
+    }
+  }, [monthlySummary, weeklyData, activityLoading]);
+  
+  // Handle refresh for all dashboard data
+  const handleRefreshAll = () => {
+    refreshWorkouts();
+    refreshActivity();
+    refreshProgress();
+    toast({
+      description: "Refreshing dashboard data...",
+    });
+  };
   
   // Prepare metrics for the metrics card
   const metricsData = [
     { name: 'Total Workouts', value: metrics.totalWorkouts },
     { name: 'This Week', value: metrics.workoutsThisWeek },
     { name: 'Completion', value: metrics.completionRate, unit: '%', change: 5 },
-    { name: 'Minutes', value: metrics.totalMinutes },
+    { name: 'Active Minutes', value: Math.round(metrics.totalMinutes) },
     { name: 'Current Streak', value: metrics.currentStreak, unit: 'days', change: 10 },
     { name: 'Weight Lifted', value: Math.round(metrics.totalWeight/1000), unit: 'k lbs', change: 15 },
   ];
@@ -57,7 +100,7 @@ const Dashboard = () => {
       description: `Selected workout: ${id}`,
     });
     // Navigate to the workout detail page
-    navigate(`/workout/${id}`);
+    navigate(`/workouts/${id}`);
   };
 
   const handleScheduleWorkout = () => {
@@ -65,10 +108,6 @@ const Dashboard = () => {
       title: "Quick Schedule",
       description: "Workout scheduling feature coming soon",
     });
-  };
-
-  const handleRefreshWorkouts = () => {
-    refreshWorkouts();
   };
 
   // Handle start workout functionality
@@ -98,13 +137,13 @@ const Dashboard = () => {
   };
 
   // Handle error states
-  if (error || progressError) {
+  if (dashboardError) {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-6">
           <div className="text-center py-10">
             <h2 className="text-2xl font-bold text-red-500 mb-4">Error Loading Dashboard</h2>
-            <p className="mb-4">{error || progressError}</p>
+            <p className="mb-4">{dashboardError}</p>
             <Button onClick={() => window.location.reload()}>
               Retry
             </Button>
@@ -114,12 +153,21 @@ const Dashboard = () => {
     );
   }
 
+  const isLoading = isDashboardLoading || progressLoading || activityLoading;
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold gradient-heading">Dashboard</h1>
           <div className="space-x-2">
+            <Button 
+              variant="outline"
+              onClick={handleRefreshAll}
+              disabled={isLoading}
+            >
+              Refresh
+            </Button>
             <Button 
               className="btn-fitness-primary"
               onClick={handleStartWorkout}
@@ -187,7 +235,7 @@ const Dashboard = () => {
               workouts={upcomingWorkouts} 
               isLoading={isLoading}
               onScheduleWorkout={handleScheduleWorkout}
-              onRefresh={handleRefreshWorkouts}
+              onRefresh={refreshWorkouts}
             />
           </div>
         </div>

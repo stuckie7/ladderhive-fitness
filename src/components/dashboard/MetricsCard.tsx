@@ -7,7 +7,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@/components/ui/chart";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts";
 
 interface MetricData {
   name: string;
@@ -73,34 +73,49 @@ const MetricsCard = ({
                 <ChartContainer 
                   config={{
                     weight: { theme: { light: "#3b82f6", dark: "#60a5fa" } },
-                    duration: { theme: { light: "#10b981", dark: "#34d399" } },
+                    minutes: { theme: { light: "#10b981", dark: "#34d399" } },
                   }}
                 >
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                       <XAxis 
-                        dataKey="day" 
+                        dataKey="name" 
                         tickLine={false}
                         axisLine={false}
                         tickMargin={8}
                         tick={{ fontSize: 12 }}
                       />
                       <YAxis 
+                        yAxisId="left"
+                        orientation="left"
                         tickLine={false}
                         axisLine={false}
                         tickMargin={8}
                         tick={{ fontSize: 12 }}
                         tickFormatter={(value) => `${value}`}
                       />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
                       <Bar
-                        dataKey="weight"
-                        fill="var(--color-weight)"
+                        name="Minutes"
+                        dataKey="minutes"
+                        yAxisId="left"
+                        fill="var(--color-minutes)"
                         radius={[4, 4, 0, 0]}
                         barSize={6}
                       />
                       <Bar
-                        dataKey="duration"
-                        fill="var(--color-duration)"
+                        name="Weight (lbs)"
+                        dataKey="weight"
+                        yAxisId="right"
+                        fill="var(--color-weight)"
                         radius={[4, 4, 0, 0]}
                         barSize={6}
                       />

@@ -14,13 +14,14 @@ interface WorkoutData {
   duration: number;
   exercises: number;
   completed: boolean;
+  type?: 'workout' | 'wod';
 }
 
 interface WorkoutHistoryProps {
   workouts?: WorkoutData[];
   isLoading: boolean;
   onSelectDate?: (date: Date) => void;
-  onSelectWorkout?: (id: string) => void;
+  onSelectWorkout?: (id: string, type?: string) => void;
 }
 
 type ViewMode = 'day' | 'week';
@@ -80,9 +81,9 @@ const WorkoutHistory = ({
     });
   }, [selectedDate]);
   
-  const handleWorkoutClick = (id: string) => {
+  const handleWorkoutClick = (id: string, type?: string) => {
     if (onSelectWorkout) {
-      onSelectWorkout(id);
+      onSelectWorkout(id, type);
     }
   };
 
@@ -186,7 +187,7 @@ const WorkoutHistory = ({
                   <div 
                     key={workout.id} 
                     className="p-3 border border-gray-800/50 rounded-lg hover:border-fitness-secondary/50 transition-all cursor-pointer"
-                    onClick={() => handleWorkoutClick(workout.id)}
+                    onClick={() => handleWorkoutClick(workout.id, workout.type)}
                   >
                     <div className="flex justify-between items-start">
                       <div>
@@ -197,6 +198,14 @@ const WorkoutHistory = ({
                           <span className="mx-1">•</span>
                           <Clock className="h-3.5 w-3.5 mr-1" />
                           {workout.duration} minutes
+                          {workout.type && (
+                            <>
+                              <span className="mx-1">•</span>
+                              <span className={workout.type === 'wod' ? 'text-purple-400' : 'text-blue-400'}>
+                                {workout.type.toUpperCase()}
+                              </span>
+                            </>
+                          )}
                         </p>
                       </div>
                       <Badge variant={workout.completed ? "success" : "outline"} className="text-xs">

@@ -1,64 +1,48 @@
 
 import { ActivityData } from "@/types/activity";
+import { format, subDays } from "date-fns";
 
 /**
- * Returns an array of date strings for the last n days
+ * Get date strings for the last N days
  */
-export function getLastNDays(days: number = 7): string[] {
+export const getLastNDays = (days: number): string[] => {
+  const dates: string[] = [];
   const today = new Date();
-  const dates = [];
   
   for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    dates.push(date.toISOString().split('T')[0]);
+    const date = subDays(today, i);
+    dates.push(format(date, 'yyyy-MM-dd'));
   }
   
   return dates;
-}
+};
 
 /**
- * Maps database data to ActivityData format, ensuring all days are included
+ * Format raw data from the API into the ActivityData structure
  */
-export function formatActivityData(
-  rawData: Array<{date: string, step_count: number, active_minutes: number, workouts_completed: number}>,
+export const formatActivityData = (
+  rawData: any[],
   dateRange: string[]
-): ActivityData[] {
-  // Create a map of the fetched data
-  const dataMap = new Map<string, ActivityData>();
-  
-  rawData.forEach(item => {
-    dataMap.set(item.date, {
-      date: item.date,
-      steps: item.step_count,
-      active_minutes: item.active_minutes,
-      workouts: item.workouts_completed,
-      day: '' // Will be set below
+): ActivityData[] => {
+  // Create a map of dates to data for quick lookup
+  const dataMap = new Map();
+  if (rawData) {
+    rawData.forEach(item => {
+      dataMap.set(item.date, item);
     });
-  });
-
-  // Ensure we have entries for all days in the range
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  }
   
+  // Build the formatted data array with all dates in range
   return dateRange.map(date => {
-    const dayIndex = new Date(date).getDay();
-    const day = dayNames[dayIndex];
+    const dayData = dataMap.get(date);
+    const dayOfWeek = format(new Date(date), 'E'); // Mon, Tue, etc.
     
-    if (dataMap.has(date)) {
-      const entry = dataMap.get(date)!;
-      return {
-        ...entry,
-        day,
-      };
-    }
-    
-    // Return a zero-value entry if we don't have data for this day
     return {
-      date,
-      day,
-      steps: 0,
-      active_minutes: 0,
-      workouts: 0
+      date: date,
+      day: dayOfWeek,
+      steps: dayData?.step_count || 0,
+      active_minutes: dayData?.active_minutes || 0,
+      workouts: dayData?.workouts_completed || 0
     };
   });
-}
+};
