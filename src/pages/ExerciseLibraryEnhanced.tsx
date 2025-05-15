@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useExerciseLibraryEnhanced } from "@/hooks/exercise-library/hooks/use-exercise-library-enhanced";
@@ -67,9 +68,9 @@ const ExerciseLibraryEnhanced = () => {
     handleFormChange(mockEvent);
   };
 
-  // Handle search changes with proper event typing
+  // Handle search changes with proper event typing - this was the problematic part
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleSearchChange(e.target.value);
+    handleSearchChange(e);
   };
 
   // Adapt the delete handler to match the expected signature

@@ -11,6 +11,7 @@ export const useExerciseFiltersState = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState<number>(0);
 
+  // Updated to accept ChangeEvent<HTMLInputElement> instead of just string
   const handleSearchChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   }, []);

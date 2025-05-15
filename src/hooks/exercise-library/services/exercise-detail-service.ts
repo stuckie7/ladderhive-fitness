@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Exercise, ExerciseFull } from "@/types/exercise";
 import { mapExerciseFullToExercise } from "../mappers";
 
-// Extended interface to include all fields from database
-interface ExerciseFullWithImageUrl extends ExerciseFull {
+// Modified interface to fix the type incompatibility with instructions
+interface ExerciseFullData extends Omit<ExerciseFull, 'instructions'> {
   image_url?: string;
   description?: string;
   instructions?: string[] | string;
@@ -41,7 +41,7 @@ export const getExerciseFullById = async (id: string | number): Promise<Exercise
     console.log('Exercise data:', data);
     
     // Create the exercise full object with proper type safety
-    const exerciseData: ExerciseFullWithImageUrl = {
+    const exerciseData: ExerciseFullData = {
       ...data,
       id: data.id,
       name: data.name || '',
@@ -49,18 +49,39 @@ export const getExerciseFullById = async (id: string | number): Promise<Exercise
     
     // Add optional fields with proper typing
     if ('description' in data) exerciseData.description = String(data.description || '');
+    
+    // Handle instructions properly, ensuring it's always an array
     if ('instructions' in data) {
-      exerciseData.instructions = Array.isArray(data.instructions) 
-        ? data.instructions 
-        : data.instructions ? [String(data.instructions)] : [];
+      if (Array.isArray(data.instructions)) {
+        exerciseData.instructions = data.instructions;
+      } else if (data.instructions) {
+        exerciseData.instructions = [String(data.instructions)];
+      } else {
+        exerciseData.instructions = [];
+      }
     }
+    
+    // Handle image_url safely
     if ('image_url' in data) exerciseData.image_url = String(data.image_url || '');
-    if ('youtube_thumbnail_url' in data) exerciseData.image_url = String(data.image_url || data.youtube_thumbnail_url || '');
+    
+    // Set thumbnail URL with fallback
+    if ('youtube_thumbnail_url' in data) {
+      exerciseData.image_url = String(data.image_url || data.youtube_thumbnail_url || '');
+    }
+    
     if ('target_muscle_group' in data) {
       exerciseData.target_muscle_group = String(data.target_muscle_group || data.prime_mover_muscle || '');
     }
 
-    return exerciseData as ExerciseFull;
+    // Cast the data to ExerciseFull, ensuring instructions is an array
+    const result: ExerciseFull = {
+      ...exerciseData,
+      instructions: Array.isArray(exerciseData.instructions) ? 
+        exerciseData.instructions : 
+        exerciseData.instructions ? [String(exerciseData.instructions)] : []
+    };
+
+    return result;
   } catch (error) {
     console.error('Error in getExerciseFullById:', error);
     throw error;
