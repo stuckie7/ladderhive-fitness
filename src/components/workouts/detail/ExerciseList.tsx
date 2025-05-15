@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table"
 import ExerciseVideoHandler from '@/components/exercises/ExerciseVideoHandler';
 
-interface ExerciseListItem {
+export interface ExerciseListItem {
   id: string;
   name: string;
   sets: number;
@@ -25,7 +25,7 @@ interface ExerciseListItem {
   thumbnailUrl?: string;
 }
 
-interface ExerciseListProps {
+export interface ExerciseListProps {
   exercises: ExerciseListItem[];
   onRemove?: (id: string) => void;
 }

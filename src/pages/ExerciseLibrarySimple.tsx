@@ -1,13 +1,13 @@
 
 import React from "react";
-import { useExercises } from '@/hooks/useExercises';
+import { useExercisesFull } from '@/hooks/use-exercises-full';
 import { Video, Plus } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 
 export default function ExerciseLibrarySimple() {
-  const { exercises, loading, error, page, setPage, itemsPerPage } = useExercises();
+  const { exercises, loading, error, page, setPage, itemsPerPage } = useExercisesFull();
 
   return (
     <AppLayout>
@@ -21,7 +21,7 @@ export default function ExerciseLibrarySimple() {
           </div>
         ) : error ? (
           <div className="p-4 bg-red-50 text-red-500 rounded-md">
-            Error: {error}
+            Error: {error.message}
           </div>
         ) : (
           <>

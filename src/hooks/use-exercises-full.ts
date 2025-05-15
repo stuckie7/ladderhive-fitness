@@ -15,7 +15,7 @@ export const useExercisesFull = () => {
   useEffect(() => {
     const fetchInitialExercises = async () => {
       try {
-        const results = await searchExercises('');
+        const results = await searchExercises('a'); // Search for 'a' to get some initial results
         setExercises(results || []);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to load exercises'));

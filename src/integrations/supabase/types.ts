@@ -578,7 +578,7 @@ export type Database = {
           difficulty: string
           duration_minutes: number
           equipment_needed: string | null
-          goal: string
+          goal: string | null
           id: string
           instructions: string | null
           is_template: boolean | null
@@ -599,7 +599,7 @@ export type Database = {
           difficulty: string
           duration_minutes: number
           equipment_needed?: string | null
-          goal: string
+          goal?: string | null
           id?: string
           instructions?: string | null
           is_template?: boolean | null
@@ -620,7 +620,7 @@ export type Database = {
           difficulty?: string
           duration_minutes?: number
           equipment_needed?: string | null
-          goal?: string
+          goal?: string | null
           id?: string
           instructions?: string | null
           is_template?: boolean | null

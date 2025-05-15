@@ -29,7 +29,8 @@ export const useExercises = () => {
         target: item.prime_mover_muscle,
         equipment: item.primary_equipment,
         muscle_group: item.prime_mover_muscle,
-        description: item.description || '',
+        // Handle missing properties with checks
+        description: 'description' in item ? item.description : '',
         difficulty: item.difficulty,
         short_youtube_demo: item.short_youtube_demo,
         in_depth_youtube_exp: item.in_depth_youtube_exp,
@@ -41,11 +42,10 @@ export const useExercises = () => {
         secondary_equipment: item.secondary_equipment,
         target_muscle_group: item.prime_mover_muscle || '',
         // Adding compatible properties
-        image_url: item.youtube_thumbnail_url || item.image_url || '',
+        image_url: 'image_url' in item ? item.image_url : item.youtube_thumbnail_url || '',
         // Add instructions if present
-        instructions: Array.isArray(item.instructions) 
-          ? item.instructions 
-          : (item.instructions ? [item.instructions] : []),
+        instructions: 'instructions' in item && item.instructions ? 
+          (Array.isArray(item.instructions) ? item.instructions : [item.instructions]) : [],
       }));
       
       return exercises;

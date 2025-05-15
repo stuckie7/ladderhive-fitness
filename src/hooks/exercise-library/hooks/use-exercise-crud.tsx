@@ -1,198 +1,191 @@
 
-// Only updating the ExerciseFormState interface to align with what's used in ExerciseLibraryEnhanced
+import { useState, useCallback, ChangeEvent } from 'react';
+import { Exercise, ExerciseFull } from '@/types/exercise';
+import { useToast } from '@/components/ui/use-toast';
+import { createExercise, updateExercise, deleteExercise } from '../services/exercise-enhanced-service';
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Exercise, ExerciseFull } from "@/types/exercise";
-import { getExerciseFullById, updateExerciseFull, deleteExerciseFull } from "../services/exercise-detail-service";
-
-// Update the ExerciseFormState interface
+// Update the ExerciseFormState type to match what's used in ExerciseFormDialog
 export interface ExerciseFormState {
-  id?: string | number;
+  id: string | number;
   name: string;
-  description?: string;
-  muscle_group?: string;
-  equipment?: string;
-  difficulty?: string;
-  body_region?: string;
-  instructions?: string;
-  video_url?: string;
-  image_url?: string;
-  prime_mover_muscle?: string;
-  primary_equipment?: string;
-  short_youtube_demo?: string;
+  description: string;
+  target_muscle_group: string;
+  prime_mover_muscle: string; // Make this required to match expected type
+  secondary_muscle: string;
+  primary_equipment: string;
+  difficulty: string;
+  video_demonstration_url: string;
+  image_url: string;
+  instructions: string;
+  // Additional fields
+  [key: string]: string | number | undefined | null;
 }
 
-interface UseExerciseCrudResult {
-  formState: ExerciseFormState;
-  handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  handleAddExercise: () => Promise<void>;
-  handleEditExercise: () => Promise<void>;
-  handleDeleteExercise: (exercise: Exercise) => Promise<void>;
-  openEditDialog: (exercise: Exercise) => void;
-  openDeleteDialog: (exercise: Exercise) => void;
-  currentExercise?: Exercise;
-}
-
-export const useExerciseCrud = (handleRefresh: () => void): UseExerciseCrudResult => {
+export const useExerciseCrud = () => {
+  const { toast } = useToast();
   const [formState, setFormState] = useState<ExerciseFormState>({
+    id: '',
     name: '',
     description: '',
-    muscle_group: '',
-    equipment: '',
-    difficulty: '',
-    body_region: '',
-    instructions: '',
-    video_url: '',
-    image_url: '',
-    prime_mover_muscle: '',
+    target_muscle_group: '',
+    prime_mover_muscle: '', // Initialize with empty string
+    secondary_muscle: '',
     primary_equipment: '',
-    short_youtube_demo: ''
+    difficulty: 'Beginner',
+    video_demonstration_url: '',
+    image_url: '',
+    instructions: '',
   });
-  const [currentExercise, setCurrentExercise] = useState<Exercise>();
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormState(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
-
-  const handleAddExercise = async () => {
-    try {
-      // Omit the id property when creating a new exercise
-      const { id, ...exerciseData } = formState;
-      
-      const { data, error } = await supabase
-        .from('exercises_full')
-        .insert([exerciseData])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error adding exercise:", error);
-        return;
-      }
-      
-      console.log("Exercise added successfully:", data);
-      handleRefresh();
-      resetForm();
-    } catch (error) {
-      console.error("Error adding exercise:", error);
-    }
-  };
-
-  const handleEditExercise = async () => {
-    if (!formState.id) {
-      console.error("Exercise ID is missing for edit.");
-      return;
-    }
-    
-    try {
-      // Convert string ID to number if needed
-      const numericId = typeof formState.id === 'string' ? parseInt(formState.id) : formState.id;
-      
-      // Prepare the update data without the id field
-      const { id, ...updateData } = formState;
-      
-      const { data, error } = await supabase
-        .from('exercises_full')
-        .update(updateData)
-        .eq('id', numericId)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error updating exercise:", error);
-        return;
-      }
-      
-      console.log("Exercise updated successfully:", data);
-      handleRefresh();
-      resetForm();
-    } catch (error) {
-      console.error("Error updating exercise:", error);
-    }
-  };
-
-  const handleDeleteExercise = async (exercise: Exercise) => {
-    if (!exercise.id) {
-      console.error("Exercise ID is missing for deletion.");
-      return;
-    }
-    
-    try {
-      // Convert string ID to number if needed
-      const numericId = typeof exercise.id === 'string' ? parseInt(exercise.id) : exercise.id;
-      
-      const { error } = await supabase
-        .from('exercises_full')
-        .delete()
-        .eq('id', numericId);
-      
-      if (error) {
-        console.error("Error deleting exercise:", error);
-        return;
-      }
-      
-      console.log("Exercise deleted successfully");
-      handleRefresh();
-      resetForm();
-    } catch (error) {
-      console.error("Error deleting exercise:", error);
-    }
-  };
-
-  const openEditDialog = (exercise: Exercise) => {
-    setCurrentExercise(exercise);
+  // Reset form to initial state
+  const resetForm = useCallback(() => {
     setFormState({
-      id: exercise.id,
-      name: exercise.name,
-      description: exercise.description || '',
-      muscle_group: exercise.muscle_group || '',
-      equipment: exercise.equipment || '',
-      difficulty: exercise.difficulty || '',
-      body_region: exercise.bodyPart || '',
-      instructions: exercise.instructions ? exercise.instructions.join('\n') : '',
-      video_url: exercise.video_url || '',
-      image_url: exercise.image_url || '',
-      prime_mover_muscle: exercise.prime_mover_muscle || '',
-      primary_equipment: exercise.primary_equipment || '',
-      short_youtube_demo: exercise.short_youtube_demo || ''
-    });
-  };
-
-  const openDeleteDialog = (exercise: Exercise) => {
-    setCurrentExercise(exercise);
-  };
-
-  const resetForm = () => {
-    setFormState({
+      id: '',
       name: '',
       description: '',
-      muscle_group: '',
-      equipment: '',
-      difficulty: '',
-      body_region: '',
-      instructions: '',
-      video_url: '',
-      image_url: '',
+      target_muscle_group: '',
       prime_mover_muscle: '',
+      secondary_muscle: '',
       primary_equipment: '',
-      short_youtube_demo: ''
+      difficulty: 'Beginner',
+      video_demonstration_url: '',
+      image_url: '',
+      instructions: '',
     });
-    setCurrentExercise(undefined);
-  };
+  }, []);
+
+  // Handle form field changes
+  const handleFormChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormState(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  // Initialize form with exercise data for editing
+  const initFormWithExercise = useCallback((exercise: Exercise | ExerciseFull) => {
+    setFormState({
+      id: exercise.id,
+      name: exercise.name || '',
+      description: exercise.description || '',
+      target_muscle_group: exercise.target_muscle_group || exercise.target || '',
+      prime_mover_muscle: exercise.prime_mover_muscle || '',
+      secondary_muscle: exercise.secondary_muscle || '',
+      primary_equipment: exercise.primary_equipment || exercise.equipment || '',
+      difficulty: exercise.difficulty || 'Beginner',
+      video_demonstration_url: exercise.video_demonstration_url || exercise.video_url || '',
+      image_url: exercise.image_url || '',
+      instructions: Array.isArray(exercise.instructions) 
+        ? exercise.instructions.join('\n') 
+        : exercise.instructions || '',
+    });
+  }, []);
+
+  // Add new exercise
+  const handleAddExercise = useCallback(async (): Promise<boolean> => {
+    try {
+      // Convert form state to ExerciseFull format
+      const exerciseData = {
+        name: formState.name,
+        description: formState.description,
+        target_muscle_group: formState.target_muscle_group,
+        prime_mover_muscle: formState.prime_mover_muscle,
+        secondary_muscle: formState.secondary_muscle,
+        primary_equipment: formState.primary_equipment,
+        difficulty: formState.difficulty,
+        video_demonstration_url: formState.video_demonstration_url,
+        image_url: formState.image_url,
+        instructions: formState.instructions.split('\n'),
+      };
+
+      await createExercise(exerciseData);
+      
+      toast({
+        title: "Exercise Created",
+        description: "New exercise has been added to the database",
+      });
+      
+      resetForm();
+      return true;
+    } catch (error) {
+      console.error('Error adding exercise:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create exercise",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [formState, toast, resetForm]);
+
+  // Edit existing exercise
+  const handleEditExercise = useCallback(async (): Promise<boolean> => {
+    try {
+      if (!formState.id) {
+        throw new Error('Exercise ID is required for updating');
+      }
+
+      // Convert form state to ExerciseFull format
+      const exerciseData = {
+        id: formState.id,
+        name: formState.name,
+        description: formState.description,
+        target_muscle_group: formState.target_muscle_group,
+        prime_mover_muscle: formState.prime_mover_muscle,
+        secondary_muscle: formState.secondary_muscle,
+        primary_equipment: formState.primary_equipment,
+        difficulty: formState.difficulty,
+        video_demonstration_url: formState.video_demonstration_url,
+        image_url: formState.image_url,
+        instructions: formState.instructions.split('\n'),
+      };
+
+      await updateExercise(exerciseData);
+      
+      toast({
+        title: "Exercise Updated",
+        description: "Exercise has been updated successfully",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating exercise:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update exercise",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [formState, toast]);
+
+  // Delete exercise
+  const handleDeleteExercise = useCallback(async (exercise: Exercise | ExerciseFull): Promise<boolean> => {
+    try {
+      await deleteExercise(exercise.id);
+      
+      toast({
+        title: "Exercise Deleted",
+        description: "Exercise has been removed from the database",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting exercise:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete exercise",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [toast]);
 
   return {
     formState,
     handleFormChange,
+    initFormWithExercise,
     handleAddExercise,
     handleEditExercise,
     handleDeleteExercise,
-    openEditDialog,
-    openDeleteDialog,
-    currentExercise
+    resetForm,
   };
 };

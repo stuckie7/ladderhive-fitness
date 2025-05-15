@@ -21,7 +21,8 @@ export interface UseExerciseLibraryReturn {
   handleSearch: (searchTerm: string) => Promise<Exercise[]>;
 }
 
-export const useExerciseLibraryImpl = (): UseExerciseLibraryReturn => {
+// Rename to match what's being imported elsewhere
+export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
   const { toast } = useToast();
   const [exercises, setExercises] = useState<ExerciseFull[]>([]);
   const [isLoading, setIsLoading] = useState(false);
