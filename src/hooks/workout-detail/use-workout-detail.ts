@@ -1,57 +1,124 @@
 
-import { useState } from 'react';
-import { useFetchWorkout } from './use-fetch-workout';
-import { useFetchWorkoutExercises } from '../workout-exercises/use-fetch-workout-exercises';
+import { useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { useFetchWorkoutExercises } from '../workout-exercises';
 import { useWorkoutActions } from './use-workout-actions';
-import { useNavigate } from 'react-router-dom';
-import { Exercise } from '@/types/exercise';
+// Import directly from the file, not using an alias
+import { fetchWorkoutById } from './use-fetch-workout';
 
-export const useWorkoutDetail = (workoutId?: string) => {
-  const [isStarting, setIsStarting] = useState(false);
-  const navigate = useNavigate();
-  
-  const { workout, isLoading: isLoadingWorkout, error: workoutError } = useFetchWorkout(workoutId);
-  const { 
-    exercises: workoutExercises, 
-    isLoading: isLoadingExercises, 
-    error: exercisesError,
-    refetch: refetchExercises
-  } = useFetchWorkoutExercises(workoutId);
-  
-  const { isSaved, handleSaveWorkout: toggleSaveWorkout, isLoading: isActionLoading } = useWorkoutActions(workoutId);
+export type WorkoutDetailHookReturn = ReturnType<typeof useWorkoutDetail>;
 
-  const handleStartWorkout = async () => {
+export const useWorkoutDetail = (id?: string) => {
+  const [workout, setWorkout] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { toast } = useToast();
+  
+  // Use the workout exercises hook
+  const { exercises, isLoading: exercisesLoading, refetch: refetchExercises } = useFetchWorkoutExercises(id);
+  
+  // Use workout actions
+  const { completeWorkout, isCompletingWorkout } = useWorkoutActions();
+
+  // Fetch workout details
+  useEffect(() => {
+    const loadWorkout = async () => {
+      if (!id) {
+        setError('No workout ID provided');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Fetch workout data from database
+        const workoutData = await fetchWorkoutById(id);
+        
+        if (!workoutData) {
+          setError('Workout not found');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Attach exercises to workout object
+        setWorkout({
+          ...workoutData,
+          exercises: exercises || []
+        });
+        
+      } catch (err) {
+        console.error('Error loading workout:', err);
+        setError('Failed to load workout details');
+        toast({
+          title: 'Error',
+          description: 'Failed to load workout details',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadWorkout();
+  }, [id, exercises, toast]);
+
+  // Handle workout completion
+  const handleCompleteWorkout = async () => {
+    if (!workout) return;
+    
     try {
-      setIsStarting(true);
-      // Logic to start workout
-      // For now just navigate to a page
-      navigate(`/active-workout/${workoutId}`);
-    } catch (error) {
-      console.error('Failed to start workout:', error);
-    } finally {
-      setIsStarting(false);
+      await completeWorkout(workout.id);
+      toast({
+        title: 'Workout completed',
+        description: 'Great job! Your workout has been marked as completed.',
+      });
+    } catch (err) {
+      console.error('Error completing workout:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to mark workout as completed',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleAddExercise = async (exercise: Exercise) => {
-    // Implementation will be added later
-    console.log('Adding exercise:', exercise);
-    return Promise.resolve(true);
+  // Refresh workout data
+  const refreshWorkout = async () => {
+    setIsLoading(true);
+    
+    try {
+      if (id) {
+        const freshWorkout = await fetchWorkoutById(id);
+        await refetchExercises();
+        
+        if (freshWorkout) {
+          setWorkout({
+            ...freshWorkout,
+            exercises: exercises || []
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing workout:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh workout data',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return {
     workout,
-    workoutExercises,
-    isLoadingWorkout,
-    isLoadingExercises,
-    workoutError,
-    exercisesError,
-    toggleSaveWorkout,
-    isSaved,
-    isActionLoading,
-    handleStartWorkout,
-    isStarting,
-    handleAddExercise,
-    refetchExercises
+    isLoading: isLoading || exercisesLoading,
+    error,
+    completeWorkout: handleCompleteWorkout,
+    isCompletingWorkout,
+    refreshWorkout
   };
 };

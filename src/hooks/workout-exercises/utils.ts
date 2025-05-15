@@ -1,36 +1,36 @@
-
-import { Exercise } from "@/types/exercise";
+import { Exercise, ExerciseFull } from "@/types/exercise";
 
 export interface WorkoutExercise {
   id: string;
   workout_id: string;
   exercise_id: string;
+  exercise: Exercise | ExerciseFull;
   sets: number;
-  reps: string; // Must be string to handle ranges like "8-12"
-  weight: string | null;
-  rest_time: number;
+  reps: string;
+  rest_seconds: number;
   order_index: number;
-  exercise?: Exercise;
+  notes?: string;
+  weight?: string | number;
 }
 
-// Helper function to ensure reps is always a string
-export const ensureStringReps = (reps: string | number | undefined): string => {
-  if (typeof reps === 'undefined') return '10';
-  return typeof reps === 'string' ? reps : String(reps);
+export const formatExerciseName = (exercise: Exercise | ExerciseFull | undefined): string => {
+  if (!exercise) return 'Unknown Exercise';
+  
+  // Get primary display name
+  const name = exercise.name || 'Unknown Exercise';
+  
+  // Get equipment specification if available
+  const equipment = exercise.equipment || 
+                   exercise.primary_equipment || 
+                   '';
+  
+  // If we have both name and equipment, combine them
+  if (name && equipment) {
+    return `${name} (${equipment})`;
+  }
+  
+  // Otherwise just return the name
+  return name;
 };
 
-// Helper to map a Supabase exercise result to our Exercise type
-export const mapSupabaseExerciseToExercise = (exerciseData: any): Exercise => {
-  return {
-    id: String(exerciseData.id), // Ensure ID is a string
-    name: exerciseData.name || '',
-    description: exerciseData.description || '',
-    muscle_group: exerciseData.prime_mover_muscle || exerciseData.target_muscle_group || exerciseData.muscle_group || '',
-    equipment: exerciseData.primary_equipment || exerciseData.equipment || '',
-    difficulty: exerciseData.difficulty || '',
-    video_url: exerciseData.video_url || exerciseData.short_youtube_demo || '',
-    image_url: exerciseData.image_url || exerciseData.youtube_thumbnail_url || '',
-    video_demonstration_url: exerciseData.video_demonstration_url || exerciseData.short_youtube_demo || '',
-    // Map other fields as needed
-  };
-};
+// More utils as needed

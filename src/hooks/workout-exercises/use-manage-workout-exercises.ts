@@ -1,226 +1,285 @@
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { useFetchWorkoutExercises } from './use-fetch-workout-exercises';
+import { WorkoutExercise } from './utils';
 import { Exercise } from '@/types/exercise';
-import { WorkoutExercise } from './use-fetch-workout-exercises';
-import { useToast } from '@/hooks/use-toast';
 
-interface ManageWorkoutExercisesReturn {
-  addExerciseToWorkout: (workoutId: string, exercise: Exercise, details?: ExerciseDetails) => Promise<boolean>;
-  updateExerciseDetails: (exerciseId: string, details: ExerciseDetails) => Promise<boolean>;
-  removeExerciseFromWorkout: (exerciseId: string) => Promise<boolean>;
-  reorderWorkoutExercises: (exercises: WorkoutExercise[]) => Promise<boolean>;
-  isLoading: boolean;
-  error: Error | null;
-}
-
-export interface ExerciseDetails {
-  sets?: number;
-  reps?: string | number;
-  weight?: string;
-  rest_seconds?: number;
-  notes?: string;
-}
-
-export const useManageWorkoutExercises = (workoutId?: string): ManageWorkoutExercisesReturn => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export const useManageWorkoutExercises = (workoutId?: string) => {
   const { toast } = useToast();
-
+  const { exercises, refetch, isLoading } = useFetchWorkoutExercises(workoutId);
+  
+  // Add an exercise to a workout
   const addExerciseToWorkout = useCallback(async (
-    workoutId: string, 
-    exercise: Exercise, 
-    details: ExerciseDetails = { sets: 3, reps: '10', rest_seconds: 60 }
-  ): Promise<boolean> => {
-    if (!workoutId || !exercise) {
-      setError(new Error('WorkoutId and exercise are required'));
+    exercise: Exercise,
+    sets: number = 3,
+    reps: string = '10',
+    restSeconds: number = 60,
+    notes: string = ''
+  ) => {
+    if (!workoutId) {
+      toast({
+        title: 'Error',
+        description: 'No workout ID provided',
+        variant: 'destructive',
+      });
       return false;
     }
-
-    setIsLoading(true);
-    setError(null);
-
+    
     try {
-      // Get the current exercises to determine the next order_index
-      const { data: currentExercises } = await supabase
-        .from('user_created_workout_exercises')
-        .select('order_index')
-        .eq('workout_id', workoutId)
-        .order('order_index', { ascending: false })
-        .limit(1);
-
-      const nextOrderIndex = currentExercises && currentExercises.length > 0 
-        ? currentExercises[0].order_index + 1 
+      // Check if this is a prepared workout or user-created workout
+      const { data: preparedWorkout } = await supabase
+        .from('prepared_workouts')
+        .select('id')
+        .eq('id', workoutId)
+        .maybeSingle();
+        
+      const table = preparedWorkout 
+        ? 'prepared_workout_exercises'
+        : 'user_created_workout_exercises';
+      
+      // Get the next order index
+      const orderIndex = exercises && exercises.length > 0
+        ? Math.max(...exercises.map(ex => ex.order_index)) + 1
         : 0;
-
-      // Convert exercise_id to number if possible
-      let exerciseId = exercise.id;
-      if (typeof exerciseId === 'string' && !isNaN(Number(exerciseId))) {
-        exerciseId = Number(exerciseId);
-      }
-
-      const { error: insertError } = await supabase
-        .from('user_created_workout_exercises')
+      
+      // Exercise ID might be string or number, ensure we handle both
+      const exerciseId = typeof exercise.id === 'string' 
+        ? parseInt(exercise.id, 10) 
+        : exercise.id;
+      
+      // Add exercise to the correct table
+      const { error } = await supabase
+        .from(table)
         .insert({
           workout_id: workoutId,
           exercise_id: exerciseId,
-          sets: details.sets || 3,
-          reps: details.reps?.toString() || '10',
-          rest_seconds: details.rest_seconds || 60,
-          order_index: nextOrderIndex,
-          weight: details.weight || '',
-          notes: details.notes || ''
+          sets: sets,
+          reps: reps,
+          rest_seconds: restSeconds,
+          order_index: orderIndex,
+          notes: notes
         });
-
-      if (insertError) {
-        throw insertError;
+      
+      if (error) {
+        console.error(`Failed to add exercise to ${table}:`, error);
+        toast({
+          title: 'Error',
+          description: `Failed to add exercise: ${error.message}`,
+          variant: 'destructive',
+        });
+        return false;
       }
-
+      
       toast({
         title: 'Success',
-        description: `${exercise.name} added to workout`,
+        description: 'Exercise added to workout',
       });
-
-      return true;
-    } catch (err: any) {
-      console.error('Error adding exercise to workout:', err);
-      setError(err instanceof Error ? err : new Error('Failed to add exercise to workout'));
       
+      // Refresh the exercise list
+      await refetch();
+      return true;
+    } catch (error) {
+      console.error('Error adding exercise to workout:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add exercise to workout',
+        description: 'An unexpected error occurred',
         variant: 'destructive',
       });
-      
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  const updateExerciseDetails = useCallback(async (
-    exerciseId: string, 
-    details: ExerciseDetails
-  ): Promise<boolean> => {
-    if (!exerciseId) {
-      setError(new Error('Exercise ID is required'));
       return false;
     }
-
-    setIsLoading(true);
-    setError(null);
-
+  }, [workoutId, exercises, refetch, toast]);
+  
+  // Update an exercise in the workout
+  const updateWorkoutExercise = useCallback(async (exerciseData: Partial<WorkoutExercise>) => {
+    if (!workoutId || !exerciseData.id) {
+      toast({
+        title: 'Error',
+        description: 'Missing workout ID or exercise ID',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
     try {
-      // Convert to proper type for reps and rest time
-      const updateData: Record<string, any> = {};
-      
-      if (details.sets !== undefined) updateData.sets = details.sets;
-      if (details.reps !== undefined) updateData.reps = details.reps.toString();
-      if (details.rest_seconds !== undefined) updateData.rest_seconds = details.rest_seconds;
-      if (details.weight !== undefined) updateData.weight = details.weight;
-      if (details.notes !== undefined) updateData.notes = details.notes;
-
-      const { error: updateError } = await supabase
-        .from('user_created_workout_exercises')
-        .update(updateData)
-        .eq('id', exerciseId);
-
-      if (updateError) throw updateError;
-
-      return true;
-    } catch (err: any) {
-      console.error('Error updating exercise details:', err);
-      setError(err instanceof Error ? err : new Error('Failed to update exercise details'));
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const removeExerciseFromWorkout = useCallback(async (exerciseId: string): Promise<boolean> => {
-    if (!exerciseId) {
-      setError(new Error('Exercise ID is required'));
-      return false;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // First get the exercise data to show in success message
-      const { data: exerciseData } = await supabase
-        .from('user_created_workout_exercises')
-        .select('exercise_id')
-        .eq('id', exerciseId)
-        .single();
+      // Check if this is a prepared workout or user-created workout
+      const { data: preparedWorkout } = await supabase
+        .from('prepared_workouts')
+        .select('id')
+        .eq('id', workoutId)
+        .maybeSingle();
         
-      // Delete the exercise
-      const { error: deleteError } = await supabase
-        .from('user_created_workout_exercises')
+      const table = preparedWorkout 
+        ? 'prepared_workout_exercises'
+        : 'user_created_workout_exercises';
+      
+      // Prepare update data - omit exercise object and use rest_seconds instead of rest_time
+      const updateData = {
+        sets: exerciseData.sets,
+        reps: exerciseData.reps,
+        rest_seconds: exerciseData.rest_seconds ?? exerciseData.rest_seconds,
+        notes: exerciseData.notes,
+      };
+      
+      // Remove undefined fields
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key as keyof typeof updateData] === undefined) {
+          delete updateData[key as keyof typeof updateData];
+        }
+      });
+      
+      const { error } = await supabase
+        .from(table)
+        .update(updateData)
+        .eq('id', exerciseData.id);
+      
+      if (error) {
+        console.error(`Failed to update exercise in ${table}:`, error);
+        toast({
+          title: 'Error',
+          description: `Failed to update exercise: ${error.message}`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Exercise updated',
+      });
+      
+      // Refresh the exercise list
+      await refetch();
+      return true;
+    } catch (error) {
+      console.error('Error updating workout exercise:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [workoutId, refetch, toast]);
+  
+  // Remove an exercise from the workout
+  const removeExerciseFromWorkout = useCallback(async (exerciseId: string) => {
+    if (!workoutId) {
+      toast({
+        title: 'Error',
+        description: 'No workout ID provided',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    try {
+      // Check if this is a prepared workout or user-created workout
+      const { data: preparedWorkout } = await supabase
+        .from('prepared_workouts')
+        .select('id')
+        .eq('id', workoutId)
+        .maybeSingle();
+        
+      const table = preparedWorkout 
+        ? 'prepared_workout_exercises'
+        : 'user_created_workout_exercises';
+      
+      const { error } = await supabase
+        .from(table)
         .delete()
         .eq('id', exerciseId);
-
-      if (deleteError) throw deleteError;
-
+      
+      if (error) {
+        console.error(`Failed to remove exercise from ${table}:`, error);
+        toast({
+          title: 'Error',
+          description: `Failed to remove exercise: ${error.message}`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
       toast({
         title: 'Success',
-        description: `Exercise removed from workout`,
+        description: 'Exercise removed from workout',
       });
-
-      return true;
-    } catch (err: any) {
-      console.error('Error removing exercise from workout:', err);
-      setError(err instanceof Error ? err : new Error('Failed to remove exercise from workout'));
       
+      // Refresh the exercise list
+      await refetch();
+      return true;
+    } catch (error) {
+      console.error('Error removing exercise from workout:', error);
       toast({
         title: 'Error',
-        description: 'Failed to remove exercise from workout',
+        description: 'An unexpected error occurred',
         variant: 'destructive',
       });
-      
       return false;
-    } finally {
-      setIsLoading(false);
     }
-  }, [toast]);
-
-  const reorderWorkoutExercises = useCallback(async (exercises: WorkoutExercise[]): Promise<boolean> => {
-    if (!exercises.length) {
-      return true; // Nothing to do
+  }, [workoutId, refetch, toast]);
+  
+  // Reorder exercises in the workout
+  const reorderWorkoutExercises = useCallback(async (orderedExercises: { id: string, order_index: number }[]) => {
+    if (!workoutId || !orderedExercises.length) {
+      return false;
     }
-
-    setIsLoading(true);
-    setError(null);
-
+    
     try {
-      // Update each exercise with its new order index
-      const updates = exercises.map((exercise, index) => ({
-        id: exercise.id,
-        order_index: index
-      }));
-
-      const { error: updateError } = await supabase
-        .from('user_created_workout_exercises')
-        .upsert(updates);
-
-      if (updateError) throw updateError;
-
+      // Check if this is a prepared workout or user-created workout
+      const { data: preparedWorkout } = await supabase
+        .from('prepared_workouts')
+        .select('id')
+        .eq('id', workoutId)
+        .maybeSingle();
+        
+      const table = preparedWorkout 
+        ? 'prepared_workout_exercises'
+        : 'user_created_workout_exercises';
+      
+      // Use UPSERT to update all exercises at once
+      // This is more efficient than updating them one by one
+      const { error } = await supabase
+        .from(table)
+        .upsert(
+          orderedExercises.map(item => ({
+            id: item.id,
+            order_index: item.order_index
+          }))
+        );
+      
+      if (error) {
+        console.error(`Failed to reorder exercises in ${table}:`, error);
+        toast({
+          title: 'Error',
+          description: `Failed to reorder exercises: ${error.message}`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      // Refresh the exercise list
+      await refetch();
       return true;
-    } catch (err: any) {
-      console.error('Error reordering exercises:', err);
-      setError(err instanceof Error ? err : new Error('Failed to reorder exercises'));
+    } catch (error) {
+      console.error('Error reordering workout exercises:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
       return false;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
-
+  }, [workoutId, refetch, toast]);
+  
   return {
+    exercises,
+    isLoading,
     addExerciseToWorkout,
-    updateExerciseDetails,
+    updateWorkoutExercise,
     removeExerciseFromWorkout,
     reorderWorkoutExercises,
-    isLoading,
-    error
+    refetch
   };
 };

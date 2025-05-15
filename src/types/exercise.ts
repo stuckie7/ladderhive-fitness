@@ -31,10 +31,11 @@ export interface Exercise {
   posture?: string;
   laterality?: string;
   difficulty_level?: string;
+  youtube_thumbnail_url?: string;
 }
 
 export interface ExerciseFull {
-  id: number | string;
+  id: string | number;
   name: string;
   primary_items_count?: number;
   secondary_items_count?: number;
@@ -73,6 +74,12 @@ export interface ExerciseFull {
   video_demonstration_url?: string;
   video_explanation_url?: string;
   image_url?: string;
+  // Add compatible properties from Exercise interface for cross-compatibility
+  equipment?: string;
+  bodyPart?: string;
+  target?: string;
+  instructions?: string[];
+  gifUrl?: string;
 }
 
 export interface FilterOptions {

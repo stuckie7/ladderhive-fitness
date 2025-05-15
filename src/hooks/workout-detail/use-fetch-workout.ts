@@ -1,68 +1,50 @@
 
-import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { WorkoutDetail } from '@/types/workout';
 
-export const useFetchWorkout = (workoutId?: string) => {
-  const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchWorkout = useCallback(async () => {
-    if (!workoutId) return;
+// Fetch a workout by ID from either prepared_workouts or user_created_workouts
+export const fetchWorkoutById = async (workoutId: string) => {
+  try {
+    // First try to find in prepared workouts
+    const { data: preparedWorkout, error: preparedError } = await supabase
+      .from('prepared_workouts')
+      .select('*')
+      .eq('id', workoutId)
+      .single();
     
-    // Validate UUID format to prevent invalid queries
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(workoutId)) {
-      console.error('Invalid UUID format:', workoutId);
-      setError(new Error('Invalid workout ID format'));
-      setIsLoading(false);
-      return;
+    // If found in prepared workouts, return it
+    if (preparedWorkout && !preparedError) {
+      console.log('Found workout in prepared_workouts:', preparedWorkout);
+      return preparedWorkout;
     }
     
-    setIsLoading(true);
-    setError(null);
+    // If not found in prepared workouts, try user_created_workouts
+    const { data: userWorkout, error: userError } = await supabase
+      .from('user_created_workouts')
+      .select('*')
+      .eq('id', workoutId)
+      .single();
     
-    try {
-      // Fetch the workout details
-      const { data: workoutData, error: workoutError } = await supabase
-        .from('workouts')
-        .select('*')
-        .eq('id', workoutId)
-        .single();
-        
-      if (workoutError) throw workoutError;
-      if (!workoutData) throw new Error('Workout not found');
-      
-      // Prepare the complete workout object
-      const completeWorkout: WorkoutDetail = {
-        ...workoutData,
-        id: workoutData.id,
-        title: workoutData.title,
-        description: workoutData.description || '',
-        duration: workoutData.duration || 0,
-        exercises: workoutData.exercises || 0,
-        difficulty: workoutData.difficulty || 'Beginner',
-      };
-      
-      setWorkout(completeWorkout);
-    } catch (err: any) {
-      console.error('Error fetching workout:', err);
-      setError(err);
-    } finally {
-      setIsLoading(false);
+    if (userWorkout && !userError) {
+      console.log('Found workout in user_created_workouts:', userWorkout);
+      return userWorkout;
     }
-  }, [workoutId]);
+    
+    // If we reach here, workout was not found in either table
+    if (preparedError) console.error('Error fetching from prepared_workouts:', preparedError);
+    if (userError) console.error('Error fetching from user_created_workouts:', userError);
+    
+    console.warn('Workout not found in either table:', workoutId);
+    return null;
+  } catch (error) {
+    console.error('Unexpected error in fetchWorkoutById:', error);
+    throw error;
+  }
+};
 
-  // Fetch data on first render
-  useEffect(() => {
-    fetchWorkout();
-  }, [fetchWorkout]);
-
+// This is an empty hook as we've moved the functionality to a standalone function
+// Kept for backward compatibility
+export const useFetchWorkout = () => {
   return {
-    workout,
-    isLoading,
-    error,
-    fetchWorkout
+    fetchWorkoutById
   };
 };

@@ -93,7 +93,7 @@ export const useExerciseLibraryEnhanced = () => {
     // Reload filter options and exercise data
     const refreshData = async () => {
       try {
-        await loadFilterOptions(); // Remove the argument here
+        await loadFilterOptions(); // Removed argument here
         loadExerciseDataWithState();
       } catch (error) {
         console.error("Failed to refresh data:", error);

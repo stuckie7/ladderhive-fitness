@@ -1,100 +1,137 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Exercise, ExerciseFull } from "@/types/exercise";
-import ExerciseSpecItem from "./ExerciseSpecItem";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Exercise, ExerciseFull } from '@/types/exercise';
+import ExerciseSpecItem from './ExerciseSpecItem';
 
 interface ExerciseSidebarContentProps {
-  exercise: Exercise | null;
-  loading?: boolean;
+  exercise: Exercise | ExerciseFull | null;
+  loading: boolean;
 }
 
-export default function ExerciseSidebarContent({ exercise, loading = false }: ExerciseSidebarContentProps) {
-  if (loading || !exercise) {
+const ExerciseSidebarContent: React.FC<ExerciseSidebarContentProps> = ({ exercise, loading }) => {
+  if (loading) {
     return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="h-5 bg-muted rounded animate-pulse w-1/2" />
-          </CardHeader>
-          <CardContent>
-            <div className="aspect-square rounded-md bg-muted animate-pulse" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="h-5 bg-muted rounded animate-pulse w-1/2" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="h-4 bg-muted rounded animate-pulse w-full" />
-              <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-              <div className="h-4 bg-muted rounded animate-pulse w-4/5" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="space-y-4">
+        <Skeleton className="h-[200px] rounded-md" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
       </div>
     );
   }
 
-  // Helper to safely access potentially undefined property
-  const getThumbnailUrl = (exercise: Exercise | ExerciseFull): string | undefined => {
-    // Check if it's an ExerciseFull type with youtube_thumbnail_url
-    if ('youtube_thumbnail_url' in exercise) {
-      return exercise.youtube_thumbnail_url as string;
-    }
-    return exercise.image_url || exercise.gifUrl;
+  if (!exercise) {
+    return <div>No exercise data available</div>;
+  }
+
+  // Helper function to get image URL with fallbacks
+  const getImageUrl = () => {
+    // Order of priority for image sources
+    return (
+      exercise.youtube_thumbnail_url || 
+      exercise.image_url || 
+      '/placeholder.svg'
+    );
   };
 
-  return (
-    <div>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Exercise Image</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {exercise.gifUrl || exercise.image_url || getThumbnailUrl(exercise) ? (
-            <div className="aspect-square rounded-md overflow-hidden">
-              <img 
-                src={exercise.gifUrl || exercise.image_url || getThumbnailUrl(exercise)} 
-                alt={exercise.name}
-                className="object-cover w-full h-full" 
-              />
-            </div>
-          ) : (
-            <div className="aspect-square rounded-md bg-muted flex items-center justify-center">
-              <p className="text-muted-foreground">No image available</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+  // Determine equipment display value
+  const equipmentDisplay = exercise.equipment || 
+                           exercise.primary_equipment || 
+                           'Not specified';
+  
+  // Determine target muscle display value
+  const targetMuscleDisplay = exercise.target || 
+                              exercise.prime_mover_muscle || 
+                              exercise.target_muscle_group || 
+                              'Not specified';
+  
+  // Determine body region display value
+  const bodyRegionDisplay = exercise.bodyPart || 
+                            exercise.body_region || 
+                            'Not specified';
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Specifications</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {'mechanics' in exercise && (
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-1">Movement Type</h4>
-                {exercise.mechanics && <ExerciseSpecItem label="Mechanics" value={exercise.mechanics} />}
-                {('force_type' in exercise) && exercise.force_type && <ExerciseSpecItem label="Force Type" value={exercise.force_type} />}
-              </div>
+  return (
+    <>
+      {/* Exercise Image */}
+      <Card className="mb-4 overflow-hidden">
+        <div className="aspect-video relative">
+          <img
+            src={getImageUrl()}
+            alt={exercise.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = '/placeholder.svg';
+            }}
+          />
+        </div>
+      </Card>
+      
+      {/* Exercise Specifications */}
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <h3 className="text-lg font-semibold mb-3">Exercise Specifications</h3>
+          <div className="space-y-2">
+            <ExerciseSpecItem 
+              label="Target Muscle"
+              value={targetMuscleDisplay}
+            />
+            <ExerciseSpecItem 
+              label="Equipment"
+              value={equipmentDisplay}
+            />
+            <ExerciseSpecItem 
+              label="Body Region"
+              value={bodyRegionDisplay}
+            />
+            <ExerciseSpecItem 
+              label="Difficulty"
+              value={exercise.difficulty || 'Not specified'}
+            />
+            {exercise.mechanics && (
+              <ExerciseSpecItem 
+                label="Mechanics"
+                value={exercise.mechanics}
+              />
             )}
-            <div>
-              <h4 className="text-sm font-semibold text-muted-foreground mb-1">Muscles</h4>
-              {('posture' in exercise) && exercise.posture && <ExerciseSpecItem label="Posture" value={exercise.posture} />}
-              {('laterality' in exercise) && exercise.laterality && <ExerciseSpecItem label="Laterality" value={exercise.laterality} />}
-              {('secondaryMuscles' in exercise) && exercise.secondaryMuscles?.length > 0 && (
-                <ExerciseSpecItem label="Secondary Muscles" value={exercise.secondaryMuscles.join(', ')} />
-              )}
-              {('tertiary_muscle' in exercise) && exercise.tertiary_muscle && (
-                <ExerciseSpecItem label="Tertiary Muscles" value={exercise.tertiary_muscle} />
-              )}
-            </div>
+            {exercise.force_type && (
+              <ExerciseSpecItem 
+                label="Force Type"
+                value={exercise.force_type}
+              />
+            )}
           </div>
         </CardContent>
       </Card>
-    </div>
+      
+      {/* Additional Details */}
+      {(exercise.secondary_muscle || exercise.tertiary_muscle) && (
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="text-lg font-semibold mb-3">Additional Muscle Groups</h3>
+            <div className="space-y-2">
+              {exercise.secondary_muscle && (
+                <ExerciseSpecItem 
+                  label="Secondary"
+                  value={exercise.secondary_muscle}
+                />
+              )}
+              {exercise.tertiary_muscle && (
+                <ExerciseSpecItem 
+                  label="Tertiary"
+                  value={exercise.tertiary_muscle}
+                />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </>
   );
-}
+};
+
+export default ExerciseSidebarContent;

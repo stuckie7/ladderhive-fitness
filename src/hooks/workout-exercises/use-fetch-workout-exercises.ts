@@ -1,178 +1,181 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from '@/integrations/supabase/client';
+import { Exercise, ExerciseFull } from "@/types/exercise";
+import { WorkoutExercise } from "./utils";
 
-export interface WorkoutExercise {
-  id: string;
-  workout_id: string;
-  exercise_id: string | number;
-  sets: number;
-  reps: string | number;
-  rest_seconds?: number;
-  rest_time?: number;
-  order_index: number;
-  weight?: string;
-  notes?: string;
-  exercise?: {
-    id: string | number;
-    name: string;
-    description?: string;
-    prime_mover_muscle?: string;
-    primary_equipment?: string;
-    difficulty?: string;
-    body_region?: string;
-    short_youtube_demo?: string;
-    in_depth_youtube_exp?: string;
-    youtube_thumbnail_url?: string;
-  };
-}
-
-export interface FetchWorkoutExercisesReturn {
-  exercises: WorkoutExercise[];
+export type FetchWorkoutExercisesReturn = {
+  exercises: WorkoutExercise[] | null;
   isLoading: boolean;
-  error: Error | null;
+  error: string | null;
   refetch: () => Promise<void>;
-}
+};
 
+/**
+ * Hook to fetch exercises associated with a workout
+ */
 export const useFetchWorkoutExercises = (workoutId?: string): FetchWorkoutExercisesReturn => {
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [exercises, setExercises] = useState<WorkoutExercise[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchWorkoutExercises = useCallback(async () => {
+  // Determine the workout type (prepared or user-created)
+  const determineWorkoutType = useCallback(async (id: string): Promise<'prepared' | 'user-created' | 'unknown'> => {
+    try {
+      // Check if it's a prepared workout
+      const { count: preparedCount } = await supabase
+        .from('prepared_workouts')
+        .select('*', { count: 'exact', head: true })
+        .eq('id', id);
+        
+      if (preparedCount && preparedCount > 0) {
+        return 'prepared';
+      }
+      
+      // Check if it's a user-created workout
+      const { count: userCount } = await supabase
+        .from('user_created_workouts')
+        .select('*', { count: 'exact', head: true })
+        .eq('id', id);
+        
+      if (userCount && userCount > 0) {
+        return 'user-created';
+      }
+      
+      return 'unknown';
+    } catch (error) {
+      console.error('Error determining workout type:', error);
+      return 'unknown';
+    }
+  }, []);
+
+  // Function to transform raw data into WorkoutExercise objects
+  const mapExerciseData = useCallback((rawExercises: any[]): WorkoutExercise[] => {
+    return rawExercises.map(item => {
+      let exerciseData: Exercise | ExerciseFull;
+      
+      // Check if exercise data is available
+      if (item.exercise && !item.exercise.error) {
+        exerciseData = item.exercise as ExerciseFull;
+      } else {
+        // Create a placeholder if no exercise data
+        exerciseData = {
+          id: item.exercise_id.toString(),
+          name: 'Unknown Exercise',
+        };
+      }
+      
+      // Create a WorkoutExercise object
+      return {
+        id: item.id,
+        workout_id: item.workout_id,
+        exercise_id: item.exercise_id.toString(),
+        sets: item.sets || 0,
+        reps: item.reps || '',
+        rest_seconds: item.rest_seconds || 0,
+        order_index: item.order_index || 0,
+        notes: item.notes || '',
+        exercise: exerciseData
+      };
+    });
+  }, []);
+
+  // Fetch exercises for a user-created workout
+  const fetchUserCreatedWorkoutExercises = useCallback(async (id: string): Promise<WorkoutExercise[]> => {
+    const { data, error } = await supabase
+      .from('user_created_workout_exercises')
+      .select(`
+        *,
+        exercise:exercise_id(*)
+      `)
+      .eq('workout_id', id)
+      .order('order_index');
+    
+    if (error) {
+      throw new Error(`Error fetching user workout exercises: ${error.message}`);
+    }
+    
+    return mapExerciseData(data || []);
+  }, [mapExerciseData]);
+
+  // Fetch exercises for a prepared workout
+  const fetchPreparedWorkoutExercises = useCallback(async (id: string): Promise<WorkoutExercise[]> => {
+    const { data, error } = await supabase
+      .from('prepared_workout_exercises')
+      .select(`
+        *,
+        exercise:exercise_id(*)
+      `)
+      .eq('workout_id', id)
+      .order('order_index');
+    
+    if (error) {
+      throw new Error(`Error fetching prepared workout exercises: ${error.message}`);
+    }
+    
+    return mapExerciseData(data || []);
+  }, [mapExerciseData]);
+
+  // Fetch function that will be exposed for refetching
+  const fetchExercises = useCallback(async () => {
     if (!workoutId) {
-      setExercises([]);
+      setExercises(null);
+      setError('No workout ID provided');
       setIsLoading(false);
       return;
     }
-
+    
     setIsLoading(true);
     setError(null);
-
+    
     try {
-      // First, try to get exercises from user_created_workout_exercises
-      const { data: userExercises, error: userExerciseError } = await supabase
-        .from('user_created_workout_exercises')
-        .select(`
-          *,
-          exercise:exercise_id (
-            id, name, description, prime_mover_muscle, primary_equipment, 
-            difficulty, body_region, short_youtube_demo, in_depth_youtube_exp,
-            youtube_thumbnail_url
-          )
-        `)
-        .eq('workout_id', workoutId)
-        .order('order_index', { ascending: true });
-
-      if (userExerciseError) {
-        console.error('Error fetching user workout exercises:', userExerciseError);
-        throw userExerciseError;
-      }
-
-      // If user exercises exist, format them and return
-      if (userExercises && userExercises.length > 0) {
-        const formattedExercises: WorkoutExercise[] = userExercises.map((ex) => {
-          // Handle the case where exercise may be null
-          const exerciseData = ex.exercise || {
-            id: ex.exercise_id,
-            name: 'Unknown Exercise',
-            description: '',
-            prime_mover_muscle: '',
-            primary_equipment: '',
-            difficulty: '',
-            body_region: '',
-            short_youtube_demo: '',
-            in_depth_youtube_exp: '',
-            youtube_thumbnail_url: ''
-          };
-
-          return {
-            id: ex.id,
-            workout_id: ex.workout_id,
-            exercise_id: ex.exercise_id,
-            sets: ex.sets,
-            reps: ex.reps,
-            rest_seconds: ex.rest_seconds,
-            order_index: ex.order_index,
-            notes: ex.notes,
-            exercise: exerciseData
-          };
-        });
-
-        setExercises(formattedExercises);
-        setIsLoading(false);
+      // Determine if the workout is prepared or user-created
+      const workoutType = await determineWorkoutType(workoutId);
+      
+      if (workoutType === 'unknown') {
+        setError('Workout not found');
+        setExercises(null);
         return;
       }
-
-      // If no user exercises, try getting from prepared workout exercises
-      const { data: preparedExercises, error: preparedExerciseError } = await supabase
-        .from('prepared_workout_exercises')
-        .select(`
-          *,
-          exercise:exercise_id (
-            id, name, description, prime_mover_muscle, primary_equipment, 
-            difficulty, body_region, short_youtube_demo, in_depth_youtube_exp,
-            youtube_thumbnail_url
-          )
-        `)
-        .eq('workout_id', workoutId)
-        .order('order_index', { ascending: true });
-
-      if (preparedExerciseError) {
-        console.error('Error fetching prepared workout exercises:', preparedExerciseError);
-        throw preparedExerciseError;
-      }
-
-      // Format prepared exercises
-      if (preparedExercises && preparedExercises.length > 0) {
-        const formattedExercises: WorkoutExercise[] = preparedExercises.map((ex) => {
-          // Handle the case where exercise may be null
-          const exerciseData = ex.exercise || {
-            id: ex.exercise_id,
-            name: 'Unknown Exercise',
-            description: '',
-            prime_mover_muscle: '',
-            primary_equipment: '',
-            difficulty: '',
-            body_region: '',
-            short_youtube_demo: '',
-            in_depth_youtube_exp: '',
-            youtube_thumbnail_url: ''
-          };
-
-          // Convert exercise_id to string for compatibility
-          return {
-            id: ex.id,
-            workout_id: ex.workout_id,
-            exercise_id: ex.exercise_id.toString(),
-            sets: ex.sets,
-            reps: ex.reps || '',
-            rest_seconds: ex.rest_seconds || 0,
-            order_index: ex.order_index,
-            notes: ex.notes,
-            exercise: exerciseData
-          };
-        });
-
-        setExercises(formattedExercises);
+      
+      // Fetch exercises based on workout type
+      let workoutExercises: WorkoutExercise[];
+      
+      if (workoutType === 'prepared') {
+        workoutExercises = await fetchPreparedWorkoutExercises(workoutId);
       } else {
-        // No exercises found
-        setExercises([]);
+        workoutExercises = await fetchUserCreatedWorkoutExercises(workoutId);
       }
-    } catch (err: any) {
-      console.error('Error fetching workout exercises:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch workout exercises'));
+      
+      // Process exercises - normalize any inconsistencies
+      const processedExercises = workoutExercises.map(exercise => ({
+        ...exercise,
+        // Ensure rest_seconds is used (not rest_time)
+        rest_seconds: exercise.rest_seconds || 0,
+        // Ensure other required fields
+        sets: exercise.sets || 0,
+        reps: exercise.reps || '',
+        notes: exercise.notes || ''
+      }));
+      
+      setExercises(processedExercises);
+    } catch (error) {
+      console.error('Error fetching workout exercises:', error);
+      setError('Failed to load workout exercises');
     } finally {
       setIsLoading(false);
     }
-  }, [workoutId]);
+  }, [workoutId, determineWorkoutType, fetchPreparedWorkoutExercises, fetchUserCreatedWorkoutExercises]);
 
-  // Re-export as refetch for more intuitive naming
-  const refetch = fetchWorkoutExercises;
+  // Initial fetch when workoutId changes
+  useEffect(() => {
+    fetchExercises();
+  }, [fetchExercises]);
 
-  // Return both the original and the exercises as 'workoutExercises' for compatibility
-  return { exercises, isLoading, error, refetch };
+  return {
+    exercises,
+    isLoading,
+    error,
+    refetch: fetchExercises
+  };
 };
-
-// For backward compatibility
-export const useWorkoutExercises = useFetchWorkoutExercises;
