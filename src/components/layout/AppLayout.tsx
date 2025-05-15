@@ -108,7 +108,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile navigation */}
       <div className="md:hidden sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="p-4 flex justify-between items-center">
-          <h1 className="font-bold">FitTrack Pro</h1>
+<Link to="/" className="flex items-center gap-2 px-2">
+  <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
+  <h1 className="font-bold text-xl">FitTrack Pro</h1>
+</Link>
+
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {/* Mobile menu button could go here */}
