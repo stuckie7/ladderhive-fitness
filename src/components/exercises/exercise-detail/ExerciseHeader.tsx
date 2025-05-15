@@ -1,4 +1,4 @@
-// ExerciseHeader.tsx
+
 import { Button } from "@/components/ui/button";
 import { Exercise } from "@/types/exercise";
 import { ArrowLeft } from "lucide-react";
