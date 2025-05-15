@@ -1,3 +1,3 @@
 
-// Re-export from the correct module
-export { useWorkouts } from "./workouts";
+// Re-export from the workouts module
+export { useWorkouts } from './workouts';

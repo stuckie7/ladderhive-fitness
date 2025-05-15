@@ -1,96 +1,76 @@
+
+// Export type definitions
 export interface Exercise {
-  id: string;
+  id: string | number;
   name: string;
-  short_youtube_demo?: string | null;
-  in_depth_youtube_exp?: string | null;
-  difficulty?: string | null;
-  prime_mover_muscle?: string | null;
-  secondary_muscle?: string | null;
-  tertiary_muscle?: string | null;
-  primary_equipment?: string | null;
-  secondary_equipment?: string | null;
-  posture?: string | null;
-  movement_pattern_1?: string | null;
-  movement_pattern_2?: string | null;
-  movement_pattern_3?: string | null;
-  plane_of_motion_1?: string | null;
-  plane_of_motion_2?: string | null;
-  plane_of_motion_3?: string | null;
-  body_region?: string | null;
-  force_type?: string | null;
-  mechanics?: string | null;
-  laterality?: string | null;
-  youtube_thumbnail_url?: string | null;
-  
-  // Compatibility fields for UI components
-  bodyPart?: string;
-  target?: string;
-  equipment?: string;
   description?: string;
-  instructions?: string[];
   muscle_group?: string;
+  equipment?: string;
+  difficulty?: string;
+  instructions?: string[];
   video_url?: string;
   image_url?: string;
+  bodyPart?: string;
+  target?: string;
   secondaryMuscles?: string[];
-  difficulty_level?: string;
-  gifUrl?: string | null;
-  exercise_classification?: string | null;
-  
-  // Mapped fields for backward compatibility
-  target_muscle_group?: string | null;
-  video_demonstration_url?: string | null;
-  video_explanation_url?: string | null;
-}
-
-export interface ExerciseFilters {
-  muscleGroup: string;
-  equipment: string;
-  difficulty: string;
+  equipment_needed?: string;
+  video_demonstration_url?: string;
 }
 
 export interface ExerciseFull {
+  id: number | string;
+  name: string;
+  primary_items_count?: number;
+  secondary_items_count?: number;
+  combination_exercise?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  short_youtube_demo?: string;
+  in_depth_youtube_exp?: string;
+  difficulty?: string;
+  prime_mover_muscle?: string;
+  secondary_muscle?: string;
+  tertiary_muscle?: string;
+  primary_equipment?: string;
+  secondary_equipment?: string;
+  posture?: string;
+  single_or_double_arm?: string;
+  arm_movement_pattern?: string;
+  grip?: string;
+  load_position?: string;
+  leg_movement_pattern?: string;
+  foot_elevation?: string;
+  movement_pattern_1?: string;
+  movement_pattern_2?: string;
+  movement_pattern_3?: string;
+  plane_of_motion_1?: string;
+  plane_of_motion_2?: string;
+  plane_of_motion_3?: string;
+  body_region?: string;
+  force_type?: string;
+  mechanics?: string;
+  laterality?: string;
+  exercise_classification?: string;
+  youtube_thumbnail_url?: string;
+  description?: string;
+  target_muscle_group?: string;
+  video_demonstration_url?: string;
+  video_explanation_url?: string;
+  image_url?: string;
+}
+
+export interface FilterOptions {
+  muscleGroups: string[];
+  equipment: string[];
+  difficulty: string[];
+  bodyParts: string[];
+}
+
+export interface SuggestedExercise {
   id: number;
-  name: string | null;
-  short_youtube_demo: string | null;
-  in_depth_youtube_exp: string | null;
-  difficulty: string | null;
-  prime_mover_muscle: string | null;
-  secondary_muscle: string | null;
-  tertiary_muscle: string | null;
-  primary_equipment: string | null;
-  secondary_equipment: string | null;
-  posture: string | null;
-  movement_pattern_1: string | null;
-  movement_pattern_2: string | null;
-  movement_pattern_3: string | null;
-  plane_of_motion_1: string | null;
-  plane_of_motion_2: string | null;
-  plane_of_motion_3: string | null;
-  body_region: string | null;
-  force_type: string | null;
-  mechanics: string | null;
-  laterality: string | null;
-  youtube_thumbnail_url?: string | null;
-  
-  // Add the missing properties to match database
-  target_muscle_group: string | null;
-  video_demonstration_url: string | null;
-  video_explanation_url: string | null;
-  
-  // Additional fields from the Supabase exercises_full table
-  primary_items_count: number | null;
-  secondary_items_count: number | null;
-  combination_exercise: boolean | null;
-  single_or_double_arm: string | null;
-  arm_movement_pattern: string | null;
-  grip: string | null;
-  load_position: string | null;
-  leg_movement_pattern: string | null;
-  foot_elevation: string | null;
-  exercise_classification: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  
-  // Add description property that's used in components
-  description?: string | null;
+  name: string;
+  target?: string;
+  bodyPart?: string;
+  equipment?: string;
+  gifUrl?: string;
 }

@@ -1,6 +1,10 @@
 
-// Export the hooks from their respective modules
-export { usePreparedWorkouts } from './use-prepared-workouts';
-export { usePreparedWorkoutsList } from './use-prepared-workouts-list';
-export { usePreparedWorkoutsEnhanced } from './use-prepared-workouts-enhanced';
+// Re-export all workouts related hooks from this index file
 export { useWorkouts } from './use-workouts';
+export { useSavedWorkouts } from './use-saved-workouts';
+export { usePreparedWorkouts } from './use-prepared-workouts';
+export { useWorkoutDetail } from '../workout-detail/use-workout-detail';
+export { useWorkoutDetailEnhanced } from './use-workout-detail-enhanced';
+
+// Export types
+export * from './types';
