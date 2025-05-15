@@ -1,65 +1,84 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { ExerciseFull } from '@/types/exercise';
+import { Exercise, ExerciseFull } from '@/types/exercise';
 
-export const getExerciseFullById = async (id: number | string): Promise<ExerciseFull | null> => {
-  try {
-    console.log(`Fetching exercise with ID ${id}`);
-    
-    // Ensure numeric ID for Supabase query
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-    
-    const response = await supabase
-      .from('exercises_full')
-      .select('*')
-      .eq('id', numericId)
-      .single();
-    
-    if (response.error) {
-      console.error(`Error fetching exercise with ID ${id}:`, response.error);
-      throw response.error;
-    }
-    
-    const { data } = response;
-    console.log(`Exercise data found:`, data ? 'Yes' : 'No');
-    
-    // Transform the data to match our ExerciseFull type
-    if (data) {
-      // Clean up any URL fields that might have quotes in them
-      const cleanYoutubeUrls = (url: string | null): string | null => {
-        // If null or empty string, return null
-        if (!url) return null;
-        
-        // Remove quotes if they exist in the URL
-        const cleanUrl = url.replace(/^["']|["']$/g, '');
-        
-        // Return the cleaned URL, whether it's a real URL or just text like "Video Demonstration"
-        return cleanUrl;
+export type ExerciseDetailService = {
+  fetchExerciseById: (id: string | number) => Promise<ExerciseFull | null>;
+  updateExercise: (id: string | number, exerciseData: Partial<ExerciseFull>) => Promise<ExerciseFull | null>;
+};
+
+export const createExerciseDetailService = (): ExerciseDetailService => {
+  const fetchExerciseById = async (id: string | number): Promise<ExerciseFull | null> => {
+    try {
+      // Convert ID to string to ensure compatibility
+      const exerciseId = id.toString();
+      
+      // Fetch the exercise details
+      const { data: exerciseData, error } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .eq('id', exerciseId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching exercise:', error);
+        return null;
+      }
+
+      if (!exerciseData) {
+        console.warn('Exercise not found:', exerciseId);
+        return null;
+      }
+      
+      // Clean up and format the data
+      // If the exercise is in ExerciseFull format, it may contain these properties
+      // If not, we'll provide reasonable defaults
+      const exercise = exerciseData as ExerciseFull;
+
+      // Ensure all required properties for ExerciseFull are set
+      return {
+        ...exercise,
+        // Provide fallbacks for potentially missing properties
+        name: exercise.name || '',
+        id: exercise.id || '',
+        // Add any other required properties with sensible defaults
       };
       
-      // Create a description if it doesn't exist
-      const description = data.description || 
-        `${data.prime_mover_muscle || 'Muscle'} exercise using ${data.primary_equipment || 'equipment'}`;
-      
-      // Cast to ExerciseFull and add necessary properties
-      const exerciseData: ExerciseFull = {
-        ...data,
-        // Add any required properties that might be missing in the ExerciseFull type
-        description,
-        target_muscle_group: data.prime_mover_muscle || null,
-        video_demonstration_url: cleanYoutubeUrls(data.short_youtube_demo) || null,
-        video_explanation_url: cleanYoutubeUrls(data.in_depth_youtube_exp) || null,
-        // Clean and map properties correctly, providing fallbacks for missing fields
-        short_youtube_demo: cleanYoutubeUrls(data.short_youtube_demo),
-        in_depth_youtube_exp: cleanYoutubeUrls(data.in_depth_youtube_exp),
-      } as ExerciseFull; // Use type assertion here
-      
-      return exerciseData;
+    } catch (error) {
+      console.error('Unexpected error in fetchExerciseById:', error);
+      return null;
     }
-    
-    return null;
-  } catch (error) {
-    console.error(`Failed to fetch exercise with ID ${id}:`, error);
-    throw error;
-  }
+  };
+  
+  const updateExercise = async (id: string | number, exerciseData: Partial<ExerciseFull>): Promise<ExerciseFull | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('exercises_full')
+        .update({
+          ...exerciseData,
+          // Handle specific fields if needed
+          primary_equipment: exerciseData.primary_equipment || undefined,
+        })
+        .eq('id', id.toString())
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating exercise:', error);
+        return null;
+      }
+      
+      return data as ExerciseFull;
+    } catch (error) {
+      console.error('Unexpected error in updateExercise:', error);
+      return null;
+    }
+  };
+  
+  return {
+    fetchExerciseById,
+    updateExercise,
+  };
 };
+
+export default createExerciseDetailService;

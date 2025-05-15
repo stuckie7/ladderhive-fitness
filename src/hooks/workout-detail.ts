@@ -1,14 +1,14 @@
 
 import { useWorkoutActions } from './workout-detail/use-workout-actions';
-import { useWorkoutFetch } from './workout-detail/use-fetch-workout';
-import { useWorkoutExercises } from './workout-exercises/use-fetch-workout-exercises';
+import { useFetchWorkout } from './workout-detail/use-fetch-workout';
+import { useFetchWorkoutExercises } from './workout-exercises/use-fetch-workout-exercises';
 import { Exercise } from '@/types/exercise';
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-export const useWorkoutDetail = (workoutId: string) => {
-  const { workout, isLoading: workoutLoading, error } = useWorkoutFetch(workoutId);
-  const { workoutExercises, isLoading: exercisesLoading, fetchExercises } = useWorkoutExercises();
+export const useWorkoutDetail = (workoutId?: string) => {
+  const { workout, isLoading: workoutLoading, error } = useFetchWorkout(workoutId);
+  const { exercises: workoutExercises, isLoading: exercisesLoading, refetch: fetchExercises } = useFetchWorkoutExercises(workoutId);
   const { isSaved, handleSaveWorkout, handleCompleteWorkout } = useWorkoutActions(workoutId);
   const [isLoading, setIsLoading] = useState(workoutLoading);
   const { toast } = useToast();
@@ -16,7 +16,7 @@ export const useWorkoutDetail = (workoutId: string) => {
   // Fetch exercises when workout ID changes
   useEffect(() => {
     if (workoutId) {
-      fetchExercises(workoutId);
+      fetchExercises();
     }
   }, [workoutId, fetchExercises]);
 

@@ -1,6 +1,5 @@
 
 export { 
   useFetchWorkoutExercises,
-  useWorkoutExercises,
-  useManageWorkoutExercises
+  useManageWorkoutExercises 
 } from './workout-exercises';

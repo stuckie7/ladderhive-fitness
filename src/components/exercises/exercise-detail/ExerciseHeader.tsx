@@ -30,20 +30,33 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
   };
 
   // Helper function to get exercise properties based on type
-  const getExerciseProperty = (prop: string): string | null => {
-    if ('bodyPart' in exercise && prop === 'bodyPart') return exercise.bodyPart || null;
-    if ('body_region' in exercise && prop === 'bodyPart') return exercise.body_region || null;
+  const getExerciseProperty = (key: string): string | null => {
+    if (key === 'bodyPart') {
+      return ('body_region' in exercise) ? exercise.body_region || null :
+             ('bodyPart' in exercise) ? exercise.bodyPart || null : null;
+    }
     
-    if ('target' in exercise && prop === 'target') return exercise.target || null;
-    if ('prime_mover_muscle' in exercise && prop === 'target') return exercise.prime_mover_muscle || null;
+    if (key === 'target') {
+      return ('prime_mover_muscle' in exercise) ? exercise.prime_mover_muscle || null :
+             ('target' in exercise) ? exercise.target || null : null;
+    }
     
-    if ('equipment' in exercise && prop === 'equipment') return exercise.equipment || null;
-    if ('primary_equipment' in exercise && prop === 'equipment') return exercise.primary_equipment || null;
+    if (key === 'equipment') {
+      return ('primary_equipment' in exercise) ? exercise.primary_equipment || null :
+             ('equipment' in exercise) ? exercise.equipment || null : null;
+    }
     
-    if ('difficulty' in exercise) return exercise.difficulty || null;
+    if (key === 'difficulty') {
+      return ('difficulty' in exercise) ? exercise.difficulty || null : null;
+    }
 
     return null;
   };
+
+  const bodyPart = getExerciseProperty('bodyPart');
+  const target = getExerciseProperty('target');
+  const equipment = getExerciseProperty('equipment');
+  const difficulty = getExerciseProperty('difficulty');
 
   return (
     <>
@@ -56,10 +69,10 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
         <div>
           <h1 className="text-3xl font-bold mb-2">{exercise.name}</h1>
           <p className="text-muted-foreground text-sm">
-            {getExerciseProperty('bodyPart') && `${getExerciseProperty('bodyPart')} `}
-            {getExerciseProperty('target') && getExerciseProperty('target') !== getExerciseProperty('bodyPart') && `· ${getExerciseProperty('target')} `}
-            {getExerciseProperty('equipment') && `· Equipment: ${getExerciseProperty('equipment')} `}
-            {getExerciseProperty('difficulty') && `· Difficulty: ${getExerciseProperty('difficulty')}`}
+            {bodyPart && `${bodyPart} `}
+            {target && target !== bodyPart && `· ${target} `}
+            {equipment && `· Equipment: ${equipment} `}
+            {difficulty && `· Difficulty: ${difficulty}`}
           </p>
         </div>
 

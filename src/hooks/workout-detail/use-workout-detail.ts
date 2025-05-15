@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useFetchWorkout } from './use-fetch-workout';
 import { useFetchWorkoutExercises } from '../workout-exercises/use-fetch-workout-exercises';
@@ -16,7 +17,8 @@ export const useWorkoutDetail = (workoutId?: string) => {
     error: exercisesError,
     refetch: refetchExercises
   } = useFetchWorkoutExercises(workoutId);
-  const { toggleSaveWorkout, isSaved, isLoading: isActionLoading } = useWorkoutActions(workoutId);
+  
+  const { isSaved, handleSaveWorkout: toggleSaveWorkout, isLoading: isActionLoading } = useWorkoutActions(workoutId);
 
   const handleStartWorkout = async () => {
     try {

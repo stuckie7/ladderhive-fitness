@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Card,
@@ -18,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/components/ui/use-toast";
-import { ExerciseVideoHandler } from "@/components/exercises/ExerciseVideoHandler";
+import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 import { Exercise } from "@/types/exercise";
 
 interface WorkoutBuilderExerciseListProps {
@@ -80,7 +81,7 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
   };
 
   return (
-    <Accordion type="multiple" collapsible>
+    <Accordion type="multiple">
       {exercises.map((exercise) => (
         <AccordionItem key={exercise.id} value={exercise.id.toString()}>
           <AccordionTrigger>
@@ -157,12 +158,11 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
                     }
                   />
                 </div>
-                {exercise.demonstration && (
+                {exercise.video_url && (
                   <ExerciseVideoHandler 
-                    url={exercise.demonstration} 
+                    url={exercise.video_url} 
                     title={exercise.name || "Exercise Video"} 
                     className="w-full h-32" 
-                    thumbnailUrl={exercise.thumbnailUrl}
                   />
                 )}
               </CardContent>

@@ -1,174 +1,123 @@
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Exercise, ExerciseFull } from "@/types/exercise";
+import { createExerciseDetailService } from "../services/exercise-detail-service";
 
-export const useExerciseCrud = (onSuccess: () => void) => {
-  const [isLoading, setLoading] = useState(false);
-  const { toast } = useToast();
+interface ExerciseCrudResult {
+  addExercise: (exercise: Exercise) => Promise<boolean>;
+  updateExercise: (id: string | number, exercise: Partial<ExerciseFull>) => Promise<boolean>;
+  deleteExercise: (id: string | number) => Promise<boolean>;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export const useExerciseCrud = (): ExerciseCrudResult => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
+  const exerciseService = createExerciseDetailService();
 
   // Add a new exercise
-  const addExercise = async (exercise: Exercise): Promise<boolean> => {
-    setLoading(true);
-    
+  const addExercise = useCallback(async (exercise: Exercise): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from("exercises_full")
-        .insert({
-          name: exercise.name || "",
-          difficulty: exercise.difficulty || null,
-          prime_mover_muscle: exercise.prime_mover_muscle || exercise.target_muscle_group || null,
-          primary_equipment: exercise.equipment_needed || exercise.equipment || null,
-          short_youtube_demo: exercise.video_demonstration_url || null,
-          in_depth_youtube_exp: exercise.video_explanation_url || null,
-          description: exercise.description || null
-          // Add other fields as needed
-        })
-        .select();
-        
-      if (error) {
-        console.error("Error adding exercise:", error);
-        toast({
-          title: "Error",
-          description: "Failed to add exercise",
-          variant: "destructive"
-        });
-        return false;
-      }
+      const { error } = await supabase
+        .from("exercises")
+        .insert([
+          {
+            name: exercise.name,
+            bodyPart: exercise.bodyPart,
+            equipment: exercise.equipment,
+            gifUrl: exercise.gifUrl,
+            target: exercise.target,
+            id: exercise.id,
+          },
+        ]);
+
+      if (error) throw error;
       
-      toast({
-        title: "Success",
-        description: "Exercise added successfully"
-      });
-      
-      onSuccess();
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ["exercises"] });
       return true;
-      
-    } catch (error) {
-      console.error("Error adding exercise:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
+    } catch (err: any) {
+      console.error("Error adding exercise:", err);
+      setError(err instanceof Error ? err : new Error("Failed to add exercise"));
       return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
-  
+  }, [queryClient]);
+
   // Update an existing exercise
-  const updateExercise = async (id: string | number, exercise: Partial<ExerciseFull>): Promise<boolean> => {
-    setLoading(true);
-    
-    try {
-      // Convert id to number if it's a string number
-      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-      
-      // Extract the primary equipment from appropriate properties
-      const primaryEquipment = exercise.primary_equipment || 
-                              (exercise as any).equipment_needed || 
-                              (exercise as any).equipment || 
-                              null;
-      
-      const { error } = await supabase
-        .from("exercises_full")
-        .update({
-          name: exercise.name,
-          difficulty: exercise.difficulty,
-          prime_mover_muscle: exercise.prime_mover_muscle || exercise.target_muscle_group,
-          primary_equipment: primaryEquipment,
-          short_youtube_demo: exercise.short_youtube_demo || exercise.video_demonstration_url,
-          in_depth_youtube_exp: exercise.in_depth_youtube_exp || exercise.video_explanation_url,
-          description: exercise.description
-          // Add other fields as needed
-        })
-        .eq("id", numericId);
+  const updateExercise = useCallback(
+    async (id: string | number, exerciseData: Partial<ExerciseFull>): Promise<boolean> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Handle the specific properties for exerciseFull
+        const exerciseDataForUpdate = {
+          ...exerciseData,
+          // Handle primary_equipment separately if it doesn't exist in the original type
+          primary_equipment: exerciseData.primary_equipment || undefined
+        };
+
+        const updatedExercise = await exerciseService.updateExercise(id, exerciseDataForUpdate);
         
-      if (error) {
-        console.error("Error updating exercise:", error);
-        toast({
-          title: "Error",
-          description: "Failed to update exercise",
-          variant: "destructive"
-        });
+        if (!updatedExercise) {
+          throw new Error('Failed to update exercise');
+        }
+        
+        // Invalidate queries
+        queryClient.invalidateQueries({ queryKey: ["exercises"] });
+        queryClient.invalidateQueries({ queryKey: ["exercise", id] });
+        
+        return true;
+      } catch (err: any) {
+        console.error("Error updating exercise:", err);
+        setError(err instanceof Error ? err : new Error("Failed to update exercise"));
         return false;
+      } finally {
+        setIsLoading(false);
       }
-      
-      toast({
-        title: "Success",
-        description: "Exercise updated successfully"
-      });
-      
-      onSuccess();
-      return true;
-      
-    } catch (error) {
-      console.error("Error updating exercise:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+    },
+    [queryClient, exerciseService]
+  );
+
   // Delete an exercise
-  const deleteExercise = async (id: string | number): Promise<boolean> => {
-    if (!window.confirm("Are you sure you want to delete this exercise?")) {
-      return false;
-    }
-    
-    setLoading(true);
-    
-    try {
-      // Convert id to number if it's a string number
-      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-      
-      const { error } = await supabase
-        .from("exercises_full")
-        .delete()
-        .eq("id", numericId);
+  const deleteExercise = useCallback(
+    async (id: string | number): Promise<boolean> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const { error } = await supabase
+          .from("exercises_full")
+          .delete()
+          .eq("id", id.toString());
+
+        if (error) throw error;
         
-      if (error) {
-        console.error("Error deleting exercise:", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete exercise",
-          variant: "destructive"
-        });
+        // Invalidate queries
+        queryClient.invalidateQueries({ queryKey: ["exercises"] });
+        return true;
+      } catch (err: any) {
+        console.error("Error deleting exercise:", err);
+        setError(err instanceof Error ? err : new Error("Failed to delete exercise"));
         return false;
+      } finally {
+        setIsLoading(false);
       }
-      
-      toast({
-        title: "Success",
-        description: "Exercise deleted successfully"
-      });
-      
-      onSuccess();
-      return true;
-      
-    } catch (error) {
-      console.error("Error deleting exercise:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+    },
+    [queryClient]
+  );
+
   return {
     addExercise,
     updateExercise,
     deleteExercise,
-    isLoading
+    isLoading,
+    error,
   };
 };

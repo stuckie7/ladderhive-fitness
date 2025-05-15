@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutDetail } from '@/types/workout';
 
-export const useWorkoutFetch = (workoutId: string) => {
+export const useFetchWorkout = (workoutId?: string) => {
   const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);

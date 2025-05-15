@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Exercise } from "@/types/exercise";
+import { Exercise, ExerciseFull } from "@/types/exercise";
 import ExerciseSpecItem from "./ExerciseSpecItem";
 
 interface ExerciseSidebarContentProps {
@@ -37,11 +37,12 @@ export default function ExerciseSidebarContent({ exercise, loading = false }: Ex
   }
 
   // Helper to safely access potentially undefined property
-  const getThumbnailUrl = (exercise: Exercise): string | undefined => {
+  const getThumbnailUrl = (exercise: Exercise | ExerciseFull): string | undefined => {
     // Check if it's an ExerciseFull type with youtube_thumbnail_url
-    return ('youtube_thumbnail_url' in exercise) ? 
-      exercise.youtube_thumbnail_url as string : 
-      exercise.image_url;
+    if ('youtube_thumbnail_url' in exercise) {
+      return exercise.youtube_thumbnail_url as string;
+    }
+    return exercise.image_url || exercise.gifUrl;
   };
 
   return (
@@ -73,19 +74,21 @@ export default function ExerciseSidebarContent({ exercise, loading = false }: Ex
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-semibold text-muted-foreground mb-1">Movement Type</h4>
-              {exercise.mechanics && <ExerciseSpecItem label="Mechanics" value={exercise.mechanics} />}
-              {exercise.force_type && <ExerciseSpecItem label="Force Type" value={exercise.force_type} />}
-            </div>
+            {'mechanics' in exercise && (
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-1">Movement Type</h4>
+                {exercise.mechanics && <ExerciseSpecItem label="Mechanics" value={exercise.mechanics} />}
+                {('force_type' in exercise) && exercise.force_type && <ExerciseSpecItem label="Force Type" value={exercise.force_type} />}
+              </div>
+            )}
             <div>
               <h4 className="text-sm font-semibold text-muted-foreground mb-1">Muscles</h4>
-              {exercise.posture && <ExerciseSpecItem label="Posture" value={exercise.posture} />}
-              {exercise.laterality && <ExerciseSpecItem label="Laterality" value={exercise.laterality} />}
-              {exercise.secondaryMuscles?.length > 0 && (
+              {('posture' in exercise) && exercise.posture && <ExerciseSpecItem label="Posture" value={exercise.posture} />}
+              {('laterality' in exercise) && exercise.laterality && <ExerciseSpecItem label="Laterality" value={exercise.laterality} />}
+              {('secondaryMuscles' in exercise) && exercise.secondaryMuscles?.length > 0 && (
                 <ExerciseSpecItem label="Secondary Muscles" value={exercise.secondaryMuscles.join(', ')} />
               )}
-              {exercise.tertiary_muscle && (
+              {('tertiary_muscle' in exercise) && exercise.tertiary_muscle && (
                 <ExerciseSpecItem label="Tertiary Muscles" value={exercise.tertiary_muscle} />
               )}
             </div>

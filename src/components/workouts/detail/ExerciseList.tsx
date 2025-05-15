@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -10,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ExerciseVideoHandler } from '@/components/exercises/ExerciseVideoHandler';
+import ExerciseVideoHandler from '@/components/exercises/ExerciseVideoHandler';
 
 interface ExerciseListItem {
   id: string;
