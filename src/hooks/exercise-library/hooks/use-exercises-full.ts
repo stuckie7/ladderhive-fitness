@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { ExerciseFull } from '@/types/exercise';
@@ -108,7 +109,12 @@ export const useExercisesFull = () => {
       
       return Array.from(uniqueMap.values());
     } catch (error) {
-      handleApiError(error, 'Failed to fetch exercises data');
+      console.error('Failed to fetch exercises data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch exercises data',
+        variant: 'destructive',
+      });
       return [];
     } finally {
       setIsLoading(false);
@@ -161,7 +167,12 @@ export const useExercisesFull = () => {
       
       return Array.from(uniqueMap.values());
     } catch (error) {
-      handleApiError(error, 'Failed to search exercises');
+      console.error('Failed to search exercises:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to search exercises',
+        variant: 'destructive',
+      });
       return [];
     } finally {
       setIsLoading(false);
@@ -173,7 +184,12 @@ export const useExercisesFull = () => {
     try {
       return await getExerciseFullById(id);
     } catch (error) {
-      handleApiError(error, 'Failed to fetch exercise details');
+      console.error('Failed to fetch exercise details:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch exercise details',
+        variant: 'destructive',
+      });
       return null;
     } finally {
       setIsLoading(false);
@@ -184,7 +200,12 @@ export const useExercisesFull = () => {
     try {
       return await getMuscleGroups();
     } catch (error) {
-      handleApiError(error, 'Failed to fetch muscle groups');
+      console.error('Failed to fetch muscle groups:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch muscle groups',
+        variant: 'destructive',
+      });
       return [];
     }
   };
@@ -193,7 +214,12 @@ export const useExercisesFull = () => {
     try {
       return await getEquipmentTypes();
     } catch (error) {
-      handleApiError(error, 'Failed to fetch equipment types');
+      console.error('Failed to fetch equipment types:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch equipment types',
+        variant: 'destructive',
+      });
       return [];
     }
   };

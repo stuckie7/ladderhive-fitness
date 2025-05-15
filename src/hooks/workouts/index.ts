@@ -1,16 +1,6 @@
 
-// Import all workout-related hooks
-import { useWorkoutsFetch } from './use-workouts-fetch';
-import { useWorkoutsActions } from './use-workouts-actions';
-import { usePreparedWorkouts } from './use-prepared-workouts';
-import { useSavedWorkouts } from './use-saved-workouts';
-import { useWorkoutDetail } from '../workout-detail';
-
-// Re-export the hooks
-export {
-  useWorkoutsFetch,
-  useWorkoutsActions,
-  usePreparedWorkouts,
-  useSavedWorkouts,
-  useWorkoutDetail
-};
+// Export the hooks from their respective modules
+export { usePreparedWorkouts } from './use-prepared-workouts';
+export { usePreparedWorkoutsList } from './use-prepared-workouts-list';
+export { usePreparedWorkoutsEnhanced } from './use-prepared-workouts-enhanced';
+export { useWorkouts } from './use-workouts';
