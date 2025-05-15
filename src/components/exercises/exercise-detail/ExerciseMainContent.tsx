@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Exercise } from "@/types/exercise";
@@ -28,10 +27,9 @@ export default function ExerciseMainContent({ exercise, loading = false }: Exerc
       </div>
     );
   }
-  
-  // Determine if we have any video content to show
+
   const hasVideo = Boolean(exercise.video_url || exercise.video_demonstration_url);
-  
+
   return (
     <div className="lg:col-span-2">
       <Card>
@@ -45,13 +43,13 @@ export default function ExerciseMainContent({ exercise, loading = false }: Exerc
               <TabsTrigger value="instructions">Instructions</TabsTrigger>
               {hasVideo && <TabsTrigger value="video">Video</TabsTrigger>}
             </TabsList>
-            
+
             <TabsContent value="description">
               <p className="text-muted-foreground">
                 {exercise.description || 'No description available for this exercise.'}
               </p>
             </TabsContent>
-            
+
             <TabsContent value="instructions">
               {exercise.instructions?.length ? (
                 <div>
@@ -63,12 +61,12 @@ export default function ExerciseMainContent({ exercise, loading = false }: Exerc
                 <p className="text-muted-foreground">No instructions available.</p>
               )}
             </TabsContent>
-            
+
             {hasVideo && (
               <TabsContent value="video">
                 <ExerciseVideoPlayer 
                   url={exercise.video_url || exercise.video_demonstration_url || ''} 
-                  title={`${exercise.name} demonstration`}
+                  title={`${exercise.name} demonstration`} 
                 />
               </TabsContent>
             )}
