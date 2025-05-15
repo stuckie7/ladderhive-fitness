@@ -1,180 +1,116 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Exercise, ExerciseFull } from "@/types/exercise";
-import { useToast } from "@/components/ui/use-toast";
+import { useState, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Exercise, ExerciseFull } from '@/types/exercise';
+import { mapExerciseToExerciseFull } from '../mappers';
 
-export const useExerciseCrud = (onRefreshData: () => Promise<void>) => {
+export const useExerciseCrud = () => {
   const [isLoading, setIsLoading] = useState(false);
-  // Add state for form and current exercise
-  const [formState, setFormState] = useState<Partial<ExerciseFull>>({});
-  const [currentExercise, setCurrentExercise] = useState<ExerciseFull | null>(null);
   const { toast } = useToast();
 
-  const addExercise = async (exercise: Partial<ExerciseFull>): Promise<boolean> => {
+  const addExercise = useCallback(async (exercise: Exercise): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Fix by casting to any to avoid TypeScript errors
-      const { data, error } = await supabase
-        .from('exercises_full')
-        .insert([exercise as any])
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: "Exercise added successfully",
-      });
+      // Map to full exercise format
+      const fullExercise = mapExerciseToExerciseFull(exercise);
       
-      // Refresh data after adding
-      await onRefreshData();
-      return true;
-    } catch (error: any) {
-      console.error("Failed to add exercise:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add exercise",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateExercise = async (id: string | number, exercise: Partial<ExerciseFull>): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      // Fix by casting to any to avoid TypeScript errors
+      // Insert into exercises_full table
       const { error } = await supabase
         .from('exercises_full')
-        .update(exercise as any)
-        .eq('id', id);
+        .insert([fullExercise]);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Exercise updated successfully",
+        description: `Exercise "${exercise.name}" has been added.`,
       });
-      
-      // Refresh data after updating
-      await onRefreshData();
       return true;
     } catch (error: any) {
-      console.error("Failed to update exercise:", error);
+      console.error('Failed to add exercise:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update exercise",
+        description: `Failed to add exercise: ${error.message}`,
         variant: "destructive",
       });
       return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  const deleteExercise = async (id: string | number): Promise<boolean> => {
+  const updateExercise = useCallback(async (id: string | number, exercise: Exercise): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // Ensure numeric ID for Supabase query
+      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      
+      // Map to full exercise format
+      const fullExercise = mapExerciseToExerciseFull(exercise);
+      
+      // Update exercises_full table
+      const { error } = await supabase
+        .from('exercises_full')
+        .update(fullExercise)
+        .eq('id', numericId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Exercise "${exercise.name}" has been updated.`,
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Failed to update exercise:', error);
+      toast({
+        title: "Error",
+        description: `Failed to update exercise: ${error.message}`,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  const deleteExercise = useCallback(async (id: string | number): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // Ensure numeric ID for Supabase query
+      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      
+      // Delete from exercises_full table
       const { error } = await supabase
         .from('exercises_full')
         .delete()
-        .eq('id', id);
+        .eq('id', numericId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Exercise deleted successfully",
+        description: `Exercise has been deleted.`,
       });
-      
-      // Refresh data after deleting
-      await onRefreshData();
       return true;
     } catch (error: any) {
-      console.error("Failed to delete exercise:", error);
+      console.error('Failed to delete exercise:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete exercise",
+        description: `Failed to delete exercise: ${error.message}`,
         variant: "destructive",
       });
       return false;
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  // Handle form changes
-  const handleFormChange = (field: string, value: any) => {
-    setFormState(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Open the edit dialog with the current exercise data
-  const openEditDialog = (exercise: ExerciseFull) => {
-    setFormState(exercise);
-    setCurrentExercise(exercise);
-  };
-
-  // Open the delete dialog with the current exercise data
-  const openDeleteDialog = (exercise: ExerciseFull) => {
-    setCurrentExercise(exercise);
-  };
-
-  // Handle adding an exercise
-  const handleAddExercise = async () => {
-    const result = await addExercise(formState);
-    if (result) {
-      setFormState({}); // Reset form after successful add
-    }
-    return result;
-  };
-
-  // Handle editing an exercise
-  const handleEditExercise = async () => {
-    if (!currentExercise?.id) return false;
-    
-    const result = await updateExercise(currentExercise.id, formState);
-    if (result) {
-      setFormState({}); // Reset form after successful edit
-      setCurrentExercise(null);
-    }
-    return result;
-  };
-
-  // Handle deleting an exercise
-  const handleDeleteExercise = async () => {
-    if (!currentExercise?.id) return false;
-    
-    const result = await deleteExercise(currentExercise.id);
-    if (result) {
-      setCurrentExercise(null);
-    }
-    return result;
-  };
+  }, [toast]);
 
   return {
     isLoading,
     addExercise,
     updateExercise,
-    deleteExercise,
-    formState,
-    currentExercise,
-    handleFormChange,
-    openEditDialog,
-    openDeleteDialog,
-    handleAddExercise,
-    handleEditExercise,
-    handleDeleteExercise
+    deleteExercise
   };
 };

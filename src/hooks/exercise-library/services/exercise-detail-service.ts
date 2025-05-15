@@ -2,46 +2,57 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ExerciseFull } from '@/types/exercise';
 
-/**
- * Fetches a single exercise by ID
- */
-export const getExerciseFullById = async (
-  id: string | number
-): Promise<ExerciseFull | null> => {
+export const getExerciseFullById = async (id: number | string): Promise<ExerciseFull | null> => {
   try {
-    // Ensure numeric ID
+    console.log(`Fetching exercise with ID ${id}`);
+    
+    // Ensure numeric ID for Supabase query
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     
-    if (isNaN(Number(numericId))) {
-      throw new Error(`Invalid exercise ID: ${id}`);
-    }
-
-    const { data, error } = await supabase
+    const response = await supabase
       .from('exercises_full')
       .select('*')
       .eq('id', numericId)
       .single();
-
-    if (error) throw error;
     
-    if (!data) return null;
+    if (response.error) {
+      console.error(`Error fetching exercise with ID ${id}:`, response.error);
+      throw response.error;
+    }
     
-    // Create a typed ExerciseFull object with default values for missing properties
-    const exerciseFull: ExerciseFull = {
-      id: data.id,
-      name: data.name || 'Unknown Exercise',
-      // Add properties that might be missing in the database with typecasting to handle TS errors
-      description: (data as any).description || data.name || '',
-      target_muscle_group: (data as any).target_muscle_group || data.prime_mover_muscle || '',
-      video_demonstration_url: (data as any).video_demonstration_url || data.short_youtube_demo || '',
-      video_explanation_url: (data as any).video_explanation_url || data.in_depth_youtube_exp || '',
-      // Add all other properties from data
-      ...data
-    };
+    const { data } = response;
+    console.log(`Exercise data found:`, data ? 'Yes' : 'No');
     
-    return exerciseFull;
-  } catch (error) {
-    console.error('Failed to fetch exercise details:', error);
+    // Transform the data to match our ExerciseFull type
+    if (data) {
+      // Clean up any URL fields that might have quotes in them
+      const cleanYoutubeUrls = (url: string | null): string | null => {
+        // If null or empty string, return null
+        if (!url) return null;
+        
+        // Remove quotes if they exist in the URL
+        const cleanUrl = url.replace(/^["']|["']$/g, '');
+        
+        // Return the cleaned URL, whether it's a real URL or just text like "Video Demonstration"
+        return cleanUrl;
+      };
+      
+      const exerciseData: ExerciseFull = {
+        ...data,
+        // Clean and map properties correctly using optional chaining
+        short_youtube_demo: cleanYoutubeUrls(data.short_youtube_demo),
+        in_depth_youtube_exp: cleanYoutubeUrls(data.in_depth_youtube_exp),
+        target_muscle_group: data.prime_mover_muscle || null,
+        video_demonstration_url: cleanYoutubeUrls(data.short_youtube_demo),
+        video_explanation_url: cleanYoutubeUrls(data.in_depth_youtube_exp),
+        description: data.description || `${data.prime_mover_muscle || ''} exercise using ${data.primary_equipment || 'bodyweight'}` 
+      };
+      return exerciseData;
+    }
+    
     return null;
+  } catch (error) {
+    console.error(`Failed to fetch exercise with ID ${id}:`, error);
+    throw error;
   }
 };

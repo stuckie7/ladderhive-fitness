@@ -1,187 +1,162 @@
 
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Exercise } from '@/types/exercise';
-import { WorkoutExercise } from './utils';
-
-type ApiResponse = {
-  success: boolean;
-  error?: string;
-  data?: any;
-};
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Exercise } from "@/types/exercise";
+import { WorkoutExercise } from "./use-fetch-workout-exercises";
 
 export const useManageWorkoutExercises = () => {
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Add an exercise to a workout
-   */
+  // Add an exercise to a workout
   const addExerciseToWorkout = async (
     workoutId: string,
     exercise: Exercise,
     sets: number = 3,
-    reps: string | number = 10,
+    reps: string = "10",
     restSeconds: number = 60,
     orderIndex: number = 0
-  ): Promise<ApiResponse> => {
-    setIsProcessing(true);
-    try {
-      // Convert exercise ID to number if it's a string
-      const exerciseId = typeof exercise.id === 'string' ? parseInt(exercise.id) : exercise.id;
-      
-      if (isNaN(Number(exerciseId))) {
-        throw new Error(`Invalid exercise ID: ${exerciseId}`);
-      }
-      
-      // Check if workoutId is in prepared_workouts or user_created_workouts
-      const { data: preparedWorkout } = await supabase
-        .from('prepared_workouts')
-        .select('id')
-        .eq('id', workoutId)
-        .single();
+  ) => {
+    setIsLoading(true);
+    setError(null);
 
-      if (preparedWorkout) {
-        // This is a prepared workout
-        const { error } = await supabase
-          .from('prepared_workout_exercises')
-          .insert({
-            workout_id: workoutId,
-            exercise_id: Number(exerciseId),
-            sets,
-            reps: reps.toString(),
-            rest_seconds: restSeconds,
-            order_index: orderIndex
-          });
+    try {
+      console.log(`Adding exercise to workout ${workoutId}:`, exercise);
+      
+      // Check if it's a prepared workout or user workout
+      const isPreparedWorkout = workoutId.startsWith('prepared_') ||
+                               await checkIfPreparedWorkout(workoutId);
+      
+      // Convert exercise ID to number if it's a string containing only digits
+      const exerciseId = typeof exercise.id === 'string' && !isNaN(Number(exercise.id))
+        ? Number(exercise.id)
+        : exercise.id;
+        
+      // Add to appropriate table
+      if (isPreparedWorkout) {
+        const { error } = await supabase.from("prepared_workout_exercises").insert({
+          workout_id: workoutId,
+          exercise_id: Number(exerciseId), // Ensure it's a number for DB storage
+          sets: sets,
+          reps: reps,
+          rest_seconds: restSeconds,
+          order_index: orderIndex,
+        });
 
         if (error) throw error;
       } else {
-        // This is a user created workout 
-        const { error } = await supabase
-          .from('user_created_workout_exercises')
-          .insert({
-            workout_id: workoutId,
-            exercise_id: Number(exerciseId),
-            sets,
-            reps: reps.toString(),
-            rest_seconds: restSeconds,
-            order_index: orderIndex
-          });
+        const { error } = await supabase.from("user_created_workout_exercises").insert({
+          workout_id: workoutId,
+          exercise_id: Number(exerciseId), // Ensure it's a number for DB storage
+          sets: sets,
+          reps: reps,
+          rest_seconds: restSeconds,
+          order_index: orderIndex,
+        });
 
         if (error) throw error;
       }
 
-      return { success: true };
+      console.log("Exercise added successfully");
     } catch (error: any) {
-      console.error('Error adding exercise to workout:', error);
-      return { success: false, error: error.message || 'Failed to add exercise' };
+      console.error("Error adding exercise to workout:", error);
+      setError(error.message || "Failed to add exercise");
+      throw error;
     } finally {
-      setIsProcessing(false);
+      setIsLoading(false);
     }
   };
 
-  /**
-   * Remove an exercise from a workout
-   */
-  const removeExerciseFromWorkout = async (exerciseId: string): Promise<ApiResponse> => {
-    setIsProcessing(true);
+  // Remove an exercise from a workout
+  const removeExerciseFromWorkout = async (exerciseId: string) => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      // First try user created workouts
-      const { error: userError } = await supabase
-        .from('user_created_workout_exercises')
+      console.log(`Removing exercise ${exerciseId} from workout`);
+      
+      // Try remove from both tables since we don't know which one it's in
+      const { error: preparedError } = await supabase
+        .from("prepared_workout_exercises")
         .delete()
-        .eq('id', exerciseId);
-
-      if (userError) {
-        // If not found in user workouts, try prepared workouts
-        const { error: preparedError } = await supabase
-          .from('prepared_workout_exercises')
-          .delete()
-          .eq('id', exerciseId);
-
-        if (preparedError) throw preparedError;
+        .eq("id", exerciseId);
+        
+      const { error: userError } = await supabase
+        .from("user_created_workout_exercises")
+        .delete()
+        .eq("id", exerciseId);
+        
+      if (preparedError && userError) {
+        throw preparedError;
       }
-
-      return { success: true };
+        
+      console.log("Exercise removed successfully");
     } catch (error: any) {
-      console.error('Error removing exercise from workout:', error);
-      return { success: false, error: error.message || 'Failed to remove exercise' };
+      console.error("Error removing exercise:", error);
+      setError(error.message || "Failed to remove exercise");
+      throw error;
     } finally {
-      setIsProcessing(false);
+      setIsLoading(false);
     }
   };
 
-  /**
-   * Update an exercise in a workout
-   */
-  const updateWorkoutExercise = async (exercise: WorkoutExercise): Promise<ApiResponse> => {
-    setIsProcessing(true);
+  // Update an exercise in a workout
+  const updateWorkoutExercise = async (exercise: WorkoutExercise) => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      // First try to update in user created workouts
-      const { data: userData, error: userError } = await supabase
-        .from('user_created_workout_exercises')
-        .select('id')
-        .eq('id', exercise.id)
-        .single();
-
-      // Convert exercise ID to number if it's a string
-      let exerciseId: number;
-      if (typeof exercise.exercise_id === 'string') {
-        const parsedId = parseInt(exercise.exercise_id);
-        if (isNaN(parsedId)) {
-          throw new Error(`Invalid exercise ID: ${exercise.exercise_id}`);
-        }
-        exerciseId = parsedId;
-      } else {
-        exerciseId = exercise.exercise_id as number;
-      }
-
-      // Ensure we have rest_seconds (use rest_time as fallback)
-      const restSeconds = exercise.rest_seconds || exercise.rest_time;
-
-      if (userData) {
-        // If found in user workouts, update there
+      console.log(`Updating exercise ${exercise.id}`);
+      
+      const isPreparedWorkout = exercise.workout_id.startsWith('prepared_') ||
+                               await checkIfPreparedWorkout(exercise.workout_id);
+      
+      // Prepare the update data - remove the exercise object and any non-column properties
+      const { exercise: _, ...updateData } = exercise;
+      
+      if (isPreparedWorkout) {
         const { error } = await supabase
-          .from('user_created_workout_exercises')
-          .update({
-            sets: exercise.sets,
-            reps: exercise.reps.toString(),
-            rest_seconds: restSeconds,
-            order_index: exercise.order_index,
-            notes: exercise.notes,
-            weight: exercise.weight
-          })
-          .eq('id', exercise.id);
-
+          .from("prepared_workout_exercises")
+          .update(updateData)
+          .eq("id", exercise.id);
+          
         if (error) throw error;
       } else {
-        // Otherwise, try prepared workouts
         const { error } = await supabase
-          .from('prepared_workout_exercises')
-          .update({
-            sets: exercise.sets,
-            reps: exercise.reps.toString(),
-            rest_seconds: restSeconds,
-            order_index: exercise.order_index,
-            notes: exercise.notes
-          })
-          .eq('id', exercise.id);
-
+          .from("user_created_workout_exercises")
+          .update(updateData)
+          .eq("id", exercise.id);
+          
         if (error) throw error;
       }
-
-      return { success: true };
+      
+      console.log("Exercise updated successfully");
     } catch (error: any) {
-      console.error('Error updating workout exercise:', error);
-      return { success: false, error: error.message || 'Failed to update exercise' };
+      console.error("Error updating exercise:", error);
+      setError(error.message || "Failed to update exercise");
+      throw error;
     } finally {
-      setIsProcessing(false);
+      setIsLoading(false);
     }
+  };
+
+  // Helper functions
+  
+  const checkIfPreparedWorkout = async (workoutId: string): Promise<boolean> => {
+    const { data } = await supabase
+      .from("prepared_workouts")
+      .select("id")
+      .eq("id", workoutId)
+      .single();
+      
+    return !!data;
   };
 
   return {
-    isProcessing,
+    isLoading,
+    error,
     addExerciseToWorkout,
+    updateWorkoutExercise,
     removeExerciseFromWorkout,
-    updateWorkoutExercise
   };
 };

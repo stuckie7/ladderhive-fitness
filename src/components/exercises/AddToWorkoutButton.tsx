@@ -3,12 +3,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import AddToWorkoutModal from "./AddToWorkoutModal";
-import { Exercise, ExerciseFull } from "@/types/exercise";
+import { Exercise } from "@/types/exercise";
 
 interface AddToWorkoutButtonProps {
-  exerciseId?: string;
-  exerciseName?: string;
-  exercise?: Exercise | ExerciseFull;
+  exerciseId: string;
+  exerciseName: string;
   variant?: "default" | "outline";
   className?: string;
 }
@@ -16,18 +15,17 @@ interface AddToWorkoutButtonProps {
 export default function AddToWorkoutButton({
   exerciseId,
   exerciseName,
-  exercise,
   variant = "default",
   className = ""
 }: AddToWorkoutButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Extract ID and name from either direct props or exercise object
-  const id = exerciseId || (exercise?.id?.toString() || "");
-  const name = exerciseName || (exercise?.name || "Exercise");
-
   const handleOpenModal = () => {
     setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -40,8 +38,8 @@ export default function AddToWorkoutButton({
       <AddToWorkoutModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
-        exerciseId={id}
-        exerciseName={name}
+        exerciseId={exerciseId}
+        exerciseName={exerciseName}
       />
     </>
   );

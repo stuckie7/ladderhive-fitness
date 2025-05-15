@@ -32,7 +32,7 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
 
       <div className="flex flex-col md:flex-row justify-between items-start mb-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">{exercise.name || "Exercise Details"}</h1>
+          <h1 className="text-3xl font-bold mb-2">{exercise.name}</h1>
           <p className="text-muted-foreground text-sm">
             {exercise.bodyPart && `${exercise.bodyPart} `}
             {exercise.target && exercise.target !== exercise.bodyPart && `· ${exercise.target} `}
@@ -42,10 +42,7 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
         </div>
 
         <div className="flex gap-2 mt-4 md:mt-0">
-          <AddToWorkoutButton 
-            exerciseId={exercise.id?.toString() || ""} 
-            exerciseName={exercise.name || ""}
-          />
+          <AddToWorkoutButton exerciseId={exercise.id.toString()} exerciseName={exercise.name} />
         </div>
       </div>
     </>

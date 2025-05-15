@@ -1,3 +1,4 @@
+
 // Export type definitions
 export interface Exercise {
   id: string | number;
@@ -30,7 +31,6 @@ export interface Exercise {
   posture?: string;
   laterality?: string;
   difficulty_level?: string;
-  youtube_thumbnail_url?: string;
 }
 
 export interface ExerciseFull {

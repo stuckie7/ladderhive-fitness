@@ -6,7 +6,6 @@ import { checkExercisesFullTableExists } from "@/hooks/exercise-library/services
 import { useExerciseFiltersState } from "./use-exercise-filters-state";
 import { useExerciseCrud } from "./use-exercise-crud";
 import { loadExerciseData, getExercisesCount, loadFilterOptions } from "../services/exercise-enhanced-service";
-import { useExercisesFull } from './use-exercises-full';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -94,8 +93,8 @@ export const useExerciseLibraryEnhanced = () => {
     // Reload filter options and exercise data
     const refreshData = async () => {
       try {
-        // Fixed by removing the argument
-        await loadFilterOptions(); 
+        const options = await loadFilterOptions();
+        // Update filter options
         // We intentionally don't update the state here to avoid triggering
         // multiple rerenders, the loadExerciseDataWithState will handle it
         loadExerciseDataWithState();
