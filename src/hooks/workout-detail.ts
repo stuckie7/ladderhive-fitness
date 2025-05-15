@@ -8,10 +8,17 @@ import { useToast } from '@/hooks/use-toast';
 
 export const useWorkoutDetail = (workoutId: string) => {
   const { workout, isLoading: workoutLoading, error } = useWorkoutFetch(workoutId);
-  const { workoutExercises, isLoading: exercisesLoading } = useWorkoutExercises(workoutId);
+  const { workoutExercises, isLoading: exercisesLoading, fetchExercises } = useWorkoutExercises();
   const { isSaved, handleSaveWorkout, handleCompleteWorkout } = useWorkoutActions(workoutId);
   const [isLoading, setIsLoading] = useState(workoutLoading);
   const { toast } = useToast();
+
+  // Fetch exercises when workout ID changes
+  useCallback(() => {
+    if (workoutId) {
+      fetchExercises(workoutId);
+    }
+  }, [workoutId, fetchExercises]);
 
   // Function to add an exercise to the workout
   const handleAddExercise = useCallback(async (exercise: Exercise): Promise<void> => {

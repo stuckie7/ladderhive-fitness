@@ -16,6 +16,7 @@ export interface WorkoutExercise {
   exercise?: any;
 }
 
+// The main hook export
 export const useFetchWorkoutExercises = () => {
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -117,9 +118,12 @@ export const useFetchWorkoutExercises = () => {
   };
 
   return {
-    exercises,
+    workoutExercises: exercises,
     isLoading,
     error,
     fetchExercises,
   };
 };
+
+// Make sure we provide the correct export name that's being imported elsewhere
+export const useWorkoutExercises = useFetchWorkoutExercises;

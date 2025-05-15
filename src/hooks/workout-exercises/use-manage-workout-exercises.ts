@@ -27,15 +27,16 @@ export const useManageWorkoutExercises = () => {
       const isPreparedWorkout = workoutId.startsWith('prepared_') ||
                                await checkIfPreparedWorkout(workoutId);
       
-      const exerciseId = typeof exercise.id === 'string' && !isNaN(parseInt(exercise.id))
-        ? parseInt(exercise.id)
+      // Convert exercise ID to number if it's a string containing only digits
+      const exerciseId = typeof exercise.id === 'string' && !isNaN(Number(exercise.id))
+        ? Number(exercise.id)
         : exercise.id;
         
       // Add to appropriate table
       if (isPreparedWorkout) {
         const { error } = await supabase.from("prepared_workout_exercises").insert({
           workout_id: workoutId,
-          exercise_id: exerciseId,
+          exercise_id: Number(exerciseId), // Ensure it's a number for DB storage
           sets: sets,
           reps: reps,
           rest_seconds: restSeconds,
@@ -46,7 +47,7 @@ export const useManageWorkoutExercises = () => {
       } else {
         const { error } = await supabase.from("user_created_workout_exercises").insert({
           workout_id: workoutId,
-          exercise_id: exerciseId,
+          exercise_id: Number(exerciseId), // Ensure it's a number for DB storage
           sets: sets,
           reps: reps,
           rest_seconds: restSeconds,
