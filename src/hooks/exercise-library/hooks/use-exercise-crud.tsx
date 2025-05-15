@@ -1,167 +1,116 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { ExerciseFull } from "@/types/exercise";
-import { useToast } from "@/components/ui/use-toast";
+import { useState, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Exercise, ExerciseFull } from '@/types/exercise';
+import { mapExerciseToExerciseFull } from '../mappers';
 
-type ExerciseFormState = {
-  name: string;
-  prime_mover_muscle: string;
-  primary_equipment: string;
-  difficulty: string;
-  short_youtube_demo: string;
-};
-
-export const useExerciseCrud = (onSuccess: () => void) => {
-  const [currentExercise, setCurrentExercise] = useState<ExerciseFull | null>(null);
-  const [formState, setFormState] = useState<ExerciseFormState>({
-    name: "",
-    prime_mover_muscle: "",
-    primary_equipment: "",
-    difficulty: "Beginner",
-    short_youtube_demo: ""
-  });
-  
+export const useExerciseCrud = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Handle form input changes
-  const handleFormChange = (field: string, value: string) => {
-    setFormState(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-  
-  // Handle add exercise
-  const handleAddExercise = async () => {
+  const addExercise = useCallback(async (exercise: Exercise): Promise<boolean> => {
+    setIsLoading(true);
     try {
+      // Map to full exercise format
+      const fullExercise = mapExerciseToExerciseFull(exercise);
+      
+      // Insert into exercises_full table
       const { error } = await supabase
         .from('exercises_full')
-        .insert([{
-          name: formState.name,
-          prime_mover_muscle: formState.prime_mover_muscle,
-          primary_equipment: formState.primary_equipment,
-          difficulty: formState.difficulty,
-          short_youtube_demo: formState.short_youtube_demo
-        }]);
-      
+        .insert([fullExercise]);
+
       if (error) throw error;
-      
+
       toast({
-        title: "Exercise Added",
-        description: `Successfully added ${formState.name}`,
+        title: "Success",
+        description: `Exercise "${exercise.name}" has been added.`,
       });
-      
-      // Reset form
-      setFormState({
-        name: "",
-        prime_mover_muscle: "",
-        primary_equipment: "",
-        difficulty: "Beginner",
-        short_youtube_demo: ""
-      });
-      
-      // Refresh the exercise list
-      onSuccess();
-    } catch (error) {
-      console.error("Failed to add exercise:", error);
+      return true;
+    } catch (error: any) {
+      console.error('Failed to add exercise:', error);
       toast({
         title: "Error",
-        description: "Failed to add exercise. Check the console for details.",
-        variant: "destructive"
+        description: `Failed to add exercise: ${error.message}`,
+        variant: "destructive",
       });
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-  };
-  
-  // Handle edit exercise
-  const handleEditExercise = async () => {
-    if (!currentExercise) return;
-    
+  }, [toast]);
+
+  const updateExercise = useCallback(async (id: string | number, exercise: Exercise): Promise<boolean> => {
+    setIsLoading(true);
     try {
+      // Ensure numeric ID for Supabase query
+      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      
+      // Map to full exercise format
+      const fullExercise = mapExerciseToExerciseFull(exercise);
+      
+      // Update exercises_full table
       const { error } = await supabase
         .from('exercises_full')
-        .update({
-          name: formState.name,
-          prime_mover_muscle: formState.prime_mover_muscle,
-          primary_equipment: formState.primary_equipment,
-          difficulty: formState.difficulty,
-          short_youtube_demo: formState.short_youtube_demo
-        })
-        .eq('id', currentExercise.id);
-      
+        .update(fullExercise)
+        .eq('id', numericId);
+
       if (error) throw error;
-      
+
       toast({
-        title: "Exercise Updated",
-        description: `Successfully updated ${formState.name}`,
+        title: "Success",
+        description: `Exercise "${exercise.name}" has been updated.`,
       });
-      
-      // Refresh the exercise list
-      onSuccess();
-    } catch (error) {
-      console.error("Failed to update exercise:", error);
+      return true;
+    } catch (error: any) {
+      console.error('Failed to update exercise:', error);
       toast({
         title: "Error",
-        description: "Failed to update exercise. Check the console for details.",
-        variant: "destructive"
+        description: `Failed to update exercise: ${error.message}`,
+        variant: "destructive",
       });
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-  };
-  
-  // Handle delete exercise
-  const handleDeleteExercise = async () => {
-    if (!currentExercise) return;
-    
+  }, [toast]);
+
+  const deleteExercise = useCallback(async (id: string | number): Promise<boolean> => {
+    setIsLoading(true);
     try {
+      // Ensure numeric ID for Supabase query
+      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      
+      // Delete from exercises_full table
       const { error } = await supabase
         .from('exercises_full')
         .delete()
-        .eq('id', currentExercise.id);
-      
+        .eq('id', numericId);
+
       if (error) throw error;
-      
+
       toast({
-        title: "Exercise Deleted",
-        description: `Successfully deleted ${currentExercise.name}`,
+        title: "Success",
+        description: `Exercise has been deleted.`,
       });
-      
-      // Refresh the exercise list
-      onSuccess();
-    } catch (error) {
-      console.error("Failed to delete exercise:", error);
+      return true;
+    } catch (error: any) {
+      console.error('Failed to delete exercise:', error);
       toast({
         title: "Error",
-        description: "Failed to delete exercise. Check the console for details.",
-        variant: "destructive"
+        description: `Failed to delete exercise: ${error.message}`,
+        variant: "destructive",
       });
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-  };
-  
-  // Open edit dialog with exercise data
-  const openEditDialog = (exercise: ExerciseFull) => {
-    setCurrentExercise(exercise);
-    setFormState({
-      name: exercise.name || "",
-      prime_mover_muscle: exercise.prime_mover_muscle || "",
-      primary_equipment: exercise.primary_equipment || "",
-      difficulty: exercise.difficulty || "Beginner",
-      short_youtube_demo: exercise.short_youtube_demo || ""
-    });
-  };
-  
-  // Open delete confirmation dialog
-  const openDeleteDialog = (exercise: ExerciseFull) => {
-    setCurrentExercise(exercise);
-  };
+  }, [toast]);
 
   return {
-    formState,
-    currentExercise,
-    handleFormChange,
-    handleAddExercise,
-    handleEditExercise,
-    handleDeleteExercise,
-    openEditDialog,
-    openDeleteDialog
+    isLoading,
+    addExercise,
+    updateExercise,
+    deleteExercise
   };
 };

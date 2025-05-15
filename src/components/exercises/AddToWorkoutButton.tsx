@@ -1,52 +1,36 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus, Check } from "lucide-react";
-import { Exercise } from "@/types/exercise";
-import AddToWorkoutModal from "./AddToWorkoutModal";
-import { useAddToWorkout } from "@/hooks/use-add-to-workout";
+import React, { useState } from 'react';
+import { Button, ButtonProps } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import AddToWorkoutModal from './AddToWorkoutModal';
 
-interface AddToWorkoutButtonProps {
-  exercise: Exercise;
-  variant?: "default" | "outline";
-  className?: string;
+interface AddToWorkoutButtonProps extends ButtonProps {
+  exerciseId: string | number;
+  exerciseName: string;
 }
 
-export default function AddToWorkoutButton({ 
-  exercise, 
-  variant = "default",
-  className = ""
-}: AddToWorkoutButtonProps) {
+const AddToWorkoutButton = ({ exerciseId, exerciseName, ...props }: AddToWorkoutButtonProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { isRecentlyAdded } = useAddToWorkout();
-  const isAdded = isRecentlyAdded(exercise.id);
 
   return (
     <>
       <Button
-        variant={variant}
+        variant="secondary"
+        size="sm"
         onClick={() => setIsModalOpen(true)}
-        className={className}
-        disabled={isAdded}
+        {...props}
       >
-        {isAdded ? (
-          <>
-            <Check className="h-4 w-4 mr-2" />
-            Added!
-          </>
-        ) : (
-          <>
-            <Plus className="h-4 w-4 mr-2" />
-            Add to Workout
-          </>
-        )}
+        <Plus className="mr-2 h-4 w-4" /> Add to Workout
       </Button>
       
       <AddToWorkoutModal
-        exercise={exercise}
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        exerciseId={exerciseId.toString()}
+        exerciseName={exerciseName}
       />
     </>
   );
-}
+};
+
+export default AddToWorkoutButton;

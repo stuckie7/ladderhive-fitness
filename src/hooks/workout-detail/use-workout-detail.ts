@@ -1,55 +1,49 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useWorkoutActions } from './use-workout-actions';
+import { useWorkoutFetch } from './use-fetch-workout';
+import { useWorkoutExercises } from './workout-exercises/use-fetch-workout-exercises';
+import { Exercise } from '@/types/exercise';
+import { useState, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-export const useWorkoutDetail = (id?: string) => {
-  const [workout, setWorkout] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const useWorkoutDetail = (workoutId: string | undefined) => {
+  // Handle undefined workoutId gracefully
+  const safeWorkoutId = workoutId || '';
+  const { workout, isLoading: workoutLoading, error } = useWorkoutFetch(safeWorkoutId);
+  const { workoutExercises, isLoading: exercisesLoading } = useWorkoutExercises(safeWorkoutId);
+  const { isSaved, handleSaveWorkout, handleCompleteWorkout } = useWorkoutActions(safeWorkoutId);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!id) {
-      setIsLoading(false);
-      return;
-    }
+  // Function to add an exercise to the workout
+  const handleAddExercise = useCallback(async (exercise: Exercise): Promise<void> => {
+    toast({
+      title: "Feature in development",
+      description: "Adding exercises to existing workouts will be available soon.",
+      variant: "default"
+    });
+    return Promise.resolve();
+  }, [toast]);
 
-    const fetchWorkout = async () => {
-      try {
-        setIsLoading(true);
-        
-        const { data, error } = await supabase
-          .from('prepared_workouts')
-          .select(`
-            *,
-            exercises:prepared_workout_exercises(
-              *,
-              exercise:exercise_id(*)
-            )
-          `)
-          .eq('id', id)
-          .single();
-        
-        if (error) throw error;
-        
-        setWorkout(data);
-        
-      } catch (err: any) {
-        console.error('Error fetching workout detail:', err);
-        setError(err.message);
-        toast({
-          title: "Error",
-          description: `Failed to load workout: ${err.message}`,
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Function to remove an exercise from the workout
+  const removeExerciseFromWorkout = useCallback(async (exerciseId: string): Promise<void> => {
+    toast({
+      title: "Feature in development",
+      description: "Removing exercises from workouts will be available soon.",
+      variant: "default"
+    });
+    return Promise.resolve();
+  }, [toast]);
 
-    fetchWorkout();
-  }, [id, toast]);
-
-  return { workout, isLoading, error };
+  return {
+    workout,
+    isLoading: workoutLoading || exercisesLoading,
+    isSaved,
+    workoutExercises,
+    exercisesLoading,
+    error,
+    handleAddExercise,
+    handleSaveWorkout,
+    handleCompleteWorkout,
+    removeExerciseFromWorkout
+  };
 };

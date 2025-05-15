@@ -1,136 +1,123 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Star, Plus, Dumbbell, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "react-router-dom";
-import { Exercise } from "@/types/exercise";
-import { useToast } from "@/components/ui/use-toast";
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSuggestedExercises } from '@/hooks/use-suggested-exercises';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Activity, Dumbbell, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-interface FavoriteExercisesProps {
-  exercises: Exercise[];
-  isLoading: boolean;
-  onAddExercise?: () => void;
-  onRemoveFavorite?: (id: string) => Promise<void>;
-}
-
-const FavoriteExercises = ({ 
-  exercises, 
-  isLoading, 
-  onAddExercise,
-  onRemoveFavorite
-}: FavoriteExercisesProps) => {
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const [removingId, setRemovingId] = useState<string | null>(null);
-
-  const handleRemoveFavorite = async (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to manage favorite exercises",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      setRemovingId(id);
-      
-      if (onRemoveFavorite) {
-        await onRemoveFavorite(id);
-        toast({
-          title: "Success",
-          description: "Exercise removed from favorites",
-        });
-      }
-    } catch (error) {
-      console.error("Error removing favorite:", error);
-      toast({
-        title: "Error",
-        description: "Failed to remove exercise from favorites",
-        variant: "destructive",
-      });
-    } finally {
-      setRemovingId(null);
-    }
+const FavoriteExercises = () => {
+  const { suggestedExercises, isLoading } = useSuggestedExercises();
+  const navigate = useNavigate();
+  
+  const handleViewDetails = (exerciseId: string | number) => {
+    navigate(`/exercises/${exerciseId}`);
   };
-
+  
+  // Show limited number of exercises on dashboard
+  const displayExercises = suggestedExercises.slice(0, 4);
+  
+  if (isLoading) {
+    return (
+      <Card className="col-span-12 lg:col-span-6 xl:col-span-7">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Suggested Exercises</CardTitle>
+          <CardDescription>Popular exercises you might want to try</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...Array(4)].map((_, index) => (
+              <Card key={index} className="overflow-hidden">
+                <div className="p-4">
+                  <Skeleton className="h-4 w-2/3 mb-2" />
+                  <Skeleton className="h-3 w-1/3 mb-4" />
+                  <div className="flex gap-2 mb-4">
+                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                  <Skeleton className="h-8 w-28 mt-4" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
-    <Card className="glass-panel h-full">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xl flex items-center gap-2 text-fitness-accent">
-          <Star className="h-5 w-5" />
-          <span>Favorite Exercises</span>
-        </CardTitle>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 px-2"
-          onClick={onAddExercise}
+    <Card className="col-span-12 lg:col-span-6 xl:col-span-7">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-xl font-semibold">Suggested Exercises</CardTitle>
+          <CardDescription>Popular exercises you might want to try</CardDescription>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1"
+          onClick={() => navigate('/exercise-library-enhanced')}
         >
-          <Plus className="h-4 w-4 mr-1" />
-          <span>Add</span>
+          View All <ArrowRight className="h-4 w-4" />
         </Button>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-20 w-full" />
-            ))}
-          </div>
-        ) : exercises.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {exercises.map((exercise) => (
-              <Link 
-                key={exercise.id} 
-                to={`/exercises/${exercise.id}`}
-                className="p-3 border border-gray-800/50 rounded-lg hover:border-fitness-accent/50 hover:bg-gray-900/30 transition-all group relative"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-fitness-accent/10 p-2 rounded-full">
-                    <Dumbbell className="h-4 w-4 text-fitness-accent" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {displayExercises.length > 0 ? (
+            displayExercises.map((exercise) => (
+              <Card key={exercise.id} className="overflow-hidden">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium truncate">{exercise.name}</h3>
+                    {exercise.difficulty && (
+                      <Badge variant="outline" className="capitalize">
+                        {exercise.difficulty}
+                      </Badge>
+                    )}
                   </div>
-                  <div>
-                    <h4 className="font-medium text-sm group-hover:text-fitness-accent transition-colors line-clamp-1">{exercise.name}</h4>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
-                      {exercise.muscle_group || exercise.bodyPart || ""}
-                    </p>
+                  
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+                    <Dumbbell className="h-3.5 w-3.5" />
+                    <span>{exercise.primary_equipment || 'Bodyweight'}</span>
                   </div>
-                </div>
-                {onRemoveFavorite && (
-                  <button 
-                    className="absolute top-1 right-1 p-1 rounded-full bg-gray-800/50 hover:bg-red-500/30 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => handleRemoveFavorite(e, exercise.id)}
-                    disabled={removingId === exercise.id}
+                  
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {exercise.prime_mover_muscle && (
+                      <Badge variant="secondary" className="bg-secondary/50">
+                        {exercise.prime_mover_muscle}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => handleViewDetails(exercise.id.toString())}
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <Dumbbell className="mx-auto h-12 w-12 text-gray-600" />
-            <h3 className="mt-4 text-lg font-medium text-white">No favorites yet</h3>
-            <p className="mt-2 text-gray-400">
-              Add exercises to your favorites for quick access
-            </p>
-            <Link to="/exercises">
-              <Button className="mt-6 btn-fitness-accent">
-                <Plus className="mr-2 h-4 w-4" /> Browse Exercises
+                    View Details
+                  </Button>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-2 py-8 text-center">
+              <Activity className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+              <h3 className="text-lg font-medium">No exercises available</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                No suggested exercises found at the moment
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/exercise-library-enhanced')}
+              >
+                Browse Exercise Library
               </Button>
-            </Link>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
