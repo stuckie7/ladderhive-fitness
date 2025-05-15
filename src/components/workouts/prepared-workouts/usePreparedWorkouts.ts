@@ -104,10 +104,10 @@ export const usePreparedWorkouts = (currentWorkoutId: string | null = null) => {
       const mappedExercises: WorkoutExercise[] = data.map(item => ({
         id: item.id,
         workout_id: item.workout_id,
-        exercise_id: item.exercise_id,
+        exercise_id: item.exercise_id.toString(),
         sets: item.sets,
         reps: ensureStringReps(item.reps), // Convert to string
-        weight: item.weight,
+        weight: item.weight ? item.weight.toString() : undefined,
         rest_time: item.rest_time,
         rest_seconds: item.rest_time || 60, // Map rest_time to rest_seconds
         order_index: item.order_index,

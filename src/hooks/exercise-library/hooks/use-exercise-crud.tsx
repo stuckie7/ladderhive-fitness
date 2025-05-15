@@ -3,9 +3,24 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Exercise, ExerciseFull } from "@/types/exercise";
+import { ensureIdFormat } from "@/hooks/workout-exercises/utils";
 
 // Initial form state for new exercises
-const initialFormState = {
+export interface ExerciseFormState {
+  name: string;
+  description: string;
+  muscle_group: string;
+  primary_equipment: string;
+  difficulty: string;
+  body_region: string;
+  instructions: string;
+  video_url: string;
+  image_url: string;
+  prime_mover_muscle?: string;
+  short_youtube_demo?: string;
+}
+
+const initialFormState: ExerciseFormState = {
   name: "",
   description: "",
   muscle_group: "",
@@ -14,11 +29,13 @@ const initialFormState = {
   body_region: "",
   instructions: "",
   video_url: "",
-  image_url: ""
+  image_url: "",
+  prime_mover_muscle: "",
+  short_youtube_demo: ""
 };
 
 export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
-  const [formState, setFormState] = useState(initialFormState);
+  const [formState, setFormState] = useState<ExerciseFormState>(initialFormState);
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   const { toast } = useToast();
 
@@ -36,20 +53,18 @@ export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
         image_url: ex.gifUrl || "",
       }));
 
-      const { error } = await supabase
-        .from("exercises")
-        .upsert(formattedExercises, {
-          onConflict: "id"
-        });
+      // Insert each exercise individually to handle different types
+      for (const exercise of formattedExercises) {
+        const { error } = await supabase
+          .from("exercises")
+          .upsert(exercise, {
+            onConflict: "id"
+          });
 
-      if (error) {
-        console.error("Error adding exercises:", error);
-        toast({
-          title: "Error",
-          description: `Failed to add exercises: ${error.message}`,
-          variant: "destructive"
-        });
-        return false;
+        if (error) {
+          console.error("Error adding exercise:", error);
+          throw error;
+        }
       }
 
       toast({
@@ -126,10 +141,10 @@ export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
       const updateData: any = {
         name: exercise.name,
         description: exercise.description,
-        prime_mover_muscle: exercise.prime_mover_muscle,
-        primary_equipment: exercise.primary_equipment,
+        prime_mover_muscle: exercise.prime_mover_muscle || exercise.muscle_group,
+        primary_equipment: exercise.primary_equipment || exercise.equipment,
         difficulty: exercise.difficulty,
-        body_region: exercise.body_region,
+        body_region: exercise.body_region || exercise.bodyPart,
         // Include other fields as needed
       };
       
@@ -226,17 +241,53 @@ export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
     setFormState({
       name: exercise.name || "",
       description: exercise.description || "",
-      muscle_group: exercise.muscle_group || exercise.prime_mover_muscle || "",
-      primary_equipment: exercise.primary_equipment || exercise.equipment || "",
+      muscle_group: getMuscleGroup(exercise),
+      primary_equipment: getEquipment(exercise),
       difficulty: exercise.difficulty || "",
-      body_region: exercise.bodyPart || exercise.body_region || "",
+      body_region: getBodyRegion(exercise),
       instructions: Array.isArray(exercise.instructions) 
         ? exercise.instructions.join("\n") 
-        : exercise.instructions || "",
-      video_url: exercise.video_url || exercise.short_youtube_demo || "",
-      image_url: exercise.image_url || exercise.youtube_thumbnail_url || ""
+        : exercise.instructions as string || "",
+      video_url: getVideoUrl(exercise),
+      image_url: getImageUrl(exercise),
+      prime_mover_muscle: exercise.prime_mover_muscle || "",
+      short_youtube_demo: exercise.short_youtube_demo || ""
     });
     setCurrentExercise(exercise as Exercise);
+  };
+
+  // Helper functions to get values with fallbacks
+  const getMuscleGroup = (exercise: Exercise | ExerciseFull): string => {
+    return exercise.muscle_group || 
+           exercise.prime_mover_muscle || 
+           exercise.target || 
+           "";
+  };
+
+  const getEquipment = (exercise: Exercise | ExerciseFull): string => {
+    return exercise.primary_equipment || 
+           exercise.equipment || 
+           "";
+  };
+
+  const getBodyRegion = (exercise: Exercise | ExerciseFull): string => {
+    return exercise.body_region || 
+           exercise.bodyPart || 
+           "";
+  };
+
+  const getVideoUrl = (exercise: Exercise | ExerciseFull): string => {
+    return exercise.video_url || 
+           exercise.short_youtube_demo || 
+           exercise.video_demonstration_url || 
+           "";
+  };
+
+  const getImageUrl = (exercise: Exercise | ExerciseFull): string => {
+    return exercise.image_url || 
+           exercise.youtube_thumbnail_url || 
+           exercise.gifUrl || 
+           "";
   };
 
   // Set up for deleting an exercise
@@ -256,7 +307,9 @@ export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
       instructions: formState.instructions ? [formState.instructions] : [],
       video_url: formState.video_url,
       image_url: formState.image_url,
-      bodyPart: formState.body_region
+      bodyPart: formState.body_region,
+      prime_mover_muscle: formState.prime_mover_muscle,
+      short_youtube_demo: formState.short_youtube_demo
     };
     
     return addExercise(newExercise);
@@ -269,11 +322,11 @@ export const useExerciseCrud = (onSuccess: () => Promise<void>) => {
     const updatedExercise: Partial<ExerciseFull> = {
       name: formState.name,
       description: formState.description,
-      prime_mover_muscle: formState.muscle_group,
+      prime_mover_muscle: formState.prime_mover_muscle || formState.muscle_group,
       primary_equipment: formState.primary_equipment,
       difficulty: formState.difficulty,
       body_region: formState.body_region,
-      short_youtube_demo: formState.video_url,
+      short_youtube_demo: formState.short_youtube_demo || formState.video_url,
       youtube_thumbnail_url: formState.image_url
     };
     

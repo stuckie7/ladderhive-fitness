@@ -29,7 +29,7 @@ export default function ExerciseDetail() {
         let { data: fullData, error: fullError } = await supabase
           .from('exercises_full')
           .select('*')
-          .eq('id', parseInt(id, 10))
+          .eq('id', id)
           .single();
 
         if (fullData) {

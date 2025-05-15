@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Card,
   CardContent,
@@ -22,70 +22,54 @@ import { useToast } from "@/components/ui/use-toast";
 import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 import { Exercise } from "@/types/exercise";
 
-interface WorkoutBuilderExerciseListProps {
-  exercises: Exercise[];
-  onExerciseDetailsChange: (
-    exerciseId: string,
-    sets: number,
-    reps: string,
-    weight: string,
-    restTime: number
-  ) => void;
-  onRemoveExercise: (exerciseId: string) => void;
+export interface WorkoutExerciseDetail extends Exercise {
+  sets: number;
+  reps: string;
+  weight?: string;
+  restTime?: number;
+  rest_seconds?: number;
+  notes?: string;
+  order_index?: number;
+}
+
+export interface WorkoutBuilderExerciseListProps {
+  exercises: WorkoutExerciseDetail[];
+  onRemove: (id: string) => void;
+  onUpdate: (id: string, updates: Partial<WorkoutExerciseDetail>) => void;
+  onMoveUp: (id: string) => void;
+  onMoveDown: (id: string) => void;
+  onReorder: (startIndex: number, endIndex: number) => void;
+  isLoading: boolean;
 }
 
 const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
   exercises,
-  onExerciseDetailsChange,
-  onRemoveExercise,
+  onRemove,
+  onUpdate,
+  onMoveUp,
+  onMoveDown,
+  onReorder,
+  isLoading,
 }) => {
   const { toast } = useToast();
-  const [exerciseDetails, setExerciseDetails] = useState<{
-    [exerciseId: string]: {
-      sets: number;
-      reps: string;
-      weight: string;
-      restTime: number;
-    };
-  }>({});
-
-  const handleDetailsChange = (
+  
+  const handleDetailChange = (
     exerciseId: string,
     field: string,
     value: string | number
   ) => {
-    setExerciseDetails((prevDetails) => ({
-      ...prevDetails,
-      [exerciseId]: {
-        ...prevDetails[exerciseId],
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleSaveDetails = (exerciseId: string) => {
-    const details = exerciseDetails[exerciseId];
-    if (details) {
-      onExerciseDetailsChange(
-        exerciseId,
-        details.sets,
-        details.reps,
-        details.weight,
-        details.restTime
-      );
-      toast({
-        title: "Details Saved",
-        description: "Exercise details have been saved.",
-      });
-    }
+    onUpdate(exerciseId, { [field]: value });
   };
 
   return (
-    <Accordion type="multiple">
-      {exercises.map((exercise) => (
-        <AccordionItem key={exercise.id} value={exercise.id.toString()}>
-          <AccordionTrigger>
-            {exercise.name}
+    <Accordion type="multiple" className="space-y-2">
+      {exercises.map((exercise, index) => (
+        <AccordionItem key={exercise.id} value={exercise.id.toString()} className="border rounded-md">
+          <AccordionTrigger className="px-4">
+            <div className="flex justify-between w-full">
+              <span>{exercise.name}</span>
+              {isLoading && <span className="text-muted-foreground text-sm">Loading...</span>}
+            </div>
           </AccordionTrigger>
           <AccordionContent>
             <Card>
@@ -102,12 +86,12 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
                     <Input
                       type="number"
                       id={`sets-${exercise.id}`}
-                      defaultValue="3"
+                      value={exercise.sets}
                       onChange={(e) =>
-                        handleDetailsChange(
+                        handleDetailChange(
                           exercise.id.toString(),
                           "sets",
-                          parseInt(e.target.value)
+                          parseInt(e.target.value || '3')
                         )
                       }
                     />
@@ -117,9 +101,9 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
                     <Input
                       type="text"
                       id={`reps-${exercise.id}`}
-                      defaultValue="10"
+                      value={exercise.reps}
                       onChange={(e) =>
-                        handleDetailsChange(
+                        handleDetailChange(
                           exercise.id.toString(),
                           "reps",
                           e.target.value
@@ -129,13 +113,14 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor={`weight-${exercise.id}`}>Weight (lbs)</Label>
+                  <Label htmlFor={`weight-${exercise.id}`}>Weight</Label>
                   <Input
                     type="text"
                     id={`weight-${exercise.id}`}
+                    value={exercise.weight || ''}
                     placeholder="Enter weight"
                     onChange={(e) =>
-                      handleDetailsChange(
+                      handleDetailChange(
                         exercise.id.toString(),
                         "weight",
                         e.target.value
@@ -144,47 +129,84 @@ const WorkoutBuilderExerciseList: React.FC<WorkoutBuilderExerciseListProps> = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor={`rest-${exercise.id}`}>Rest Time (seconds)</Label>
+                  <Label htmlFor={`rest-${exercise.id}`}>
+                    Rest Time (seconds): {exercise.rest_seconds || exercise.restTime || 60}
+                  </Label>
                   <Slider
-                    defaultValue={[60]}
+                    id={`rest-${exercise.id}`}
+                    value={[exercise.rest_seconds || exercise.restTime || 60]}
                     max={300}
-                    step={30}
+                    step={10}
                     onValueChange={(value) =>
-                      handleDetailsChange(
+                      handleDetailChange(
                         exercise.id.toString(),
-                        "restTime",
+                        "rest_seconds",
                         value[0]
                       )
                     }
                   />
                 </div>
-                {exercise.video_url && (
+                <div>
+                  <Label htmlFor={`notes-${exercise.id}`}>Notes</Label>
+                  <Input
+                    type="text"
+                    id={`notes-${exercise.id}`}
+                    value={exercise.notes || ''}
+                    placeholder="Add notes (optional)"
+                    onChange={(e) =>
+                      handleDetailChange(
+                        exercise.id.toString(),
+                        "notes",
+                        e.target.value
+                      )
+                    }
+                  />
+                </div>
+                {(exercise.video_url || exercise.short_youtube_demo) && (
                   <ExerciseVideoHandler 
-                    url={exercise.video_url} 
-                    title={exercise.name || "Exercise Video"} 
-                    className="w-full h-32" 
+                    url={exercise.video_url || exercise.short_youtube_demo || ''} 
+                    title={exercise.name} 
                   />
                 )}
               </CardContent>
               <CardFooter className="justify-between">
+                <div className="space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onMoveUp(exercise.id.toString())}
+                    disabled={index === 0}
+                  >
+                    Up
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onMoveDown(exercise.id.toString())}
+                    disabled={index === exercises.length - 1}
+                  >
+                    Down
+                  </Button>
+                </div>
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => onRemoveExercise(exercise.id.toString())}
+                  onClick={() => onRemove(exercise.id.toString())}
                 >
                   Remove
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleSaveDetails(exercise.id.toString())}
-                >
-                  Save Details
                 </Button>
               </CardFooter>
             </Card>
           </AccordionContent>
         </AccordionItem>
       ))}
+      {exercises.length === 0 && !isLoading && (
+        <Card>
+          <CardContent className="py-6 text-center text-muted-foreground">
+            No exercises added to this workout yet.
+          </CardContent>
+        </Card>
+      )}
     </Accordion>
   );
 };

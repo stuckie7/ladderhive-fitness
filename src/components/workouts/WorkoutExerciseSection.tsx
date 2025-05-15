@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dumbbell, Search } from "lucide-react";
-import ExerciseList from "@/components/workouts/ExerciseList";
+import ExerciseList from "@/components/workouts/detail/ExerciseList";
 import ExerciseSearchModal from "@/components/exercises/ExerciseSearchModal";
 import WorkoutExerciseSkeleton from "@/components/workouts/WorkoutExerciseSkeleton";
 import { Exercise } from "@/types/exercise";
@@ -19,6 +19,7 @@ interface ExerciseListItem {
   restTime?: number;
   description?: string;
   demonstration?: string;
+  thumbnailUrl?: string;
 }
 
 interface WorkoutExerciseSectionProps {
@@ -48,12 +49,14 @@ const WorkoutExerciseSection = ({
     sets: we.sets,
     reps: we.reps, // This will be string or number already
     weight: we.weight ? String(we.weight) : undefined, // Convert weight to string
-    restTime: we.rest_seconds || we.rest_time, // Use rest_seconds with fallback to rest_time
+    restTime: we.rest_seconds || 60, // Prioritize rest_seconds field
     description: we.exercise?.description,
     demonstration: we.exercise?.video_demonstration_url || 
                   we.exercise?.video_url || 
                   we.exercise?.short_youtube_demo ||
-                  we.exercise?.image_url
+                  we.exercise?.image_url,
+    thumbnailUrl: we.exercise?.youtube_thumbnail_url ||
+                 we.exercise?.image_url
   }));
 
   return (

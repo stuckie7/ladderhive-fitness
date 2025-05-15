@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -238,25 +237,17 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         ? 'prepared_workout_exercises'
         : 'user_created_workout_exercises';
       
-      // Use UPSERT to update all exercises at once
-      // This is more efficient than updating them one by one
-      const { error } = await supabase
-        .from(table)
-        .upsert(
-          orderedExercises.map(item => ({
-            id: item.id,
-            order_index: item.order_index
-          }))
-        );
-      
-      if (error) {
-        console.error(`Failed to reorder exercises in ${table}:`, error);
-        toast({
-          title: 'Error',
-          description: `Failed to reorder exercises: ${error.message}`,
-          variant: 'destructive',
-        });
-        return false;
+      // Process each exercise update individually
+      for (const item of orderedExercises) {
+        const { error } = await supabase
+          .from(table)
+          .update({ order_index: item.order_index })
+          .eq('id', item.id);
+        
+        if (error) {
+          console.error(`Failed to reorder exercise ${item.id}:`, error);
+          throw error;
+        }
       }
       
       // Refresh the exercise list

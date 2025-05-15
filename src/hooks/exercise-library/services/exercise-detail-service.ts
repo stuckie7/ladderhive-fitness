@@ -58,10 +58,13 @@ export const createExerciseDetailService = (): ExerciseDetailService => {
         updatePayload.instructions = updatePayload.instructions.join('\n');
       }
       
+      // Convert ID to string
+      const exerciseId = id.toString();
+      
       const { data, error } = await supabase
         .from('exercises_full')
         .update(updatePayload)
-        .eq('id', id.toString())
+        .eq('id', exerciseId)
         .select()
         .single();
       
