@@ -61,10 +61,10 @@ export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise 
     secondary_muscle: exerciseFull.secondary_muscle,
     tertiary_muscle: exerciseFull.tertiary_muscle,
     primary_equipment: exerciseFull.primary_equipment,
-    body_region: exerciseFull.body_region
+    body_region: exerciseFull.body_region,
+    target_muscle_group: exerciseFull.prime_mover_muscle || exerciseFull.target_muscle_group
   };
 };
 
 // Export the WorkoutExercise type from the workout-exercises module
-export { WorkoutExercise };
-
+export type { WorkoutExercise } from '@/types/workout';

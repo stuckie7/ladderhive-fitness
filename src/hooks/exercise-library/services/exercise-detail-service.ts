@@ -1,5 +1,4 @@
 
-
 import { supabase } from '@/integrations/supabase/client';
 import { Exercise, ExerciseFull } from '@/types/exercise';
 
@@ -23,6 +22,7 @@ export const getExerciseFullById = async (id: string | number): Promise<Exercise
       return null;
     }
     
+    // Ensure the returned data has correct typing
     return data as ExerciseFull;
   } catch (error) {
     console.error('Exception fetching exercise full data:', error);
@@ -42,14 +42,12 @@ export const updateExerciseFull = async (exercise: Partial<ExerciseFull>): Promi
     // Create an update object with only the fields that exist in the exercises_full table
     const updateData = {
       ...exercise,
-      // Don't include non-existent fields in update
+      id: numericId,
+      description: exercise.description || null,
+      instructions: Array.isArray(exercise.instructions) ? exercise.instructions : null
     };
     
-    // Remove any fields that might not be in the table schema
-    if ('instructions' in updateData && Array.isArray(updateData.instructions)) {
-      // Handle instructions array properly
-    }
-    
+    // Handle instructions formatting if needed
     const { data, error } = await supabase
       .from('exercises_full')
       .update(updateData)
@@ -85,7 +83,7 @@ export const createExerciseFull = async (exercise: Partial<ExerciseFull>): Promi
       // Include only fields that are in the table schema
       short_youtube_demo: exercise.short_youtube_demo,
       description: exercise.description,
-      image_url: exercise.image_url
+      image_url: exercise.image_url,
     };
     
     const { data, error } = await supabase

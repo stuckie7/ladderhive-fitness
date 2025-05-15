@@ -28,7 +28,7 @@ export const mapExerciseFullToExercise = (full: ExerciseFull): Exercise => {
     tertiary_muscle: full.tertiary_muscle,
     primary_equipment: full.primary_equipment,
     secondary_equipment: full.secondary_equipment,
-    target_muscle_group: full.target_muscle_group || full.prime_mover_muscle,
+    target_muscle_group: full.prime_mover_muscle || full.target_muscle_group,
     mechanics: full.mechanics,
     force_type: full.force_type,
     posture: full.posture,

@@ -1,213 +1,67 @@
-import { useState } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { Exercise } from '@/types/exercise';
-import * as exerciseApi from '@/integrations/exercisedb/client';
-import { supabase } from '@/integrations/supabase/client';
+
+import { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Exercise } from "@/types/exercise";
+import { useToast } from "@/components/ui/use-toast";
+
+// Make sure to use the Exercise type from types/exercise.ts
 
 export const useExercises = () => {
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
-  const [rawExercisesData, setRawExercisesData] = useState<any[]>([]);
-  const itemsPerPage = 12;
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // New function to fetch raw exercise data from Supabase
-  const getRawExercisesData = async (limit = 10) => {
-    setLoading(true);
+  const searchExercises = useCallback(async (query: string): Promise<Exercise[]> => {
+    if (!query) return [];
+    
+    setIsLoading(true);
     try {
-      // Query the exercises_full table for the first 10 rows
       const { data, error } = await supabase
         .from('exercises_full')
         .select('*')
-        .limit(limit);
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data) {
-        // Map the data to include required fields for ExerciseFull
-        const mappedData = data.map(item => ({
-          ...item,
-          target_muscle_group: item.prime_mover_muscle || null,
-          video_demonstration_url: item.short_youtube_demo || null,
-          video_explanation_url: item.in_depth_youtube_exp || null
-        }));
-        
-        setRawExercisesData(mappedData);
-        return mappedData;
-      }
-      
-      return [];
-    } catch (error: any) {
-      console.error("Error fetching raw exercise data:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch raw exercise data.",
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getExerciseById = async (id: string): Promise<Exercise | null> => {
-    setLoading(true);
-    try {
-      const exercise = await exerciseApi.getExerciseById(id);
-      
-      // Map API response to our Exercise interface for compatibility
-      return mapExerciseResponse(exercise);
-    } catch (error: any) {
-      console.error("Error fetching exercise:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch exercise details.",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getExercisesByMuscleGroup = async (muscleGroup: string): Promise<Exercise[]> => {
-    setLoading(true);
-    try {
-      const exercises = await exerciseApi.getExercisesByBodyPart(muscleGroup);
-      
-      // Map API response to our Exercise interface for compatibility
-      return exercises.map(mapExerciseResponse);
-    } catch (error: any) {
-      console.error("Error fetching exercises:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch exercises.",
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getExercisesByEquipment = async (equipment: string): Promise<Exercise[]> => {
-    setLoading(true);
-    try {
-      const exercises = await exerciseApi.getExercisesByEquipment(equipment);
-      
-      // Map API response to our Exercise interface for compatibility
-      return exercises.map(mapExerciseResponse);
-    } catch (error: any) {
-      console.error("Error fetching exercises:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch exercises.",
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const searchExercises = async (query: string): Promise<Exercise[]> => {
-    setLoading(true);
-    try {
-      // Try to search from our Supabase database first
-      const { data: supabaseExercises, error } = await supabase
-        .from('exercises')
-        .select('*')
         .ilike('name', `%${query}%`)
-        .limit(20);
+        .limit(10);
       
-      if (supabaseExercises && supabaseExercises.length > 0) {
-        console.log("Found exercises in Supabase:", supabaseExercises);
-        return supabaseExercises.map(ex => ({
-          id: ex.id,
-          name: ex.name,
-          bodyPart: ex.muscle_group || '',
-          target: ex.muscle_group || '',
-          equipment: ex.equipment || '',
-          muscle_group: ex.muscle_group,
-          description: ex.description,
-          difficulty: ex.difficulty as any,
-          video_url: ex.video_url,
-          image_url: ex.image_url
-        }));
-      }
+      if (error) throw error;
       
-      // If no results from Supabase, use the ExerciseDB API with our mock fallback
-      try {
-        const exercises = await exerciseApi.searchExercises(query);
-        console.log("Search results:", exercises);
-        return exercises.map(mapExerciseResponse);
-      } catch (apiError) {
-        console.error("Error searching exercises with external API:", apiError);
-        // Return empty array if both Supabase and API searches fail
-        return [];
-      }
+      // Map database results to Exercise interface
+      const exercises: Exercise[] = (data || []).map(item => ({
+        id: item.id.toString(),
+        name: item.name,
+        bodyPart: item.body_region,
+        target: item.prime_mover_muscle,
+        equipment: item.primary_equipment,
+        muscle_group: item.prime_mover_muscle,
+        description: item.description || '',
+        difficulty: item.difficulty,
+        short_youtube_demo: item.short_youtube_demo,
+        in_depth_youtube_exp: item.in_depth_youtube_exp,
+        youtube_thumbnail_url: item.youtube_thumbnail_url,
+        prime_mover_muscle: item.prime_mover_muscle,
+        secondary_muscle: item.secondary_muscle,
+        tertiary_muscle: item.tertiary_muscle,
+        primary_equipment: item.primary_equipment,
+        secondary_equipment: item.secondary_equipment,
+        target_muscle_group: item.prime_mover_muscle || item.target_muscle_group,
+        // Adding compatible properties
+        image_url: item.youtube_thumbnail_url || item.image_url
+      }));
+      
+      return exercises;
     } catch (error: any) {
       console.error("Error searching exercises:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to search exercises.",
+        title: "Search failed",
+        description: "Failed to search exercises",
         variant: "destructive",
       });
       return [];
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
-
-  // Helper function to map API response to our Exercise interface
-  const mapExerciseResponse = (exercise: any): Exercise => {
-    return {
-      id: exercise.id.toString(),
-      name: exercise.name,
-      bodyPart: exercise.bodyPart,
-      target: exercise.target,
-      equipment: exercise.equipment,
-      gifUrl: exercise.gifUrl,
-      secondaryMuscles: exercise.secondaryMuscles,
-      instructions: exercise.instructions,
-      // Compatibility with our existing UI
-      muscle_group: exercise.bodyPart,
-      description: exercise.instructions ? exercise.instructions.join(' ') : '',
-      difficulty: mapDifficulty(exercise),
-      video_url: null,
-      image_url: exercise.gifUrl || exercise.image_url
-    };
-  };
-
-  // Map exercises to difficulty based on some heuristics
-  const mapDifficulty = (exercise: any): string => {
-    // This is a simplistic mapping - in real application you'd want more nuanced logic
-    if (exercise.equipment === 'body weight' || exercise.equipment === 'assisted') {
-      return 'Beginner';
-    } else if (exercise.equipment === 'cable' || exercise.equipment === 'dumbbell') {
-      return 'Intermediate';
-    } else {
-      return 'Advanced';
-    }
-  };
+  }, [toast]);
 
   return {
-    isLoading: loading,
-    rawExercisesData,
-    getExerciseById,
-    getExercisesByMuscleGroup,
-    getExercisesByEquipment,
     searchExercises,
-    getRawExercisesData,
-    exercises,
-    loading,
-    error,
-    page,
-    setPage,
-    itemsPerPage
+    isLoading
   };
 };
