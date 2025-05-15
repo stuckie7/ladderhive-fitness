@@ -22,6 +22,7 @@ export interface FetchWorkoutExercisesReturn {
   isLoading: boolean;
   error: string | null;
   fetchExercises: (workoutId: string) => Promise<void>;
+  exercises: WorkoutExercise[]; // Alias for compatibility
 }
 
 // The main hook export
@@ -64,7 +65,7 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
         rawWorkoutExercises.map(async (we) => {
           // Create a safe base object with default values
           const safeExerciseData = {
-            id: typeof we.exercise_id === 'number' ? we.exercise_id.toString() : we.exercise_id.toString(),
+            id: typeof we.exercise_id === 'number' ? we.exercise_id.toString() : String(we.exercise_id),
             name: "Unknown Exercise",
             description: "",
             prime_mover_muscle: "",
@@ -85,14 +86,14 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
               
             // If found, use this data
             if (exerciseData) {
-              safeExerciseData.id = exerciseData.id?.toString() || safeExerciseData.id;
+              safeExerciseData.id = (exerciseData.id?.toString()) || safeExerciseData.id;
               safeExerciseData.name = exerciseData.name || safeExerciseData.name;
-              safeExerciseData.description = exerciseData.description || safeExerciseData.description;
+              safeExerciseData.description = (exerciseData as any).description || safeExerciseData.description;
               safeExerciseData.prime_mover_muscle = exerciseData.prime_mover_muscle || safeExerciseData.prime_mover_muscle;
               safeExerciseData.primary_equipment = exerciseData.primary_equipment || safeExerciseData.primary_equipment;
               safeExerciseData.difficulty = exerciseData.difficulty || safeExerciseData.difficulty;
               safeExerciseData.youtube_thumbnail_url = exerciseData.youtube_thumbnail_url || safeExerciseData.youtube_thumbnail_url;
-              safeExerciseData.video_demonstration_url = exerciseData.video_demonstration_url || exerciseData.short_youtube_demo || safeExerciseData.video_demonstration_url;
+              safeExerciseData.video_demonstration_url = (exerciseData as any).video_demonstration_url || exerciseData.short_youtube_demo || safeExerciseData.video_demonstration_url;
             } else {
               // If not found in exercises_full, try regular exercises table
               const { data } = await supabase
@@ -102,7 +103,7 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
                 .single();
                 
               if (data) {
-                safeExerciseData.id = data.id?.toString() || safeExerciseData.id;
+                safeExerciseData.id = (data.id?.toString()) || safeExerciseData.id;
                 safeExerciseData.name = data.name || safeExerciseData.name;
                 safeExerciseData.description = data.description || safeExerciseData.description;
                 safeExerciseData.prime_mover_muscle = data.muscle_group || safeExerciseData.prime_mover_muscle;
@@ -122,10 +123,10 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
             exercise_id: we.exercise_id,
             sets: we.sets || 0,
             reps: we.reps || "0",
-            rest_time: we.rest_seconds || we.rest_time || 0,
-            rest_seconds: we.rest_seconds || we.rest_time || 0,
+            rest_time: (we as any).rest_time || we.rest_seconds || 0,
+            rest_seconds: we.rest_seconds || (we as any).rest_time || 0,
             order_index: we.order_index || 0,
-            weight: we.weight || "",
+            weight: (we as any).weight || "",
             notes: we.notes || "",
             exercise: safeExerciseData
           } as WorkoutExercise;
@@ -175,6 +176,7 @@ export const useFetchWorkoutExercises = (): FetchWorkoutExercisesReturn => {
     isLoading,
     error,
     fetchExercises,
+    exercises: workoutExercises // Add alias for compatibility
   };
 };
 

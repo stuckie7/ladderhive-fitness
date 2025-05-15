@@ -51,7 +51,7 @@ export const useWorkoutDetail = (workoutId: string) => {
     handleSaveWorkout,
     handleCompleteWorkout,
     removeExerciseFromWorkout,
-    // Add an alias for exercises property to maintain compatibility
+    // Explicitly define exercises property as an alias for workoutExercises
     exercises: workoutExercises
   };
 };

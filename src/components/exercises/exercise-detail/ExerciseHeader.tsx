@@ -1,11 +1,11 @@
 
 import { Button } from "@/components/ui/button";
-import { Exercise } from "@/types/exercise";
+import { Exercise, ExerciseFull } from "@/types/exercise";
 import { ArrowLeft } from "lucide-react";
 import AddToWorkoutButton from "../AddToWorkoutButton";
 
 interface ExerciseHeaderProps {
-  exercise: Exercise | null;
+  exercise: Exercise | ExerciseFull | null;
   onBackClick: () => void;
 }
 
@@ -22,6 +22,12 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
       </div>
     );
   }
+
+  // Create an exercise object with necessary properties for AddToWorkoutButton
+  const exerciseForButton = {
+    id: exercise.id,
+    name: exercise.name
+  };
 
   return (
     <>
@@ -42,7 +48,7 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
         </div>
 
         <div className="flex gap-2 mt-4 md:mt-0">
-          <AddToWorkoutButton exerciseId={exercise.id.toString()} exerciseName={exercise.name} />
+          <AddToWorkoutButton exercise={exerciseForButton as Exercise} />
         </div>
       </div>
     </>

@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Exercise } from "@/types/exercise";
 import ExerciseSpecItem from "./ExerciseSpecItem";
@@ -35,6 +36,11 @@ export default function ExerciseSidebarContent({ exercise, loading = false }: Ex
     );
   }
 
+  // Helper to safely access potentially undefined property
+  const getThumbnailUrl = (exercise: Exercise): string | undefined => {
+    return (exercise as any).youtube_thumbnail_url || exercise.image_url;
+  };
+
   return (
     <div>
       <Card className="mb-6">
@@ -42,10 +48,10 @@ export default function ExerciseSidebarContent({ exercise, loading = false }: Ex
           <CardTitle>Exercise Image</CardTitle>
         </CardHeader>
         <CardContent>
-          {exercise.gifUrl || exercise.image_url ? (
+          {exercise.gifUrl || exercise.image_url || getThumbnailUrl(exercise) ? (
             <div className="aspect-square rounded-md overflow-hidden">
               <img 
-                src={exercise.gifUrl || exercise.image_url || exercise.youtube_thumbnail_url} 
+                src={exercise.gifUrl || exercise.image_url || getThumbnailUrl(exercise)} 
                 alt={exercise.name}
                 className="object-cover w-full h-full" 
               />

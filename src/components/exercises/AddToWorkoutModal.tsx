@@ -135,22 +135,24 @@ export default function AddToWorkoutModal({
       if (isPreparedWorkout) {
         const { error } = await supabase.from("prepared_workout_exercises").insert({
           workout_id: selectedWorkoutId,
-          exercise_id: exerciseIdValue,
+          exercise_id: Number(exerciseIdValue), // Ensure it's a number for DB
           sets: parseInt(sets),
           reps: reps,
           rest_seconds: 60, // Default rest time
           order_index: existingExercisesCount,
+          notes: ""
         });
 
         if (error) throw error;
       } else {
         const { error } = await supabase.from("user_created_workout_exercises").insert({
           workout_id: selectedWorkoutId,
-          exercise_id: exerciseIdValue,
+          exercise_id: Number(exerciseIdValue), // Ensure it's a number for DB
           sets: parseInt(sets),
           reps: reps,
           rest_seconds: 60, // Default rest time
           order_index: existingExercisesCount,
+          notes: ""
         });
 
         if (error) throw error;

@@ -37,22 +37,22 @@ export const getExerciseFullById = async (id: number | string): Promise<Exercise
         return cleanUrl;
       };
       
+      // Create a description if it doesn't exist
+      const description = (data as any).description || 
+        `${data.prime_mover_muscle || 'Muscle'} exercise using ${data.primary_equipment || 'equipment'}`;
+      
+      // Cast to ExerciseFull and add necessary properties
       const exerciseData: ExerciseFull = {
         ...data,
-        // Clean and map properties correctly, providing fallbacks for missing fields
-        short_youtube_demo: cleanYoutubeUrls(data.short_youtube_demo),
-        in_depth_youtube_exp: cleanYoutubeUrls(data.in_depth_youtube_exp),
-        
-        // Add description if it doesn't exist
-        description: data.description || `${data.prime_mover_muscle || 'Muscle'} exercise using ${data.primary_equipment || 'equipment'}`,
-        
-        // Add missing properties with fallbacks
+        // Add required properties for ExerciseFull type
+        description,
         target_muscle_group: data.prime_mover_muscle || null,
         video_demonstration_url: cleanYoutubeUrls(data.short_youtube_demo) || null,
         video_explanation_url: cleanYoutubeUrls(data.in_depth_youtube_exp) || null,
-        
-        // Additional fallbacks for instructions
-        instructions: data.instructions || null
+        // Clean and map properties correctly, providing fallbacks for missing fields
+        short_youtube_demo: cleanYoutubeUrls(data.short_youtube_demo),
+        in_depth_youtube_exp: cleanYoutubeUrls(data.in_depth_youtube_exp),
+        instructions: [] // Initialize as empty array, which is safer than null
       };
       
       return exerciseData;

@@ -5,15 +5,27 @@ interface ExerciseVideoHandlerProps {
   url: string | null;
   title: string;
   className?: string;
+  thumbnailUrl?: string;
+  showPlaceholder?: boolean;
 }
 
-const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({ url, title, className }) => {
+const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({ 
+  url, 
+  title, 
+  className,
+  thumbnailUrl,
+  showPlaceholder = true
+}) => {
   if (!url) {
-    return (
+    return showPlaceholder ? (
       <div className={`flex items-center justify-center text-muted-foreground p-4 ${className || ''}`}>
-        No video available
+        {thumbnailUrl ? (
+          <img src={thumbnailUrl} alt={title} className="max-w-full h-auto rounded" />
+        ) : (
+          "No video available"
+        )}
       </div>
-    );
+    ) : null;
   }
 
   const isYoutubeVideo = url.includes('youtube.com') || url.includes('youtu.be');

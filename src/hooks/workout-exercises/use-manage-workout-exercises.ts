@@ -28,9 +28,7 @@ export const useManageWorkoutExercises = () => {
                                await checkIfPreparedWorkout(workoutId);
       
       // Convert exercise ID to number if it's a string containing only digits
-      const exerciseId = typeof exercise.id === 'string' && !isNaN(Number(exercise.id))
-        ? Number(exercise.id)
-        : exercise.id;
+      const exerciseId = !isNaN(Number(exercise.id)) ? Number(exercise.id) : exercise.id;
         
       // Add to appropriate table
       if (isPreparedWorkout) {
@@ -41,6 +39,7 @@ export const useManageWorkoutExercises = () => {
           reps: reps,
           rest_seconds: restSeconds,
           order_index: orderIndex,
+          notes: ""
         });
 
         if (error) throw error;
@@ -52,6 +51,7 @@ export const useManageWorkoutExercises = () => {
           reps: reps,
           rest_seconds: restSeconds,
           order_index: orderIndex,
+          notes: ""
         });
 
         if (error) throw error;
@@ -114,17 +114,32 @@ export const useManageWorkoutExercises = () => {
       // Prepare the update data - remove the exercise object and any non-column properties
       const { exercise: _, ...updateData } = exercise;
       
+      // Make sure exercise_id is a number
+      const updatePayload = {
+        ...updateData,
+        exercise_id: typeof updateData.exercise_id === 'string' ? 
+                      Number(updateData.exercise_id) : 
+                      updateData.exercise_id,
+        reps: String(updateData.reps), // Ensure reps is a string
+        rest_seconds: updateData.rest_seconds || updateData.rest_time || 60
+      };
+      
+      // Remove properties that don't exist in the database table
+      if ('rest_time' in updatePayload) {
+        delete updatePayload.rest_time;
+      }
+      
       if (isPreparedWorkout) {
         const { error } = await supabase
           .from("prepared_workout_exercises")
-          .update(updateData)
+          .update(updatePayload)
           .eq("id", exercise.id);
           
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("user_created_workout_exercises")
-          .update(updateData)
+          .update(updatePayload)
           .eq("id", exercise.id);
           
         if (error) throw error;
