@@ -53,7 +53,10 @@ export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise 
     muscle_group: exerciseFull.prime_mover_muscle || '',
     equipment: exerciseFull.primary_equipment || '',
     difficulty: exerciseFull.difficulty || '',
-    instructions: exerciseFull.instructions || [],
+    // Handle potential missing instructions property
+    instructions: Array.isArray(exerciseFull.instructions) 
+      ? exerciseFull.instructions 
+      : (exerciseFull.instructions ? [exerciseFull.instructions] : []),
     video_url: exerciseFull.short_youtube_demo || exerciseFull.video_demonstration_url || '',
     image_url: exerciseFull.image_url || exerciseFull.youtube_thumbnail_url || '',
     bodyPart: exerciseFull.body_region || '',
@@ -66,5 +69,5 @@ export const mapExerciseFullToExercise = (exerciseFull: ExerciseFull): Exercise 
   };
 };
 
-// Export the WorkoutExercise type from the workout-exercises module
+// Export type
 export type { WorkoutExercise } from '@/types/workout';

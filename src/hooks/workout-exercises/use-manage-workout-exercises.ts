@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise } from "@/types/exercise";
@@ -39,6 +40,38 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
         ? 'prepared_workout_exercises'
         : 'user_created_workout_exercises';
       
+      // If we're adding to a prepared workout, make sure the workout exists
+      if (preparedWorkout) {
+        const { count } = await supabase
+          .from('prepared_workouts')
+          .select('*', { count: 'exact', head: true })
+          .eq('id', workoutId);
+          
+        if (count === 0) {
+          toast({
+            title: 'Error',
+            description: 'The selected workout does not exist',
+            variant: 'destructive',
+          });
+          return false;
+        }
+      } else {
+        // Check if the user created workout exists
+        const { count } = await supabase
+          .from('user_created_workouts')
+          .select('*', { count: 'exact', head: true })
+          .eq('id', workoutId);
+          
+        if (count === 0) {
+          toast({
+            title: 'Error',
+            description: 'The selected workout does not exist',
+            variant: 'destructive',
+          });
+          return false;
+        }
+      }
+      
       // Get the next order index
       const orderIndex = exercises && exercises.length > 0
         ? Math.max(...exercises.map(ex => ex.order_index)) + 1
@@ -64,11 +97,20 @@ export const useManageWorkoutExercises = (workoutId?: string) => {
       
       if (error) {
         console.error(`Failed to add exercise to ${table}:`, error);
-        toast({
-          title: 'Error',
-          description: `Failed to add exercise: ${error.message}`,
-          variant: 'destructive',
-        });
+        
+        if (error.message.includes('foreign key constraint')) {
+          toast({
+            title: 'Error',
+            description: 'Cannot add exercise to this workout. The workout may not exist or you may not have permission to modify it.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: `Failed to add exercise: ${error.message}`,
+            variant: 'destructive',
+          });
+        }
         return false;
       }
       

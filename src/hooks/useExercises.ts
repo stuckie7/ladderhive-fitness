@@ -41,9 +41,13 @@ export const useExercises = () => {
         tertiary_muscle: item.tertiary_muscle,
         primary_equipment: item.primary_equipment,
         secondary_equipment: item.secondary_equipment,
-        target_muscle_group: item.prime_mover_muscle || item.target_muscle_group,
+        target_muscle_group: item.prime_mover_muscle || '',
         // Adding compatible properties
-        image_url: item.youtube_thumbnail_url || item.image_url
+        image_url: item.youtube_thumbnail_url || item.image_url || '',
+        // Add instructions if present
+        instructions: Array.isArray(item.instructions) 
+          ? item.instructions 
+          : (item.instructions ? [item.instructions] : []),
       }));
       
       return exercises;
