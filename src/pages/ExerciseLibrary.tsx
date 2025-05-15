@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { mapExerciseFullToExercise } from "@/hooks/exercise-library/mappers";
 import { Exercise, ExerciseFull } from "@/types/exercise";
+import { ArrowRight } from "lucide-react";
 
 const ExerciseLibraryHeader = lazy(() => import("@/components/exercises/ExerciseLibraryHeader"));
 const SearchBar = lazy(() => import("@/components/exercises/SearchBar"));
 const ExerciseFilters = lazy(() => import("@/components/exercises/ExerciseFilters"));
 const ExerciseTabs = lazy(() => import("@/components/exercises/ExerciseTabs"));
-const ExercisesFullTable = lazy(() => import("@/components/exercises/ExercisesFullTable"));
 
 const DIFFICULTY_LEVELS: ("Beginner" | "Intermediate" | "Advanced")[] = [
   "Beginner",
@@ -42,7 +42,7 @@ const ExerciseLibrary = () => {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const goToEnhancedLibrary = () => {
-    navigate("/exercise-library");
+    navigate("/exercises/enhanced");
   };
 
   // Adapter function to convert ExerciseFull[] to Exercise[]
@@ -111,10 +111,34 @@ const ExerciseLibrary = () => {
         </Suspense>
 
         <div className="mt-12 pt-6 border-t">
-          <h2 className="text-xl font-semibold mb-4">Complete Exercise Database</h2>
-          <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-            <ExercisesFullTable />
-          </Suspense>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Complete Exercise Database</h2>
+              <p className="text-muted-foreground mb-4">
+                Access our comprehensive enhanced exercise library with advanced filtering and detailed information
+              </p>
+            </div>
+            <Button 
+              onClick={goToEnhancedLibrary} 
+              className="bg-fitness-primary hover:bg-fitness-primary/90"
+            >
+              Go to Enhanced Library
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+          <div className="mt-4 p-6 border rounded-lg bg-muted/20 text-center">
+            <p>
+              Our enhanced exercise library provides detailed information about exercises,
+              including videos, muscle targeting, difficulty levels, and more.
+            </p>
+            <Button 
+              onClick={goToEnhancedLibrary} 
+              variant="outline" 
+              className="mt-4"
+            >
+              Explore Enhanced Library
+            </Button>
+          </div>
         </div>
       </div>
     </AppLayout>
