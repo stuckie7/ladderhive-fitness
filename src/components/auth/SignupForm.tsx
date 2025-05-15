@@ -18,6 +18,7 @@ const SignupForm = () => {
   const navigate = useNavigate();
   const { signUp, user } = useAuth();
 
+  // Redirect if already logged in
   useEffect(() => {
     if (user) {
       navigate('/dashboard');

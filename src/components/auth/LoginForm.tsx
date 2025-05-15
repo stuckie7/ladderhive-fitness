@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,11 +15,12 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const { signIn, user } = useAuth();
 
-  // Redirect if already logged in
-  if (user) {
-    navigate('/dashboard', { replace: true });
-    return null;
-  }
+  // Handle redirection if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +28,8 @@ const LoginForm = () => {
     
     try {
       await signIn(email, password);
-      // No need to navigate here as it's handled in the signIn function
+      // After successful sign in, let the effect hook handle navigation
+      // based on the updated user state
     } catch (error: any) {
       // Error handling is done in the signIn function
     } finally {

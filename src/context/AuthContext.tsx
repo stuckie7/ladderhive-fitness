@@ -2,7 +2,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -20,7 +19,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener first
@@ -30,9 +28,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
-        
-        // Remove all redirects from the auth state change listener
-        // We'll handle specific redirects in the signIn, signOut functions instead
       }
     );
 
@@ -42,8 +37,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setLoading(false);
-      
-      // Remove redirect from here too
     });
 
     return () => subscription.unsubscribe();
@@ -60,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       
-      // Use toast outside of component render
+      // Use toast for success notification
       setTimeout(() => {
         toast({
           title: "Welcome back!",
@@ -68,10 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }, 0);
       
-      // Add redirect here after successful login
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 0);
+      // Don't navigate here - we'll handle navigation in the components that use this context
     } catch (error: any) {
       console.error("Login error:", error);
       setTimeout(() => {
@@ -111,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }, 0);
       
-      // Don't auto-redirect after signup as they might need to confirm email first
+      // Don't navigate here - we'll handle navigation in the components
     } catch (error: any) {
       setTimeout(() => {
         toast({
@@ -139,10 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }, 0);
       
-      // Add redirect here after successful logout
-      setTimeout(() => {
-        navigate('/login');
-      }, 0);
+      // Don't navigate here - we'll handle navigation after this function is called
     } catch (error: any) {
       console.error("Error logging out:", error);
       setTimeout(() => {

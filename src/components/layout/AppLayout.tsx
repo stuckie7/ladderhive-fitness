@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Container } from '@/components/ui/container';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -26,10 +26,16 @@ type NavItem = {
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
   };
 
   const navItems: NavItem[] = [
@@ -92,7 +98,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           <Button 
             variant="outline" 
             className="w-full" 
-            onClick={() => signOut?.()}
+            onClick={handleSignOut}
           >
             Sign out
           </Button>
