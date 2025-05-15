@@ -10,11 +10,7 @@ export const useWorkoutPersistence = (
     'setIsLoading' | 'setIsSaving'
   >
 ) => {
-  const { loadWorkout, loadTemplate } = useWorkoutLoader({
-    setWorkout: workoutState.setWorkout,
-    setExercises: workoutState.setExercises,
-    setIsLoading: workoutState.setIsLoading
-  });
+  const { loadWorkout, isLoading, error } = useWorkoutLoader();
   
   const { saveWorkout } = useWorkoutSaver({
     workout: workoutState.workout,
@@ -24,8 +20,9 @@ export const useWorkoutPersistence = (
 
   return {
     loadWorkout,
-    loadTemplate,
-    saveWorkout
+    saveWorkout,
+    isLoading,
+    error
   };
 };
 
