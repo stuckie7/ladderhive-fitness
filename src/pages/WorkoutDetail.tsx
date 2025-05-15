@@ -1,15 +1,16 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWorkoutDetail } from '@/hooks/workout-detail';
 import { Exercise } from '@/types/exercise';
 import AppLayout from '@/components/layout/AppLayout';
 
-// Components
-import WorkoutDetailHeader from '@/components/workouts/WorkoutDetailHeader';
-import WorkoutDetailLayout from '@/components/workouts/WorkoutDetailLayout';
+// Import the components requested
+import WorkoutDetailHeader from '@/components/workouts/detail/WorkoutDetailHeader';
+import DescriptionCard from '@/components/workouts/detail/DescriptionCard';
+import VideoEmbed from '@/components/workouts/detail/VideoEmbed';
 import WorkoutExerciseSection from '@/components/workouts/WorkoutExerciseSection';
-import WorkoutDetailStats from '@/components/workouts/WorkoutDetailStats';
+import WorkoutAdditionalInfo from '@/components/workouts/detail/WorkoutAdditionalInfo';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/use-toast';
@@ -35,7 +36,6 @@ export default function WorkoutDetail() {
   
   // States for UI feedback
   const [isStarting, setIsStarting] = useState(false);
-  const [isCompletingWorkout, setIsCompletingWorkout] = useState(false);
   
   // Handle starting a workout (navigate to workout session)
   const handleStartWorkout = async () => {
@@ -55,27 +55,6 @@ export default function WorkoutDetail() {
       });
     } finally {
       setIsStarting(false);
-    }
-  };
-
-  // Handle completing a workout
-  const completeWorkout = async () => {
-    setIsCompletingWorkout(true);
-    try {
-      await handleCompleteWorkout();
-      toast({
-        title: "Workout Completed",
-        description: "Great job! Your workout has been marked as completed.",
-      });
-    } catch (error) {
-      console.error('Error completing workout:', error);
-      toast({
-        title: "Error",
-        description: "Failed to mark workout as completed",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCompletingWorkout(false);
     }
   };
 
@@ -126,38 +105,75 @@ export default function WorkoutDetail() {
     );
   }
 
-  // Prepare props for the components
-  const headerProps = {
-    title: workout.title,
-    description: workout.description,
-    isSaved: isSaved,
-    isLoading: isLoading,
-    onToggleSave: toggleSaveWorkout,
-    onStartWorkout: handleStartWorkout
-  };
-
-  const statsProps = {
-    duration: workout.duration || workout.duration_minutes || 0,
-    exercises: workoutExercises?.length || 0,
-    difficulty: workout.difficulty || "Not specified",
-    category: workout.category
-  };
-  
   return (
     <AppLayout>
-      <WorkoutDetailLayout 
-        header={<WorkoutDetailHeader {...headerProps} />}
-        stats={<WorkoutDetailStats {...statsProps} />}
-        content={
-          <WorkoutExerciseSection 
-            workoutId={id}
-            exercises={workoutExercises || []}
-            isLoading={exercisesLoading}
-            onAddExercise={handleAddExercise}
-            onRemoveExercise={removeExerciseFromWorkout}
-          />
-        }
-      />
+      <div className="container mx-auto px-4 py-6">
+        <Button variant="ghost" className="mb-6" onClick={handleBackClick}>
+          <div className="flex items-center">
+            <span className="mr-2">←</span>
+            Back
+          </div>
+        </Button>
+        
+        {/* WorkoutDetailHeader - Combined title, description and actions */}
+        <WorkoutDetailHeader 
+          title={workout.title}
+          description={workout.description}
+          difficulty={workout.difficulty || "Not specified"}
+          duration={workout.duration || workout.duration_minutes || 0}
+          exerciseCount={workoutExercises?.length || 0}
+        />
+        
+        {/* Video embed if available */}
+        <VideoEmbed videoUrl={workout.video_url} thumbnailUrl={workout.thumbnail_url} />
+        
+        {/* Description card */}
+        <DescriptionCard 
+          description={workout.long_description || workout.description} 
+          benefits={workout.benefits}
+        />
+        
+        {/* Exercise section with circuit view option */}
+        <WorkoutExerciseSection 
+          workoutId={id}
+          exercises={workoutExercises || []}
+          isLoading={exercisesLoading}
+          onAddExercise={handleAddExercise}
+          onRemoveExercise={removeExerciseFromWorkout}
+          viewMode="circuit" // Set default to circuit view
+        />
+        
+        {/* Additional information */}
+        <WorkoutAdditionalInfo
+          goal={workout.goal}
+          category={workout.category}
+          equipment_needed={workout.equipment_needed}
+          instructions={workout.instructions}
+          modifications={workout.modifications}
+          created_at={workout.created_at}
+        />
+        
+        {/* Action buttons at the bottom */}
+        <div className="flex gap-4 mt-8 justify-center">
+          <Button
+            variant="outline"
+            onClick={toggleSaveWorkout}
+            disabled={isLoading}
+            className={isSaved ? "text-amber-500" : ""}
+          >
+            {isSaved ? "Saved" : "Save Workout"}
+          </Button>
+          
+          <Button 
+            className="bg-fitness-primary hover:bg-fitness-primary/90"
+            onClick={handleStartWorkout}
+            disabled={isStarting}
+          >
+            {isStarting ? <Spinner className="mr-2 h-4 w-4" /> : null}
+            Start Workout
+          </Button>
+        </div>
+      </div>
     </AppLayout>
   );
 }
