@@ -1,36 +1,46 @@
 
-import React, { useState } from 'react';
-import { Button, ButtonProps } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import AddToWorkoutModal from './AddToWorkoutModal';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import AddToWorkoutModal from "./AddToWorkoutModal";
+import { Exercise } from "@/types/exercise";
 
-interface AddToWorkoutButtonProps extends ButtonProps {
-  exerciseId: string | number;
+interface AddToWorkoutButtonProps {
+  exerciseId: string;
   exerciseName: string;
+  variant?: "default" | "outline";
+  className?: string;
 }
 
-const AddToWorkoutButton = ({ exerciseId, exerciseName, ...props }: AddToWorkoutButtonProps) => {
+export default function AddToWorkoutButton({
+  exerciseId,
+  exerciseName,
+  variant = "default",
+  className = ""
+}: AddToWorkoutButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
 
   return (
     <>
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => setIsModalOpen(true)}
-        {...props}
-      >
-        <Plus className="mr-2 h-4 w-4" /> Add to Workout
+      <Button variant={variant} onClick={handleOpenModal} className={className}>
+        <Plus className="h-4 w-4 mr-2" />
+        Add to Workout
       </Button>
       
       <AddToWorkoutModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        exerciseId={exerciseId.toString()}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        exerciseId={exerciseId}
         exerciseName={exerciseName}
       />
     </>
   );
-};
-
-export default AddToWorkoutButton;
+}

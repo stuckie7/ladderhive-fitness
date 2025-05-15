@@ -1,93 +1,125 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-export const useWorkoutExercises = (workoutId: string) => {
-  const [workoutExercises, setWorkoutExercises] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export interface WorkoutExercise {
+  id: string;
+  workout_id: string;
+  exercise_id: string | number;
+  sets: number;
+  reps: string | number;
+  rest_time?: number;
+  rest_seconds?: number;
+  order_index: number;
+  weight?: string;
+  notes?: string;
+  exercise?: any;
+}
 
-  useEffect(() => {
-    const fetchExercises = async () => {
-      if (!workoutId) {
-        setIsLoading(false);
+export const useFetchWorkoutExercises = () => {
+  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch exercises for a specific workout
+  const fetchExercises = useCallback(async (workoutId: string) => {
+    if (!workoutId) return;
+    
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log(`Fetching exercises for workout: ${workoutId}`);
+      
+      // Check if the workout is a prepared_workout or user_created_workout
+      const isPreparedWorkout = workoutId.startsWith('prepared_') || 
+                               await checkIfPreparedWorkout(workoutId);
+      
+      // Fetch from the appropriate table
+      let { data: workoutExercises, error: exercisesError } = isPreparedWorkout
+        ? await fetchPreparedWorkoutExercises(workoutId)
+        : await fetchUserWorkoutExercises(workoutId);
+        
+      if (exercisesError) throw exercisesError;
+      
+      if (!workoutExercises || workoutExercises.length === 0) {
+        console.log("No exercises found for this workout");
+        setExercises([]);
         return;
       }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        // First try to fetch from user_created_workout_exercises
-        let { data: userExercises, error: userError } = await supabase
-          .from('user_created_workout_exercises')
-          .select('*, exercise_id')
-          .eq('workout_id', workoutId)
-          .order('order_index');
-
-        if (!userError && userExercises && userExercises.length > 0) {
-          // Fetch exercise details for each exercise
-          const enrichedExercises = await Promise.all(
-            userExercises.map(async (ex) => {
-              const { data: exerciseData } = await supabase
-                .from('exercises_full')
-                .select('*')
-                .eq('id', ex.exercise_id)
-                .single();
-                
-              return {
-                ...ex,
-                exercise: exerciseData
-              };
-            })
-          );
+      
+      console.log(`Found ${workoutExercises.length} exercises`);
+      
+      // Get full exercise details for each exercise
+      const exercisesWithDetails = await Promise.all(
+        workoutExercises.map(async (we) => {
+          // Try exercises_full first (more detail)
+          let { data: exerciseData } = await supabase
+            .from("exercises_full")
+            .select("*")
+            .eq("id", we.exercise_id)
+            .single();
+            
+          // If not found, try regular exercises table
+          if (!exerciseData) {
+            const { data } = await supabase
+              .from("exercises")
+              .select("*")
+              .eq("id", we.exercise_id)
+              .single();
+              
+            exerciseData = data;
+          }
           
-          setWorkoutExercises(enrichedExercises);
-          setIsLoading(false);
-          return;
-        }
-
-        // If no user exercises found, try prepared_workout_exercises
-        let { data: preparedExercises, error: preparedError } = await supabase
-          .from('prepared_workout_exercises')
-          .select('*, exercise_id')
-          .eq('workout_id', workoutId)
-          .order('order_index');
-
-        if (!preparedError && preparedExercises && preparedExercises.length > 0) {
-          // Fetch exercise details for each exercise
-          const enrichedExercises = await Promise.all(
-            preparedExercises.map(async (ex) => {
-              const { data: exerciseData } = await supabase
-                .from('exercises_full')
-                .select('*')
-                .eq('id', ex.exercise_id)
-                .single();
-                
-              return {
-                ...ex,
-                exercise: exerciseData
-              };
-            })
-          );
-          
-          setWorkoutExercises(enrichedExercises);
-        }
-      } catch (err: any) {
-        console.error('Error fetching workout exercises:', err);
-        setError(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchExercises();
-  }, [workoutId]);
+          return {
+            ...we,
+            exercise: exerciseData,
+          };
+        })
+      );
+      
+      setExercises(exercisesWithDetails);
+      
+    } catch (error: any) {
+      console.error("Error fetching workout exercises:", error);
+      setError(error.message || "Failed to load exercises");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  // Helper functions
+  
+  const checkIfPreparedWorkout = async (workoutId: string): Promise<boolean> => {
+    const { data } = await supabase
+      .from("prepared_workouts")
+      .select("id")
+      .eq("id", workoutId)
+      .single();
+      
+    return !!data;
+  };
+  
+  const fetchPreparedWorkoutExercises = async (workoutId: string) => {
+    return await supabase
+      .from("prepared_workout_exercises")
+      .select("*")
+      .eq("workout_id", workoutId)
+      .order("order_index");
+  };
+  
+  const fetchUserWorkoutExercises = async (workoutId: string) => {
+    return await supabase
+      .from("user_created_workout_exercises")
+      .select("*")
+      .eq("workout_id", workoutId)
+      .order("order_index");
+  };
 
   return {
-    workoutExercises,
+    exercises,
     isLoading,
     error,
-    setWorkoutExercises
+    fetchExercises,
   };
 };

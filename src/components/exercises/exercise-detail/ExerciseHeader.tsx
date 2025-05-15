@@ -6,11 +6,24 @@ import { ArrowLeft } from "lucide-react";
 import AddToWorkoutButton from "../AddToWorkoutButton";
 
 interface ExerciseHeaderProps {
-  exercise: Exercise;
+  exercise: Exercise | null;
   onBackClick: () => void;
 }
 
 export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeaderProps) {
+  if (!exercise) {
+    return (
+      <div className="mb-6">
+        <Button variant="outline" className="mb-6" onClick={onBackClick}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Exercises
+        </Button>
+        <div className="h-8 bg-muted rounded animate-pulse w-1/3 mb-2"></div>
+        <div className="h-4 bg-muted rounded animate-pulse w-1/2"></div>
+      </div>
+    );
+  }
+  
   return (
     <>
       <Button variant="outline" className="mb-6" onClick={onBackClick}>
@@ -40,7 +53,7 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
         </div>
         
         <div className="flex gap-2 mt-4 md:mt-0">
-          <AddToWorkoutButton exercise={exercise} />
+          <AddToWorkoutButton exerciseId={exercise.id.toString()} exerciseName={exercise.name} />
         </div>
       </div>
     </>

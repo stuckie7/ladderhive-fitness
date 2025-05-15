@@ -4,10 +4,38 @@ import { Exercise } from "@/types/exercise";
 import ExerciseSpecItem from "./ExerciseSpecItem";
 
 interface ExerciseSidebarContentProps {
-  exercise: Exercise;
+  exercise: Exercise | null;
+  loading?: boolean;
 }
 
-export default function ExerciseSidebarContent({ exercise }: ExerciseSidebarContentProps) {
+export default function ExerciseSidebarContent({ exercise, loading = false }: ExerciseSidebarContentProps) {
+  if (loading || !exercise) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="h-5 bg-muted rounded animate-pulse w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <div className="aspect-square rounded-md bg-muted animate-pulse" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="h-5 bg-muted rounded animate-pulse w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="h-4 bg-muted rounded animate-pulse w-full" />
+              <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+              <div className="h-4 bg-muted rounded animate-pulse w-4/5" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div>
       <Card className="mb-6">
@@ -15,10 +43,10 @@ export default function ExerciseSidebarContent({ exercise }: ExerciseSidebarCont
           <CardTitle>Exercise Image</CardTitle>
         </CardHeader>
         <CardContent>
-          {exercise.gifUrl ? (
+          {exercise.gifUrl || exercise.image_url ? (
             <div className="aspect-square rounded-md overflow-hidden">
               <img 
-                src={exercise.gifUrl} 
+                src={exercise.gifUrl || exercise.image_url || exercise.youtube_thumbnail_url} 
                 alt={exercise.name}
                 className="object-cover w-full h-full" 
               />

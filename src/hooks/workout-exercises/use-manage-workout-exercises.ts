@@ -1,143 +1,154 @@
 
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Exercise } from '@/types/exercise';
-import { WorkoutExercise, ensureStringReps } from './utils';
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Exercise } from "@/types/exercise";
+import { WorkoutExercise } from "./use-fetch-workout-exercises";
 
 export const useManageWorkoutExercises = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
+  // Add an exercise to a workout
   const addExerciseToWorkout = async (
     workoutId: string,
     exercise: Exercise,
     sets: number = 3,
-    reps: string = '10',
+    reps: string = "10",
     restSeconds: number = 60,
     orderIndex: number = 0
-  ): Promise<boolean> => {
+  ) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      if (!workoutId) throw new Error('Workout ID is required');
-      if (!exercise || !exercise.id) throw new Error('Invalid exercise data');
+      console.log(`Adding exercise to workout ${workoutId}:`, exercise);
       
-      // Ensure exercise.id is a string when it might be a number
-      const exerciseId = exercise.id.toString();
+      // Check if it's a prepared workout or user workout
+      const isPreparedWorkout = workoutId.startsWith('prepared_') ||
+                               await checkIfPreparedWorkout(workoutId);
       
-      const { data, error: insertError } = await supabase
-        .from('workout_exercises')
-        .insert({
+      const exerciseId = typeof exercise.id === 'string' && !isNaN(parseInt(exercise.id))
+        ? parseInt(exercise.id)
+        : exercise.id;
+        
+      // Add to appropriate table
+      if (isPreparedWorkout) {
+        const { error } = await supabase.from("prepared_workout_exercises").insert({
           workout_id: workoutId,
           exercise_id: exerciseId,
           sets: sets,
           reps: reps,
-          rest_time: restSeconds,
-          order_index: orderIndex
+          rest_seconds: restSeconds,
+          order_index: orderIndex,
         });
-      
-      if (insertError) throw insertError;
-      
-      toast({
-        title: 'Exercise added',
-        description: `${exercise.name} has been added to your workout.`
-      });
-      
-      return true;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to add exercise to workout';
-      setError(errorMessage);
-      
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-      
-      return false;
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("user_created_workout_exercises").insert({
+          workout_id: workoutId,
+          exercise_id: exerciseId,
+          sets: sets,
+          reps: reps,
+          rest_seconds: restSeconds,
+          order_index: orderIndex,
+        });
+
+        if (error) throw error;
+      }
+
+      console.log("Exercise added successfully");
+    } catch (error: any) {
+      console.error("Error adding exercise to workout:", error);
+      setError(error.message || "Failed to add exercise");
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateWorkoutExercise = async (
-    exercise: WorkoutExercise
-  ): Promise<boolean> => {
+  // Remove an exercise from a workout
+  const removeExerciseFromWorkout = async (exerciseId: string) => {
     setIsLoading(true);
     setError(null);
-    
-    try {
-      if (!exercise || !exercise.id) throw new Error('Invalid exercise data');
-      
-      const { error: updateError } = await supabase
-        .from('workout_exercises')
-        .update({
-          sets: exercise.sets,
-          reps: ensureStringReps(exercise.reps),
-          rest_time: exercise.rest_time,
-          weight: exercise.weight
-        })
-        .eq('id', exercise.id);
-      
-      if (updateError) throw updateError;
-      
-      toast({
-        title: 'Exercise updated',
-        description: `Workout exercise has been updated.`
-      });
-      
-      return true;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to update exercise';
-      setError(errorMessage);
-      
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-      
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const removeExerciseFromWorkout = async (exerciseId: string): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-    
     try {
-      const { error: deleteError } = await supabase
-        .from('workout_exercises')
+      console.log(`Removing exercise ${exerciseId} from workout`);
+      
+      // Try remove from both tables since we don't know which one it's in
+      const { error: preparedError } = await supabase
+        .from("prepared_workout_exercises")
         .delete()
-        .eq('id', exerciseId);
-      
-      if (deleteError) throw deleteError;
-      
-      toast({
-        title: 'Exercise removed',
-        description: `Exercise has been removed from the workout.`
-      });
-      
-      return true;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to remove exercise';
-      setError(errorMessage);
-      
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-      
-      return false;
+        .eq("id", exerciseId);
+        
+      const { error: userError } = await supabase
+        .from("user_created_workout_exercises")
+        .delete()
+        .eq("id", exerciseId);
+        
+      if (preparedError && userError) {
+        throw preparedError;
+      }
+        
+      console.log("Exercise removed successfully");
+    } catch (error: any) {
+      console.error("Error removing exercise:", error);
+      setError(error.message || "Failed to remove exercise");
+      throw error;
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Update an exercise in a workout
+  const updateWorkoutExercise = async (exercise: WorkoutExercise) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log(`Updating exercise ${exercise.id}`);
+      
+      const isPreparedWorkout = exercise.workout_id.startsWith('prepared_') ||
+                               await checkIfPreparedWorkout(exercise.workout_id);
+      
+      // Prepare the update data - remove the exercise object and any non-column properties
+      const { exercise: _, ...updateData } = exercise;
+      
+      if (isPreparedWorkout) {
+        const { error } = await supabase
+          .from("prepared_workout_exercises")
+          .update(updateData)
+          .eq("id", exercise.id);
+          
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("user_created_workout_exercises")
+          .update(updateData)
+          .eq("id", exercise.id);
+          
+        if (error) throw error;
+      }
+      
+      console.log("Exercise updated successfully");
+    } catch (error: any) {
+      console.error("Error updating exercise:", error);
+      setError(error.message || "Failed to update exercise");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Helper functions
+  
+  const checkIfPreparedWorkout = async (workoutId: string): Promise<boolean> => {
+    const { data } = await supabase
+      .from("prepared_workouts")
+      .select("id")
+      .eq("id", workoutId)
+      .single();
+      
+    return !!data;
   };
 
   return {
@@ -145,6 +156,6 @@ export const useManageWorkoutExercises = () => {
     error,
     addExerciseToWorkout,
     updateWorkoutExercise,
-    removeExerciseFromWorkout
+    removeExerciseFromWorkout,
   };
 };
