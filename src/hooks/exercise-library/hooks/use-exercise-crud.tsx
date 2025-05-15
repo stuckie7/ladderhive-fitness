@@ -2,7 +2,11 @@
 import { useState, useCallback, ChangeEvent } from 'react';
 import { Exercise, ExerciseFull } from '@/types/exercise';
 import { useToast } from '@/components/ui/use-toast';
-import { createExercise, updateExercise, deleteExercise } from '../services/exercise-enhanced-service';
+import { 
+  createExerciseInDatabase, 
+  updateExerciseInDatabase, 
+  deleteExerciseFromDatabase 
+} from '../services/exercise-detail-service';
 
 // Update the ExerciseFormState type to match what's used in ExerciseFormDialog
 export interface ExerciseFormState {
@@ -92,11 +96,13 @@ export const useExerciseCrud = () => {
         primary_equipment: formState.primary_equipment,
         difficulty: formState.difficulty,
         video_demonstration_url: formState.video_demonstration_url,
+        short_youtube_demo: formState.video_demonstration_url,
+        in_depth_youtube_exp: formState.video_demonstration_url,
         image_url: formState.image_url,
         instructions: formState.instructions.split('\n'),
       };
 
-      await createExercise(exerciseData);
+      await createExerciseInDatabase(exerciseData);
       
       toast({
         title: "Exercise Created",
@@ -134,11 +140,13 @@ export const useExerciseCrud = () => {
         primary_equipment: formState.primary_equipment,
         difficulty: formState.difficulty,
         video_demonstration_url: formState.video_demonstration_url,
+        short_youtube_demo: formState.video_demonstration_url,
+        in_depth_youtube_exp: formState.video_demonstration_url,
         image_url: formState.image_url,
         instructions: formState.instructions.split('\n'),
       };
 
-      await updateExercise(exerciseData);
+      await updateExerciseInDatabase(exerciseData);
       
       toast({
         title: "Exercise Updated",
@@ -160,7 +168,7 @@ export const useExerciseCrud = () => {
   // Delete exercise
   const handleDeleteExercise = useCallback(async (exercise: Exercise | ExerciseFull): Promise<boolean> => {
     try {
-      await deleteExercise(exercise.id);
+      await deleteExerciseFromDatabase(exercise.id);
       
       toast({
         title: "Exercise Deleted",

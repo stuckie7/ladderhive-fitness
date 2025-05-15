@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useExercisesFull } from '@/hooks/use-exercises-full';
+import { useExercisesFull } from '@/hooks/exercise-library/hooks/use-exercises-full';
 import { ExerciseFull } from '@/types/exercise';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue 
 } from '@/components/ui/select';
+import { loadExerciseData } from '@/hooks/exercise-library/services/exercise-enhanced-service';
+import { supabase } from '@/integrations/supabase/client';
 
 const ExercisesFullList = () => {
   const [exercises, setExercises] = useState<ExerciseFull[]>([]);
@@ -25,20 +27,97 @@ const ExercisesFullList = () => {
   const [selectedEquipment, setSelectedEquipment] = useState<string>('all');
   const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Use our hook for basic functionality
   const exerciseHook = useExercisesFull();
+
+  // Define direct data fetching methods since they're missing from the hook
+  const fetchExercisesFull = async (limit = 20, offset = 0): Promise<ExerciseFull[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .range(offset, offset + limit - 1)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data as ExerciseFull[];
+    } catch (err) {
+      console.error('Error fetching exercises:', err);
+      return [];
+    }
+  };
+
+  const getMuscleGroups = async (): Promise<string[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('exercises_full')
+        .select('prime_mover_muscle')
+        .not('prime_mover_muscle', 'is', null);
+
+      if (error) throw error;
+      
+      // Extract unique muscle groups
+      const muscleGroups = Array.from(
+        new Set(data.map(item => item.prime_mover_muscle).filter(Boolean))
+      );
+      
+      return muscleGroups.sort();
+    } catch (err) {
+      console.error('Error fetching muscle groups:', err);
+      return [];
+    }
+  };
+
+  const getEquipmentTypes = async (): Promise<string[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('exercises_full')
+        .select('primary_equipment')
+        .not('primary_equipment', 'is', null);
+
+      if (error) throw error;
+      
+      // Extract unique equipment types
+      const equipmentTypes = Array.from(
+        new Set(data.map(item => item.primary_equipment).filter(Boolean))
+      );
+      
+      return equipmentTypes.sort();
+    } catch (err) {
+      console.error('Error fetching equipment types:', err);
+      return [];
+    }
+  };
+
+  const searchExercisesFull = async (query: string): Promise<ExerciseFull[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('exercises_full')
+        .select('*')
+        .ilike('name', `%${query}%`)
+        .limit(20);
+
+      if (error) throw error;
+      return data as ExerciseFull[];
+    } catch (err) {
+      console.error('Error searching exercises:', err);
+      return [];
+    }
+  };
 
   const loadExercises = async () => {
     setIsLoading(true);
-    const data = await exerciseHook.fetchExercisesFull(20, page * 20);
+    const data = await fetchExercisesFull(20, page * 20);
     setExercises(data);
     setIsLoading(false);
   };
 
   const loadFilters = async () => {
-    const muscleGroups = await exerciseHook.getMuscleGroups();
-    const equipmentTypes = await exerciseHook.getEquipmentTypes();
-    setMuscleGroups(muscleGroups);
-    setEquipmentTypes(equipmentTypes);
+    const loadedMuscleGroups = await getMuscleGroups();
+    const loadedEquipmentTypes = await getEquipmentTypes();
+    setMuscleGroups(loadedMuscleGroups);
+    setEquipmentTypes(loadedEquipmentTypes);
   };
 
   useEffect(() => {
@@ -48,7 +127,7 @@ const ExercisesFullList = () => {
 
   const handleSearch = async () => {
     if (searchQuery.trim()) {
-      const results = await exerciseHook.searchExercisesFull(searchQuery);
+      const results = await searchExercisesFull(searchQuery);
       setExercises(results);
     } else {
       loadExercises();

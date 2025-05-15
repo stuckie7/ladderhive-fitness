@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useExerciseLibraryEnhanced } from "@/hooks/exercise-library/hooks/use-exercise-library-enhanced";
-import { ExerciseFormState } from "@/hooks/exercise-library/hooks/use-exercise-crud";
 import ExercisesEnhancedNavigation from "@/components/exercises/ExercisesEnhancedNavigation";
 import ExerciseSearchAndFilters from "@/components/exercises/ExerciseSearchAndFilters";
 import ExerciseCardGrid from "@/components/exercises/ExerciseCardGrid";
@@ -88,6 +87,14 @@ const ExerciseLibraryEnhanced = () => {
     );
   }
 
+  // Add missing properties required by ExerciseFormDialog to formState
+  const enhancedFormState = {
+    ...formState,
+    // Add any missing required properties with sensible defaults
+    short_youtube_demo: formState.video_demonstration_url || "",
+    in_depth_youtube_exp: formState.video_explanation_url || "",
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8">
@@ -151,7 +158,7 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setIsAddDialogOpen}
         title="Add New Exercise"
         description="Create a new exercise in your database"
-        formState={formState as unknown as ExerciseFormState}
+        formState={enhancedFormState}
         onFormChange={adaptedFormChangeHandler}
         onSubmit={handleAddExercise}
         submitLabel="Add Exercise"
@@ -165,7 +172,7 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setIsEditDialogOpen}
         title="Edit Exercise"
         description="Update the exercise details"
-        formState={formState as unknown as ExerciseFormState}
+        formState={enhancedFormState}
         onFormChange={adaptedFormChangeHandler}
         onSubmit={handleEditExercise}
         submitLabel="Save Changes"

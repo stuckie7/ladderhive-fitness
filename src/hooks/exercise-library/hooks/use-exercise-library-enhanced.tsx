@@ -1,120 +1,217 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { ExerciseFull } from "@/types/exercise";
-import { useToast } from "@/components/ui/use-toast";
-import { checkExercisesFullTableExists } from "@/hooks/exercise-library/services/exercise-fetch-service";
-import { useExerciseFiltersState } from "./use-exercise-filters-state";
-import { useExerciseCrud } from "./use-exercise-crud";
-import { loadExerciseData, getExercisesCount, loadFilterOptions } from "../services/exercise-enhanced-service";
-
-const ITEMS_PER_PAGE = 12;
+import { useState, useEffect, useCallback, ChangeEvent } from 'react';
+import { Exercise, ExerciseFull } from '@/types/exercise';
+import { useToast } from '@/components/ui/use-toast';
+import { loadExerciseData, getExercisesCount, loadFilterOptions } from '../services/exercise-enhanced-service';
+import { checkExercisesFullTableExists } from '../services/exercise-fetch-service';
+import { useExerciseCrud } from './use-exercise-crud';
+import { useExerciseFiltersState } from './use-exercise-filters-state';
 
 export const useExerciseLibraryEnhanced = () => {
-  const [exercises, setExercises] = useState<ExerciseFull[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
-  const [tableExists, setTableExists] = useState(true);
-  
   const { toast } = useToast();
+  const [exercises, setExercises] = useState<ExerciseFull[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [tableExists, setTableExists] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [currentExercise, setCurrentExercise] = useState<ExerciseFull | null>(null);
+  const ITEMS_PER_PAGE = 12;
   
-  // Use the filter state hook
-  const filterState = useExerciseFiltersState();
+  // Get filter states
+  const {
+    searchQuery, 
+    selectedMuscleGroup,
+    selectedEquipment,
+    selectedDifficulty,
+    muscleGroups,
+    equipmentTypes,
+    difficultyLevels,
+    setSearchQuery,
+    setSelectedMuscleGroup,
+    setSelectedEquipment,
+    setSelectedDifficulty,
+    setMuscleGroups,
+    setEquipmentTypes,
+    setDifficultyLevels
+  } = useExerciseFiltersState();
   
-  // Handle data reload
-  const loadExerciseDataWithState = useCallback(async () => {
-    setLoading(true);
-    
-    try {
-      // Check if the table exists first
-      const exists = await checkExercisesFullTableExists();
-      setTableExists(exists);
-      
-      if (!exists) {
-        toast({
-          title: "Table Not Found",
-          description: "The exercises_full table does not exist in your database.",
-          variant: "destructive"
-        });
-        setLoading(false);
-        return;
+  // Get CRUD operations
+  const {
+    formState,
+    handleFormChange,
+    initFormWithExercise,
+    handleAddExercise,
+    handleEditExercise,
+    handleDeleteExercise,
+    resetForm,
+  } = useExerciseCrud();
+
+  // Check if table exists
+  useEffect(() => {
+    const checkTable = async () => {
+      try {
+        const exists = await checkExercisesFullTableExists();
+        setTableExists(exists);
+        if (!exists) {
+          toast({
+            title: "Database table not found",
+            description: "The exercises_full table doesn't exist in your database",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error checking table:', error);
+        setTableExists(false);
       }
+    };
+    
+    checkTable();
+  }, [toast]);
+
+  // Load filters
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      if (!tableExists) return;
       
-      // Load exercise data
-      const data = await loadExerciseData(
-        filterState.selectedMuscleGroup,
-        filterState.selectedEquipment, 
-        filterState.selectedDifficulty,
-        filterState.searchQuery,
-        filterState.currentPage,
+      try {
+        const options = await loadFilterOptions();
+        setMuscleGroups(options.muscleGroups);
+        setEquipmentTypes(options.equipmentTypes);
+        setDifficultyLevels(options.difficultyLevels);
+      } catch (error) {
+        console.error('Error loading filters:', error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, [tableExists]);
+
+  // Load exercises
+  const loadExercises = useCallback(async () => {
+    if (!tableExists) return;
+    
+    setLoading(true);
+    try {
+      // Fetch exercises with current filters
+      const exercisesData = await loadExerciseData(
+        selectedMuscleGroup,
+        selectedEquipment,
+        selectedDifficulty,
+        searchQuery,
+        currentPage,
         ITEMS_PER_PAGE
       );
       
-      setExercises(data);
+      setExercises(exercisesData);
       
-      // Get total count for pagination
+      // Fetch total count for pagination
       const count = await getExercisesCount(
-        filterState.selectedMuscleGroup,
-        filterState.selectedEquipment,
-        filterState.selectedDifficulty,
-        filterState.searchQuery
+        selectedMuscleGroup,
+        selectedEquipment,
+        selectedDifficulty,
+        searchQuery
       );
       
       setTotalCount(count);
-      
     } catch (error) {
-      console.error("Failed to load exercise data:", error);
+      console.error('Error loading exercises:', error);
       toast({
         title: "Error",
-        description: "Failed to load exercise data. Check the console for details.",
-        variant: "destructive"
+        description: "Failed to load exercises",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   }, [
-    filterState.selectedMuscleGroup, 
-    filterState.selectedEquipment, 
-    filterState.selectedDifficulty, 
-    filterState.searchQuery, 
-    filterState.currentPage,
+    tableExists, 
+    selectedMuscleGroup, 
+    selectedEquipment, 
+    selectedDifficulty,
+    searchQuery,
+    currentPage,
+    ITEMS_PER_PAGE,
     toast
   ]);
-  
-  // Load exercises and filter options
-  useEffect(() => {
-    loadExerciseDataWithState();
-  }, [loadExerciseDataWithState]);
-  
-  // Refresh database to requery for exercises
-  const handleRefresh = useCallback(() => {
-    setLoading(true);
-    filterState.setCurrentPage(0); // Reset to first page
-    
-    // Reload filter options and exercise data
-    const refreshData = async () => {
-      try {
-        await loadFilterOptions(); // Removed argument here
-        loadExerciseDataWithState();
-      } catch (error) {
-        console.error("Failed to refresh data:", error);
-        setLoading(false);
-      }
-    };
-    
-    refreshData();
-  }, [filterState, loadExerciseDataWithState]);
 
-  // Use the CRUD operations hook
-  const crudOperations = useExerciseCrud(loadExerciseDataWithState);
+  useEffect(() => {
+    loadExercises();
+  }, [loadExercises]);
+
+  // Handle search
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(0); // Reset to first page on search change
+  }, []);
+
+  // Handle filter change
+  const handleFilterChange = useCallback((filterType: string, value: string) => {
+    switch (filterType) {
+      case 'muscleGroup':
+        setSelectedMuscleGroup(value);
+        break;
+      case 'equipment':
+        setSelectedEquipment(value);
+        break;
+      case 'difficulty':
+        setSelectedDifficulty(value);
+        break;
+    }
+    setCurrentPage(0); // Reset to first page on filter change
+  }, []);
+
+  // Reset filters
+  const resetFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedMuscleGroup('all');
+    setSelectedEquipment('all');
+    setSelectedDifficulty('all');
+    setCurrentPage(0);
+  }, []);
+
+  // Open dialogs with exercise data
+  const openEditDialog = useCallback((exercise: Exercise) => {
+    const exerciseFull = exercise as ExerciseFull;
+    setCurrentExercise(exerciseFull);
+    initFormWithExercise(exerciseFull);
+  }, [initFormWithExercise]);
+
+  const openDeleteDialog = useCallback((exercise: Exercise) => {
+    const exerciseFull = exercise as ExerciseFull;
+    setCurrentExercise(exerciseFull);
+  }, []);
+
+  // Handle refresh
+  const handleRefresh = useCallback(() => {
+    loadExercises();
+  }, [loadExercises]);
 
   return {
     exercises,
     loading,
+    searchQuery,
+    muscleGroups,
+    equipmentTypes,
+    difficultyLevels,
+    selectedMuscleGroup,
+    selectedEquipment,
+    selectedDifficulty,
+    currentPage,
     totalCount,
     tableExists,
+    formState,
+    currentExercise,
     ITEMS_PER_PAGE,
+    handleSearchChange,
+    handleFilterChange,
+    resetFilters,
+    handleFormChange,
+    handleAddExercise,
+    handleEditExercise,
+    handleDeleteExercise,
+    openEditDialog,
+    openDeleteDialog,
     handleRefresh,
-    ...filterState,
-    ...crudOperations
+    setCurrentPage
   };
 };

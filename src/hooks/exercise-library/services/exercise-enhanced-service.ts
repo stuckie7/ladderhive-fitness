@@ -168,3 +168,88 @@ export const loadFilterOptions = async () => {
     };
   }
 };
+
+/**
+ * Creates a new exercise in the database
+ */
+export const createExercise = async (exerciseData: Partial<ExerciseFull>): Promise<ExerciseFull> => {
+  try {
+    // Prepare the exercise data by removing any id field (database will generate one)
+    const { id, ...dataToInsert } = exerciseData;
+    
+    // Make sure required fields are included
+    if (!dataToInsert.name) {
+      throw new Error('Exercise name is required');
+    }
+    
+    // Handle instructions - ensure it's stored as an array in the database
+    if (typeof dataToInsert.instructions === 'string') {
+      dataToInsert.instructions = (dataToInsert.instructions as string).split('\n');
+    }
+    
+    // Insert the new exercise
+    const { data, error } = await supabase
+      .from('exercises_full')
+      .insert(dataToInsert)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    return data as ExerciseFull;
+  } catch (error) {
+    console.error("Error creating exercise:", error);
+    throw error;
+  }
+};
+
+/**
+ * Updates an existing exercise in the database
+ */
+export const updateExercise = async (exerciseData: Partial<ExerciseFull>): Promise<ExerciseFull> => {
+  try {
+    if (!exerciseData.id) {
+      throw new Error('Exercise ID is required for updating');
+    }
+    
+    const id = exerciseData.id;
+    const { id: _, ...dataToUpdate } = exerciseData;
+    
+    // Handle instructions - ensure it's stored as an array in the database
+    if (typeof dataToUpdate.instructions === 'string') {
+      dataToUpdate.instructions = (dataToUpdate.instructions as string).split('\n');
+    }
+    
+    // Update the exercise
+    const { data, error } = await supabase
+      .from('exercises_full')
+      .update(dataToUpdate)
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    return data as ExerciseFull;
+  } catch (error) {
+    console.error("Error updating exercise:", error);
+    throw error;
+  }
+};
+
+/**
+ * Deletes an exercise from the database
+ */
+export const deleteExercise = async (id: string | number): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('exercises_full')
+      .delete()
+      .eq('id', id);
+      
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error deleting exercise:", error);
+    throw error;
+  }
+};
