@@ -23,7 +23,16 @@ export const useSuggestedExercises = (limit = 5) => {
         
         if (error) throw error;
         
-        setExercises(data || []);
+        // Map the response to include all ExerciseFull properties
+        const mappedExercises: ExerciseFull[] = (data || []).map(exercise => ({
+          ...exercise,
+          target_muscle_group: exercise.prime_mover_muscle,
+          video_demonstration_url: exercise.short_youtube_demo,
+          video_explanation_url: exercise.in_depth_youtube_exp,
+          description: exercise.exercise_classification // Use as placeholder for description
+        }));
+        
+        setExercises(mappedExercises);
         
       } catch (err: any) {
         console.error('Error fetching suggested exercises:', err);

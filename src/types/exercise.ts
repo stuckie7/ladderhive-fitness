@@ -1,4 +1,3 @@
-
 export interface Exercise {
   id: string;
   name: string;
@@ -73,7 +72,7 @@ export interface ExerciseFull {
   laterality: string | null;
   youtube_thumbnail_url?: string | null;
   
-  // Mapped fields for backward compatibility
+  // Add the missing properties to match database
   target_muscle_group: string | null;
   video_demonstration_url: string | null;
   video_explanation_url: string | null;
@@ -91,4 +90,7 @@ export interface ExerciseFull {
   exercise_classification: string | null;
   created_at: string | null;
   updated_at: string | null;
+  
+  // Add description property that's used in components
+  description?: string | null;
 }

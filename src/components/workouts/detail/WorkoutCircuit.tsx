@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { CheckCircle2, ChevronDown, ChevronUp, Dumbbell, Plus } from "lucide-react";
@@ -89,9 +88,9 @@ const WorkoutCircuit: React.FC<WorkoutCircuitProps> = ({ exercises }) => {
                       <p className="text-sm text-muted-foreground mt-1">
                         {exercise.prime_mover_muscle || 'Various muscles'} • {exercise.primary_equipment || 'Bodyweight'}
                       </p>
-                      {exercise.description && (
+                      {(exercise.description || exercise.target_muscle_group) && (
                         <p className="text-xs text-muted-foreground mt-2 line-clamp-3">
-                          {exercise.description}
+                          {exercise.description || `Targets: ${exercise.target_muscle_group}`}
                         </p>
                       )}
                     </div>
