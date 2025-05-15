@@ -31,13 +31,28 @@ const ExerciseFormDialog = ({
   onOpenChange,
   title,
   description,
-  formState,
+  formState = {
+    name: '',
+    prime_mover_muscle: '',
+    primary_equipment: '',
+    difficulty: '',
+    short_youtube_demo: ''
+  },
   onFormChange,
   onSubmit,
   submitLabel,
-  muscleGroups,
-  equipmentTypes
+  muscleGroups = [],
+  equipmentTypes = []
 }: ExerciseFormDialogProps) => {
+  // Ensure formState is never undefined
+  const safeFormState = formState || {
+    name: '',
+    prime_mover_muscle: '',
+    primary_equipment: '',
+    difficulty: '',
+    short_youtube_demo: ''
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -55,7 +70,7 @@ const ExerciseFormDialog = ({
               id="name"
               name="name" 
               placeholder="Exercise name" 
-              value={formState.name} 
+              value={safeFormState.name || ''} 
               onChange={(e) => onFormChange('name', e.target.value)}
             />
           </div>
@@ -68,11 +83,11 @@ const ExerciseFormDialog = ({
                 name="prime_mover_muscle"
                 list="muscle-groups"
                 placeholder="Target muscle" 
-                value={formState.prime_mover_muscle} 
+                value={safeFormState.prime_mover_muscle || ''} 
                 onChange={(e) => onFormChange('prime_mover_muscle', e.target.value)}
               />
               <datalist id="muscle-groups">
-                {muscleGroups.map(group => (
+                {(muscleGroups || []).map(group => (
                   <option key={group} value={group} />
                 ))}
               </datalist>
@@ -85,11 +100,11 @@ const ExerciseFormDialog = ({
                 name="primary_equipment"
                 list="equipments"
                 placeholder="Equipment needed" 
-                value={formState.primary_equipment} 
+                value={safeFormState.primary_equipment || ''} 
                 onChange={(e) => onFormChange('primary_equipment', e.target.value)}
               />
               <datalist id="equipments">
-                {equipmentTypes.map(eq => (
+                {(equipmentTypes || []).map(eq => (
                   <option key={eq} value={eq} />
                 ))}
               </datalist>
@@ -100,7 +115,7 @@ const ExerciseFormDialog = ({
             <label htmlFor="difficulty" className="text-sm font-medium">Difficulty Level</label>
             <Select 
               name="difficulty"
-              value={formState.difficulty} 
+              value={safeFormState.difficulty || ''} 
               onValueChange={(value) => onFormChange('difficulty', value)}
             >
               <SelectTrigger id="difficulty">
@@ -120,7 +135,7 @@ const ExerciseFormDialog = ({
               id="video"
               name="short_youtube_demo"
               placeholder="YouTube video URL" 
-              value={formState.short_youtube_demo} 
+              value={safeFormState.short_youtube_demo || ''} 
               onChange={(e) => onFormChange('short_youtube_demo', e.target.value)}
             />
           </div>
