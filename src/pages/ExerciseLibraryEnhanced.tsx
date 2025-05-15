@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useExerciseLibraryEnhanced } from "@/hooks/exercise-library/hooks/use-exercise-library-enhanced";
@@ -68,6 +67,11 @@ const ExerciseLibraryEnhanced = () => {
     handleFormChange(mockEvent);
   };
 
+  // Handle search changes with proper event typing
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleSearchChange(e.target.value);
+  };
+
   // Adapt the delete handler to match the expected signature
   const handleDeleteConfirm = () => {
     if (currentExercise) {
@@ -93,6 +97,7 @@ const ExerciseLibraryEnhanced = () => {
     // Add any missing required properties with sensible defaults
     short_youtube_demo: formState.video_demonstration_url || "",
     in_depth_youtube_exp: formState.video_explanation_url || "",
+    prime_mover_muscle: formState.target_muscle_group || "", // Ensure prime_mover_muscle is required
   };
 
   return (
@@ -110,7 +115,7 @@ const ExerciseLibraryEnhanced = () => {
         {/* Search and filters */}
         <ExerciseSearchAndFilters 
           searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
+          onSearchChange={handleSearchInputChange}
           filters={{
             muscleGroup: selectedMuscleGroup,
             equipment: selectedEquipment,

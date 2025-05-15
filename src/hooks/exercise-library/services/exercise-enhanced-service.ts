@@ -190,7 +190,7 @@ export const createExercise = async (exerciseData: Partial<ExerciseFull>): Promi
     // Insert the new exercise
     const { data, error } = await supabase
       .from('exercises_full')
-      .insert(dataToInsert)
+      .insert(dataToInsert as any)
       .select()
       .single();
       
@@ -212,7 +212,8 @@ export const updateExercise = async (exerciseData: Partial<ExerciseFull>): Promi
       throw new Error('Exercise ID is required for updating');
     }
     
-    const id = exerciseData.id;
+    // Convert string id to number if needed
+    const id = typeof exerciseData.id === 'string' ? parseInt(exerciseData.id, 10) : exerciseData.id;
     const { id: _, ...dataToUpdate } = exerciseData;
     
     // Handle instructions - ensure it's stored as an array in the database
@@ -223,7 +224,7 @@ export const updateExercise = async (exerciseData: Partial<ExerciseFull>): Promi
     // Update the exercise
     const { data, error } = await supabase
       .from('exercises_full')
-      .update(dataToUpdate)
+      .update(dataToUpdate as any)
       .eq('id', id)
       .select()
       .single();
@@ -242,10 +243,13 @@ export const updateExercise = async (exerciseData: Partial<ExerciseFull>): Promi
  */
 export const deleteExercise = async (id: string | number): Promise<void> => {
   try {
+    // Convert string id to number if needed
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    
     const { error } = await supabase
       .from('exercises_full')
       .delete()
-      .eq('id', id);
+      .eq('id', numericId);
       
     if (error) throw error;
   } catch (error) {

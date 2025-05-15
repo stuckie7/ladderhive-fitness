@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Exercise, ExerciseFull } from "@/types/exercise";
 import { mapExerciseFullToExercise } from "../mappers";
 
+// Extended interface to include all fields from database
+interface ExerciseFullWithImageUrl extends ExerciseFull {
+  image_url?: string;
+  description?: string;
+  instructions?: string[] | string;
+}
+
 /**
  * Fetches an exercise by its ID
  * @param id The exercise ID
@@ -34,26 +41,26 @@ export const getExerciseFullById = async (id: string | number): Promise<Exercise
     console.log('Exercise data:', data);
     
     // Create the exercise full object with proper type safety
-    const exerciseData: ExerciseFull = {
+    const exerciseData: ExerciseFullWithImageUrl = {
       ...data,
       id: data.id,
       name: data.name || '',
-    } as ExerciseFull;
+    };
     
     // Add optional fields with proper typing
-    if ('description' in data) exerciseData.description = data.description || '';
+    if ('description' in data) exerciseData.description = String(data.description || '');
     if ('instructions' in data) {
       exerciseData.instructions = Array.isArray(data.instructions) 
         ? data.instructions 
-        : data.instructions ? [data.instructions] : [];
+        : data.instructions ? [String(data.instructions)] : [];
     }
-    if ('image_url' in data) exerciseData.image_url = data.image_url || '';
-    if ('youtube_thumbnail_url' in data) exerciseData.image_url = data.image_url || data.youtube_thumbnail_url || '';
+    if ('image_url' in data) exerciseData.image_url = String(data.image_url || '');
+    if ('youtube_thumbnail_url' in data) exerciseData.image_url = String(data.image_url || data.youtube_thumbnail_url || '');
     if ('target_muscle_group' in data) {
-      exerciseData.target_muscle_group = data.target_muscle_group || data.prime_mover_muscle || '';
+      exerciseData.target_muscle_group = String(data.target_muscle_group || data.prime_mover_muscle || '');
     }
 
-    return exerciseData;
+    return exerciseData as ExerciseFull;
   } catch (error) {
     console.error('Error in getExerciseFullById:', error);
     throw error;

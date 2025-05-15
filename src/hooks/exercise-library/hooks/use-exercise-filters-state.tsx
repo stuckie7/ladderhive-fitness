@@ -1,60 +1,44 @@
 
-import { useState, useEffect } from "react";
-import { loadFilterOptions } from "../services/exercise-enhanced-service";
+import { useState, useCallback, ChangeEvent } from 'react';
 
 export const useExerciseFiltersState = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [muscleGroups, setMuscleGroups] = useState<string[]>([]);
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
   const [difficultyLevels, setDifficultyLevels] = useState<string[]>([]);
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>("all");
-  const [selectedEquipment, setSelectedEquipment] = useState<string>("all");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(0);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
+  const [selectedEquipment, setSelectedEquipment] = useState<string>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState<number>(0);
 
-  // Load filter options on initial render
-  useEffect(() => {
-    const fetchFilterOptions = async () => {
-      const options = await loadFilterOptions();
-      setMuscleGroups(options.muscleGroups);
-      setEquipmentTypes(options.equipmentTypes);
-      setDifficultyLevels(options.difficultyLevels);
-    };
-    
-    fetchFilterOptions();
+  const handleSearchChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   }, []);
 
-  // Handle search input change
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(0); // Reset to first page on new search
-  };
-  
-  // Handle filter change
-  const handleFilterChange = (key: "muscleGroup" | "equipment" | "difficulty", value: string) => {
-    setCurrentPage(0); // Reset to first page when filter changes
-    
+  const handleFilterChange = useCallback((key: 'equipment' | 'muscleGroup' | 'difficulty', value: string) => {
     switch (key) {
-      case "muscleGroup":
+      case 'muscleGroup':
         setSelectedMuscleGroup(value);
         break;
-      case "equipment":
+      case 'equipment':
         setSelectedEquipment(value);
         break;
-      case "difficulty":
+      case 'difficulty':
         setSelectedDifficulty(value);
         break;
+      default:
+        break;
     }
-  };
-  
-  // Reset all filters
-  const resetFilters = () => {
-    setSearchQuery("");
-    setSelectedMuscleGroup("all");
-    setSelectedEquipment("all");
-    setSelectedDifficulty("all");
+    setCurrentPage(0); // Reset page when filter changes
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedMuscleGroup('all');
+    setSelectedEquipment('all');
+    setSelectedDifficulty('all');
     setCurrentPage(0);
-  };
+  }, []);
 
   return {
     searchQuery,
@@ -65,6 +49,13 @@ export const useExerciseFiltersState = () => {
     selectedEquipment,
     selectedDifficulty,
     currentPage,
+    setSearchQuery,
+    setSelectedMuscleGroup,
+    setSelectedEquipment,
+    setSelectedDifficulty,
+    setMuscleGroups,
+    setEquipmentTypes,
+    setDifficultyLevels,
     setCurrentPage,
     handleSearchChange,
     handleFilterChange,

@@ -13,11 +13,10 @@ export const useExerciseLibraryEnhanced = () => {
   const [loading, setLoading] = useState(false);
   const [tableExists, setTableExists] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0);
   const [currentExercise, setCurrentExercise] = useState<ExerciseFull | null>(null);
   const ITEMS_PER_PAGE = 12;
   
-  // Get filter states
+  // Get filter states - use the fully featured hook
   const {
     searchQuery, 
     selectedMuscleGroup,
@@ -26,13 +25,18 @@ export const useExerciseLibraryEnhanced = () => {
     muscleGroups,
     equipmentTypes,
     difficultyLevels,
+    currentPage,
+    setCurrentPage,
     setSearchQuery,
     setSelectedMuscleGroup,
     setSelectedEquipment,
     setSelectedDifficulty,
     setMuscleGroups,
     setEquipmentTypes,
-    setDifficultyLevels
+    setDifficultyLevels,
+    handleSearchChange,
+    handleFilterChange,
+    resetFilters
   } = useExerciseFiltersState();
   
   // Get CRUD operations
@@ -84,7 +88,7 @@ export const useExerciseLibraryEnhanced = () => {
     };
     
     fetchFilterOptions();
-  }, [tableExists]);
+  }, [tableExists, setMuscleGroups, setEquipmentTypes, setDifficultyLevels]);
 
   // Load exercises
   const loadExercises = useCallback(async () => {
@@ -137,37 +141,6 @@ export const useExerciseLibraryEnhanced = () => {
   useEffect(() => {
     loadExercises();
   }, [loadExercises]);
-
-  // Handle search
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(0); // Reset to first page on search change
-  }, []);
-
-  // Handle filter change
-  const handleFilterChange = useCallback((filterType: string, value: string) => {
-    switch (filterType) {
-      case 'muscleGroup':
-        setSelectedMuscleGroup(value);
-        break;
-      case 'equipment':
-        setSelectedEquipment(value);
-        break;
-      case 'difficulty':
-        setSelectedDifficulty(value);
-        break;
-    }
-    setCurrentPage(0); // Reset to first page on filter change
-  }, []);
-
-  // Reset filters
-  const resetFilters = useCallback(() => {
-    setSearchQuery('');
-    setSelectedMuscleGroup('all');
-    setSelectedEquipment('all');
-    setSelectedDifficulty('all');
-    setCurrentPage(0);
-  }, []);
 
   // Open dialogs with exercise data
   const openEditDialog = useCallback((exercise: Exercise) => {
