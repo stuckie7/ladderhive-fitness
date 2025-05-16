@@ -6,13 +6,14 @@ import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-
 import { Button } from '@/components/ui/button';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Components
 import ExerciseDetailSkeleton from '@/components/exercises/exercise-detail/ExerciseDetailSkeleton';
 import ExerciseNotFound from '@/components/exercises/exercise-detail/ExerciseNotFound';
 import ExerciseMainDetails from '@/components/exercises/exercise-detail/ExerciseMainDetails';
 
-export default function ExerciseDetailSimplified() {
+export default function ExerciseDetailEnhanced() {
   const [exercise, setExercise] = useState<ExerciseFull | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
@@ -75,8 +76,52 @@ export default function ExerciseDetailSimplified() {
         </Button>
       </div>
 
-      {/* Main Details Section */}
-      <ExerciseMainDetails exercise={exercise} />
+      {/* Main content with tabs */}
+      <div className="space-y-6">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            {exercise.short_youtube_demo && (
+              <TabsTrigger value="video">Video</TabsTrigger>
+            )}
+          </TabsList>
+          
+          <TabsContent value="overview" className="space-y-4">
+            {/* In-depth Video */}
+            {exercise.in_depth_youtube_exp && (
+              <div className="bg-card rounded-lg p-6">
+                <h3 className="text-lg font-medium mb-4">In-Depth Video Explanation</h3>
+                <div className="aspect-video rounded-md overflow-hidden">
+                  <iframe 
+                    src={`https://www.youtube.com/embed/${extractYoutubeId(exercise.in_depth_youtube_exp)}`} 
+                    title="In-Depth Explanation"
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Main Details */}
+            <ExerciseMainDetails exercise={exercise} />
+          </TabsContent>
+
+          {exercise.short_youtube_demo && (
+            <TabsContent value="video">
+              <div className="bg-card rounded-lg p-6">
+                <div className="aspect-video rounded-md overflow-hidden">
+                  <iframe 
+                    src={`https://www.youtube.com/embed/${extractYoutubeId(exercise.short_youtube_demo)}`} 
+                    title="Quick Demonstration"
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          )}
+        </Tabs>
+      </div>
     </div>
   );
 }
