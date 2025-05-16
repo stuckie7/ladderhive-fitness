@@ -168,13 +168,31 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
           
           <div>
             <h3 className="text-lg font-medium mb-2">Additional Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-              <ExerciseSpecItem label="Arm Movement" value={exercise.arm_movement_pattern} />
-              <ExerciseSpecItem label="Leg Movement" value={exercise.leg_movement_pattern} />
-              <ExerciseSpecItem label="Single/Double Arm" value={exercise.single_or_double_arm} />
-              <ExerciseSpecItem label="Grip" value={exercise.grip} />
-              <ExerciseSpecItem label="Load Position" value={exercise.load_position} />
-              <ExerciseSpecItem label="Foot Elevation" value={exercise.foot_elevation} />
+            <div className="space-y-4">
+              {/* In-depth Video */}
+              {exercise.in_depth_youtube_exp && (
+                <div className="space-y-2">
+                  <h4 className="font-medium">In-Depth Explanation</h4>
+                  <div className="aspect-video bg-muted rounded-md overflow-hidden">
+                    <iframe 
+                      className="w-full h-full"
+                      src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
+                      title="In-Depth Explanation"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Technical Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                <ExerciseSpecItem label="Arm Movement" value={exercise.arm_movement_pattern} />
+                <ExerciseSpecItem label="Leg Movement" value={exercise.leg_movement_pattern} />
+                <ExerciseSpecItem label="Single/Double Arm" value={exercise.single_or_double_arm} />
+                <ExerciseSpecItem label="Grip" value={exercise.grip} />
+                <ExerciseSpecItem label="Load Position" value={exercise.load_position} />
+                <ExerciseSpecItem label="Foot Elevation" value={exercise.foot_elevation} />
+              </div>
             </div>
           </div>
         </div>
