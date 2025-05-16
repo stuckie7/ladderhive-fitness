@@ -5,6 +5,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Exercise, ExerciseFull } from '@/types/exercise';
 import { supabase } from '@/integrations/supabase/client';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
+import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
 
 // Components
 import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
@@ -111,12 +112,14 @@ export default function ExerciseDetail() {
   }, [id]);
 
   const handleBackClick = () => {
-    navigate('/exercise-library');
+    navigate('/exercises');
   };
 
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8">
+        <DynamicBreadcrumb onBack={handleBackClick} className="mb-6" />
+        
         <ExerciseHeader 
           exercise={exercise} 
           onBackClick={handleBackClick} 

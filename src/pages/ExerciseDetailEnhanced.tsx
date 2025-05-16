@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ExerciseFull } from '@/types/exercise';
@@ -6,6 +5,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Bookmark, BookmarkCheck } from 'lucide-react';
+import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
 
 // Components
 import ExerciseDetailHeader from '@/components/exercises/exercise-detail/ExerciseDetailHeader';
@@ -53,7 +53,7 @@ export default function ExerciseDetailEnhanced() {
   }, [id]);
 
   const handleBackClick = () => {
-    navigate('/exercise-library-enhanced');
+    navigate('/exercises/enhanced');
   };
 
   const handleToggleSave = () => {
@@ -84,12 +84,9 @@ export default function ExerciseDetailEnhanced() {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
-          <Button variant="ghost" onClick={handleBackClick} className="flex items-center gap-1">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Library
-          </Button>
-          
+        <DynamicBreadcrumb onBack={handleBackClick} className="mb-6" />
+        
+        <div className="flex justify-end items-center mb-6">
           <div className="flex items-center gap-2">
             <Button 
               variant="outline"

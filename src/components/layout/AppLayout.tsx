@@ -13,11 +13,14 @@ import {
   PanelLeft,
   Moon, 
   BookOpen,
-  Bookmark
+  Bookmark,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useExerciseLibraryNavigation } from '@/hooks/use-exercise-library-navigation';
+import { BottomNavigation } from './BottomNavigation';
+import { Fab } from '@/components/ui/fab';
 
 type NavItem = {
   label: string;
@@ -44,6 +47,41 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     e.preventDefault();
     exerciseNav.goToExerciseLibrary();
   };
+
+  // Quick actions for the FAB
+  const quickActions = [
+    { 
+      icon: <Zap size={24} />, 
+      label: 'Start Workout', 
+      href: '/workout-builder' 
+    },
+    { 
+      icon: <Dumbbell size={24} />, 
+      label: 'Exercises', 
+      href: '/exercises/enhanced',
+      onClick: handleExerciseClick
+    },
+    { 
+      icon: <CalendarDays size={24} />, 
+      label: 'Schedule', 
+      href: '/schedule' 
+    },
+    { 
+      icon: <LineChart size={24} />, 
+      label: 'Progress', 
+      href: '/progress' 
+    },
+    { 
+      icon: <BookOpen size={24} />, 
+      label: 'WODs', 
+      href: '/wods' 
+    },
+    { 
+      icon: <Bookmark size={24} />, 
+      label: 'Saved', 
+      href: '/saved-workouts' 
+    },
+  ];
 
   const navItems: NavItem[] = [
     { label: 'Home', href: '/dashboard', icon: <Home size={18} /> },
@@ -138,24 +176,26 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile navigation */}
       <div className="md:hidden sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="p-4 flex justify-between items-center">
-<Link to="/" className="flex items-center gap-2">
-  <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-6 w-auto" />
-  <span className="font-bold">FitTrack Pro</span>
-</Link>
-
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-6 w-auto" />
+            <span className="font-bold">FitTrack Pro</span>
+          </Link>
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            {/* Mobile menu button could go here */}
           </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen pb-16 md:pb-0">
         <main className="flex-1">
           {children}
         </main>
+
+        {/* Bottom Navigation and FAB only on mobile */}
+        <BottomNavigation />
+        <Fab actions={quickActions} />
       </div>
     </div>
   );
