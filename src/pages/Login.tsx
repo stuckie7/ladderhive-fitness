@@ -1,24 +1,31 @@
 
 import LoginForm from "@/components/auth/LoginForm";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [redirectAttempted, setRedirectAttempted] = useState(false);
   
   useEffect(() => {
-    // Only redirect if user is logged in and we're not still loading
-    // Also check redirectAttempted to prevent multiple redirects
+    // Only redirect if:
+    // 1. User is logged in
+    // 2. We're not still loading auth state
+    // 3. We haven't already attempted to redirect (prevents loops)
     if (user && !loading && !redirectAttempted) {
+      console.log("Login: User is authenticated, redirecting to dashboard");
       setRedirectAttempted(true);
-      navigate("/dashboard");
+      
+      // Get the redirect path from location state or default to dashboard
+      const from = location.state?.from || "/dashboard";
+      navigate(from, { replace: true });
     }
-  }, [user, loading, navigate, redirectAttempted]);
+  }, [user, loading, navigate, redirectAttempted, location]);
   
-  // If still loading auth state, don't render anything yet to prevent flashing
+  // If still loading auth state, show loading indicator
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -27,7 +34,7 @@ const Login = () => {
     );
   }
   
-  // Only render the login form if user is not authenticated
+  // Only render the login form if user is NOT authenticated
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">

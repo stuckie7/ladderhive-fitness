@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   session: Session | null;
@@ -19,19 +19,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener first
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, currentSession) => {
-        console.log("Auth state changed:", _event, currentSession?.user?.email);
+      (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
       }
     );
 
-    // Then check for existing session
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log("Got existing session:", currentSession?.user?.email);
       setSession(currentSession);
@@ -53,24 +54,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       
-      // Use toast for success notification
-      setTimeout(() => {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
-        });
-      }, 0);
-      
-      // Don't navigate here - we'll handle navigation in the components that use this context
+      // Toast will be shown after redirect
+      console.log("Login successful");
     } catch (error: any) {
       console.error("Login error:", error);
-      setTimeout(() => {
-        toast({
-          title: "Login failed",
-          description: error.message || "Check your credentials and try again.",
-          variant: "destructive",
-        });
-      }, 0);
+      toast({
+        title: "Login failed",
+        description: error.message || "Check your credentials and try again.",
+        variant: "destructive",
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -94,22 +86,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       
-      setTimeout(() => {
-        toast({
-          title: "Account created",
-          description: "Please check your email to confirm your registration.",
-        });
-      }, 0);
-      
-      // Don't navigate here - we'll handle navigation in the components
+      toast({
+        title: "Account created",
+        description: "Please check your email to confirm your registration.",
+      });
     } catch (error: any) {
-      setTimeout(() => {
-        toast({
-          title: "Registration failed",
-          description: error.message || "An error occurred during signup.",
-          variant: "destructive",
-        });
-      }, 0);
+      toast({
+        title: "Registration failed",
+        description: error.message || "An error occurred during signup.",
+        variant: "destructive",
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -122,23 +108,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      setTimeout(() => {
-        toast({
-          title: "Logged out",
-          description: "You have been successfully logged out.",
-        });
-      }, 0);
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
       
       // Don't navigate here - we'll handle navigation after this function is called
     } catch (error: any) {
       console.error("Error logging out:", error);
-      setTimeout(() => {
-        toast({
-          title: "Error",
-          description: "An error occurred while logging out.",
-          variant: "destructive",
-        });
-      }, 0);
+      toast({
+        title: "Error",
+        description: "An error occurred while logging out.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

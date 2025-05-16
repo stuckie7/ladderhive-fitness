@@ -50,6 +50,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // If still loading, show a loading spinner
   if (loading) {
+    console.log("ProtectedRoute: Still loading auth state");
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-fitness-primary" />
@@ -60,10 +61,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // If not logged in, redirect to login page but preserve the intended destination
   if (!user) {
+    console.log("ProtectedRoute: User not authenticated, redirecting to login");
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   // If logged in, render the child routes
+  console.log("ProtectedRoute: User authenticated, rendering children");
   return <>{children}</>;
 };
 

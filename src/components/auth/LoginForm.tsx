@@ -18,12 +18,24 @@ const LoginForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Missing information",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       await signIn(email, password);
-      // The parent Login component will handle navigation after successful login
+      // Auth context will handle navigation after successful login via onAuthStateChange
+      console.log("Login successful, waiting for redirect");
     } catch (error: any) {
+      console.error("Login error:", error);
       // Error handling is done in the signIn function
     } finally {
       setIsLoading(false);
