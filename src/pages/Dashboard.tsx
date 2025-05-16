@@ -152,7 +152,7 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6">
+     <div className="px-0 py-4 md:px-4 md:py-6">
         {/* Dashboard header with action buttons */}
         <DashboardHeader 
           isLoading={isLoading}
