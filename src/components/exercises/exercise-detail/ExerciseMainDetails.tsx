@@ -184,6 +184,21 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
                 </div>
               )}
               
+              {/* Additional video for exercise 9257 */}
+              {exercise.id === 9257 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium">Additional Video</h4>
+                  <div className="aspect-video bg-muted rounded-md overflow-hidden">
+                    <iframe 
+                      className="w-full h-full"
+                      src="https://www.youtube.com/embed/A3uK5TPzHq8" 
+                      title="Additional Demonstration"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+              
               {/* Technical Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
                 <ExerciseSpecItem label="Arm Movement" value={exercise.arm_movement_pattern} />
