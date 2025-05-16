@@ -177,7 +177,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Mobile navigation */}
       <div className="md:hidden sticky top-0 z-30 w-full bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="p-4 flex justify-between items-center">
+        <div className="flex-1 md:px-0">
           <Link to="/" className="flex items-center gap-2">
             <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-6 w-auto" />
             <span className="font-bold">FitTrack Pro</span>
@@ -192,10 +192,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-screen pb-16 md:pb-0">
         <main className="flex-1 md:px-0">
-          {/* Remove MD breakpoint padding */}
-        <div className="px-0 md:px-4">
-  {children}
-</div>
+  <div className="mobile-content md:px-0">
+    {children}
+  </div>
+
 
         </main>
 
