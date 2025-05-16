@@ -6,32 +6,33 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-
-interface WorkoutData {
-  id: string;
-  date: string;
-  title: string;
-  duration: number;
-  exercises: number;
-  completed: boolean;
-  type?: 'workout' | 'wod';
-}
+import { useWorkoutHistory } from "@/hooks/use-workout-history";
 
 interface WorkoutHistoryProps {
-  workouts?: WorkoutData[];
-  isLoading: boolean;
   onSelectDate?: (date: Date) => void;
   onSelectWorkout?: (id: string, type?: string) => void;
 }
 
 type ViewMode = 'day' | 'week';
 
-const WorkoutHistory = ({ 
-  workouts = [], 
-  isLoading, 
+const WorkoutHistory = ({
   onSelectDate,
-  onSelectWorkout 
+  onSelectWorkout
 }: WorkoutHistoryProps) => {
+  const { workouts, loading, error } = useWorkoutHistory();
+
+  // Convert Supabase data to match our interface
+  const formattedWorkouts = workouts.map(workout => ({
+    id: workout.id,
+    date: workout.date,
+    title: workout.workout_name,
+    duration: workout.duration_minutes,
+    exercises: workout.exercises.length,
+    completed: true,
+    type: 'workout'
+  }));
+
+
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   
@@ -55,7 +56,7 @@ const WorkoutHistory = ({
   const getFilteredWorkouts = useCallback(() => {
     if (viewMode === 'day') {
       // Return workouts for the selected date
-      return workouts.filter(workout => {
+      return formattedWorkouts.filter(workout => {
         const workoutDate = parseISO(workout.date);
         return isSameDay(workoutDate, selectedDate);
       });
@@ -64,12 +65,12 @@ const WorkoutHistory = ({
       const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 }); // Monday as first day
       const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
       
-      return workouts.filter(workout => {
+      return formattedWorkouts.filter(workout => {
         const workoutDate = parseISO(workout.date);
         return workoutDate >= weekStart && workoutDate <= weekEnd;
       });
     }
-  }, [workouts, selectedDate, viewMode]);
+  }, [formattedWorkouts, selectedDate, viewMode]);
 
   const filteredWorkouts = getFilteredWorkouts();
   
@@ -172,7 +173,7 @@ const WorkoutHistory = ({
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {loading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
               <Skeleton key={i} className="h-20 w-full" />
