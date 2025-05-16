@@ -16,7 +16,7 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
     if (!url) return '';
     
     // Remove quotes if they exist in the URL
-    let cleanUrl = url.replace(/^["']|["']$/g, '');
+    let cleanUrl = url.replace(/^['"]|['"]$/g, '');
     
     // Handle youtube.com/watch?v= format
     if (cleanUrl.includes('watch?v=')) {
@@ -74,29 +74,63 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
           </div>
         )}
         
-        {/* Description Section */}
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-lg font-medium mb-2">Primary Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-              <ExerciseSpecItem label="Primary Muscle" value={exercise.prime_mover_muscle} />
-              <ExerciseSpecItem label="Secondary Muscle" value={exercise.secondary_muscle} />
-              <ExerciseSpecItem label="Equipment" value={exercise.primary_equipment} />
-              <ExerciseSpecItem label="Secondary Equipment" value={exercise.secondary_equipment} />
-              <ExerciseSpecItem label="Body Region" value={exercise.body_region} />
-              <ExerciseSpecItem label="Difficulty" value={exercise.difficulty} />
-            </div>
+        {/* Exercise Type and Intensity */}
+        <div>
+          <h3 className="text-lg font-medium mb-2">Exercise Type & Intensity</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+            <ExerciseSpecItem label="Movement Pattern 1" value={exercise.movement_pattern_1} />
+            <ExerciseSpecItem label="Movement Pattern 2" value={exercise.movement_pattern_2} />
+            <ExerciseSpecItem label="Movement Pattern 3" value={exercise.movement_pattern_3} />
+            <ExerciseSpecItem label="Plane of Motion 1" value={exercise.plane_of_motion_1} />
+            <ExerciseSpecItem label="Plane of Motion 2" value={exercise.plane_of_motion_2} />
+            <ExerciseSpecItem label="Plane of Motion 3" value={exercise.plane_of_motion_3} />
           </div>
-          
-          <div>
-            <h3 className="text-lg font-medium mb-2">Mechanics</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-              <ExerciseSpecItem label="Force Type" value={exercise.force_type} />
-              <ExerciseSpecItem label="Mechanics" value={exercise.mechanics} />
-              <ExerciseSpecItem label="Posture" value={exercise.posture} />
-              <ExerciseSpecItem label="Laterality" value={exercise.laterality} />
-              <ExerciseSpecItem label="Classification" value={exercise.exercise_classification} />
-            </div>
+        </div>
+
+        {/* Primary Information */}
+        <div>
+          <h3 className="text-lg font-medium mb-2">Primary Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+            <ExerciseSpecItem label="Primary Muscle" value={exercise.prime_mover_muscle} />
+            <ExerciseSpecItem label="Secondary Muscle" value={exercise.secondary_muscle} />
+            <ExerciseSpecItem label="Tertiary Muscle" value={exercise.tertiary_muscle} />
+            <ExerciseSpecItem label="Primary Equipment" value={exercise.primary_equipment} />
+            <ExerciseSpecItem label="Secondary Equipment" value={exercise.secondary_equipment} />
+            <ExerciseSpecItem label="Body Region" value={exercise.body_region} />
+            <ExerciseSpecItem label="Difficulty" value={exercise.difficulty} />
+          </div>
+        </div>
+        
+        {/* Mechanics */}
+        <div>
+          <h3 className="text-lg font-medium mb-2">Mechanics</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+            <ExerciseSpecItem label="Force Type" value={exercise.force_type} />
+            <ExerciseSpecItem label="Mechanics" value={exercise.mechanics} />
+            <ExerciseSpecItem label="Posture" value={exercise.posture} />
+            <ExerciseSpecItem label="Arm Movement" value={exercise.arm_movement_pattern} />
+            <ExerciseSpecItem label="Leg Movement" value={exercise.leg_movement_pattern} />
+            <ExerciseSpecItem label="Foot Elevation" value={exercise.foot_elevation} />
+            <ExerciseSpecItem label="Grip" value={exercise.grip} />
+            <ExerciseSpecItem label="Load Position" value={exercise.load_position} />
+            <ExerciseSpecItem label="Laterality" value={exercise.laterality} />
+            <ExerciseSpecItem label="Classification" value={exercise.exercise_classification} />
+          </div>
+        </div>
+
+        {/* Recommendations */}
+        <div>
+          <h3 className="text-lg font-medium mb-2">Recommendations</h3>
+          <div className="space-y-4">
+            <ExerciseSpecItem label="Instructions" value={exercise.instructions?.join('\n\n')} />
+          </div>
+        </div>
+
+        {/* Safety Information */}
+        <div>
+          <h3 className="text-lg font-medium mb-2">Safety Information</h3>
+          <div className="space-y-4">
+            <ExerciseSpecItem label="Description" value={exercise.description} />
           </div>
         </div>
         
