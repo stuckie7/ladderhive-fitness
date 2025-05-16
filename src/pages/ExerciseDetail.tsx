@@ -135,15 +135,15 @@ export default function ExerciseDetail() {
   <div className="px-0 py-4 md:px-4 md:py-6">
         {/* Back button & breadcrumbs */}
         <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleBackClick}
-            className="gap-1 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back to Exercises
-          </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBackClick}
+              className="gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Dashboard
+            </Button>
         </div>
         
         {/* Exercise header with title and basic info */}

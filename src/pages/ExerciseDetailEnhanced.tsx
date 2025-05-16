@@ -78,6 +78,14 @@ export default function ExerciseDetailEnhanced() {
         <Button 
           variant="ghost" 
           size="sm"
+          onClick={handleBackClick}
+          className="text-muted-foreground"
+        >
+          Dashboard
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm"
           onClick={handleToggleSave}
           className="text-muted-foreground"
         >
