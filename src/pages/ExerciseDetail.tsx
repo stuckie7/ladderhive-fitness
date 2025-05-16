@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Exercise, ExerciseFull } from '@/types/exercise';
-import { getEmbeddedYoutubeUrl } from '@/components/exercises/exercise-detail/ExerciseMainDetails';
+import ExerciseMainDetails from '@/components/exercises/exercise-detail/ExerciseMainDetails';
+const { getEmbeddedYoutubeUrl } = ExerciseMainDetails;
 import { supabase } from '@/integrations/supabase/client';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
@@ -153,7 +154,6 @@ export default function ExerciseDetail() {
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="mb-4">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="instructions">Instructions</TabsTrigger>
                   {exercise.video_url && (
                     <TabsTrigger value="video">Video</TabsTrigger>
                   )}
@@ -181,25 +181,6 @@ export default function ExerciseDetail() {
                       loading={loading} 
                     />
                   </div>
-                </TabsContent>
-                <TabsContent value="instructions" className="space-y-4">
-                  {exercise.instructions?.length ? (
-                    <div className="bg-card rounded-lg p-6 space-y-4">
-                      <h2 className="text-xl font-semibold">Step-by-Step Instructions</h2>
-                      <ol className="list-decimal pl-5 space-y-3">
-                        {exercise.instructions.map((instruction, index) => (
-                          <li key={index} className="pl-1">{instruction}</li>
-                        ))}
-                      </ol>
-                    </div>
-                  ) : (
-                    <div className="bg-muted/30 rounded-lg p-6 flex items-center justify-center">
-                      <div className="text-center">
-                        <Info className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">No instructions available for this exercise.</p>
-                      </div>
-                    </div>
-                  )}
                 </TabsContent>
                 {exercise.video_url && (
                   <TabsContent value="video">
