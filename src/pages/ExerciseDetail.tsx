@@ -6,6 +6,9 @@ import { Exercise, ExerciseFull } from '@/types/exercise';
 import { supabase } from '@/integrations/supabase/client';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
+import { ChevronLeft, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Components
 import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
@@ -117,25 +120,92 @@ export default function ExerciseDetail() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8">
-        <DynamicBreadcrumb onBack={handleBackClick} className="mb-6" />
+      <div className="container mx-auto px-4 py-6">
+        {/* Back button & breadcrumbs */}
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBackClick}
+            className="gap-1 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Exercises
+          </Button>
+        </div>
         
-        <ExerciseHeader 
-          exercise={exercise} 
-          onBackClick={handleBackClick} 
-        />
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          {/* Main content takes up 2/3 of the container on medium+ screens */}
-          <div className="md:col-span-2">
-            <ExerciseMainContent 
-              exercise={exercise} 
-              loading={loading} 
-            />
+        {/* Exercise header with title and basic info */}
+        <div className="mb-8">
+          <ExerciseHeader 
+            exercise={exercise} 
+            onBackClick={handleBackClick} 
+          />
+        </div>
+
+        {/* Main content with tabs */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main content area - 2/3 width on large screens */}
+          <div className="lg:col-span-2 space-y-6">
+            {loading ? (
+              <div className="h-64 bg-card animate-pulse rounded-lg"></div>
+            ) : exercise ? (
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="instructions">Instructions</TabsTrigger>
+                  {exercise.video_url && (
+                    <TabsTrigger value="video">Video</TabsTrigger>
+                  )}
+                </TabsList>
+                <TabsContent value="overview" className="space-y-4">
+                  <ExerciseMainContent 
+                    exercise={exercise} 
+                    loading={loading} 
+                  />
+                </TabsContent>
+                <TabsContent value="instructions" className="space-y-4">
+                  {exercise.instructions?.length ? (
+                    <div className="bg-card rounded-lg p-6 space-y-4">
+                      <h2 className="text-xl font-semibold">Step-by-Step Instructions</h2>
+                      <ol className="list-decimal pl-5 space-y-3">
+                        {exercise.instructions.map((instruction, index) => (
+                          <li key={index} className="pl-1">{instruction}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : (
+                    <div className="bg-muted/30 rounded-lg p-6 flex items-center justify-center">
+                      <div className="text-center">
+                        <Info className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-muted-foreground">No instructions available for this exercise.</p>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+                {exercise.video_url && (
+                  <TabsContent value="video">
+                    <div className="bg-card rounded-lg p-6">
+                      <div className="aspect-video rounded-md overflow-hidden mb-4">
+                        <iframe 
+                          src={exercise.video_url.replace('watch?v=', 'embed/')} 
+                          title={exercise.name} 
+                          className="w-full h-full"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
+                    </div>
+                  </TabsContent>
+                )}
+              </Tabs>
+            ) : (
+              <div className="bg-muted/30 rounded-lg p-6 flex items-center justify-center">
+                <p className="text-muted-foreground">Exercise not found</p>
+              </div>
+            )}
           </div>
           
-          {/* Sidebar content takes up 1/3 of the container on medium+ screens */}
-          <div className="md:col-span-1">
+          {/* Sidebar - 1/3 width on large screens */}
+          <div className="lg:col-span-1">
             <ExerciseSidebarContent 
               exercise={exercise} 
               loading={loading} 
