@@ -40,3 +40,10 @@
 .read-the-docs {
   color: #888;
 }
+/* In your global CSS file */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
