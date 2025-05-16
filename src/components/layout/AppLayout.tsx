@@ -83,7 +83,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   ];
 
   const navItems: NavItem[] = [
-    { label: 'Home', href: '/dashboard', icon: <Home size={18} /> },
+    { label: 'Dashboard', href: '/dashboard', icon: <Home size={18} /> },
     { label: 'Exercises', href: '/exercises/enhanced', icon: <Dumbbell size={18} /> },
     { label: 'Workouts', href: '/workouts', icon: <PanelLeft size={18} /> },
     { label: 'Saved Workouts', href: '/saved-workouts', icon: <Bookmark size={18} /> },

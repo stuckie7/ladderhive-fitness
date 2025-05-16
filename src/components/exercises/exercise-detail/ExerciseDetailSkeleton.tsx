@@ -12,7 +12,7 @@ export default function ExerciseDetailSkeleton({ onBackClick }: ExerciseDetailSk
     <div className="container mx-auto px-4 py-6">
       <Button variant="outline" className="mb-6" disabled={!onBackClick} onClick={onBackClick}>
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Exercises
+        Dashboard
       </Button>
       <Skeleton className="h-12 w-3/4 mb-4" />
       <Skeleton className="h-8 w-1/3 mb-6" />
