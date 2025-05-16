@@ -5,7 +5,8 @@ export const useExerciseLibraryNavigation = () => {
   const navigate = useNavigate();
   
   const goToExerciseLibrary = () => {
-    navigate("/exercises");
+    // Updated to navigate to the enhanced library by default
+    navigate("/exercises/enhanced");
   };
   
   const goToEnhancedLibrary = () => {

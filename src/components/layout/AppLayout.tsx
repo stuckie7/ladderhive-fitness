@@ -47,7 +47,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   const navItems: NavItem[] = [
     { label: 'Home', href: '/dashboard', icon: <Home size={18} /> },
-    { label: 'Exercises', href: '/exercises', icon: <Dumbbell size={18} /> },
+    { label: 'Exercises', href: '/exercises/enhanced', icon: <Dumbbell size={18} /> }, // Updated href
     { label: 'Workouts', href: '/workouts', icon: <PanelLeft size={18} /> },
     { label: 'Saved Workouts', href: '/saved-workouts', icon: <Bookmark size={18} /> },
     { label: 'Mindful Movement', href: '/mindful-movement', icon: <Moon size={18} /> },
