@@ -1,28 +1,20 @@
-
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ExerciseFull } from '@/types/exercise';
-import AppLayout from '@/components/layout/AppLayout';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Bookmark, BookmarkCheck, LogOut } from 'lucide-react';
-import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
-
-// Components
-import ExerciseDetailHeader from '@/components/exercises/exercise-detail/ExerciseDetailHeader';
-import ExerciseDetailSkeleton from '@/components/exercises/exercise-detail/ExerciseDetailSkeleton';
-import ExerciseNotFound from '@/components/exercises/exercise-detail/ExerciseNotFound';
-import ExerciseMainDetails from '@/components/exercises/exercise-detail/ExerciseMainDetails';
-import ExerciseSidebarInfo from '@/components/exercises/exercise-detail/ExerciseSidebarInfo';
-import AddToWorkoutButton from '@/components/exercises/AddToWorkoutButton';
+import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-export default function ExerciseDetailEnhanced() {
+// Components
+import ExerciseDetailSkeleton from '@/components/exercises/exercise-detail/ExerciseDetailSkeleton';
+import ExerciseNotFound from '@/components/exercises/exercise-detail/ExerciseNotFound';
+
+export default function ExerciseDetailSimplified() {
   const [exercise, setExercise] = useState<ExerciseFull | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const { id } = useParams();
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,18 +22,11 @@ export default function ExerciseDetailEnhanced() {
       if (!id) return;
       
       setLoading(true);
-      
       try {
-        // Handle both numeric and string IDs
         const exerciseId = typeof id === 'string' && !isNaN(parseInt(id)) 
           ? parseInt(id, 10) 
           : id;
-          
-        console.log(`Fetching exercise with ID: ${exerciseId}`);
-        
         const exerciseData = await getExerciseFullById(exerciseId);
-        console.log("Exercise data fetched:", exerciseData);
-        
         setExercise(exerciseData);
       } catch (error) {
         console.error('Error fetching exercise:', error);
@@ -53,95 +38,60 @@ export default function ExerciseDetailEnhanced() {
     fetchExerciseDetails();
   }, [id]);
 
-  const handleBackClick = () => {
-    navigate('/exercises/enhanced');
-  };
-
   const handleToggleSave = () => {
     setIsSaved(!isSaved);
-    
     toast({
-      title: isSaved ? "Exercise removed from favorites" : "Exercise saved to favorites",
-      description: isSaved ? "The exercise has been removed from your favorites" : "The exercise has been added to your favorites",
+      title: isSaved ? "Removed from favorites" : "Saved to favorites",
+      variant: "default",
     });
   };
 
-  if (loading) {
-    return (
-      <AppLayout>
-        <ExerciseDetailSkeleton onBackClick={handleBackClick} />
-      </AppLayout>
-    );
-  }
-
-  if (!exercise) {
-    return (
-      <AppLayout>
-        <ExerciseNotFound onBackClick={handleBackClick} />
-      </AppLayout>
-    );
-  }
+  if (loading) return <ExerciseDetailSkeleton />;
+  if (!exercise) return <ExerciseNotFound />;
 
   return (
-    <AppLayout>
-      <div className="container mx-auto px-4 py-6 flex flex-col min-h-[calc(100vh-4rem)]">
-        <DynamicBreadcrumb onBack={handleBackClick} className="mb-6" />
-        
-        <div className="flex justify-end items-center mb-6">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline"
-              onClick={handleToggleSave}
-              className="flex items-center gap-1"
-            >
-              {isSaved ? (
-                <>
-                  <BookmarkCheck className="h-4 w-4 text-primary" />
-                  Saved
-                </>
-              ) : (
-                <>
-                  <Bookmark className="h-4 w-4" />
-                  Save
-                </>
-              )}
-            </Button>
-            
-            {exercise && (
-              <AddToWorkoutButton 
-                exercise={exercise}
-                variant="default"
-              />
-            )}
-          </div>
+    <div className="max-w-3xl mx-auto p-4">
+      {/* Video Section (Prominent) */}
+      {exercise.youtubeUrl && (
+        <div className="mb-6 rounded-lg overflow-hidden aspect-video bg-black">
+          <iframe
+            src={`https://www.youtube.com/embed/${extractYoutubeId(exercise.youtubeUrl)}`}
+            className="w-full h-full"
+            allowFullScreen
+          />
         </div>
-        
-        <ExerciseDetailHeader 
-          exercise={exercise} 
-          showBackButton={false}
-        />
-        
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 flex-grow">
-          {/* Left Column - Main Details */}
-          <div className="lg:col-span-2">
-            <ExerciseMainDetails exercise={exercise} />
-          </div>
-          
-          {/* Right Column - Sidebar Information */}
-          <div>
-            <ExerciseSidebarInfo exercise={exercise} />
-          </div>
-        </div>
-        
-        {/* Sign Out Bar at bottom */}
-        <div className="mt-auto pt-6 border-t">
-          <Button variant="ghost" className="w-full flex items-center justify-center py-3">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
+      )}
+
+      {/* Header with Save Button */}
+      <div className="flex justify-between items-start mb-4">
+        <h1 className="text-2xl font-bold">{exercise.name}</h1>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={handleToggleSave}
+          className="text-muted-foreground"
+        >
+          {isSaved ? (
+            <BookmarkCheck className="h-5 w-5 text-primary" />
+          ) : (
+            <Bookmark className="h-5 w-5" />
+          )}
+        </Button>
       </div>
-    </AppLayout>
+
+      {/* Description (Simple Markdown) */}
+      <div className="prose prose-sm max-w-none">
+        {exercise.description.split('\n').map((para, i) => (
+          <p key={i} className="mb-4 last:mb-0">{para}</p>
+        ))}
+      </div>
+    </div>
   );
+}
+
+// Helper to extract YouTube ID from URL
+function extractYoutubeId(url: string) {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
 }
