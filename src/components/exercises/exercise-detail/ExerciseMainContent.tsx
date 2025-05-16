@@ -43,31 +43,4 @@ export default function ExerciseMainContent({ exercise, loading = false }: Exerc
       </CardContent>
     </Card>
   );
-            <div className="flex flex-wrap gap-2">
-              {exercise.mechanics && (
-                <Badge variant="outline" className="bg-accent/50">
-                  {exercise.mechanics}
-                </Badge>
-              )}
-              {exercise.force_type && (
-                <Badge variant="outline" className="bg-accent/50">
-                  {exercise.force_type}
-                </Badge>
-              )}
-              {exercise.posture && (
-                <Badge variant="outline" className="bg-accent/50">
-                  {exercise.posture}
-                </Badge>
-              )}
-              {exercise.laterality && (
-                <Badge variant="outline" className="bg-accent/50">
-                  {exercise.laterality}
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
 }
