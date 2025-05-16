@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Exercise } from "@/types/exercise";
 import ExerciseVideoPlayer from "./ExerciseVideoPlayer";
+import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Flame, Target } from "lucide-react";
+import { Dumbbell, Flame, Target, Video } from "lucide-react";
 
 interface ExerciseMainContentProps {
   exercise: Exercise | null;
@@ -29,6 +30,10 @@ export default function ExerciseMainContent({ exercise, loading = false }: Exerc
     );
   }
 
+  // Check for available video sources
+  const videoUrl = exercise.video_url || exercise.short_youtube_demo || '';
+  const hasVideo = videoUrl && videoUrl.length > 5;
+  
   return (
     <Card>
       <CardHeader>
@@ -38,6 +43,23 @@ export default function ExerciseMainContent({ exercise, loading = false }: Exerc
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Video Section - Added at the top of the content */}
+        {hasVideo && (
+          <div className="mb-6">
+            <h3 className="text-lg font-medium flex items-center mb-3">
+              <Video className="h-5 w-5 text-primary mr-2" />
+              Video Demonstration
+            </h3>
+            <div className="aspect-video bg-muted rounded-md overflow-hidden">
+              <ExerciseVideoHandler 
+                url={videoUrl} 
+                title={exercise.name} 
+                thumbnailUrl={exercise.youtube_thumbnail_url}
+              />
+            </div>
+          </div>
+        )}
+        
         {/* Key information cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-muted/30 p-4 rounded-lg">
