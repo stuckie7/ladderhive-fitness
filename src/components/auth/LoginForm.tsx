@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/toast";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "@/context/AuthContext";
 
@@ -13,14 +13,7 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signIn, user } = useAuth();
-
-  // Handle redirection if user is already logged in
-  useEffect(() => {
-    if (user) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, navigate]);
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +21,7 @@ const LoginForm = () => {
     
     try {
       await signIn(email, password);
-      // After successful sign in, let the effect hook handle navigation
-      // based on the updated user state
+      // The parent Login component will handle navigation after successful login
     } catch (error: any) {
       // Error handling is done in the signIn function
     } finally {
