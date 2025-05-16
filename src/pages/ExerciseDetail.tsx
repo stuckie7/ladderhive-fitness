@@ -63,7 +63,7 @@ export default function ExerciseDetail() {
             youtube_thumbnail_url: fullExercise.youtube_thumbnail_url
           };
           
-          setExercise(exerciseData);
+          setExercise(exerciseData as ExerciseFull);
         } 
         // If not found in exercises_full, try regular exercises table
         else {
