@@ -3,13 +3,39 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from 'react';
 import { ExerciseFull } from "@/types/exercise";
 
 interface ExerciseFormState {
   name: string;
   prime_mover_muscle: string;
+  secondary_muscles: string[];
   primary_equipment: string;
+  equipment_options: string[];
   difficulty: string;
+  exercise_type: string;
+  intensity_level: string;
+  rest_time: number;
+  recommended_sets: number;
+  recommended_reps: number;
+  safety_notes: string;
+  short_youtube_demo: string;
+}
+
+// Helper type for default values
+interface DefaultExerciseFormState {
+  name: string;
+  prime_mover_muscle: string;
+  secondary_muscles: string[];
+  primary_equipment: string;
+  equipment_options: string[];
+  difficulty: string;
+  exercise_type: string;
+  intensity_level: string;
+  rest_time: number;
+  recommended_sets: number;
+  recommended_reps: number;
+  safety_notes: string;
   short_youtube_demo: string;
 }
 
@@ -18,12 +44,14 @@ interface ExerciseFormDialogProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
-  formState: ExerciseFormState;
-  onFormChange: (field: string, value: string) => void;
+  formState?: ExerciseFormState;
+  onFormChange: (field: keyof ExerciseFormState, value: any) => void;
   onSubmit: () => void;
   submitLabel: string;
   muscleGroups: string[];
   equipmentTypes: string[];
+  exerciseTypes: string[];
+  intensityLevels: string[];
 }
 
 const ExerciseFormDialog = ({
@@ -34,24 +62,54 @@ const ExerciseFormDialog = ({
   formState = {
     name: '',
     prime_mover_muscle: '',
+    secondary_muscles: [],
     primary_equipment: '',
+    equipment_options: [],
     difficulty: '',
+    exercise_type: '',
+    intensity_level: '',
+    rest_time: 0,
+    recommended_sets: 0,
+    recommended_reps: 0,
+    safety_notes: '',
     short_youtube_demo: ''
-  },
+  } as ExerciseFormState,
   onFormChange,
   onSubmit,
   submitLabel,
   muscleGroups = [],
-  equipmentTypes = []
+  equipmentTypes = [],
+  exerciseTypes = [],
+  intensityLevels = []
 }: ExerciseFormDialogProps) => {
+  const [selectedMuscles, setSelectedMuscles] = useState<string[]>(formState.secondary_muscles || []);
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>(formState.equipment_options || []);
+
+  const handleMuscleChange = (value: string[]) => {
+    setSelectedMuscles(value);
+    onFormChange('secondary_muscles', value);
+  };
+
+  const handleEquipmentChange = (value: string[]) => {
+    setSelectedEquipment(value);
+    onFormChange('equipment_options', value);
+  };
   // Ensure formState is never undefined
   const safeFormState = formState || {
     name: '',
     prime_mover_muscle: '',
+    secondary_muscles: [],
     primary_equipment: '',
+    equipment_options: [],
     difficulty: '',
+    exercise_type: '',
+    intensity_level: '',
+    rest_time: 0,
+    recommended_sets: 0,
+    recommended_reps: 0,
+    safety_notes: '',
     short_youtube_demo: ''
-  };
+  } as ExerciseFormState;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,45 +135,135 @@ const ExerciseFormDialog = ({
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="muscle-group" className="text-sm font-medium">Target Muscle Group</label>
-              <Input 
-                id="muscle-group"
-                name="prime_mover_muscle"
-                list="muscle-groups"
-                placeholder="Target muscle" 
-                value={safeFormState.prime_mover_muscle || ''} 
-                onChange={(e) => onFormChange('prime_mover_muscle', e.target.value)}
-              />
-              <datalist id="muscle-groups">
-                {(muscleGroups || []).map(group => (
-                  <option key={group} value={group} />
-                ))}
-              </datalist>
+              <label htmlFor="muscle-group" className="text-sm font-medium">Primary Muscle Group</label>
+              <Select
+                value={safeFormState.prime_mover_muscle}
+                onValueChange={(value) => onFormChange('prime_mover_muscle', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select primary muscle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {muscleGroups.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {group}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            
+
             <div className="space-y-2">
-              <label htmlFor="equipment" className="text-sm font-medium">Equipment</label>
-              <Input 
-                id="equipment"
-                name="primary_equipment"
-                list="equipments"
-                placeholder="Equipment needed" 
-                value={safeFormState.primary_equipment || ''} 
-                onChange={(e) => onFormChange('primary_equipment', e.target.value)}
-              />
-              <datalist id="equipments">
-                {(equipmentTypes || []).map(eq => (
-                  <option key={eq} value={eq} />
-                ))}
-              </datalist>
+              <label htmlFor="secondary-muscles" className="text-sm font-medium">Secondary Muscles</label>
+              <Select
+                value={selectedMuscles.join(',')}
+                onValueChange={(value) => handleMuscleChange(value.split(','))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select secondary muscles" />
+                </SelectTrigger>
+                <SelectContent>
+                  {muscleGroups.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {group}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="equipment" className="text-sm font-medium">Primary Equipment</label>
+              <Select
+                value={safeFormState.primary_equipment}
+                onValueChange={(value) => onFormChange('primary_equipment', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select equipment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipmentTypes.map((eq) => (
+                    <SelectItem key={eq} value={eq}>
+                      {eq}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="equipment-options" className="text-sm font-medium">Alternative Equipment</label>
+              <Select
+                value={selectedEquipment.join(',')}
+                onValueChange={(value) => handleEquipmentChange(value.split(','))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select alternative equipment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipmentTypes.map((eq) => (
+                    <SelectItem key={eq} value={eq}>
+                      {eq}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="sets" className="text-sm font-medium">Recommended Sets</label>
+              <Input
+                type="number"
+                id="sets"
+                name="recommended_sets"
+                value={safeFormState.recommended_sets}
+                onChange={(e) => onFormChange('recommended_sets', parseInt(e.target.value))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="reps" className="text-sm font-medium">Recommended Reps</label>
+              <Input
+                type="number"
+                id="reps"
+                name="recommended_reps"
+                value={safeFormState.recommended_reps}
+                onChange={(e) => onFormChange('recommended_reps', parseInt(e.target.value))}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <label htmlFor="difficulty" className="text-sm font-medium">Difficulty Level</label>
-            <Select 
-              name="difficulty"
-              value={safeFormState.difficulty || ''} 
+            <label htmlFor="youtube" className="text-sm font-medium">YouTube Demo URL</label>
+            <Input
+              id="youtube"
+              name="short_youtube_demo"
+              placeholder="YouTube video URL"
+              value={safeFormState.short_youtube_demo}
+              onChange={(e) => onFormChange('short_youtube_demo', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="safety-notes" className="text-sm font-medium">Safety Notes</label>
+            <textarea
+              id="safety-notes"
+              name="safety_notes"
+              className="w-full p-2 border rounded-md"
+              rows={4}
+              value={safeFormState.safety_notes}
+              onChange={(e) => onFormChange('safety_notes', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="difficulty" className="text-sm font-medium">Difficulty</label>
+            <Select
+              value={safeFormState.difficulty}
               onValueChange={(value) => onFormChange('difficulty', value)}
             >
               <SelectTrigger id="difficulty">
