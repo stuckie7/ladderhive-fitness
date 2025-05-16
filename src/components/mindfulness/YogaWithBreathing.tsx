@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Play, Clock, ActivitySquare, Brain } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Workout {
   id: string;
@@ -23,6 +24,11 @@ interface YogaWithBreathingProps {
 
 export const YogaWithBreathing = ({ workout }: YogaWithBreathingProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
+  
+  const handleStartPractice = () => {
+    navigate(`/yoga/${workout.id}`);
+  };
   
   return (
     <Card 
@@ -84,7 +90,7 @@ export const YogaWithBreathing = ({ workout }: YogaWithBreathingProps) => {
           </div>
           
           <div className="mt-4 flex justify-end">
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleStartPractice}>
               Start Practice
             </Button>
           </div>

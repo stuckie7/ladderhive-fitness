@@ -9,11 +9,13 @@ import { ArrowLeft, Clock, Play } from "lucide-react";
 import yogaRoutines from "@/data/yoga-routines";
 import yogaExercises from "@/data/yoga-exercises";
 import YogaExerciseCard from "@/components/mindfulness/YogaExerciseCard";
+import { useToast } from "@/components/ui/use-toast";
 
 const YogaRoutineDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [routine, setRoutine] = useState(yogaRoutines.find(r => r.id === id));
+  const { toast } = useToast();
   
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -26,6 +28,23 @@ const YogaRoutineDetailPage: React.FC = () => {
   
   const handleBack = () => {
     navigate("/mindfulness");
+  };
+  
+  const handleStartRoutine = () => {
+    // In a real app, we might start a session here
+    // For now, we'll just show a toast notification
+    toast({
+      title: "Routine Started",
+      description: `You've started the ${routine?.title} routine. Follow along with the steps.`,
+    });
+    
+    // Record the practice in local storage to update progress
+    const savedDays = localStorage.getItem('mindful_practice_days');
+    const currentDays = savedDays ? parseInt(savedDays, 10) : 0;
+    localStorage.setItem('mindful_practice_days', (currentDays + 1).toString());
+    
+    // Scroll to the routine steps section
+    document.querySelector('.routine-steps')?.scrollIntoView({ behavior: 'smooth' });
   };
   
   if (!routine) {
@@ -77,6 +96,7 @@ const YogaRoutineDetailPage: React.FC = () => {
             <Button 
               className="bg-blue-600 hover:bg-blue-700 text-white"
               size="lg"
+              onClick={handleStartRoutine}
             >
               <Play className="mr-2 h-4 w-4" /> 
               Start Routine
@@ -88,7 +108,7 @@ const YogaRoutineDetailPage: React.FC = () => {
           </p>
         </div>
         
-        <Card className="mb-8">
+        <Card className="mb-8 routine-steps">
           <CardContent className="p-6">
             <h2 className="text-xl font-semibold mb-4">Routine Steps</h2>
             <ol className="space-y-4">

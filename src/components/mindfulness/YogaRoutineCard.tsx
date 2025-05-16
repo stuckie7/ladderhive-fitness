@@ -47,7 +47,7 @@ const YogaRoutineCard = ({
   };
   
   const handleStartRoutine = () => {
-    navigate(`/mindfulness/routine/${id}`);
+    navigate(`/yoga/${id}`);
   };
 
   return (
