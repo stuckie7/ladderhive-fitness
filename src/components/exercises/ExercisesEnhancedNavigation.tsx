@@ -18,16 +18,6 @@ const ExercisesEnhancedNavigation = ({ currentView }: ExercisesEnhancedNavigatio
   return (
     <div className="flex flex-wrap gap-2 mb-6">
       <Button
-        variant={currentView === "exercises-full" ? "default" : "outline"}
-        size="sm"
-        onClick={() => navigateToView("/exercises-full")}
-        className="flex items-center"
-      >
-        <Table2 className="h-4 w-4 mr-2" />
-        Raw Exercise Data
-      </Button>
-      
-      <Button
         variant={currentView === "workouts" ? "default" : "outline"}
         size="sm"
         onClick={() => navigateToView("/workouts")}
