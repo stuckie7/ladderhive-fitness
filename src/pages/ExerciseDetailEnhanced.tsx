@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 // Components
 import ExerciseDetailSkeleton from '@/components/exercises/exercise-detail/ExerciseDetailSkeleton';
 import ExerciseNotFound from '@/components/exercises/exercise-detail/ExerciseNotFound';
+import ExerciseMainDetails from '@/components/exercises/exercise-detail/ExerciseMainDetails';
 
 export default function ExerciseDetailSimplified() {
   const [exercise, setExercise] = useState<ExerciseFull | null>(null);
@@ -55,22 +56,8 @@ export default function ExerciseDetailSimplified() {
   if (loading) return <ExerciseDetailSkeleton />;
   if (!exercise) return <ExerciseNotFound onBackClick={handleBackClick} />;
 
-  // Using in_depth_youtube_exp or short_youtube_demo for the video
-  const videoUrl = exercise.in_depth_youtube_exp || exercise.short_youtube_demo;
-
   return (
     <div className="max-w-3xl mx-auto p-4">
-      {/* Video Section (Prominent) */}
-      {videoUrl && (
-        <div className="mb-6 rounded-lg overflow-hidden aspect-video bg-black">
-          <iframe
-            src={`https://www.youtube.com/embed/${extractYoutubeId(videoUrl)}`}
-            className="w-full h-full"
-            allowFullScreen
-          />
-        </div>
-      )}
-
       {/* Header with Save Button */}
       <div className="flex justify-between items-start mb-4">
         <h1 className="text-2xl font-bold">{exercise.name}</h1>
@@ -88,12 +75,8 @@ export default function ExerciseDetailSimplified() {
         </Button>
       </div>
 
-      {/* Description (Simple Markdown) */}
-      <div className="prose prose-sm max-w-none">
-        {exercise.description && exercise.description.split('\n').map((para, i) => (
-          <p key={i} className="mb-4 last:mb-0">{para}</p>
-        ))}
-      </div>
+      {/* Main Details Section */}
+      <ExerciseMainDetails exercise={exercise} />
     </div>
   );
 }
