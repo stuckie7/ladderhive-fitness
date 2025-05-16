@@ -1,6 +1,6 @@
 
 import LoginForm from "@/components/auth/LoginForm";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
@@ -8,7 +8,6 @@ const Login = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [redirectAttempted, setRedirectAttempted] = useState(false);
   
   useEffect(() => {
     // Only redirect if user is authenticated and not loading

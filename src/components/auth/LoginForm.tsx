@@ -28,15 +28,14 @@ const LoginForm = () => {
       return;
     }
     
-    setIsLoading(true);
-    
     try {
+      setIsLoading(true);
       await signIn(email, password);
       // Auth context will handle navigation after successful login
       console.log("Login form: Login attempt successful");
     } catch (error: any) {
       console.error("Login form: Login attempt failed", error);
-      // Error handling is done in the signIn function
+      // Error is already handled in the signIn function
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +58,7 @@ const LoginForm = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -75,6 +75,7 @@ const LoginForm = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
           <Button 
@@ -96,8 +97,8 @@ const LoginForm = () => {
         </div>
         
         <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="w-full">Google</Button>
-          <Button variant="outline" className="w-full">Apple</Button>
+          <Button variant="outline" className="w-full" disabled={isLoading}>Google</Button>
+          <Button variant="outline" className="w-full" disabled={isLoading}>Apple</Button>
         </div>
       </CardContent>
       <CardFooter className="flex justify-center">

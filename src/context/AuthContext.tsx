@@ -22,9 +22,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('AuthProvider: Setting up auth state listener');
     let mounted = true;
     
-    // Function to get current session
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        if (mounted) {
+          console.log("Auth state changed:", event, currentSession?.user?.email);
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          setLoading(false);
+        }
+      }
+    );
+    
+    // THEN check for existing session
     const getInitialSession = async () => {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -44,20 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
     
-    // First get the session
     getInitialSession();
-    
-    // Then set up the auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        if (mounted) {
-          console.log("Auth state changed:", event, currentSession?.user?.email);
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-          setLoading(false);
-        }
-      }
-    );
     
     // Clean up subscription and mounted flag
     return () => {
@@ -149,8 +149,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const value = {
+    session,
+    user,
+    signIn,
+    signUp,
+    signOut,
+    loading
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, signIn, signUp, signOut, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
