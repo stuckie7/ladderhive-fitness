@@ -14,7 +14,8 @@ import {
   Moon, 
   BookOpen,
   Bookmark,
-  Zap
+  Zap,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -85,7 +86,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   const navItems: NavItem[] = [
     { label: 'Home', href: '/dashboard', icon: <Home size={18} /> },
-    { label: 'Exercises', href: '/exercises/enhanced', icon: <Dumbbell size={18} /> }, // Updated href
+    { label: 'Exercises', href: '/exercises/enhanced', icon: <Dumbbell size={18} /> },
     { label: 'Workouts', href: '/workouts', icon: <PanelLeft size={18} /> },
     { label: 'Saved Workouts', href: '/saved-workouts', icon: <Bookmark size={18} /> },
     { label: 'Mindful Movement', href: '/mindful-movement', icon: <Moon size={18} /> },
@@ -135,11 +136,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Sidebar */}
       <div className="w-64 bg-card border-r border-border hidden md:block p-4">
         <div className="mb-6 px-2">
-       <Link to="/" className="flex items-center gap-2 px-2">
-  <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
-  <h1 className="font-bold text-xl">FitTrack Pro</h1>
-</Link>
-
+          <Link to="/" className="flex items-center gap-2 px-2">
+            <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
+            <h1 className="font-bold text-xl">FitTrack Pro</h1>
+          </Link>
         </div>
 
         <nav className="space-y-1 mb-6">
@@ -148,7 +148,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           ))}
         </nav>
 
-        <div className="absolute bottom-4 left-4 right-4 space-y-2">
+        {/* Moved sign out button and settings to bottom of sidebar with fixed positioning */}
+        <div className="fixed bottom-4 left-4 w-56 space-y-2">
           <div className="flex justify-between items-center">
             <ThemeToggle />
             <Link to="/settings">
@@ -165,9 +166,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           
           <Button 
             variant="outline" 
-            className="w-full" 
+            className="w-full flex items-center justify-center gap-2" 
             onClick={handleSignOut}
           >
+            <LogOut size={16} />
             Sign out
           </Button>
         </div>
