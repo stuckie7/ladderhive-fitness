@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Exercise, ExerciseFull } from '@/types/exercise';
+import { getEmbeddedYoutubeUrl } from '@/components/exercises/exercise-detail/ExerciseMainDetails';
 import { supabase } from '@/integrations/supabase/client';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
@@ -158,10 +159,28 @@ export default function ExerciseDetail() {
                   )}
                 </TabsList>
                 <TabsContent value="overview" className="space-y-4">
-                  <ExerciseMainContent 
-                    exercise={exercise} 
-                    loading={loading} 
-                  />
+                  <div className="space-y-6">
+                    {/* In-depth Video */}
+                    {exercise.in_depth_youtube_exp && (
+                      <div className="bg-card rounded-lg p-6">
+                        <h3 className="text-lg font-medium mb-4">In-Depth Video Explanation</h3>
+                        <div className="aspect-video rounded-md overflow-hidden">
+                          <iframe 
+                            src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
+                            title="In-Depth Explanation"
+                            className="w-full h-full"
+                            allowFullScreen
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Main Content */}
+                    <ExerciseMainContent 
+                      exercise={exercise} 
+                      loading={loading} 
+                    />
+                  </div>
                 </TabsContent>
                 <TabsContent value="instructions" className="space-y-4">
                   {exercise.instructions?.length ? (
