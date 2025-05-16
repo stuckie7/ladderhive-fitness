@@ -22,25 +22,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let mounted = true;
+    
+    // Function to get current session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        // Only update state if component is still mounted
+        if (mounted) {
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          setLoading(false);
+          console.log("Initial session check complete:", currentSession?.user?.email || "No user");
+        }
+      } catch (error) {
+        console.error("Error getting session:", error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    // First get the session
+    getInitialSession();
+    
+    // Then set up the auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.log("Auth state changed:", event, currentSession?.user?.email);
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        setLoading(false);
+        if (mounted) {
+          console.log("Auth state changed:", event, currentSession?.user?.email);
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          setLoading(false);
+        }
       }
     );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Got existing session:", currentSession?.user?.email);
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    
+    // Clean up subscription and mounted flag
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {

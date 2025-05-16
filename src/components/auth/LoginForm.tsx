@@ -32,10 +32,10 @@ const LoginForm = () => {
     
     try {
       await signIn(email, password);
-      // Auth context will handle navigation after successful login via onAuthStateChange
-      console.log("Login successful, waiting for redirect");
+      // Auth context will handle navigation after successful login
+      console.log("Login form: Login attempt successful");
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Login form: Login attempt failed", error);
       // Error handling is done in the signIn function
     } finally {
       setIsLoading(false);

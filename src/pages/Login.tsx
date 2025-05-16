@@ -11,19 +11,15 @@ const Login = () => {
   const [redirectAttempted, setRedirectAttempted] = useState(false);
   
   useEffect(() => {
-    // Only redirect if:
-    // 1. User is logged in
-    // 2. We're not still loading auth state
-    // 3. We haven't already attempted to redirect (prevents loops)
-    if (user && !loading && !redirectAttempted) {
+    // Only redirect if user is authenticated and not loading
+    if (user && !loading) {
       console.log("Login: User is authenticated, redirecting to dashboard");
-      setRedirectAttempted(true);
       
       // Get the redirect path from location state or default to dashboard
       const from = location.state?.from || "/dashboard";
       navigate(from, { replace: true });
     }
-  }, [user, loading, navigate, redirectAttempted, location]);
+  }, [user, loading, navigate, location]);
   
   // If still loading auth state, show loading indicator
   if (loading) {
@@ -35,26 +31,21 @@ const Login = () => {
   }
   
   // Only render the login form if user is NOT authenticated
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-        <div className="w-full max-w-md mb-8">
-          <div className="text-center mb-8">
-            <div className="mx-auto h-12 w-12 bg-fitness-primary rounded-xl flex items-center justify-center mb-4">
-              <span className="text-white font-bold text-xl">LH</span>
-            </div>
-            <h1 className="text-3xl font-bold">LadderHive Fitness</h1>
-            <p className="text-muted-foreground mt-2">Your journey to better fitness starts here</p>
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md mb-8">
+        <div className="text-center mb-8">
+          <div className="mx-auto h-12 w-12 bg-fitness-primary rounded-xl flex items-center justify-center mb-4">
+            <span className="text-white font-bold text-xl">LH</span>
           </div>
-          
-          <LoginForm />
+          <h1 className="text-3xl font-bold">LadderHive Fitness</h1>
+          <p className="text-muted-foreground mt-2">Your journey to better fitness starts here</p>
         </div>
+        
+        <LoginForm />
       </div>
-    );
-  }
-  
-  // Return empty div while redirecting, this prevents render cycles
-  return <div></div>;
+    </div>
+  );
 };
 
 export default Login;
