@@ -1,25 +1,31 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 import AppLayout from "@/components/layout/AppLayout";
-import { Activity, Award, Calendar, Dumbbell, Plus, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
+
+// Import hooks
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useExerciseLibraryNavigation } from "@/hooks/use-exercise-library-navigation";
+import { useDailyProgress } from "@/hooks/use-daily-progress";
+import { useActivityProgress } from "@/hooks/activity-progress";
 
 // Import dashboard components
-import WorkoutHistory from "@/components/dashboard/WorkoutHistory";
-import MetricsCard from "@/components/dashboard/MetricsCard";
-import FavoriteExercises from "@/components/dashboard/FavoriteExercises";
-import AchievementCard from "@/components/dashboard/AchievementCard";
-import UpcomingWorkouts from "@/components/dashboard/UpcomingWorkouts";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import DashboardError from "@/components/dashboard/DashboardError";
 import DailyProgressCard from "@/components/progress/DailyProgressCard";
-import { useDailyProgress } from "@/hooks/use-daily-progress";
-import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { useActivityProgress } from "@/hooks/activity-progress";
+import DashboardMetricsSection from "@/components/dashboard/DashboardMetricsSection";
+import QuickActionsSection from "@/components/dashboard/QuickActionsSection";
+import FavoritesAndAchievementsSection from "@/components/dashboard/FavoritesAndAchievementsSection";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const exerciseNav = useExerciseLibraryNavigation();
+  
+  // State for date selection
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  
   const { 
     recentWorkouts, 
     upcomingWorkouts, 
@@ -37,15 +43,9 @@ const Dashboard = () => {
   const { progress, isLoading: progressLoading, refreshProgress } = useDailyProgress();
   const { weeklyData, monthlySummary, isLoading: activityLoading, refreshData: refreshActivity } = useActivityProgress();
   
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const { toast } = useToast();
-  
   // Combine the dashboard metrics with real activity data
   const [metrics, setMetrics] = useState(dashboardMetrics);
   const [weeklyChartData, setWeeklyChartData] = useState(initialChartData);
-  
-  // Add exercise library navigation
-  const exerciseNav = useExerciseLibraryNavigation();
   
   // Update metrics when both data sources are available
   useEffect(() => {
@@ -145,19 +145,7 @@ const Dashboard = () => {
 
   // Handle error states
   if (dashboardError) {
-    return (
-      <AppLayout>
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center py-10">
-            <h2 className="text-2xl font-bold text-red-500 mb-4">Error Loading Dashboard</h2>
-            <p className="mb-4">{dashboardError}</p>
-            <Button onClick={() => window.location.reload()}>
-              Retry
-            </Button>
-          </div>
-        </div>
-      </AppLayout>
-    );
+    return <DashboardError errorMessage={dashboardError} />;
   }
 
   const isLoading = isDashboardLoading || progressLoading || activityLoading;
@@ -165,24 +153,12 @@ const Dashboard = () => {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold gradient-heading">Dashboard</h1>
-          <div className="space-x-2">
-            <Button 
-              variant="outline"
-              onClick={handleRefreshAll}
-              disabled={isLoading}
-            >
-              Refresh
-            </Button>
-            <Button 
-              className="btn-fitness-primary"
-              onClick={handleStartWorkout}
-            >
-              <Zap className="mr-2 h-4 w-4" /> Start Workout
-            </Button>
-          </div>
-        </div>
+        {/* Dashboard header with action buttons */}
+        <DashboardHeader 
+          isLoading={isLoading}
+          onRefresh={handleRefreshAll}
+          onStartWorkout={handleStartWorkout}
+        />
         
         {/* Daily progress card */}
         <div className="mb-6">
@@ -190,78 +166,32 @@ const Dashboard = () => {
         </div>
         
         {/* Metrics and charts section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="col-span-2">
-            <MetricsCard 
-              title="Workout Metrics" 
-              icon={<Activity className="h-5 w-5" />}
-              metrics={metricsData} 
-              chartData={weeklyChartData}
-              isLoading={isLoading} 
-            />
-          </div>
-          <div>
-            <WorkoutHistory 
-              workouts={recentWorkouts} 
-              isLoading={isLoading}
-              onSelectDate={setSelectedDate}
-              onSelectWorkout={handleSelectWorkout}
-            />
-          </div>
-        </div>
+        <DashboardMetricsSection 
+          metricsData={metricsData}
+          weeklyChartData={weeklyChartData}
+          recentWorkouts={recentWorkouts}
+          isLoading={isLoading}
+          onSelectDate={setSelectedDate}
+          onSelectWorkout={handleSelectWorkout}
+        />
         
-        {/* Quick actions section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="col-span-1 glass-panel">
-            <CardContent className="space-y-4 p-4">
-              <Link to="/workout-builder">
-                <Button variant="outline" className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-primary group">
-                  <Plus className="mr-2 h-5 w-5 text-fitness-primary group-hover:animate-pulse-soft" /> Create Workout
-                </Button>
-              </Link>
-              <Link to="/workouts">
-                <Button variant="outline" className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-primary group">
-                  <Dumbbell className="mr-2 h-5 w-5 text-fitness-primary group-hover:animate-pulse-soft" /> View Workouts
-                </Button>
-              </Link>
-              <Link to="/schedule">
-                <Button variant="outline" className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-secondary group">
-                  <Calendar className="mr-2 h-5 w-5 text-fitness-secondary group-hover:animate-pulse-soft" /> Schedule
-                </Button>
-              </Link>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-orange group"
-                onClick={handleGoToExerciseLibrary}
-              >
-                <Dumbbell className="mr-2 h-5 w-5 text-fitness-orange group-hover:animate-pulse-soft" /> Exercise Library
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <div className="col-span-2">
-            <UpcomingWorkouts 
-              workouts={upcomingWorkouts} 
-              isLoading={isLoading}
-              onScheduleWorkout={handleScheduleWorkout}
-              onRefresh={refreshWorkouts}
-            />
-          </div>
-        </div>
+        {/* Quick actions and upcoming workouts */}
+        <QuickActionsSection 
+          upcomingWorkouts={upcomingWorkouts}
+          isLoading={isLoading}
+          onGoToExerciseLibrary={handleGoToExerciseLibrary}
+          onScheduleWorkout={handleScheduleWorkout}
+          onRefreshWorkouts={refreshWorkouts}
+        />
         
-        {/* Favorites and achievements section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <FavoriteExercises 
-            exercises={favoriteExercises} 
-            isLoading={isLoading}
-            onAddExercise={handleAddFavorite}
-            onRemoveFavorite={removeFavoriteExercise}
-          />
-          <AchievementCard 
-            achievements={achievements} 
-            isLoading={isLoading} 
-          />
-        </div>
+        {/* Favorites and achievements */}
+        <FavoritesAndAchievementsSection 
+          favoriteExercises={favoriteExercises}
+          achievements={achievements}
+          isLoading={isLoading}
+          onAddFavorite={handleAddFavorite}
+          onRemoveFavorite={removeFavoriteExercise}
+        />
       </div>
     </AppLayout>
   );
