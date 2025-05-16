@@ -28,12 +28,11 @@ export default function ExerciseDetail() {
       if (!id) return;
       
       setLoading(true);
-      
       try {
-        console.log(`Fetching exercise with ID: ${id}`);
-        
-        // Try fetching from enhanced service first
-        const fullExercise = await getExerciseFullById(id);
+        const exerciseId = typeof id === 'string' && !isNaN(parseInt(id)) 
+          ? parseInt(id, 10) 
+          : id;
+        const fullExercise = await getExerciseFullById(exerciseId);
         
         if (fullExercise) {
           console.log('Found exercise in enhanced library:', fullExercise);
@@ -47,25 +46,36 @@ export default function ExerciseDetail() {
             equipment: fullExercise.primary_equipment || '',
             difficulty: fullExercise.difficulty || '',
             instructions: fullExercise.instructions || [],
-            video_url: fullExercise.short_youtube_demo || fullExercise.video_demonstration_url || '',
-            image_url: fullExercise.youtube_thumbnail_url || fullExercise.image_url || '',
+            video_url: fullExercise.video_url || '',
+            image_url: fullExercise.image_url || '',
             bodyPart: fullExercise.body_region || '',
             target: fullExercise.prime_mover_muscle || '',
-            secondaryMuscles: fullExercise.secondary_muscle ? [fullExercise.secondary_muscle] : [],
-            prime_mover_muscle: fullExercise.prime_mover_muscle,
-            secondary_muscle: fullExercise.secondary_muscle,
-            tertiary_muscle: fullExercise.tertiary_muscle,
-            primary_equipment: fullExercise.primary_equipment,
-            secondary_equipment: fullExercise.secondary_equipment,
-            body_region: fullExercise.body_region,
-            mechanics: fullExercise.mechanics,
-            force_type: fullExercise.force_type,
-            posture: fullExercise.posture,
-            laterality: fullExercise.laterality,
-            youtube_thumbnail_url: fullExercise.youtube_thumbnail_url
+            secondaryMuscles: [
+              fullExercise.secondary_muscle || '',
+              fullExercise.tertiary_muscle || ''
+            ].filter(Boolean),
+            equipment_needed: fullExercise.primary_equipment || '',
+            video_demonstration_url: fullExercise.short_youtube_demo || '',
+            video_explanation_url: fullExercise.video_explanation_url || '',
+            youtube_thumbnail_url: fullExercise.youtube_thumbnail_url || '',
+            body_region: fullExercise.body_region || '',
+            mechanics: fullExercise.mechanics || '',
+            force_type: fullExercise.force_type || '',
+            posture: fullExercise.posture || '',
+            laterality: fullExercise.laterality || '',
+            short_youtube_demo: fullExercise.short_youtube_demo || '',
+            in_depth_youtube_exp: fullExercise.in_depth_youtube_exp || '',
           };
-          
-          setExercise(exerciseData as ExerciseFull);
+
+          // Update exercise data to use video_explanation_url and remove thumbnail
+          exerciseData.youtube_thumbnail_url = undefined;
+          if (exerciseData.video_explanation_url) {
+            exerciseData.video_url = exerciseData.video_explanation_url;
+          } else if (exerciseData.short_youtube_demo) {
+            exerciseData.video_url = exerciseData.short_youtube_demo;
+          }
+
+          setExercise(exerciseData);
         } 
         // If not found in exercises_full, try regular exercises table
         else {

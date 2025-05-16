@@ -31,7 +31,20 @@ export default function ExerciseDetailEnhanced() {
           ? parseInt(id, 10) 
           : id;
         const exerciseData = await getExerciseFullById(exerciseId);
-        setExercise(exerciseData);
+        
+        // Update exercise data to use video_explanation_url and remove thumbnail
+        if (exerciseData) {
+          // Remove thumbnail URL
+          exerciseData.youtube_thumbnail_url = undefined;
+          
+          // Use video_explanation_url as the main video URL if available
+          if (exerciseData.video_explanation_url) {
+            exerciseData.video_url = exerciseData.video_explanation_url;
+          } else if (exerciseData.short_youtube_demo) {
+            exerciseData.video_url = exerciseData.short_youtube_demo;
+          }
+          setExercise(exerciseData);
+        }
       } catch (error) {
         console.error('Error fetching exercise:', error);
       } finally {
