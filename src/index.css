@@ -1,0 +1,157 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark theme by default */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 160 100% 50%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 199 100% 50%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 5% 25%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 300 100% 50%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 240 5% 84.9%;
+    --sidebar-primary: 160 100% 50%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 160 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@layer components {
+  .workout-card {
+    @apply bg-gray-900/80 dark:bg-gray-800/80 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-800/50;
+  }
+  
+  .exercise-item {
+    @apply p-4 border-b border-gray-800/50 last:border-b-0 hover:bg-gray-800/50 transition-colors flex justify-between items-center;
+  }
+  
+  .stat-card {
+    @apply bg-gray-900/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-md border border-gray-800/50;
+  }
+  
+  .nav-link {
+    @apply flex items-center gap-2 px-3 py-2 rounded-md text-gray-300 hover:bg-gray-800/70 transition-colors;
+  }
+  
+  .nav-link.active {
+    @apply bg-fitness-primary/20 text-fitness-primary;
+  }
+  
+  .btn-fitness-primary {
+    @apply bg-fitness-primary text-gray-900 hover:bg-fitness-primary/90 rounded-md px-4 py-2 font-medium transition-colors shadow-lg hover:shadow-fitness-primary/20;
+  }
+  
+  .btn-fitness-secondary {
+    @apply bg-fitness-secondary text-gray-900 hover:bg-fitness-secondary/90 rounded-md px-4 py-2 font-medium transition-colors shadow-lg hover:shadow-fitness-secondary/20;
+  }
+  
+  .btn-fitness-accent {
+    @apply bg-fitness-accent text-gray-900 hover:bg-fitness-accent/90 rounded-md px-4 py-2 font-medium transition-colors shadow-lg hover:shadow-fitness-accent/20;
+  }
+  
+  .btn-fitness-outline {
+    @apply border border-fitness-primary text-fitness-primary hover:bg-fitness-primary/10 rounded-md px-4 py-2 font-medium transition-colors;
+  }
+  
+  .neon-border {
+    @apply border border-transparent bg-gradient-to-r from-fitness-primary via-fitness-secondary to-fitness-accent p-[1px] rounded-xl;
+  }
+  
+  .neon-card {
+    @apply bg-gray-900/90 rounded-xl backdrop-blur-sm;
+  }
+  
+  .glass-panel {
+    @apply bg-gray-900/30 backdrop-blur-md border border-gray-800/50 rounded-xl;
+  }
+  
+  .gradient-heading {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-fitness-primary via-fitness-secondary to-fitness-accent;
+  }
+  
+  .glow-effect {
+    @apply animate-glow;
+  }
+  
+  .animated-gradient {
+    @apply bg-neon-gradient bg-size-200 animate-gradient-shift;
+  }
+}
+
+/* New custom styles */
+.bg-size-200 {
+  background-size: 200% 200%;
+}
+
+.text-shadow {
+  text-shadow: 0 0 8px rgba(0, 255, 187, 0.5);
+}
+
+.neon-glow-primary {
+  box-shadow: 0 0 8px 2px rgba(0, 255, 187, 0.3);
+}
+
+.neon-glow-secondary {
+  box-shadow: 0 0 8px 2px rgba(0, 204, 255, 0.3);
+}
+
+.neon-glow-accent {
+  box-shadow: 0 0 8px 2px rgba(255, 0, 255, 0.3);
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
