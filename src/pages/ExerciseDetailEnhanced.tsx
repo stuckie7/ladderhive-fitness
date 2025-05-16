@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ExerciseFull } from '@/types/exercise';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { Button } from '@/components/ui/button';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 // Components
 import ExerciseDetailSkeleton from '@/components/exercises/exercise-detail/ExerciseDetailSkeleton';
@@ -16,6 +17,7 @@ export default function ExerciseDetailSimplified() {
   const [isSaved, setIsSaved] = useState(false);
   const { id } = useParams();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchExerciseDetails = async () => {
@@ -46,16 +48,23 @@ export default function ExerciseDetailSimplified() {
     });
   };
 
+  const handleBackClick = () => {
+    navigate('/exercises');
+  };
+
   if (loading) return <ExerciseDetailSkeleton />;
-  if (!exercise) return <ExerciseNotFound />;
+  if (!exercise) return <ExerciseNotFound onBackClick={handleBackClick} />;
+
+  // Using in_depth_youtube_exp or short_youtube_demo for the video
+  const videoUrl = exercise.in_depth_youtube_exp || exercise.short_youtube_demo;
 
   return (
     <div className="max-w-3xl mx-auto p-4">
       {/* Video Section (Prominent) */}
-      {exercise.youtubeUrl && (
+      {videoUrl && (
         <div className="mb-6 rounded-lg overflow-hidden aspect-video bg-black">
           <iframe
-            src={`https://www.youtube.com/embed/${extractYoutubeId(exercise.youtubeUrl)}`}
+            src={`https://www.youtube.com/embed/${extractYoutubeId(videoUrl)}`}
             className="w-full h-full"
             allowFullScreen
           />
@@ -81,7 +90,7 @@ export default function ExerciseDetailSimplified() {
 
       {/* Description (Simple Markdown) */}
       <div className="prose prose-sm max-w-none">
-        {exercise.description.split('\n').map((para, i) => (
+        {exercise.description && exercise.description.split('\n').map((para, i) => (
           <p key={i} className="mb-4 last:mb-0">{para}</p>
         ))}
       </div>
