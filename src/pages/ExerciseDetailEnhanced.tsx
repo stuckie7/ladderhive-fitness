@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ExerciseFull } from '@/types/exercise';
 import AppLayout from '@/components/layout/AppLayout';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ArrowLeft, Bookmark, BookmarkCheck, LogOut } from 'lucide-react';
 import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
 
 // Components
@@ -83,7 +84,7 @@ export default function ExerciseDetailEnhanced() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6 flex flex-col min-h-[calc(100vh-4rem)]">
         <DynamicBreadcrumb onBack={handleBackClick} className="mb-6" />
         
         <div className="flex justify-end items-center mb-6">
@@ -121,7 +122,7 @@ export default function ExerciseDetailEnhanced() {
         />
         
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 flex-grow">
           {/* Left Column - Main Details */}
           <div className="lg:col-span-2">
             <ExerciseMainDetails exercise={exercise} />
@@ -131,6 +132,14 @@ export default function ExerciseDetailEnhanced() {
           <div>
             <ExerciseSidebarInfo exercise={exercise} />
           </div>
+        </div>
+        
+        {/* Sign Out Bar at bottom */}
+        <div className="mt-auto pt-6 border-t">
+          <Button variant="ghost" className="w-full flex items-center justify-center py-3">
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
       </div>
     </AppLayout>
