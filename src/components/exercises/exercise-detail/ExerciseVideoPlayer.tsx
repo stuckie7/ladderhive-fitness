@@ -1,13 +1,23 @@
 
-import { Info, PlayCircle } from "lucide-react";
+import { Info, Play, Video } from "lucide-react";
 
 interface ExerciseVideoPlayerProps {
   url: string | null;
   title: string;
+  thumbnailUrl?: string;
 }
 
-export default function ExerciseVideoPlayer({ url, title }: ExerciseVideoPlayerProps) {
-  if (!url) return null;
+export default function ExerciseVideoPlayer({ url, title, thumbnailUrl }: ExerciseVideoPlayerProps) {
+  if (!url) {
+    return (
+      <div className="rounded-lg bg-muted aspect-video flex items-center justify-center">
+        <div className="text-center p-6">
+          <Video className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
+          <p className="text-muted-foreground font-medium">No video available</p>
+        </div>
+      </div>
+    );
+  }
   
   // Check if the URL is actually a text description like "Video Demonstration" 
   const isValidUrl = (str: string): boolean => {
@@ -25,14 +35,14 @@ export default function ExerciseVideoPlayer({ url, title }: ExerciseVideoPlayerP
     return (
       <div>
         <h3 className="text-lg font-medium mb-3 flex items-center">
-          <PlayCircle className="h-5 w-5 mr-2 text-red-600" />
+          <Play className="h-5 w-5 mr-2 text-red-600" />
           {title}
         </h3>
         <div className="aspect-video rounded-md bg-muted flex items-center justify-center">
           <div className="text-center p-6">
             <Info className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
             <p className="text-muted-foreground font-medium">{url}</p>
-            <p className="text-sm text-muted-foreground mt-2">No video URL available</p>
+            <p className="text-sm text-muted-foreground mt-2">No valid video URL available</p>
           </div>
         </div>
       </div>
@@ -63,7 +73,7 @@ export default function ExerciseVideoPlayer({ url, title }: ExerciseVideoPlayerP
   return (
     <div>
       <h3 className="text-lg font-medium mb-3 flex items-center">
-        <PlayCircle className="h-5 w-5 mr-2 text-red-600" />
+        <Play className="h-5 w-5 mr-2 text-red-600" />
         {title}
       </h3>
       <div className="aspect-video rounded-md overflow-hidden">

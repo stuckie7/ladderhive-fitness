@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Video } from "lucide-react";
+import { Play, Video } from "lucide-react";
 
 interface VideoEmbedProps {
   videoUrl?: string;
@@ -36,16 +36,22 @@ const VideoEmbed: React.FC<VideoEmbedProps> = ({ videoUrl, thumbnailUrl }) => {
   };
 
   return (
-    <div className="mb-6 aspect-video">
-      <iframe
-        className="w-full h-full rounded-lg"
-        src={getYouTubeEmbedUrl(videoUrl)}
-        title="Workout Video"
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        onError={() => setError(true)}
-      ></iframe>
+    <div className="mb-6">
+      <h3 className="font-medium mb-2 flex items-center text-lg">
+        <Play className="mr-2 h-5 w-5 text-red-600" />
+        Video Demonstration
+      </h3>
+      <div className="aspect-video rounded-lg overflow-hidden">
+        <iframe
+          className="w-full h-full"
+          src={getYouTubeEmbedUrl(videoUrl)}
+          title="Workout Video"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          onError={() => setError(true)}
+        ></iframe>
+      </div>
     </div>
   );
 };

@@ -4,24 +4,46 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExerciseFull } from "@/types/exercise";
 import ExerciseSpecItem from "./ExerciseSpecItem";
 import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
+import { Play, Info } from "lucide-react";
 
 interface ExerciseMainDetailsProps {
   exercise: ExerciseFull;
 }
 
 export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsProps) {
+  // Check if any video content is available
+  const hasVideo = Boolean(exercise.short_youtube_demo || exercise.in_depth_youtube_exp);
+  
   return (
     <Card>
       <CardHeader>
         <CardTitle>Exercise Details</CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Display main video prominently if available */}
+        {hasVideo && (
+          <div className="mb-6">
+            <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+              <iframe 
+                className="w-full h-full"
+                src={getEmbeddedYoutubeUrl(exercise.short_youtube_demo || exercise.in_depth_youtube_exp || '')} 
+                title={`${exercise.name} demonstration`}
+                allowFullScreen
+              />
+            </div>
+            <p className="text-sm text-muted-foreground mt-2 flex items-center">
+              <Play className="h-4 w-4 mr-1" /> Video demonstration of {exercise.name}
+            </p>
+          </div>
+        )}
+
         <Tabs defaultValue="overview">
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            {exercise.description && <TabsTrigger value="instructions">Instructions</TabsTrigger>}
             <TabsTrigger value="patterns">Movement Patterns</TabsTrigger>
-            {(exercise.short_youtube_demo || exercise.in_depth_youtube_exp) && (
-              <TabsTrigger value="videos">Videos</TabsTrigger>
+            {(exercise.short_youtube_demo && exercise.in_depth_youtube_exp) && (
+              <TabsTrigger value="videos">Additional Videos</TabsTrigger>
             )}
           </TabsList>
           
@@ -51,6 +73,29 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
               </div>
             </div>
           </TabsContent>
+          
+          {exercise.description && (
+            <TabsContent value="instructions">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium mb-2 flex items-center">
+                  <Info className="h-5 w-5 mr-2" /> Instructions
+                </h3>
+                <div className="text-muted-foreground space-y-2 whitespace-pre-wrap">
+                  {typeof exercise.description === 'string' ? (
+                    <p>{exercise.description}</p>
+                  ) : exercise.instructions?.length ? (
+                    <ol className="list-decimal pl-5">
+                      {exercise.instructions.map((instruction, i) => (
+                        <li key={i} className="mb-2">{instruction}</li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p>No detailed instructions available for this exercise.</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          )}
           
           <TabsContent value="patterns">
             <div className="space-y-6">
@@ -86,55 +131,19 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
             </div>
           </TabsContent>
           
-          {(exercise.short_youtube_demo || exercise.in_depth_youtube_exp) && (
+          {(exercise.short_youtube_demo && exercise.in_depth_youtube_exp) && (
             <TabsContent value="videos">
               <div className="space-y-8">
-                {exercise.short_youtube_demo && (
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-medium">Quick Demonstration</h3>
-                    <div className="aspect-video bg-muted rounded-md overflow-hidden">
-                      {exercise.short_youtube_demo.includes("youtube.com") || 
-                       exercise.short_youtube_demo.includes("youtu.be") ? (
-                        <iframe 
-                          className="w-full h-full"
-                          src={getEmbeddedYoutubeUrl(exercise.short_youtube_demo)} 
-                          title="Quick Demonstration"
-                          allowFullScreen
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ExerciseVideoHandler 
-                            url={exercise.short_youtube_demo} 
-                            title="Quick Demonstration"
-                            className="text-center p-4" 
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-                
                 {exercise.in_depth_youtube_exp && (
                   <div className="space-y-3">
                     <h3 className="text-lg font-medium">In-Depth Explanation</h3>
                     <div className="aspect-video bg-muted rounded-md overflow-hidden">
-                      {exercise.in_depth_youtube_exp.includes("youtube.com") || 
-                       exercise.in_depth_youtube_exp.includes("youtu.be") ? (
-                        <iframe 
-                          className="w-full h-full"
-                          src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
-                          title="In-Depth Explanation"
-                          allowFullScreen
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ExerciseVideoHandler 
-                            url={exercise.in_depth_youtube_exp} 
-                            title="In-Depth Explanation"
-                            className="text-center p-4" 
-                          />
-                        </div>
-                      )}
+                      <iframe 
+                        className="w-full h-full"
+                        src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
+                        title="In-Depth Explanation"
+                        allowFullScreen
+                      />
                     </div>
                   </div>
                 )}
