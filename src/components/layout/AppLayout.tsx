@@ -193,9 +193,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex-1 flex flex-col min-h-screen pb-16 md:pb-0">
         <main className="flex-1 md:px-0">
           {/* Remove MD breakpoint padding */}
-          <div className="mobile-content md:px-0">
-            {children}
-          </div>
+        <div className="px-0 md:px-4">
+  {children}
+</div>
+
         </main>
 
         {/* Bottom Navigation and FAB only on mobile */}
