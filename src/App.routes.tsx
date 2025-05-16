@@ -18,7 +18,7 @@ import ExerciseDetailEnhanced from "./pages/ExerciseDetailEnhanced";
 import ExercisesFullData from "./pages/ExercisesFullData";
 import AdvancedExercises from "./pages/AdvancedExercises";
 import Workouts from "./pages/Workouts";
-import SavedWorkouts from "./pages/SavedWorkouts"; // Import the new page
+import SavedWorkouts from "./pages/SavedWorkouts";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import WorkoutDetailEnhanced from "./pages/WorkoutDetailEnhanced";
 import WorkoutBuilder from "./pages/WorkoutBuilder";
@@ -45,6 +45,7 @@ const router = createBrowserRouter([
     path: "/signup",
     element: <Signup />
   },
+  // Protected routes - AuthProvider validation happens in the ProtectedRoute component
   {
     path: "/onboarding",
     element: <ProtectedRoute><Onboarding /></ProtectedRoute>
