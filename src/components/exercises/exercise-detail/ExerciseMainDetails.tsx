@@ -38,52 +38,7 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
         <CardTitle>Exercise Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
-        {/* Main Video Section */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium mb-2">Video Demonstration</h3>
-          <div className="grid grid-cols-1 gap-6">
-            {exercise.in_depth_youtube_exp ? (
-              <div className="space-y-2">
-                <h4 className="font-medium">In-Depth Explanation</h4>
-                <div className="aspect-video bg-muted rounded-md overflow-hidden">
-                  <iframe 
-                    className="w-full h-full"
-                    src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
-                    title="In-Depth Explanation"
-                    allowFullScreen
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <h4 className="font-medium">No Video Available</h4>
-                <div className="aspect-video bg-muted rounded-md overflow-hidden">
-                  <Skeleton className="w-full h-full" />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Quick Demo Video */}
-        {exercise.short_youtube_demo && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium mb-2">Quick Demonstration</h3>
-            <div className="grid grid-cols-1 gap-6">
-              <div className="space-y-2">
-                <h4 className="font-medium">Quick Demonstration</h4>
-                <div className="aspect-video bg-muted rounded-md overflow-hidden">
-                  <iframe 
-                    className="w-full h-full"
-                    src={getEmbeddedYoutubeUrl(exercise.short_youtube_demo)} 
-                    title="Quick Demonstration"
-                    allowFullScreen
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
         
         {/* Exercise Type and Intensity */}
         <div>
@@ -168,35 +123,7 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
           <div>
             <h3 className="text-lg font-medium mb-2">Additional Details</h3>
             <div className="space-y-4">
-              {/* In-depth Video */}
-              {exercise.in_depth_youtube_exp && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">In-Depth Explanation</h4>
-                  <div className="aspect-video bg-muted rounded-md overflow-hidden">
-                    <iframe 
-                      className="w-full h-full"
-                      src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
-                      title="In-Depth Explanation"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Additional video for exercise 9257 */}
-              {exercise.id === 9257 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">Additional Video</h4>
-                  <div className="aspect-video bg-muted rounded-md overflow-hidden">
-                    <iframe 
-                      className="w-full h-full"
-                      src="https://www.youtube.com/embed/A3uK5TPzHq8" 
-                      title="Additional Demonstration"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-              )}
+
               
               {/* Technical Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
