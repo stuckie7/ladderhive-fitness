@@ -169,21 +169,6 @@ export default function ExerciseDetail() {
                 </TabsList>
                 <TabsContent value="overview" className="space-y-4">
                   <div className="space-y-6">
-                    {/* In-depth Video */}
-                    {exercise.in_depth_youtube_exp && (
-                      <div className="bg-card rounded-lg p-6">
-                        <h3 className="text-lg font-medium mb-4">In-Depth Video Explanation</h3>
-                        <div className="aspect-video rounded-md overflow-hidden">
-                          <iframe 
-                            src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
-                            title="In-Depth Explanation"
-                            className="w-full h-full"
-                            allowFullScreen
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
                     {/* Main Content */}
                     <ExerciseMainContent 
                       exercise={exercise} 
@@ -191,20 +176,6 @@ export default function ExerciseDetail() {
                     />
                   </div>
                 </TabsContent>
-                {exercise.video_url && (
-                  <TabsContent value="video">
-                    <div className="bg-card rounded-lg p-6">
-                      <div className="aspect-video rounded-md overflow-hidden mb-4">
-                        <iframe 
-                          src={exercise.video_url.replace('watch?v=', 'embed/')} 
-                          title={exercise.name} 
-                          className="w-full h-full"
-                          allowFullScreen
-                        ></iframe>
-                      </div>
-                    </div>
-                  </TabsContent>
-                )}
               </Tabs>
             ) : (
               <div className="bg-muted/30 rounded-lg p-6 flex items-center justify-center">
