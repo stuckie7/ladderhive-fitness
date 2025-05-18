@@ -20,6 +20,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserWorkouts, addExerciseToWorkout, createWorkout } from "@/hooks/workout-library/services/workout-service";
 
 interface AddToWorkoutModalProps {
   open: boolean;
@@ -97,8 +98,50 @@ export default function AddToWorkoutModal({
   }, [open, preselectedWorkoutId, toast]);
 
   const handleAddToWorkout = async () => {
-    if (!selectedWorkoutId) {
+    setIsSaving(true);
+    try {
+      if (!selectedWorkoutId) {
+        // Create new workout
+        const newWorkout = await createWorkout('New Workout', [{
+          exercise_id: exerciseId,
+          sets: parseInt(sets),
+          reps: reps,
+          rest_seconds: parseInt(restSeconds),
+          order_index: 0,
+        }]);
+        
+        toast({
+          title: "Success",
+          description: "Exercise added to new workout",
+        });
+      } else {
+        // Add to existing workout
+        await addExerciseToWorkout(
+          selectedWorkoutId,
+          exerciseId,
+          parseInt(sets),
+          reps,
+          parseInt(restSeconds),
+          0 // We'll handle order_index properly later
+        );
+        
+        toast({
+          title: "Success",
+          description: "Exercise added to workout",
+        });
+      }
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error adding exercise to workout:', error);
       toast({
+        title: "Error",
+        description: "Failed to add exercise to workout",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
         title: "Error",
         description: "Please select a workout",
         variant: "destructive",
