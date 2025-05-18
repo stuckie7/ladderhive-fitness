@@ -63,20 +63,55 @@ export async function addExerciseToWorkout(
   orderIndex: number
 ) {
   try {
-    const { error } = await supabase
-      .from('workout_exercises')
-      .insert([
-        {
-          workout_id: workoutId,
-          exercise_id: exerciseId,
-          sets,
-          reps,
-          rest_seconds: restSeconds,
-          order_index: orderIndex,
-        },
-      ]);
+    // Check if this is a user created workout or prepared workout
+    const { data: workout, error: workoutError } = await supabase
+      .from('user_created_workouts')
+      .select('*')
+      .eq('id', workoutId)
+      .single();
 
-    if (error) throw error;
+    if (workoutError) {
+      // If not found in user_created_workouts, check prepared_workouts
+      const { data: preparedWorkout, error: preparedError } = await supabase
+        .from('prepared_workouts')
+        .select('*')
+        .eq('id', workoutId)
+        .single();
+
+      if (preparedError) throw preparedError;
+
+      // Insert into prepared_workout_exercises
+      const { error } = await supabase
+        .from('prepared_workout_exercises')
+        .insert([
+          {
+            workout_id: workoutId,
+            exercise_id: exerciseId,
+            sets,
+            reps,
+            rest_seconds: restSeconds,
+            order_index: orderIndex,
+          },
+        ]);
+
+      if (error) throw error;
+    } else {
+      // Insert into workout_exercises
+      const { error } = await supabase
+        .from('workout_exercises')
+        .insert([
+          {
+            workout_id: workoutId,
+            exercise_id: exerciseId,
+            sets,
+            reps,
+            rest_seconds: restSeconds,
+            order_index: orderIndex,
+          },
+        ]);
+
+      if (error) throw error;
+    }
   } catch (error) {
     console.error('Error adding exercise to workout:', error);
     throw error;
