@@ -163,7 +163,7 @@ export default function ExerciseDetail() {
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="mb-4">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  {exercise.video_url && (
+                  {exercise.in_depth_youtube_exp && (
                     <TabsTrigger value="video">Video</TabsTrigger>
                   )}
                 </TabsList>
@@ -176,6 +176,21 @@ export default function ExerciseDetail() {
                     />
                   </div>
                 </TabsContent>
+                {exercise.in_depth_youtube_exp && (
+                  <TabsContent value="video">
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-medium mb-4">In-Depth Video Explanation</h3>
+                      <div className="aspect-video bg-muted rounded-md overflow-hidden">
+                        <iframe 
+                          src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
+                          title="In-Depth Explanation"
+                          className="w-full h-full"
+                          allowFullScreen
+                        />
+                      </div>
+                    </div>
+                  </TabsContent>
+                )}
               </Tabs>
             ) : (
               <div className="bg-muted/30 rounded-lg p-6 flex items-center justify-center">
