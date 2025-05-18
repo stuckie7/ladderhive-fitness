@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 interface ExerciseHeaderProps {
   exercise: Exercise | ExerciseFull | null;
   onBackClick: () => void;
+  onAddToWorkout?: () => void;
 }
 
 export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeaderProps) {

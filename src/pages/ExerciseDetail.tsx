@@ -10,6 +10,23 @@ import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
 import { ChevronLeft, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AddToWorkoutModal from '@/components/exercises/AddToWorkoutModal';
+
+// Components
+import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
+import ExerciseMainContent from '@/components/exercises/exercise-detail/ExerciseMainContent';
+import ExerciseSidebarContent from '@/components/exercises/exercise-detail/ExerciseSidebarContent';
+
+export default function ExerciseDetail() {
+  const [exercise, setExercise] = useState<Exercise | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAddToWorkoutOpen, setIsAddToWorkoutOpen] = useState(false);
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const handleAddToWorkout = () => {
+    setIsAddToWorkoutOpen(true);
+  };
 
 // Components
 import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
@@ -131,18 +148,18 @@ export default function ExerciseDetail() {
 
   return (
     <AppLayout>
-  <div className="px-0 py-4 md:px-4 md:py-6">
+      <div className="px-0 py-4 md:px-4 md:py-6">
         {/* Back button & breadcrumbs */}
         <div className="mb-6">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleBackClick}
-              className="gap-1 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Dashboard
-            </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBackClick}
+            className="gap-1 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Dashboard
+          </Button>
         </div>
         
         {/* Exercise header with title and basic info */}
@@ -150,8 +167,19 @@ export default function ExerciseDetail() {
           <ExerciseHeader 
             exercise={exercise} 
             onBackClick={handleBackClick} 
+            onAddToWorkout={handleAddToWorkout}
           />
         </div>
+        
+        {/* AddToWorkoutModal */}
+        {exercise && (
+          <AddToWorkoutModal
+            open={isAddToWorkoutOpen}
+            onOpenChange={setIsAddToWorkoutOpen}
+            exerciseId={exercise.id.toString()}
+            exerciseName={exercise.name}
+          />
+        )}
 
         {/* Main content with tabs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -200,14 +228,25 @@ export default function ExerciseDetail() {
           </div>
           
           {/* Sidebar - 1/3 width on large screens */}
-          <div className="lg:col-span-1">
-            <ExerciseSidebarContent 
-              exercise={exercise} 
-              loading={loading} 
-            />
+          <div className="col-span-12 md:col-span-4">
+            <ExerciseSidebarContent exercise={exercise} />
+            <Button
+              onClick={handleAddToWorkout}
+              className="w-full mt-4 bg-primary text-white"
+            >
+              Add to Workout
+            </Button>
           </div>
         </div>
       </div>
+      {exercise && (
+        <AddToWorkoutModal
+          open={isAddToWorkoutOpen}
+          onOpenChange={setIsAddToWorkoutOpen}
+          exerciseId={exercise.id.toString()}
+          exerciseName={exercise.name}
+        />
+      )}
     </AppLayout>
   );
 }
