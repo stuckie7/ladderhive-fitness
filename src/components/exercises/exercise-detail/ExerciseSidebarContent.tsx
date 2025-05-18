@@ -56,21 +56,6 @@ const ExerciseSidebarContent: React.FC<ExerciseSidebarContentProps> = ({ exercis
 
   return (
     <div className="space-y-4">
-      {/* Exercise Image */}
-      <Card className="overflow-hidden border-2 border-muted">
-        <div className="aspect-video relative">
-          <img
-            src={getImageUrl()}
-            alt={exercise.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = '/placeholder.svg';
-            }}
-          />
-        </div>
-      </Card>
-      
       {/* Action Buttons */}
       <div className="grid grid-cols-1 gap-2">
         <AddToWorkoutButton exercise={exerciseForButton as Exercise} />
