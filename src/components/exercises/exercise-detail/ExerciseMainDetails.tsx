@@ -9,30 +9,29 @@ interface ExerciseMainDetailsProps {
   exercise: ExerciseFull;
 }
 
+export const getEmbeddedYoutubeUrl = (url: string): string => {
+  if (!url) return '';
+  
+  // Remove quotes if they exist in the URL
+  let cleanUrl = url.replace(/^['"]|['"]$/g, '');
+  
+  // Handle youtube.com/watch?v= format
+  if (cleanUrl.includes('watch?v=')) {
+    return cleanUrl.replace(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/, 'https://www.youtube.com/embed/$1');
+  }
+  
+  // Handle youtu.be/ format
+  if (cleanUrl.includes('youtu.be/')) {
+    return cleanUrl.replace(/(?:https?:\/\/)?(?:www\.)?youtu\.be\/(.+)/, 'https://www.youtube.com/embed/$1');
+  }
+  
+  // If it's already in the embed format or can't be parsed, return as is
+  return cleanUrl;
+};
+
 export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsProps) {
   const hasVideo = exercise.short_youtube_demo || exercise.in_depth_youtube_exp;
   
-  // Helper function to convert YouTube URL to embedded format
-  const getEmbeddedYoutubeUrl = (url: string): string => {
-    if (!url) return '';
-    
-    // Remove quotes if they exist in the URL
-    let cleanUrl = url.replace(/^['"]|['"]$/g, '');
-    
-    // Handle youtube.com/watch?v= format
-    if (cleanUrl.includes('watch?v=')) {
-      return cleanUrl.replace(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/, 'https://www.youtube.com/embed/$1');
-    }
-    
-    // Handle youtu.be/ format
-    if (cleanUrl.includes('youtu.be/')) {
-      return cleanUrl.replace(/(?:https?:\/\/)?(?:www\.)?youtu\.be\/(.+)/, 'https://www.youtube.com/embed/$1');
-    }
-    
-    // If it's already in the embed format or can't be parsed, return as is
-    return cleanUrl;
-  };
-
   return (
     <Card>
       <CardHeader>
