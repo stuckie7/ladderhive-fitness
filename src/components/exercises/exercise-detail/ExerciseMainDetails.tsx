@@ -38,8 +38,53 @@ export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsPro
         <CardTitle>Exercise Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
-
+        {/* Main Video Section */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium mb-2">Video Demonstration</h3>
+          <div className="grid grid-cols-1 gap-6">
+            {exercise.in_depth_youtube_exp ? (
+              <div className="space-y-2">
+                <h4 className="font-medium">In-Depth Explanation</h4>
+                <div className="aspect-video bg-muted rounded-md overflow-hidden">
+                  <iframe 
+                    className="w-full h-full"
+                    src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
+                    title="In-Depth Explanation"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <h4 className="font-medium">No Video Available</h4>
+                <div className="aspect-video bg-muted rounded-md overflow-hidden">
+                  <Skeleton className="w-full h-full" />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         
+        {/* Quick Demo Video */}
+        {exercise.short_youtube_demo && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium mb-2">Quick Demonstration</h3>
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-2">
+                <h4 className="font-medium">Quick Demonstration</h4>
+                <div className="aspect-video bg-muted rounded-md overflow-hidden">
+                  <iframe 
+                    className="w-full h-full"
+                    src={getEmbeddedYoutubeUrl(exercise.short_youtube_demo)} 
+                    title="Quick Demonstration"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Exercise Type and Intensity */}
         <div>
           <h3 className="text-lg font-medium mb-2">Exercise Type & Intensity</h3>
