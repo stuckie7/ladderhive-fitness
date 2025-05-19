@@ -62,7 +62,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     },
     { 
       icon: <CalendarDays size={24} />, 
-      label: 'Schedule', 
+      label: 'Schedule-X', 
       href: '/schedule' 
     },
     { 
@@ -89,7 +89,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Saved Workouts', href: '/saved-workouts', icon: <Bookmark size={18} /> },
     { label: 'Mindful Movement', href: '/mindful-movement', icon: <Zap size={18} /> }, // Using Zap as a temporary replacement since Moon was removed
     { label: 'Progress', href: '/progress', icon: <LineChart size={18} /> },
-    { label: 'Schedule', href: '/schedule', icon: <CalendarDays size={18} /> },
+    { label: 'Schedule-X', href: '/schedule', icon: <CalendarDays size={18} /> },
     { label: 'WODs', href: '/wods', icon: <BookOpen size={18} /> },
   ];
 
