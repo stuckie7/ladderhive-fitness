@@ -11,11 +11,12 @@ import { ChevronLeft, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AddToWorkoutModal from '@/components/exercises/AddToWorkoutModal';
-
-// Components
 import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
 import ExerciseMainContent from '@/components/exercises/exercise-detail/ExerciseMainContent';
 import ExerciseSidebarContent from '@/components/exercises/exercise-detail/ExerciseSidebarContent';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Exercise } from '@/types/exercise';
 
 export default function ExerciseDetail() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
@@ -28,16 +29,59 @@ export default function ExerciseDetail() {
     setIsAddToWorkoutOpen(true);
   };
 
-// Components
-import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
-import ExerciseMainContent from '@/components/exercises/exercise-detail/ExerciseMainContent';
-import ExerciseSidebarContent from '@/components/exercises/exercise-detail/ExerciseSidebarContent';
+  useEffect(() => {
+    const fetchExerciseDetails = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const exerciseData = await getExerciseFullById(id);
+        setExercise(exerciseData);
+      } catch (error) {
+        console.error('Error fetching exercise details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-export default function ExerciseDetail() {
-  const [exercise, setExercise] = useState<Exercise | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { id } = useParams();
-  const navigate = useNavigate();
+    fetchExerciseDetails();
+  }, [id]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!exercise) {
+    return <div>Exercise not found</div>;
+  }
+
+  const exerciseId = exercise.id.toString();
+  const exerciseName = exercise.name;
+
+  return (
+    <div className="container mx-auto py-8">
+      <DynamicBreadcrumb />
+      <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex-1">
+          <ExerciseHeader
+            exercise={exercise}
+            onBackClick={() => navigate(-1)}
+            onAddToWorkout={handleAddToWorkout}
+          />
+          <ExerciseMainContent exercise={exercise} />
+        </div>
+        <div className="w-full md:w-80">
+          <ExerciseSidebarContent exercise={exercise} loading={loading} />
+        </div>
+      </div>
+      <AddToWorkoutModal
+        open={isAddToWorkoutOpen}
+        onOpenChange={setIsAddToWorkoutOpen}
+        exerciseId={exerciseId}
+        exerciseName={exerciseName}
+      />
+    </div>
+  );
+}
 
   useEffect(() => {
     const fetchExerciseDetails = async () => {
