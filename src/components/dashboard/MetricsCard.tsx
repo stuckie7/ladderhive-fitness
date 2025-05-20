@@ -31,12 +31,24 @@ const MetricsCard = ({
   chartData,
   isLoading = false 
 }: MetricsCardProps) => {
+  // Updated title display to use the + symbol in a different color
+  const renderTitle = () => {
+    if (title === "Workout Metrics") {
+      return (
+        <span>
+          Workout Metrics<span className="text-fitness-secondary">+</span>
+        </span>
+      );
+    }
+    return title;
+  };
+
   return (
     <Card className="glass-panel h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl flex items-center gap-2 text-fitness-primary">
           {icon}
-          <span>{title}</span>
+          {renderTitle()}
         </CardTitle>
       </CardHeader>
       <CardContent>

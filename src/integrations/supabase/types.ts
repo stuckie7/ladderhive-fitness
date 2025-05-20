@@ -72,6 +72,30 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_calories: {
+        Row: {
+          calories_per_minute: number
+          exercise_name: string
+          id: string
+          intensity_level: string
+          notes: string | null
+        }
+        Insert: {
+          calories_per_minute: number
+          exercise_name: string
+          id?: string
+          intensity_level: string
+          notes?: string | null
+        }
+        Update: {
+          calories_per_minute?: number
+          exercise_name?: string
+          id?: string
+          intensity_level?: string
+          notes?: string | null
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           created_at: string
@@ -82,6 +106,7 @@ export type Database = {
           image_url: string | null
           instructions: string | null
           muscle_group: string | null
+          muscle_groups: string[] | null
           name: string
           updated_at: string
           video_url: string | null
@@ -95,6 +120,7 @@ export type Database = {
           image_url?: string | null
           instructions?: string | null
           muscle_group?: string | null
+          muscle_groups?: string[] | null
           name: string
           updated_at?: string
           video_url?: string | null
@@ -108,6 +134,7 @@ export type Database = {
           image_url?: string | null
           instructions?: string | null
           muscle_group?: string | null
+          muscle_groups?: string[] | null
           name?: string
           updated_at?: string
           video_url?: string | null
@@ -1010,6 +1037,42 @@ export type Database = {
           },
         ]
       }
+      workout_history: {
+        Row: {
+          calories_burned: number
+          created_at: string
+          date: string
+          duration_minutes: number
+          exercises: Json
+          id: string
+          notes: string | null
+          user_id: string | null
+          workout_name: string
+        }
+        Insert: {
+          calories_burned?: number
+          created_at?: string
+          date: string
+          duration_minutes: number
+          exercises: Json
+          id?: string
+          notes?: string | null
+          user_id?: string | null
+          workout_name: string
+        }
+        Update: {
+          calories_burned?: number
+          created_at?: string
+          date?: string
+          duration_minutes?: number
+          exercises?: Json
+          id?: string
+          notes?: string | null
+          user_id?: string | null
+          workout_name?: string
+        }
+        Relationships: []
+      }
       workouts: {
         Row: {
           created_at: string
@@ -1159,7 +1222,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      workout_statistics: {
+        Row: {
+          avg_calories: number | null
+          avg_duration: number | null
+          completion_rate: number | null
+          current_streak: number | null
+          monthly_workouts: number | null
+          quarterly_workouts: number | null
+          top_exercises: Json | null
+          total_calories: number | null
+          total_minutes: number | null
+          total_workouts: number | null
+          user_id: string | null
+          weekly_workouts: number | null
+          yearly_workouts: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_exercises_to_prepared_workouts: {
@@ -1173,6 +1253,10 @@ export type Database = {
       add_specified_exercises_to_workouts: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      calculate_workout_calories: {
+        Args: { json_data: Json }
+        Returns: number
       }
       dmetaphone: {
         Args: { "": string }
