@@ -1,29 +1,44 @@
 
 import React from 'react';
+import { Exercise } from '@/types/exercise';
 
 interface ExerciseVideoHandlerProps {
-  url: string | null;
+  exercise: Exercise;
   title: string;
   className?: string;
-  thumbnailUrl?: string | null;
   showPlaceholder?: boolean;
 }
 
 const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({ 
-  url, 
+  exercise, 
   title, 
   className,
-  thumbnailUrl,
   showPlaceholder = true
 }) => {
+  // Early return if exercise is undefined or has no video URLs
+  if (!exercise) {
+    return showPlaceholder ? (
+      <div className={`flex items-center justify-center text-muted-foreground p-4 ${className || ''}`}>
+        <p>No video available</p>
+      </div>
+    ) : null;
+  }
+
+  // Try different video URL fields in order of preference
+  const videoUrls = [
+    exercise.in_depth_youtube_exp || '',
+    exercise.short_youtube_demo || '',
+    exercise.video_explanation_url || '',
+    exercise.video_demonstration_url || '',
+    exercise.video_url || ''
+  ].filter(url => url && url.trim());
+
+  const url = videoUrls[0] || null;
+
   if (!url) {
     return showPlaceholder ? (
       <div className={`flex items-center justify-center text-muted-foreground p-4 ${className || ''}`}>
-        {thumbnailUrl ? (
-          <img src={thumbnailUrl} alt={title} className="max-w-full h-auto rounded" />
-        ) : (
-          "No video available"
-        )}
+        "No video available"
       </div>
     ) : null;
   }
@@ -32,6 +47,8 @@ const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({
   
   const getEmbedUrl = (videoUrl: string): string => {
     try {
+      console.log('Processing video URL:', videoUrl);
+      
       // For youtube videos
       if (isYoutubeVideo) {
         let videoId;
@@ -40,12 +57,24 @@ const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({
         } else if (videoUrl.includes('youtu.be/')) {
           videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
         }
+        
         if (videoId) {
+          console.log('Extracted video ID:', videoId);
           return `https://www.youtube.com/embed/${videoId}`;
         }
       }
+      
+      // For direct YouTube embed URLs
+      if (videoUrl.includes('youtube.com/embed/')) {
+        console.log('Video URL already in embed format');
+        return videoUrl;
+      }
+      
+      // For other video formats
+      console.log('Using original video URL');
       return videoUrl;
-    } catch {
+    } catch (error) {
+      console.error('Error processing video URL:', error);
       return videoUrl;
     }
   };

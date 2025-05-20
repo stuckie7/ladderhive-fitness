@@ -14,88 +14,56 @@ import AddToWorkoutModal from '@/components/exercises/AddToWorkoutModal';
 import ExerciseHeader from '@/components/exercises/exercise-detail/ExerciseHeader';
 import ExerciseMainContent from '@/components/exercises/exercise-detail/ExerciseMainContent';
 import ExerciseSidebarContent from '@/components/exercises/exercise-detail/ExerciseSidebarContent';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Exercise } from '@/types/exercise';
 
+/**
+ * Displays the details of a specific exercise, including its main content and sidebar information.
+ * Allows users to navigate back to the previous page or add the exercise to a workout.
+ * Fetches exercise details based on the `id` parameter from the URL.
+ * Shows loading state while data is being fetched and handles errors gracefully.
+ */
 export default function ExerciseDetail() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAddToWorkoutOpen, setIsAddToWorkoutOpen] = useState(false);
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log('Exercise ID from URL:', id);
+  }, [id]);
 
   const handleAddToWorkout = () => {
     setIsAddToWorkoutOpen(true);
   };
 
-  useEffect(() => {
-    const fetchExerciseDetails = async () => {
-      if (!id) return;
-      setLoading(true);
-      try {
-        const exerciseData = await getExerciseFullById(id);
-        setExercise(exerciseData);
-      } catch (error) {
-        console.error('Error fetching exercise details:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchExerciseDetails();
-  }, [id]);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!exercise) {
-    return <div>Exercise not found</div>;
-  }
-
-  const exerciseId = exercise.id.toString();
-  const exerciseName = exercise.name;
-
-  return (
-    <div className="container mx-auto py-8">
-      <DynamicBreadcrumb />
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="flex-1">
-          <ExerciseHeader
-            exercise={exercise}
-            onBackClick={() => navigate(-1)}
-            onAddToWorkout={handleAddToWorkout}
-          />
-          <ExerciseMainContent exercise={exercise} />
-        </div>
-        <div className="w-full md:w-80">
-          <ExerciseSidebarContent exercise={exercise} loading={loading} />
-        </div>
-      </div>
-      <AddToWorkoutModal
-        open={isAddToWorkoutOpen}
-        onOpenChange={setIsAddToWorkoutOpen}
-        exerciseId={exerciseId}
-        exerciseName={exerciseName}
-      />
-    </div>
-  );
-}
+  const handleBackClick = () => {
+    navigate('/exercises');
+  };
 
   useEffect(() => {
+    if (!id) {
+      console.error('No exercise ID provided in URL');
+      setExercise(null);
+      setLoading(false);
+      return;
+    }
+
     const fetchExerciseDetails = async () => {
-      if (!id) return;
-      
       setLoading(true);
       try {
-        const exerciseId = typeof id === 'string' && !isNaN(parseInt(id)) 
-          ? parseInt(id, 10) 
-          : id;
-        const fullExercise = await getExerciseFullById(exerciseId);
+        console.log('Fetching exercise with ID:', id);
         
-        if (fullExercise) {
-          console.log('Found exercise in enhanced library:', fullExercise);
+        // Try fetching from exercises_full first
+        const { data: fullExercise, error: fullError } = await supabase
+          .from('exercises_full')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (fullError) {
+          console.error('Error fetching from exercises_full:', fullError);
+        } else if (fullExercise) {
+          console.log('Found exercise in exercises_full:', fullExercise);
           
           // Create compatible Exercise object from ExerciseFull
           const exerciseData: Exercise = {
@@ -105,7 +73,9 @@ export default function ExerciseDetail() {
             muscle_group: fullExercise.prime_mover_muscle || '',
             equipment: fullExercise.primary_equipment || '',
             difficulty: fullExercise.difficulty || '',
-            instructions: fullExercise.instructions || [],
+            instructions: Array.isArray(fullExercise.instructions) 
+              ? fullExercise.instructions 
+              : [fullExercise.instructions || ''],
             video_url: fullExercise.video_url || '',
             image_url: fullExercise.image_url || '',
             bodyPart: fullExercise.body_region || '',
@@ -115,7 +85,7 @@ export default function ExerciseDetail() {
               fullExercise.tertiary_muscle || ''
             ].filter(Boolean),
             equipment_needed: fullExercise.primary_equipment || '',
-            video_demonstration_url: fullExercise.short_youtube_demo || '',
+            video_demonstration_url: fullExercise.video_demonstration_url || '',
             video_explanation_url: fullExercise.video_explanation_url || '',
             youtube_thumbnail_url: fullExercise.youtube_thumbnail_url || '',
             body_region: fullExercise.body_region || '',
@@ -127,53 +97,79 @@ export default function ExerciseDetail() {
             in_depth_youtube_exp: fullExercise.in_depth_youtube_exp || '',
           };
 
-          // Update exercise data to use video_explanation_url and remove thumbnail
-          exerciseData.youtube_thumbnail_url = undefined;
-          if (exerciseData.video_explanation_url) {
-            exerciseData.video_url = exerciseData.video_explanation_url;
-          } else if (exerciseData.short_youtube_demo) {
-            exerciseData.video_url = exerciseData.short_youtube_demo;
-          }
+            // Set video_url based on available video URLs in priority order
+            const videoUrls = [
+              fullExercise.in_depth_youtube_exp || '',
+              fullExercise.short_youtube_demo || '',
+              fullExercise.video_explanation_url || '',
+              fullExercise.video_demonstration_url || '',
+              fullExercise.video_url || ''
+            ].filter(url => url);
+            
+            exerciseData.video_url = videoUrls[0] || '';
 
           setExercise(exerciseData);
-        } 
+          return;
+        }
+
         // If not found in exercises_full, try regular exercises table
-        else {
-          console.log('Exercise not found in enhanced library, trying exercises table');
-          
-          let { data, error } = await supabase
-            .from('exercises')
-            .select('*')
-            .eq('id', id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching exercise:', error);
-            throw error;
-          }
-          
-          if (data) {
-            console.log('Found exercise in exercises table:', data);
-            // Transform the raw data to match our Exercise type
-            const exerciseData: Exercise = {
-              id: data.id,
-              name: data.name,
-              description: data.description || '',
-              muscle_group: data.muscle_group || '',
-              equipment: data.equipment || '',
-              difficulty: data.difficulty || '',
-              instructions: data.instructions ? [data.instructions] : [],
-              video_url: data.video_url || '',
-              image_url: data.image_url || '',
-              bodyPart: data.muscle_group || '',
-              target: data.muscle_group || '',
-            };
+        console.log('Exercise not found in exercises_full, trying exercises table');
+        
+        const { data: baseExercise, error: baseError } = await supabase
+          .from('exercises')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (baseError) {
+          console.error('Error fetching from exercises:', baseError);
+          throw baseError;
+        }
+
+        if (baseExercise) {
+          console.log('Found exercise in exercises table:', baseExercise);
+          // Transform the raw data to match our Exercise type
+          const exerciseData: Exercise = {
+            id: baseExercise.id,
+            name: baseExercise.name,
+            description: baseExercise.description || '',
+            muscle_group: baseExercise.muscle_group || '',
+            equipment: baseExercise.equipment || '',
+            difficulty: baseExercise.difficulty || '',
+            instructions: baseExercise.instructions ? [baseExercise.instructions] : [],
+            video_url: baseExercise.video_url || '',
+            image_url: baseExercise.image_url || '',
+            bodyPart: baseExercise.muscle_group || '',
+            target: baseExercise.muscle_group || '',
+            secondaryMuscles: [],
+            equipment_needed: baseExercise.equipment || '',
+            video_demonstration_url: baseExercise.video_demonstration_url || '',
+            video_explanation_url: baseExercise.video_explanation_url || '',
+            youtube_thumbnail_url: baseExercise.youtube_thumbnail_url || '',
+            body_region: baseExercise.muscle_group || '',
+            mechanics: baseExercise.mechanics || '',
+            force_type: baseExercise.force_type || '',
+            posture: baseExercise.posture || '',
+            laterality: baseExercise.laterality || '',
+            short_youtube_demo: baseExercise.short_youtube_demo || '',
+            in_depth_youtube_exp: baseExercise.in_depth_youtube_exp || '',
+          };
+
+            // Set video_url based on available video URLs in priority order
+            const videoUrls = [
+              baseExercise.video_url || '',
+              baseExercise.video_explanation_url || '',
+              baseExercise.video_demonstration_url || '',
+              baseExercise.short_youtube_demo || '',
+              baseExercise.in_depth_youtube_exp || ''
+            ].filter(url => url);
             
-            setExercise(exerciseData);
-          } else {
-            console.log('Exercise not found in either table');
-            setExercise(null);
-          }
+            exerciseData.video_url = videoUrls[0] || '';
+          
+          setExercise(exerciseData);
+        } else {
+          console.log('Exercise not found in either table');
+          setExercise(null);
         }
       } catch (error) {
         console.error('Error fetching exercise:', error);
@@ -186,9 +182,24 @@ export default function ExerciseDetail() {
     fetchExerciseDetails();
   }, [id]);
 
-  const handleBackClick = () => {
-    navigate('/exercises');
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p className="mt-4">Loading exercise details...</p>
+        <p className="text-sm text-muted-foreground">This may take a moment...</p>
+      </div>
+    );
+  }
+
+  if (!exercise) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[200px]">
+        <Info className="h-6 w-6 text-muted-foreground mb-2" />
+        <p className="text-muted-foreground">Exercise not found or error occurred</p>
+      </div>
+    );
+  }
 
   return (
     <AppLayout>
@@ -224,7 +235,7 @@ export default function ExerciseDetail() {
             exerciseName={exercise.name}
           />
         )}
-
+  
         {/* Main content with tabs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content area - 2/3 width on large screens */}
@@ -273,7 +284,7 @@ export default function ExerciseDetail() {
           
           {/* Sidebar - 1/3 width on large screens */}
           <div className="col-span-12 md:col-span-4">
-            <ExerciseSidebarContent exercise={exercise} />
+            <ExerciseSidebarContent exercise={exercise} loading={loading} />
             <Button
               onClick={handleAddToWorkout}
               className="w-full mt-4 bg-primary text-white"
