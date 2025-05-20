@@ -100,7 +100,7 @@ const WorkoutHistory = ({
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-xl flex items-center gap-2 text-fitness-secondary">
           <CalendarDays className="h-5 w-5" />
-          <span>Workout History</span>
+          <span>Workout History+</span>
         </CardTitle>
         <div className="flex items-center gap-2">
           <div className="flex items-center mr-2">
