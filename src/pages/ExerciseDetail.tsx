@@ -187,7 +187,10 @@ export default function ExerciseDetail() {
       <div className="flex flex-col items-center justify-center min-h-[200px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         <p className="mt-4">Loading exercise details...</p>
-        <p className="text-sm text-muted-foreground">This may take a moment...</p>
+        <div className="flex flex-col items-center gap-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+          <p className="text-sm text-muted-foreground">Loading exercise details...</p>
+        </div>
       </div>
     );
   }
