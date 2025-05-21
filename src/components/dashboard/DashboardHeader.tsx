@@ -24,6 +24,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <AppTitle />
       </div>
       <div className="flex justify-between items-center">
+        <AppTitle />
         <Link to="/alt-workouts" className="flex items-center gap-2 text-primary hover:underline">
           <ArrowRight className="h-5 w-5" />
           <span>ALT Workouts</span>

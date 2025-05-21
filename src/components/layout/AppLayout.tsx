@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { useExerciseLibraryNavigation } from '@/hooks/use-exercise-library-navigation';
 import { BottomNavigation } from './BottomNavigation';
 import { Fab } from '@/components/ui/fab';
+import { AppTitle } from '@/components/ui/AppTitle';
 
 type NavItem = {
   label: string;
@@ -136,7 +137,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="mb-6 px-2">
           <Link to="/" className="flex items-center gap-2 px-2">
             <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
-            <h1 className="font-bold text-xl md:hidden" data-lovable-title>FitTrack Pro beta</h1>
+            <AppTitle />
           </Link>
         </div>
 
