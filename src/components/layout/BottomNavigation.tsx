@@ -89,7 +89,7 @@ export function BottomNavigation() {
               </Link>
               <Link to="/schedule" className="flex flex-col items-center p-4 border rounded-lg">
                 <Home size={24} />
-                <span className="mt-2 text-sm font-medium">Schedule-X</span>
+                <span className="mt-2 text-sm font-medium">Schedule</span>
               </Link>
               <Link to="/mindful-movement" className="flex flex-col items-center p-4 border rounded-lg">
                 <Home size={24} />
