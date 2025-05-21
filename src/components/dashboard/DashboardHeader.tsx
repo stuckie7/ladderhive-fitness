@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Zap, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { AppTitle } from "@/components/ui/AppTitle";
 
 interface DashboardHeaderProps {
   isLoading: boolean;
@@ -20,7 +21,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
         <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
-        <h1 className="text-3xl font-bold gradient-heading" data-lovable-title>FitTrack Pro beta</h1>
+        <AppTitle />
       </div>
       <div className="flex justify-between items-center">
         <Link to="/alt-workouts" className="flex items-center gap-2 text-primary hover:underline">
