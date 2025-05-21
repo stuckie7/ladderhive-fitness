@@ -1,13 +1,13 @@
+
 import { useState } from 'react';
-import { componentTagger } from 'lovable-tagger';
 
 export function TestTagger() {
   const [text, setText] = useState('');
   const [taggedText, setTaggedText] = useState('');
 
   const handleTag = () => {
-    const result = componentTagger(text);
-    setTaggedText(result);
+    // Since lovable-tagger is not available, we'll just use a placeholder implementation
+    setTaggedText(`Tagged: ${text}`);
   };
 
   return (
@@ -26,7 +26,7 @@ export function TestTagger() {
       </button>
       <div className="mt-4">
         <h3 className="font-bold">Tagged Result:</h3>
-        <pre className="mt-2 p-2 bg-gray-100 rounded">{JSON.stringify(taggedText, null, 2)}</pre>
+        <pre className="mt-2 p-2 bg-gray-100 rounded">{taggedText}</pre>
       </div>
     </div>
   );
