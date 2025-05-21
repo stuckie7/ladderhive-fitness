@@ -20,7 +20,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
         <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
-        <h1 className="text-3xl font-bold gradient-heading" data-lovable-title>FitTrack Pro beta</h1>
+        <h1 className="text-3xl font-bold gradient-heading" data-lovable-title="true" id="lovable-app-title" aria-label="Lovable App Title">FitTrack Pro beta</h1>
       </div>
       <div className="flex justify-between items-center">
         <Link to="/alt-workouts" className="flex items-center gap-2 text-primary hover:underline">
