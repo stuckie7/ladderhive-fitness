@@ -6,7 +6,7 @@ import AddToWorkoutButton from "../AddToWorkoutButton";
 import { Badge } from "@/components/ui/badge";
 
 interface ExerciseHeaderProps {
-  exercise: Exercise | ExerciseFull | null;
+  exercise: Exercise | null;
   onBackClick: () => void;
   onAddToWorkout?: () => void;
 }
@@ -40,22 +40,19 @@ export default function ExerciseHeader({ exercise, onBackClick }: ExerciseHeader
   // Helper function to get exercise properties based on type
   const getExerciseProperty = (key: string): string | null => {
     if (key === 'bodyPart') {
-      return ('body_region' in exercise) ? exercise.body_region || null :
-             ('bodyPart' in exercise) ? exercise.bodyPart || null : null;
+      return exercise.body_region || exercise.bodyPart || null;
     }
     
     if (key === 'target') {
-      return ('prime_mover_muscle' in exercise) ? exercise.prime_mover_muscle || null :
-             ('target' in exercise) ? exercise.target || null : null;
+      return exercise.prime_mover_muscle || exercise.target || null;
     }
     
     if (key === 'equipment') {
-      return ('primary_equipment' in exercise) ? exercise.primary_equipment || null :
-             ('equipment' in exercise) ? exercise.equipment || null : null;
+      return exercise.primary_equipment || exercise.equipment || null;
     }
     
     if (key === 'difficulty') {
-      return ('difficulty' in exercise) ? exercise.difficulty || null : null;
+      return exercise.difficulty || null;
     }
 
     return null;

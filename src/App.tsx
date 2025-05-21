@@ -5,6 +5,7 @@ import router from "./App.routes";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TestTagger } from "@/components/TestTagger";
 
 // Create a client
 const queryClient = new QueryClient({

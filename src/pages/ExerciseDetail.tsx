@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Exercise, ExerciseFull } from '@/types/exercise';
+
 import { getEmbeddedYoutubeUrl } from '@/components/exercises/exercise-detail/ExerciseMainDetails';
-import { supabase } from '@/integrations/supabase/client';
+import { getExerciseById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
 import { ChevronLeft, Info } from 'lucide-react';
@@ -21,186 +22,96 @@ import ExerciseSidebarContent from '@/components/exercises/exercise-detail/Exerc
  * Fetches exercise details based on the `id` parameter from the URL.
  * Shows loading state while data is being fetched and handles errors gracefully.
  */
-export default function ExerciseDetail() {
+export default function ExerciseDetail(): JSX.Element {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAddToWorkoutOpen, setIsAddToWorkoutOpen] = useState(false);
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string | undefined }>();
+  const numericId = id ? parseInt(id) : undefined;
   const navigate = useNavigate();
 
-  useEffect(() => {
-    console.log('Exercise ID from URL:', id);
-  }, [id]);
+  const handleBackClick = () => {
+    navigate(-1);
+  };
 
   const handleAddToWorkout = () => {
     setIsAddToWorkoutOpen(true);
   };
 
-  const handleBackClick = () => {
-    navigate('/exercises');
-  };
-
   useEffect(() => {
-    if (!id) {
-      console.error('No exercise ID provided in URL');
-      setExercise(null);
-      setLoading(false);
-      return;
-    }
+    const fetchExercise = async () => {
+      if (!id) {
+        console.error('No exercise ID provided in URL');
+        setExercise(null);
+        setLoading(false);
+        return;
+      }
 
-    const fetchExerciseDetails = async () => {
-      setLoading(true);
       try {
-        console.log('Fetching exercise with ID:', id);
-        
-        // Try fetching from exercises_full first
-        const { data: fullExercise, error: fullError } = await supabase
-          .from('exercises_full')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (fullError) {
-          console.error('Error fetching from exercises_full:', fullError);
-        } else if (fullExercise) {
-          console.log('Found exercise in exercises_full:', fullExercise);
-          
-          // Create compatible Exercise object from ExerciseFull
-          const exerciseData: Exercise = {
-            id: fullExercise.id,
-            name: fullExercise.name,
-            description: fullExercise.description || '',
-            muscle_group: fullExercise.prime_mover_muscle || '',
-            equipment: fullExercise.primary_equipment || '',
-            difficulty: fullExercise.difficulty || '',
-            instructions: Array.isArray(fullExercise.instructions) 
-              ? fullExercise.instructions 
-              : [fullExercise.instructions || ''],
-            video_url: fullExercise.video_url || '',
-            image_url: fullExercise.image_url || '',
-            bodyPart: fullExercise.body_region || '',
-            target: fullExercise.prime_mover_muscle || '',
-            secondaryMuscles: [
-              fullExercise.secondary_muscle || '',
-              fullExercise.tertiary_muscle || ''
-            ].filter(Boolean),
-            equipment_needed: fullExercise.primary_equipment || '',
-            video_demonstration_url: fullExercise.video_demonstration_url || '',
-            video_explanation_url: fullExercise.video_explanation_url || '',
-            youtube_thumbnail_url: fullExercise.youtube_thumbnail_url || '',
-            body_region: fullExercise.body_region || '',
-            mechanics: fullExercise.mechanics || '',
-            force_type: fullExercise.force_type || '',
-            posture: fullExercise.posture || '',
-            laterality: fullExercise.laterality || '',
-            short_youtube_demo: fullExercise.short_youtube_demo || '',
-            in_depth_youtube_exp: fullExercise.in_depth_youtube_exp || '',
-          };
-
-            // Set video_url based on available video URLs in priority order
-            const videoUrls = [
-              fullExercise.in_depth_youtube_exp || '',
-              fullExercise.short_youtube_demo || '',
-              fullExercise.video_explanation_url || '',
-              fullExercise.video_demonstration_url || '',
-              fullExercise.video_url || ''
-            ].filter(url => url);
-            
-            exerciseData.video_url = videoUrls[0] || '';
-
-          setExercise(exerciseData);
-          return;
-        }
-
-        // If not found in exercises_full, try regular exercises table
-        console.log('Exercise not found in exercises_full, trying exercises table');
-        
-        const { data: baseExercise, error: baseError } = await supabase
-          .from('exercises')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (baseError) {
-          console.error('Error fetching from exercises:', baseError);
-          throw baseError;
-        }
-
-        if (baseExercise) {
-          console.log('Found exercise in exercises table:', baseExercise);
-          // Transform the raw data to match our Exercise type
-          const exerciseData: Exercise = {
-            id: baseExercise.id,
-            name: baseExercise.name,
-            description: baseExercise.description || '',
-            muscle_group: baseExercise.muscle_group || '',
-            equipment: baseExercise.equipment || '',
-            difficulty: baseExercise.difficulty || '',
-            instructions: baseExercise.instructions ? [baseExercise.instructions] : [],
-            video_url: baseExercise.video_url || '',
-            image_url: baseExercise.image_url || '',
-            bodyPart: baseExercise.muscle_group || '',
-            target: baseExercise.muscle_group || '',
-            secondaryMuscles: [],
-            equipment_needed: baseExercise.equipment || '',
-            video_demonstration_url: baseExercise.video_demonstration_url || '',
-            video_explanation_url: baseExercise.video_explanation_url || '',
-            youtube_thumbnail_url: baseExercise.youtube_thumbnail_url || '',
-            body_region: baseExercise.muscle_group || '',
-            mechanics: baseExercise.mechanics || '',
-            force_type: baseExercise.force_type || '',
-            posture: baseExercise.posture || '',
-            laterality: baseExercise.laterality || '',
-            short_youtube_demo: baseExercise.short_youtube_demo || '',
-            in_depth_youtube_exp: baseExercise.in_depth_youtube_exp || '',
-          };
-
-            // Set video_url based on available video URLs in priority order
-            const videoUrls = [
-              baseExercise.video_url || '',
-              baseExercise.video_explanation_url || '',
-              baseExercise.video_demonstration_url || '',
-              baseExercise.short_youtube_demo || '',
-              baseExercise.in_depth_youtube_exp || ''
-            ].filter(url => url);
-            
-            exerciseData.video_url = videoUrls[0] || '';
-          
-          setExercise(exerciseData);
-        } else {
-          console.log('Exercise not found in either table');
-          setExercise(null);
-        }
-      } catch (error) {
-        console.error('Error fetching exercise:', error);
+        setLoading(true);
+        const exercise = await getExerciseById(id);
+        setExercise(exercise);
+      } catch (err) {
+        console.error('Error fetching exercise:', err);
         setExercise(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchExerciseDetails();
+    fetchExercise();
   }, [id]);
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[200px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="mt-4">Loading exercise details...</p>
-        <div className="flex flex-col items-center gap-2">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
-          <p className="text-sm text-muted-foreground">Loading exercise details...</p>
+      <AppLayout>
+        <div className="px-0 py-4 md:px-4 md:py-6">
+          <div className="mb-6">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBackClick}
+              className="gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Dashboard
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="h-64 bg-card animate-pulse rounded-lg"></div>
+            </div>
+            <div className="lg:col-span-1 space-y-6">
+              <div className="h-16 bg-muted rounded animate-pulse"></div>
+              <div className="h-16 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (!exercise) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[200px]">
-        <Info className="h-6 w-6 text-muted-foreground mb-2" />
-        <p className="text-muted-foreground">Exercise not found or error occurred</p>
-      </div>
+      <AppLayout>
+        <div className="px-0 py-4 md:px-4 md:py-6">
+          <div className="mb-6">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBackClick}
+              className="gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Dashboard
+            </Button>
+          </div>
+          <div className="flex flex-col items-center justify-center min-h-[200px]">
+            <Info className="h-6 w-6 text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">Exercise not found or error occurred</p>
+          </div>
+        </div>
+      </AppLayout>
     );
   }
 
@@ -229,16 +140,6 @@ export default function ExerciseDetail() {
           />
         </div>
         
-        {/* AddToWorkoutModal */}
-        {exercise && (
-          <AddToWorkoutModal
-            open={isAddToWorkoutOpen}
-            onOpenChange={setIsAddToWorkoutOpen}
-            exerciseId={exercise.id.toString()}
-            exerciseName={exercise.name}
-          />
-        )}
-  
         {/* Main content with tabs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content area - 2/3 width on large screens */}
@@ -297,14 +198,6 @@ export default function ExerciseDetail() {
           </div>
         </div>
       </div>
-      {exercise && (
-        <AddToWorkoutModal
-          open={isAddToWorkoutOpen}
-          onOpenChange={setIsAddToWorkoutOpen}
-          exerciseId={exercise.id.toString()}
-          exerciseName={exercise.name}
-        />
-      )}
     </AppLayout>
   );
 }
