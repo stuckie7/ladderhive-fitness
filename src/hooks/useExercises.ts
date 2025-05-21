@@ -21,6 +21,10 @@ interface ExerciseFullData {
   description?: string;
   instructions?: string[] | string;
   image_url?: string;
+  video_demonstration_url?: string;
+  video_explanation_url?: string;
+  video_url?: string;
+  target_muscle_group?: string;
   [key: string]: any; // Allow other properties from database
 }
 
@@ -45,40 +49,37 @@ export const useExercises = () => {
       const exercises: Exercise[] = (data || []).map((item: ExerciseFullData) => {
         // First create a base object with required properties
         const exercise: Exercise = {
-          id: String(item.id),
-          name: String(item.name || ''),
-          bodyPart: String(item.body_region || ''),
-          target: String(item.prime_mover_muscle || ''),
-          equipment: String(item.primary_equipment || ''),
-          muscle_group: String(item.prime_mover_muscle || ''),
+          id: String(item.id), // Convert ID to string
+          name: String(item.name || '')
         };
         
-        // Then add optional properties if they exist in the data
-        if ('description' in item) exercise.description = String(item.description || '');
-        if ('difficulty' in item) exercise.difficulty = String(item.difficulty || '');
-        if ('short_youtube_demo' in item) exercise.short_youtube_demo = item.short_youtube_demo;
-        if ('in_depth_youtube_exp' in item) exercise.in_depth_youtube_exp = item.in_depth_youtube_exp;
-        if ('youtube_thumbnail_url' in item) exercise.youtube_thumbnail_url = item.youtube_thumbnail_url;
-        if ('prime_mover_muscle' in item) exercise.prime_mover_muscle = item.prime_mover_muscle;
-        if ('secondary_muscle' in item) exercise.secondary_muscle = item.secondary_muscle;
-        if ('tertiary_muscle' in item) exercise.tertiary_muscle = item.tertiary_muscle;
-        if ('primary_equipment' in item) exercise.primary_equipment = item.primary_equipment;
-        if ('secondary_equipment' in item) exercise.secondary_equipment = item.secondary_equipment;
-        if ('target_muscle_group' in item) exercise.target_muscle_group = String(item.target_muscle_group || item.prime_mover_muscle || '');
-        
-        // Handle image URL with fallbacks
-        exercise.image_url = String(item.image_url || item.youtube_thumbnail_url || '');
-        
-        // Handle instructions with type safety
-        if ('instructions' in item && item.instructions) {
-          if (Array.isArray(item.instructions)) {
-            exercise.instructions = item.instructions;
-          } else {
-            exercise.instructions = [String(item.instructions)];
-          }
-        } else {
-          exercise.instructions = [];
+        // Then add all properties from the database result
+        if (item.body_region) exercise.body_region = item.body_region;
+        if (item.bodyPart) exercise.bodyPart = item.bodyPart;
+        if (item.prime_mover_muscle) {
+          exercise.prime_mover_muscle = item.prime_mover_muscle;
+          exercise.target_muscle_group = item.prime_mover_muscle;
+          exercise.muscle_group = item.prime_mover_muscle;
+          exercise.target = item.prime_mover_muscle;
         }
+        if (item.primary_equipment) {
+          exercise.primary_equipment = item.primary_equipment;
+          exercise.equipment = item.primary_equipment;
+        }
+        if (item.target_muscle_group) exercise.target_muscle_group = item.target_muscle_group;
+        if (item.difficulty) exercise.difficulty = item.difficulty;
+        if (item.short_youtube_demo) exercise.short_youtube_demo = item.short_youtube_demo;
+        if (item.in_depth_youtube_exp) exercise.in_depth_youtube_exp = item.in_depth_youtube_exp;
+        if (item.youtube_thumbnail_url) exercise.youtube_thumbnail_url = item.youtube_thumbnail_url;
+        if (item.secondary_muscle) exercise.secondary_muscle = item.secondary_muscle;
+        if (item.tertiary_muscle) exercise.tertiary_muscle = item.tertiary_muscle;
+        if (item.secondary_equipment) exercise.secondary_equipment = item.secondary_equipment;
+        if (item.description) exercise.description = item.description;
+        if (item.instructions) exercise.instructions = item.instructions;
+        if (item.image_url) exercise.image_url = item.image_url;
+        if (item.video_demonstration_url) exercise.video_demonstration_url = item.video_demonstration_url;
+        if (item.video_explanation_url) exercise.video_explanation_url = item.video_explanation_url;
+        if (item.video_url) exercise.video_url = item.video_url;
         
         return exercise;
       });

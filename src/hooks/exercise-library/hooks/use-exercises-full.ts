@@ -37,7 +37,7 @@ export const useExercisesFull = () => {
 
       if (error) throw error;
       
-      // Convert the id to string to match ExerciseFull type
+      // Ensure all IDs are converted to strings
       return (data || []).map(item => ({
         ...item,
         id: String(item.id)
@@ -101,7 +101,7 @@ export const useExercisesFull = () => {
 
       if (error) throw error;
       
-      // Convert id to string
+      // Ensure all IDs are converted to strings
       return (data || []).map(item => ({
         ...item,
         id: String(item.id)

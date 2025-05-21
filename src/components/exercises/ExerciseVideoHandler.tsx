@@ -3,7 +3,7 @@ import React from 'react';
 import { Exercise } from '@/types/exercise';
 
 interface ExerciseVideoHandlerProps {
-  exercise: Exercise;
+  exercise?: Exercise;
   title: string;
   className?: string;
   showPlaceholder?: boolean;
@@ -19,7 +19,7 @@ const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({
   url: externalUrl,
   thumbnailUrl
 }) => {
-  // Early return if exercise is undefined or has no video URLs
+  // Early return if exercise is undefined and no external URL is provided
   if (!exercise && !externalUrl) {
     return showPlaceholder ? (
       <div className={`flex items-center justify-center text-muted-foreground p-4 ${className || ''}`}>

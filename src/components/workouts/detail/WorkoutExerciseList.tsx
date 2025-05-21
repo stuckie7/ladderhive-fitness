@@ -4,12 +4,17 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Clock, Dumbbell } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ExerciseVideoHandler from '@/components/exercises/ExerciseVideoHandler';
 
 interface Exercise {
   id: string;
   name: string;
   video_url?: string;
   thumbnail_url?: string;
+  short_youtube_demo?: string;
+  in_depth_youtube_exp?: string;
+  video_demonstration_url?: string;
+  video_explanation_url?: string;
 }
 
 interface WorkoutExercise {
@@ -76,12 +81,11 @@ const WorkoutExerciseList: React.FC<WorkoutExerciseListProps> = ({
                 )}
               </div>
 
-              {exercise.exercise?.video_url && (
-                <div className="aspect-video rounded-lg overflow-hidden mb-4">
-                  <video
-                    src={exercise.exercise.video_url}
-                    controls
-                    className="w-full h-full object-cover"
+              {exercise.exercise && (
+                <div className="mb-4">
+                  <ExerciseVideoHandler 
+                    exercise={exercise.exercise}
+                    title={exercise.exercise.name}
                   />
                 </div>
               )}

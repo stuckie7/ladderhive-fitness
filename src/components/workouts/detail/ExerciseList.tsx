@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import ExerciseVideoHandler from '@/components/exercises/ExerciseVideoHandler';
+import { Exercise } from '@/types/exercise';
 
 export interface ExerciseListItem {
   id: string;
@@ -31,6 +32,15 @@ export interface ExerciseListProps {
 }
 
 const ExerciseList: React.FC<ExerciseListProps> = ({ exercises, onRemove }) => {
+  // Create a minimal Exercise object for ExerciseVideoHandler
+  const getExerciseForVideo = (item: ExerciseListItem): Exercise => {
+    return {
+      id: item.id,
+      name: item.name,
+      video_url: item.demonstration
+    };
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -57,9 +67,8 @@ const ExerciseList: React.FC<ExerciseListProps> = ({ exercises, onRemove }) => {
                   <p className="text-sm text-muted-foreground">{exercise.description}</p>
                   {exercise.demonstration && (
                     <ExerciseVideoHandler 
-                      url={exercise.demonstration} 
+                      exercise={getExerciseForVideo(exercise)} 
                       title={exercise.name || "Exercise Video"}
-                      thumbnailUrl={exercise.thumbnailUrl} 
                     />
                   )}
                 </TableCell>
