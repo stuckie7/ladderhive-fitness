@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useExercisesFull } from '@/hooks/exercise-library/hooks/use-exercises-full';
 import { ExerciseFull } from '@/types/exercise';
@@ -41,7 +40,12 @@ const ExercisesFullList = () => {
         .order('name', { ascending: true });
 
       if (error) throw error;
-      return data as ExerciseFull[];
+      
+      // Ensure proper type conversion - convert number IDs to strings
+      return (data || []).map(item => ({
+        ...item,
+        id: String(item.id) // Convert ID to string
+      })) as ExerciseFull[];
     } catch (err) {
       console.error('Error fetching exercises:', err);
       return [];
@@ -99,7 +103,12 @@ const ExercisesFullList = () => {
         .limit(20);
 
       if (error) throw error;
-      return data as ExerciseFull[];
+      
+      // Ensure proper type conversion - convert number IDs to strings
+      return (data || []).map(item => ({
+        ...item,
+        id: String(item.id) // Convert ID to string
+      })) as ExerciseFull[];
     } catch (err) {
       console.error('Error searching exercises:', err);
       return [];

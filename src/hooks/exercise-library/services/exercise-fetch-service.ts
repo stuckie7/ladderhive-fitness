@@ -29,10 +29,10 @@ export const fetchExercisesFull = async (
       console.log('No data returned from exercises_full table. Please check if the table exists and has data.');
     }
     
-    // Transform the data to match our ExerciseFull type
+    // Transform the data to match our ExerciseFull type, ensuring IDs are strings
     const transformedData: ExerciseFull[] = (data || []).map(item => ({
       ...item,
-      // Map properties correctly
+      id: String(item.id), // Convert ID to string for type compatibility
       target_muscle_group: item.prime_mover_muscle || null,
       video_demonstration_url: item.short_youtube_demo || null,
       video_explanation_url: item.in_depth_youtube_exp || null
@@ -140,9 +140,10 @@ export const searchExercisesFull = async (
     
     console.log(`Found ${data?.length || 0} exercises matching search criteria`);
     
-    // Transform the data to match our ExerciseFull type
+    // Transform the data to match our ExerciseFull type, ensuring IDs are strings
     const transformedData: ExerciseFull[] = (data || []).map(item => ({
       ...item,
+      id: String(item.id), // Convert ID to string for type compatibility
       // Map properties correctly
       target_muscle_group: item.prime_mover_muscle || null,
       video_demonstration_url: item.short_youtube_demo || null,
@@ -157,7 +158,7 @@ export const searchExercisesFull = async (
 };
 
 // Get exercise by id
-export const getExerciseFullById = async (id: number): Promise<ExerciseFull | null> => {
+export const getExerciseFullById = async (id: number | string): Promise<ExerciseFull | null> => {
   try {
     const { data, error } = await supabase
       .from('exercises_full')
@@ -177,6 +178,7 @@ export const getExerciseFullById = async (id: number): Promise<ExerciseFull | nu
     // Transform the data to match our ExerciseFull type
     const transformedData: ExerciseFull = {
       ...data,
+      id: String(data.id), // Convert ID to string for type compatibility
       // Map properties correctly
       target_muscle_group: data.prime_mover_muscle || null,
       video_demonstration_url: data.short_youtube_demo || null,

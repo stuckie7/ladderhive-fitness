@@ -1,115 +1,97 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Youtube, Play } from 'lucide-react';
 import { Exercise } from '@/types/exercise';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-interface ExerciseVideoHandlerProps {
+export interface ExerciseVideoHandlerProps {
   exercise?: Exercise;
-  title: string;
+  title?: string;
   className?: string;
   showPlaceholder?: boolean;
-  url?: string;
-  thumbnailUrl?: string;
+  url?: string;  // Added direct URL property for flexibility
 }
 
 const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({ 
   exercise, 
-  title, 
-  className,
+  title,
+  className = '',
   showPlaceholder = true,
-  url: externalUrl,
-  thumbnailUrl
+  url
 }) => {
-  // Early return if exercise is undefined and no external URL is provided
-  if (!exercise && !externalUrl) {
-    return showPlaceholder ? (
-      <div className={`flex items-center justify-center text-muted-foreground p-4 ${className || ''}`}>
-        <p>No video available</p>
-      </div>
-    ) : null;
-  }
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Try different video URL fields in order of preference
-  const videoUrls = [
-    externalUrl || '',
-    exercise?.in_depth_youtube_exp || '',
-    exercise?.short_youtube_demo || '',
-    exercise?.video_explanation_url || '',
-    exercise?.video_demonstration_url || '',
-    exercise?.video_url || ''
-  ].filter(url => url && url.trim());
-
-  const url = videoUrls[0] || null;
-
-  if (!url) {
-    return showPlaceholder ? (
-      <div className={`flex items-center justify-center text-muted-foreground p-4 ${className || ''}`}>
-        <p>No video available</p>
-      </div>
-    ) : null;
-  }
-
-  const isYoutubeVideo = url.includes('youtube.com') || url.includes('youtu.be');
-  
-  const getEmbedUrl = (videoUrl: string): string => {
-    try {
-      console.log('Processing video URL:', videoUrl);
-      
-      // For youtube videos
-      if (isYoutubeVideo) {
-        let videoId;
-        if (videoUrl.includes('youtube.com/watch?v=')) {
-          videoId = new URL(videoUrl).searchParams.get('v');
-        } else if (videoUrl.includes('youtu.be/')) {
-          videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
-        }
-        
-        if (videoId) {
-          console.log('Extracted video ID:', videoId);
-          return `https://www.youtube.com/embed/${videoId}`;
-        }
-      }
-      
-      // For direct YouTube embed URLs
-      if (videoUrl.includes('youtube.com/embed/')) {
-        console.log('Video URL already in embed format');
-        return videoUrl;
-      }
-      
-      // For other video formats
-      console.log('Using original video URL');
-      return videoUrl;
-    } catch (error) {
-      console.error('Error processing video URL:', error);
-      return videoUrl;
+  // Get the video URL from either the direct url prop or from the exercise object
+  const getVideoUrl = (): string => {
+    if (url) return url;
+    
+    if (exercise) {
+      return exercise.short_youtube_demo || 
+             exercise.video_explanation_url || 
+             exercise.video_demonstration_url ||
+             exercise.video_url || 
+             '';
     }
+    
+    return '';
   };
 
-  if (isYoutubeVideo) {
-    const embedUrl = getEmbedUrl(url);
-    return (
-      <div className={`aspect-video bg-muted rounded-lg overflow-hidden ${className || ''}`}>
-        <iframe
-          src={embedUrl}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="w-full h-full"
-        />
-      </div>
-    );
-  }
+  const videoUrl = getVideoUrl();
+  
+  // Return null if no video URL is available
+  if (!videoUrl) return null;
+  
+  const displayTitle = title || (exercise ? exercise.name : 'Exercise Demo');
 
-  // For non-youtube videos or direct video URLs
+  const getEmbedUrl = (url: string): string => {
+    // Convert YouTube URLs to embed URLs
+    if (url.includes('youtube.com/watch')) {
+      return url.replace('watch?v=', 'embed/');
+    } 
+    // Handle YouTube shortened URLs
+    else if (url.includes('youtu.be')) {
+      return `https://www.youtube.com/embed/${url.split('/').pop()}`;
+    }
+    return url; // Return as is if not matching any pattern
+  };
+  
+  const embedUrl = getEmbedUrl(videoUrl);
+  
   return (
-    <div className={`aspect-video bg-muted rounded-lg overflow-hidden ${className || ''}`}>
-      <video 
-        src={url} 
-        controls 
-        title={title}
-        className="w-full h-full"
+    <div className={`mt-2 ${className}`}>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className="flex items-center" 
+        onClick={() => setIsOpen(true)}
       >
-        Your browser does not support the video tag.
-      </video>
+        {showPlaceholder ? (
+          <>
+            <Youtube className="h-4 w-4 mr-2" />
+            <span>Watch Demo</span>
+          </>
+        ) : (
+          <Play className="h-4 w-4" />
+        )}
+      </Button>
+      
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{displayTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full pt-[56.25%]">
+            <iframe 
+              className="absolute top-0 left-0 w-full h-full"
+              src={embedUrl}
+              title={displayTitle}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowFullScreen
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

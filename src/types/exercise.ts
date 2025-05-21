@@ -52,7 +52,7 @@ export interface Exercise {
 }
 
 export interface ExerciseFull {
-  id: string;
+  id: string; // Ensure id is defined as string
   name: string;
   description?: string;
   instructions?: string[] | string;
