@@ -44,62 +44,63 @@ const ExercisesFullDataCards = () => {
         }
         
         // Then fetch actual data
-const { data, error } = await supabase
-  .from('exercises_full')
-  .select(`
-    id,
-    name,
-    prime_mover_muscle,
-    mechanics,
-    difficulty,
-    primary_equipment,
-    short_youtube_demo,
-    in_depth_youtube_exp,
-    youtube_thumbnail_url,
-    secondary_muscle,
-    tertiary_muscle,
-    primary_items_count,
-    secondary_equipment,
-    secondary_items_count,
-    posture,
-    single_or_double_arm,
-    arm_movement_pattern,
-    grip,
-    load_position,
-    leg_movement_pattern,
-    foot_elevation,
-    combination_exercise,
-    movement_pattern_1,
-    movement_pattern_2,
-    movement_pattern_3,
-    plane_of_motion_1,
-    plane_of_motion_2,
-    plane_of_motion_3,
-    body_region,
-    force_type,
-    mechanics,
-    laterality,
-    exercise_classification,
-    created_at,
-    updated_at
-  `)
-  .range(page * itemsPerPage, (page + 1) * itemsPerPage - 1)
-  .order('name');
+        const { data, error } = await supabase
+          .from('exercises_full')
+          .select(`
+            id,
+            name,
+            prime_mover_muscle,
+            mechanics,
+            difficulty,
+            primary_equipment,
+            short_youtube_demo,
+            in_depth_youtube_exp,
+            youtube_thumbnail_url,
+            secondary_muscle,
+            tertiary_muscle,
+            primary_items_count,
+            secondary_equipment,
+            secondary_items_count,
+            posture,
+            single_or_double_arm,
+            arm_movement_pattern,
+            grip,
+            load_position,
+            leg_movement_pattern,
+            foot_elevation,
+            combination_exercise,
+            movement_pattern_1,
+            movement_pattern_2,
+            movement_pattern_3,
+            plane_of_motion_1,
+            plane_of_motion_2,
+            plane_of_motion_3,
+            body_region,
+            force_type,
+            mechanics,
+            laterality,
+            exercise_classification,
+            created_at,
+            updated_at
+          `)
+          .range(page * itemsPerPage, (page + 1) * itemsPerPage - 1)
+          .order('name');
 
           
         if (error) {
           throw error;
         }
         
-        // Map the data to include required fields for ExerciseFull
+        // Map the data to include required fields for ExerciseFull and convert ID to string
         const mappedData = data?.map(item => ({
           ...item,
+          id: String(item.id), // Convert id to string
           target_muscle_group: item.prime_mover_muscle || null,
           video_demonstration_url: item.short_youtube_demo || null,
           video_explanation_url: item.in_depth_youtube_exp || null
         })) || [];
         
-        setExercises(mappedData);
+        setExercises(mappedData as ExerciseFull[]);
       } catch (err: any) {
         console.error("Error fetching exercises:", err);
         setError(err.message || "Failed to fetch exercises");

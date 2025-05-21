@@ -7,16 +7,20 @@ interface ExerciseVideoHandlerProps {
   title: string;
   className?: string;
   showPlaceholder?: boolean;
+  url?: string;
+  thumbnailUrl?: string;
 }
 
 const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({ 
   exercise, 
   title, 
   className,
-  showPlaceholder = true
+  showPlaceholder = true,
+  url: externalUrl,
+  thumbnailUrl
 }) => {
   // Early return if exercise is undefined or has no video URLs
-  if (!exercise) {
+  if (!exercise && !externalUrl) {
     return showPlaceholder ? (
       <div className={`flex items-center justify-center text-muted-foreground p-4 ${className || ''}`}>
         <p>No video available</p>
@@ -26,11 +30,12 @@ const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({
 
   // Try different video URL fields in order of preference
   const videoUrls = [
-    exercise.in_depth_youtube_exp || '',
-    exercise.short_youtube_demo || '',
-    exercise.video_explanation_url || '',
-    exercise.video_demonstration_url || '',
-    exercise.video_url || ''
+    externalUrl || '',
+    exercise?.in_depth_youtube_exp || '',
+    exercise?.short_youtube_demo || '',
+    exercise?.video_explanation_url || '',
+    exercise?.video_demonstration_url || '',
+    exercise?.video_url || ''
   ].filter(url => url && url.trim());
 
   const url = videoUrls[0] || null;
@@ -38,7 +43,7 @@ const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({
   if (!url) {
     return showPlaceholder ? (
       <div className={`flex items-center justify-center text-muted-foreground p-4 ${className || ''}`}>
-        "No video available"
+        <p>No video available</p>
       </div>
     ) : null;
   }

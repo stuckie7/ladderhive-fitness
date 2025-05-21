@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { useWorkoutDetailEnhanced } from '@/hooks/workouts/use-workout-detail-enhanced';
@@ -13,7 +13,6 @@ import WorkoutAdditionalInfo from '@/components/workouts/detail/WorkoutAdditiona
 import VideoEmbed from '@/components/workouts/detail/VideoEmbed';
 import WorkoutCircuit from '@/components/workouts/detail/WorkoutCircuit';
 import WorkoutExerciseList from '@/components/workouts/detail/WorkoutExerciseList';
-import { useState } from 'react';
 
 const WorkoutDetailEnhanced: React.FC = () => {
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
@@ -42,6 +41,16 @@ const WorkoutDetailEnhanced: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
+  };
+  
+  const handleExerciseComplete = (exerciseId: string) => {
+    setCompletedExercises(prev => {
+      if (prev.includes(exerciseId)) {
+        return prev.filter(id => id !== exerciseId);
+      } else {
+        return [...prev, exerciseId];
+      }
+    });
   };
 
   return (
@@ -144,11 +153,25 @@ const WorkoutDetailEnhanced: React.FC = () => {
               benefits={workout.benefits} 
             />
             
+            {/* Exercise List */}
+            {workout.exercises && workout.exercises.length > 0 && (
+              <WorkoutExerciseList 
+                exercises={workout.exercises.map(ex => ({
+                  ...ex,
+                  exercise: ex.exercise
+                }))}
+                completedExercises={completedExercises}
+                onExerciseComplete={handleExerciseComplete}
+              />
+            )}
+            
             {/* Exercise Circuit */}
-            <WorkoutCircuit 
-              exercises={workout.exercises || []} 
-              isLoading={isLoading}
-            />
+            {workout.exercises && workout.exercises.length > 0 && (
+              <WorkoutCircuit 
+                exercises={workout.exercises} 
+                isLoading={isLoading}
+              />
+            )}
             
             {/* Additional Info */}
             <WorkoutAdditionalInfo

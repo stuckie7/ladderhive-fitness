@@ -1,3 +1,4 @@
+
 // Export type definitions
 export interface Exercise {
   id: string;
@@ -31,6 +32,13 @@ export interface Exercise {
   target?: string;
   equipment_needed?: string;
   secondaryMuscles?: string[];
+  muscle_group?: string;
+  muscle_groups?: string[];
+  short_youtube_demo?: string;
+  in_depth_youtube_exp?: string;
+  video_demonstration_url?: string;
+  video_explanation_url?: string;
+  youtube_thumbnail_url?: string;
   single_or_double_arm?: string;
   grip?: string;
   load_position?: string;
@@ -41,8 +49,6 @@ export interface Exercise {
   plane_of_motion_1?: string;
   plane_of_motion_2?: string;
   plane_of_motion_3?: string;
-  muscle_groups?: string[];
-  in_depth_youtube_exp?: string;
 }
 
 export interface ExerciseFull {
@@ -92,6 +98,7 @@ export interface ExerciseFull {
   target?: string;
   equipment_needed?: string;
   secondaryMuscles?: string[];
+  muscle_group?: string;
   muscle_groups?: string[];
 }
 
