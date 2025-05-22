@@ -80,6 +80,20 @@ const ExerciseLibraryEnhanced = () => {
     }
   };
 
+  // Convert the string values to numbers where needed
+  const convertFormToExercise = (form: any) => {
+    return {
+      ...form,
+      // Convert string values to numbers for numeric fields
+      recommended_sets: Number(form.recommended_sets || 0),
+      recommended_reps: Number(form.recommended_reps || 0),
+      rest_time: Number(form.rest_time || 0),
+      // Ensure array types
+      secondary_muscles: Array.isArray(form.secondary_muscles) ? form.secondary_muscles : [],
+      equipment_options: Array.isArray(form.equipment_options) ? form.equipment_options : []
+    };
+  };
+
   // Render error state if table doesn't exist
   if (!tableExists) {
     return (

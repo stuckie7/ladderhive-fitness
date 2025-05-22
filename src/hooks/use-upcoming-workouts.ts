@@ -28,13 +28,13 @@ export const useUpcomingWorkouts = () => {
         setIsLoading(true);
 
         // Query to get upcoming scheduled workouts
-        // Adjust this based on your actual database schema
+        // Adjust the query to properly access the joined table fields
         const { data, error } = await supabase
           .from('user_workouts')
           .select(`
             id,
             planned_for,
-            prepared_workouts:workout_id (
+            workout_id (
               id,
               title,
               duration_minutes,
@@ -51,16 +51,21 @@ export const useUpcomingWorkouts = () => {
           throw new Error(error.message);
         }
 
-        // Format the data
+        // Format the data safely with type checking
         const formattedWorkouts: UpcomingWorkout[] = (data || [])
-          .filter(workout => workout.prepared_workouts) // Filter out entries without workout data
-          .map(workout => ({
-            id: workout.id,
-            title: workout.prepared_workouts.title || 'Scheduled Workout',
-            scheduled_date: workout.planned_for,
-            duration_minutes: workout.prepared_workouts.duration_minutes || 30,
-            difficulty: workout.prepared_workouts.difficulty || 'Intermediate'
-          }));
+          .filter(workout => workout.workout_id) // Filter out entries without workout data
+          .map(workout => {
+            // Ensure workout_id is an object before accessing its properties
+            const workoutInfo = workout.workout_id as Record<string, any> || {};
+            
+            return {
+              id: workout.id,
+              title: workoutInfo.title || 'Scheduled Workout',
+              scheduled_date: workout.planned_for,
+              duration_minutes: workoutInfo.duration_minutes || 30,
+              difficulty: workoutInfo.difficulty || 'Intermediate'
+            };
+          });
 
         setWorkouts(formattedWorkouts);
       } catch (err) {

@@ -36,17 +36,17 @@ const Dashboard = () => {
     const errors = [profileError, statsError, recentWorkoutsError, favoritesError, upcomingError].filter(Boolean);
     
     if (errors.length > 0) {
-      // Convert the first error to string
+      // Handle the first error - ensure proper type checking
       const firstError = errors[0];
       if (typeof firstError === 'string') {
         setErrorMessage(firstError);
-      } else if (firstError instanceof Error) {
-        setErrorMessage(firstError.message);
+      } else if (firstError && typeof firstError === 'object' && 'message' in firstError) {
+        setErrorMessage(firstError.message as string);
       } else {
         setErrorMessage('An unknown error occurred');
       }
     }
-  }, [profileError, statsError, recentWorkoutsError, favoritesError, upcomingError]);
+  }, [profileError, statsError, recentWorkoutsLoading, favoritesError, upcomingError]);
 
   // Navigation handlers
   const goToWorkouts = () => navigate('/workouts');
@@ -59,14 +59,20 @@ const Dashboard = () => {
     return Promise.resolve();
   };
 
-  const handleAddFavorite = async (id: string): Promise<void> => {
+  const handleAddFavorite = () => {
     // Placeholder implementation
-    return Promise.resolve();
+    navigate('/exercises');
   };
 
   const handleRemoveFavorite = async (id: string): Promise<void> => {
     // Placeholder implementation
     return Promise.resolve();
+  };
+
+  // Handler for selecting workouts - fix signature type mismatch by adding parameter
+  const handleSelectWorkout = (id: string) => {
+    // Placeholder implementation
+    navigate(`/workout/${id}`);
   };
 
   // Mock data for achievements
@@ -78,10 +84,11 @@ const Dashboard = () => {
   return (
     <AppLayout>
       <div className="container mx-auto p-4 space-y-6">
-        {/* Header - fixed to use expected prop name */}
+        {/* Header with correct prop name */}
         <DashboardHeader 
-          firstName={profile?.first_name || user?.email?.split('@')[0] || 'User'} 
-          isLoading={isLoading} 
+          isLoading={isLoading}
+          onRefresh={handleRefreshWorkouts}
+          onStartWorkout={() => navigate('/workouts')}
         />
         
         {/* Handle error state */}
@@ -100,10 +107,13 @@ const Dashboard = () => {
               onRefreshWorkouts={handleRefreshWorkouts}
             />
             
-            {/* Metrics Section - Activity data */}
+            {/* Metrics Section - Using correct prop name */}
             <DashboardMetricsSection 
-              activityData={weeklyActivityData || []} 
-              isLoading={isLoading} 
+              weeklyChartData={weeklyActivityData || []}
+              recentWorkouts={recentWorkouts || []}
+              isLoading={isLoading}
+              onSelectDate={() => {}}
+              onSelectWorkout={handleSelectWorkout}
             />
             
             {/* Favorites and Achievements */}
@@ -119,6 +129,8 @@ const Dashboard = () => {
             <WorkoutHistory 
               workouts={recentWorkouts || []}
               isLoading={isLoading}
+              onSelectDate={() => {}}
+              onSelectWorkout={handleSelectWorkout}
             />
           </>
         )}

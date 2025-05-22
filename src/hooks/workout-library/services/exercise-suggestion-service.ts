@@ -62,7 +62,7 @@ export const getSuggestedExercisesForWorkout = async (
         equipment: ex.primary_equipment || 'Bodyweight',
         difficulty: ex.difficulty || 'Beginner',
         // For properties that might be missing in the database schema
-        description: '', // Default empty string
+        description: ex.description || '', // Handle missing description safely
         // Handle instructions with proper type safety
         instructions: Array.isArray(ex.instructions) 
           ? ex.instructions 

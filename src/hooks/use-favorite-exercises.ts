@@ -31,15 +31,17 @@ export const useFavoriteExercises = () => {
           throw new Error(error.message);
         }
 
-        // Convert database exercises to Exercise type
+        // Convert database exercises to Exercise type with safe property access
         const formattedExercises: Exercise[] = (data || []).map(ex => ({
           id: String(ex.id),
           name: ex.name || 'Unknown Exercise',
           muscle_group: ex.prime_mover_muscle || '',
           equipment: ex.primary_equipment || 'Bodyweight',
           difficulty: ex.difficulty || 'Beginner',
-          description: ex.description || '',
-          instructions: ex.instructions || [],
+          description: ex.description || '', // Safely handle missing description
+          instructions: Array.isArray(ex.instructions) ? ex.instructions : 
+                       typeof ex.instructions === 'string' ? [ex.instructions] : 
+                       [ex.name || 'No instructions available'], // Safely handle missing instructions
           video_url: ex.short_youtube_demo || '',
           image_url: ex.youtube_thumbnail_url || '',
           target_muscle_group: ex.prime_mover_muscle || ''
