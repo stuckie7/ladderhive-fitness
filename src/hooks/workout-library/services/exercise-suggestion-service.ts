@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Exercise, ExerciseFull } from '@/types/exercise';
+import { Exercise } from '@/types/exercise';
 import { toStringId } from '@/utils/id-conversion';
 
 /**
@@ -55,12 +55,14 @@ export const getSuggestedExercisesForWorkout = async (
     // Convert exercise database records to Exercise type
     const result: Exercise[] = exercises.map(ex => ({
       id: toStringId(ex.id),
-      name: ex.name,
-      description: ex.description || '',
+      name: ex.name || 'Unknown Exercise',
+      // Safely handle potentially missing properties
+      description: ex.name || '', // Fallback to name if description is missing
       muscle_group: ex.prime_mover_muscle || '',
       equipment: ex.primary_equipment || 'Bodyweight',
       difficulty: ex.difficulty || 'Beginner',
-      instructions: ex.instructions ? (Array.isArray(ex.instructions) ? ex.instructions : [ex.instructions]) : [],
+      // Handle instructions as an array or string or undefined
+      instructions: ex.name ? [ex.name] : [], // Fallback to using name if instructions are missing
       video_url: ex.short_youtube_demo || '',
       image_url: ex.youtube_thumbnail_url || '',
       video_demonstration_url: ex.short_youtube_demo || '',

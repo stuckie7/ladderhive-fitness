@@ -45,20 +45,25 @@ export const useAltWorkouts = () => {
       try {
         setIsLoading(true);
         
-        // Get all prepared workouts
-        const { data, error } = await supabase
+        // Fetch all workouts
+        const { data: workoutData, error: workoutError } = await supabase
           .from('prepared_workouts')
           .select(`
             id, title, description, difficulty, duration_minutes, category, thumbnail_url
           `)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        // For each workout, fetch the associated exercises
-        const workoutsWithExercises: AltWorkout[] = await Promise.all(
-          (data || []).map(async (workout) => {
-            const { data: exercisesData, error: exercisesError } = await supabase
+          .order('title');
+        
+        if (workoutError) throw workoutError;
+        
+        if (!workoutData || workoutData.length === 0) {
+          setWorkouts([]);
+          return;
+        }
+        
+        // For each workout, fetch its exercises
+        const workoutsWithExercises = await Promise.all(
+          workoutData.map(async (workout) => {
+            const { data: exerciseData, error: exerciseError } = await supabase
               .from('prepared_workout_exercises')
               .select(`
                 id, workout_id, exercise_id, sets, reps, rest_seconds, order_index, notes,
@@ -67,56 +72,61 @@ export const useAltWorkouts = () => {
               .eq('workout_id', workout.id)
               .order('order_index');
               
-            if (exercisesError) {
-              console.error('Error fetching exercises for workout:', exercisesError);
+            if (exerciseError) {
+              console.error(`Error fetching exercises for workout ${workout.id}:`, exerciseError);
               return {
                 ...workout,
                 exercises: []
-              } as AltWorkout;
+              };
             }
             
-            // Convert exercise_id from number to string in each exercise
-            const formattedExercises: WorkoutExercise[] = (exercisesData || []).map(ex => ({
-              ...ex,
-              exercise_id: toStringId(ex.exercise_id),
-              exercise: ex.exercise ? {
-                id: toStringId(ex.exercise.id),
-                name: ex.exercise.name || 'Unknown Exercise',
-                video_url: ex.exercise.short_youtube_demo || undefined,
-                thumbnail_url: ex.exercise.youtube_thumbnail_url || undefined
-              } : {
-                id: toStringId(ex.exercise_id),
-                name: 'Unknown Exercise'
-              }
-            }));
+            // Format the exercises data
+            const formattedExercises = (exerciseData || []).map(ex => {
+              // Handle potential SelectQueryError by providing default values
+              const exerciseData = ex.exercise || {};
+              
+              return {
+                id: ex.id,
+                workout_id: ex.workout_id,
+                exercise_id: toStringId(ex.exercise_id),
+                sets: ex.sets,
+                reps: ex.reps,
+                rest_seconds: ex.rest_seconds,
+                order_index: ex.order_index,
+                notes: ex.notes || '',
+                exercise: {
+                  id: toStringId(exerciseData.id || ex.exercise_id),
+                  name: exerciseData.name || 'Unknown Exercise',
+                  video_url: exerciseData.short_youtube_demo || undefined,
+                  thumbnail_url: exerciseData.youtube_thumbnail_url || undefined
+                }
+              };
+            });
             
             return {
               ...workout,
               exercises: formattedExercises
-            } as AltWorkout;
+            };
           })
         );
-
+        
         setWorkouts(workoutsWithExercises);
+        
       } catch (err: any) {
-        console.error('Error fetching ALT workouts:', err);
+        console.error('Error fetching workouts:', err);
         setError(err.message);
         toast({
           title: "Error",
-          description: `Failed to load ALT workouts: ${err.message}`,
+          description: `Failed to load workouts: ${err.message}`,
           variant: "destructive",
         });
       } finally {
         setIsLoading(false);
       }
     };
-
+    
     fetchWorkouts();
   }, [toast]);
 
-  return {
-    workouts,
-    isLoading,
-    error,
-  };
+  return { workouts, isLoading, error };
 };

@@ -74,19 +74,27 @@ export const useAltWorkoutDetail = (id?: string) => {
         if (exercisesError) throw exercisesError;
         
         // Convert exercise_id to string in each exercise
-        const formattedExercises: WorkoutExercise[] = (exercisesData || []).map(ex => ({
-          ...ex,
-          exercise_id: toStringId(ex.exercise_id),
-          exercise: ex.exercise ? {
-            id: toStringId(ex.exercise.id),
-            name: ex.exercise.name || 'Unknown Exercise',
-            video_url: ex.exercise.short_youtube_demo || undefined,
-            thumbnail_url: ex.exercise.youtube_thumbnail_url || undefined
-          } : {
-            id: toStringId(ex.exercise_id),
-            name: 'Unknown Exercise'
-          }
-        }));
+        const formattedExercises: WorkoutExercise[] = (exercisesData || []).map(ex => {
+          // Handle potential SelectQueryError by providing default values
+          const exerciseData = ex.exercise || {};
+          
+          return {
+            id: ex.id,
+            workout_id: ex.workout_id,
+            exercise_id: toStringId(ex.exercise_id),
+            sets: ex.sets,
+            reps: ex.reps,
+            rest_seconds: ex.rest_seconds,
+            order_index: ex.order_index,
+            notes: ex.notes || '',
+            exercise: {
+              id: toStringId(exerciseData.id || ex.exercise_id),
+              name: exerciseData.name || 'Unknown Exercise',
+              video_url: exerciseData.short_youtube_demo || undefined,
+              thumbnail_url: exerciseData.youtube_thumbnail_url || undefined
+            }
+          };
+        });
         
         setWorkout({
           ...workoutData,

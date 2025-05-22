@@ -124,9 +124,8 @@ const Dashboard = () => {
       ) : (
         <div className="dashboard-content min-h-[calc(100vh-12rem)]">
           <DashboardMetricsSection
-            metrics={metricsData}
-            chartData={weeklyChartData}
-            workouts={recentWorkouts}
+            weeklyChartData={weeklyChartData}
+            recentWorkouts={recentWorkouts}
             isLoading={isDashboardLoading || progressLoading || activityLoading}
             onSelectDate={setSelectedDate}
             onSelectWorkout={handleSelectWorkout}

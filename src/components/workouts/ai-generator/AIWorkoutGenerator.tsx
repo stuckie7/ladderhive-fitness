@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,6 +34,12 @@ const AIWorkoutGenerator = () => {
 
   const handleRefine = (exerciseIndex: number, changes: Partial<any>) => {
     refineWorkout(exerciseIndex, changes);
+  };
+
+  const handleSaveWorkout = () => {
+    if (generatedWorkout) {
+      saveWorkout(generatedWorkout);
+    }
   };
 
   return (
@@ -231,7 +238,7 @@ const AIWorkoutGenerator = () => {
               </div>
 
               <div className="mt-4">
-                <Button onClick={saveWorkout}>Save to Library</Button>
+                <Button onClick={handleSaveWorkout}>Save to Library</Button>
               </div>
             </div>
           </CardContent>
