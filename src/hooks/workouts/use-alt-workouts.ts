@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import type { Exercise } from '@/types/exercise';
 
 interface AltWorkout {
   id: string;
@@ -40,7 +41,7 @@ export const useAltWorkouts = () => {
               exercise:exercise_id(*, video_url, thumbnail_url)
             )
           `)
-          .eq('is_alt', true) // Filter for ALT workouts
+          .eq('type', 'alt') // Filter for ALT workouts
           .order('created_at', { ascending: false });
 
         if (error) throw error;
