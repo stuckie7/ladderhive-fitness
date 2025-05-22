@@ -72,16 +72,22 @@ export default function ExerciseDetailEnhanced() {
     if (!url) return '';
     
     try {
+      let videoId = '';
+      
       // Handle YouTube watch URLs
       if (url.includes('youtube.com/watch')) {
-        const videoId = new URL(url).searchParams.get('v');
-        return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+        videoId = new URL(url).searchParams.get('v') || '';
       } 
       // Handle youtu.be shortened URLs
       else if (url.includes('youtu.be/')) {
-        const videoId = new URL(url).pathname.split('/').pop();
-        return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+        videoId = new URL(url).pathname.split('/').pop() || '';
       }
+      
+      if (videoId) {
+        // Return YouTube embed URL with necessary parameters
+        return `https://www.youtube-nocookie.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&enablejsapi=1&origin=${window.location.origin}`;
+      }
+      
       // If it's already an embed URL or some other format, return as is
       return url;
     } catch (error) {
@@ -154,15 +160,16 @@ export default function ExerciseDetailEnhanced() {
               <TabsContent value="video">
                 <div className="bg-card rounded-lg p-6">
                   <h3 className="text-lg font-medium mb-4">Exercise Demonstration</h3>
-                  <div className="aspect-video rounded-md overflow-hidden">
+                  <div className="aspect-video rounded-md overflow-hidden bg-black">
                     <iframe
                       src={getEmbedUrl(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url || '')}
                       title="Exercise Demonstration"
                       className="w-full h-full"
                       frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
                       loading="lazy"
+                      referrerPolicy="strict-origin-when-cross-origin"
                     />
                   </div>
                 </div>
@@ -173,15 +180,16 @@ export default function ExerciseDetailEnhanced() {
               <TabsContent value="tutorial">
                 <div className="bg-card rounded-lg p-6">
                   <h3 className="text-lg font-medium mb-4">In-Depth Tutorial</h3>
-                  <div className="aspect-video rounded-md overflow-hidden">
+                  <div className="aspect-video rounded-md overflow-hidden bg-black">
                     <iframe
                       src={getEmbedUrl(exercise.in_depth_youtube_exp || exercise.video_explanation_url || '')}
                       title="In-Depth Tutorial"
                       className="w-full h-full"
                       frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
                       loading="lazy"
+                      referrerPolicy="strict-origin-when-cross-origin"
                     />
                   </div>
                 </div>
