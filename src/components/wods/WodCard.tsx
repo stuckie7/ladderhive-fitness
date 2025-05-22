@@ -24,7 +24,7 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
   const hasVideo = !!wod.video_url;
   
   // Use default image for saved workouts or when no thumbnail is available
-  const defaultThumbnail = '/images/default-workout.jpg';
+  const defaultThumbnail = '/fitapp icon 48x48.jpg';
 
   const getDifficultyColor = (difficulty: string | undefined) => {
     switch (difficulty?.toLowerCase()) {
@@ -91,7 +91,11 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center">
-            <Dumbbell className="h-16 w-16 text-white opacity-30" />
+            <img 
+              src={defaultThumbnail} 
+              alt="Default workout thumbnail"
+              className="w-full h-full object-cover opacity-70"
+            />
           </div>
         )}
       </div>
