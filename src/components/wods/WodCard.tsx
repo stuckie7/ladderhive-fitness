@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Bookmark, BookmarkCheck, Video, Play } from "lucide-react";
+import { Clock, Bookmark, BookmarkCheck, Video, Play, Dumbbell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Wod } from '@/types/wod';
 import { getYouTubeThumbnail, createDescriptionSnippet, generateEngagingDescription } from '@/utils/wodHelpers';
@@ -22,6 +22,9 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
   // Generate an engaging description or use the existing one
   const descriptionText = wod.description ? createDescriptionSnippet(wod.description, 120) : generateEngagingDescription(wod);
   const hasVideo = !!wod.video_url;
+  
+  // Use default image for saved workouts or when no thumbnail is available
+  const defaultThumbnail = '/images/default-workout.jpg';
 
   const getDifficultyColor = (difficulty: string | undefined) => {
     switch (difficulty?.toLowerCase()) {
@@ -69,24 +72,29 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
       className="h-full flex flex-col hover:shadow-md transition-shadow transform hover:scale-[1.01] overflow-hidden relative"
       onClick={handleViewDetails}
     >
-      {thumbnailUrl && (
-        <div className="absolute inset-0 z-0">
-          <div 
-            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"
-            aria-hidden="true"
-          />
+      <div className="absolute inset-0 z-0">
+        <div 
+          className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"
+          aria-hidden="true"
+        />
+        {thumbnailUrl ? (
           <img 
             src={thumbnailUrl} 
             alt={`${wod.name} thumbnail`}
             className="w-full h-full object-cover opacity-70"
             onError={(e) => {
-              // Handle image loading errors by adding a class to hide the broken image
-              e.currentTarget.classList.add('hidden');
-              console.error(`Failed to load thumbnail for WOD ${wod.id}`);
+              // Fallback to default image on error
+              const img = e.target as HTMLImageElement;
+              img.src = defaultThumbnail;
+              img.onerror = null; // Prevent infinite loop if default image fails
             }}
           />
-        </div>
-      )}
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center">
+            <Dumbbell className="h-16 w-16 text-white opacity-30" />
+          </div>
+        )}
+      </div>
       
       <CardHeader className={`pb-2 relative z-10 ${thumbnailUrl ? 'text-white' : ''}`}>
         <div className="flex justify-between">
