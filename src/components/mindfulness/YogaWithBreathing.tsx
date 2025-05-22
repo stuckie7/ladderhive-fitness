@@ -7,15 +7,26 @@ import { Play, Clock, ActivitySquare, Brain, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-// Helper function to get YouTube embed URL
-const getYoutubeEmbedUrl = (url: string | undefined): string | null => {
+// Helper function to extract YouTube video ID
+const getYoutubeId = (url: string | undefined): string | null => {
   if (!url) return null;
   if (url.includes('youtu.be/')) {
-    const videoId = url.split('youtu.be/')[1].split(/[?&#]/)[0];
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    return url.split('youtu.be/')[1].split(/[?&#]/)[0];
   }
   const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-  return match ? `https://www.youtube.com/embed/${match[1]}?autoplay=1` : null;
+  return match ? match[1] : null;
+};
+
+// Helper function to get YouTube thumbnail URL
+const getYoutubeThumbnail = (url: string | undefined, quality: 'default' | 'mqdefault' | 'hqdefault' | 'sddefault' | 'maxresdefault' = 'hqdefault'): string | null => {
+  const videoId = getYoutubeId(url);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/${quality}.jpg` : null;
+};
+
+// Helper function to get YouTube embed URL
+const getYoutubeEmbedUrl = (url: string | undefined): string | null => {
+  const videoId = getYoutubeId(url);
+  return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : null;
 };
 
 interface Workout {
@@ -37,8 +48,11 @@ interface YogaWithBreathingProps {
 export const YogaWithBreathing = ({ workout }: YogaWithBreathingProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
+  const videoId = getYoutubeId(workout.videoUrl);
   const embedUrl = getYoutubeEmbedUrl(workout.videoUrl);
+  const thumbnailUrl = workout.thumbnailUrl || getYoutubeThumbnail(workout.videoUrl, 'hqdefault');
   
   const handleStartPractice = () => {
     if (workout.videoUrl) {
@@ -74,15 +88,28 @@ export const YogaWithBreathing = ({ workout }: YogaWithBreathingProps) => {
     >
       <div className="grid grid-cols-1 md:grid-cols-3 h-full">
         <div className="relative h-48 md:h-full md:col-span-1 overflow-hidden">
-          {workout.thumbnailUrl ? (
-            <img 
-              src={workout.thumbnailUrl} 
-              alt={workout.title}
-              className="w-full h-full object-cover"
-            />
+          {thumbnailUrl && !imageError ? (
+            <div className="w-full h-full relative">
+              <img 
+                src={thumbnailUrl}
+                alt={workout.title}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+              {videoId && (
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                  <div className="bg-black/50 rounded-full p-3">
+                    <Play className="h-8 w-8 text-white" fill="currentColor" />
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-blue-100 dark:bg-blue-900">
-              <ActivitySquare className="h-12 w-12 text-blue-500 dark:text-blue-300" />
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/50 p-4 text-center">
+              <ActivitySquare className="h-12 w-12 text-blue-400 dark:text-blue-300 mb-2" />
+              <span className="text-sm text-blue-600 dark:text-blue-300 font-medium">
+                {workout.title}
+              </span>
             </div>
           )}
           
