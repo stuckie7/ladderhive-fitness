@@ -36,27 +36,27 @@ const SavedWorkoutCard: React.FC<SavedWorkoutCardProps> = ({
             </Badge>
           )}
           
-          {workout.thumbnail_url ? (
+          <div className="w-full h-full flex items-center justify-center bg-muted overflow-hidden">
             <img 
-              src={workout.thumbnail_url} 
-              alt={workout.title} 
-              className="w-full h-full object-cover"
+              src={workout.thumbnail_url || '/fitapp icon 48x48.jpg'} 
+              alt={workout.thumbnail_url ? workout.title : 'Default workout thumbnail'} 
+              className="w-full h-full object-contain p-4"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                width: 'auto',
+                height: 'auto'
+              }}
               onError={(e) => {
                 // Fallback to default image on error
                 const img = e.target as HTMLImageElement;
-                img.src = '/fitapp icon 48x48.jpg';
-                img.onerror = null; // Prevent infinite loop if default image fails
+                if (img.src !== '/fitapp icon 48x48.jpg') {
+                  img.src = '/fitapp icon 48x48.jpg';
+                  img.onerror = null; // Prevent infinite loop if default image fails
+                }
               }}
             />
-          ) : (
-            <div className="w-full h-full">
-              <img 
-                src="/fitapp icon 48x48.jpg" 
-                alt="Default workout thumbnail"
-                className="w-full h-full object-cover opacity-90"
-              />
-            </div>
-          )}
+          </div>
         </div>
         
         <CardContent className="p-4">
