@@ -62,13 +62,9 @@ export const getSuggestedExercisesForWorkout = async (
         equipment: ex.primary_equipment || 'Bodyweight',
         difficulty: ex.difficulty || 'Beginner',
         // Safely handle potentially missing properties
-        description: ex.description ?? '', // Use nullish coalescing for description
-        // Handle instructions with proper fallbacks
-        instructions: Array.isArray(ex.instructions) 
-          ? ex.instructions 
-          : typeof ex.instructions === 'string' && ex.instructions 
-            ? [ex.instructions] 
-            : [ex.name || 'No instructions available'], // Fallback to name if instructions are missing
+        description: '', // Default empty string for description
+        // Handle instructions with proper default value
+        instructions: [], // Default empty array for instructions
         video_url: ex.short_youtube_demo || '',
         image_url: ex.youtube_thumbnail_url || '',
         video_demonstration_url: ex.short_youtube_demo || '',

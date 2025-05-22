@@ -1,140 +1,114 @@
-
-import React, { useEffect, useState } from 'react';
-import AppLayout from '@/components/layout/AppLayout';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardMetricsSection from '@/components/dashboard/DashboardMetricsSection';
-import QuickActionsSection from '@/components/dashboard/QuickActionsSection';
-import FavoritesAndAchievementsSection from '@/components/dashboard/FavoritesAndAchievementsSection';
-import WorkoutHistory from '@/components/dashboard/WorkoutHistory';
-import { useProfile } from '@/hooks/use-profile';
-import { useWorkoutStats } from '@/hooks/use-workout-stats';
-import { useRecentWorkouts } from '@/hooks/use-recent-workouts';
+import AppLayout from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/button';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { DashboardMetricsSection } from '@/components/dashboard/DashboardMetricsSection';
+import { QuickActionsSection } from '@/components/dashboard/QuickActionsSection';
+import { FavoritesAndAchievementsSection } from '@/components/dashboard/FavoritesAndAchievementsSection';
 import { useFavoriteExercises } from '@/hooks/use-favorite-exercises';
 import { useUpcomingWorkouts } from '@/hooks/use-upcoming-workouts';
-import DashboardError from '@/components/dashboard/DashboardError';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
+import { DashboardError } from '@/components/dashboard/DashboardError';
+import { useProfile } from '@/hooks/use-profile';
+import { useWorkouts } from '@/hooks/workouts';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Dumbbell } from 'lucide-react';
+import { useDailyProgress } from '@/hooks/use-daily-progress';
+import { useActivityProgress } from '@/hooks/use-activity-progress';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  
-  const { profile, isLoading: profileLoading, error: profileError } = useProfile();
-  const { weeklyActivityData, isLoading: statsLoading, error: statsError } = useWorkoutStats();
-  const { workouts: recentWorkouts, isLoading: recentWorkoutsLoading, error: recentWorkoutsError } = useRecentWorkouts();
-  const { exercises: favoriteExercises, isLoading: favoritesLoading, error: favoritesError } = useFavoriteExercises();
-  const { workouts: upcomingWorkouts, isLoading: upcomingLoading, error: upcomingError } = useUpcomingWorkouts();
-
-  // Aggregated loading state
-  const isLoading = profileLoading || statsLoading || recentWorkoutsLoading || favoritesLoading || upcomingLoading;
-
-  // Error state
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { profile, isLoading: profileLoading } = useProfile();
+  const { exercises, isLoading: exercisesLoading } = useFavoriteExercises();
+  const { workouts, isLoading: workoutsLoading } = useUpcomingWorkouts();
+  const { workouts: recentWorkouts, isLoading: recentWorkoutsLoading } = useWorkouts();
+  const { weeklyData, isLoading: weeklyDataLoading } = useActivityProgress();
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Collect any errors - but make sure they're strings
-    const errors = [profileError, statsError, recentWorkoutsError, favoritesError, upcomingError]
-      .filter(Boolean)
-      .map(err => {
-        if (typeof err === 'string') return err;
-        if (err && typeof err === 'object') {
-          // Check if it has a message property
-          return 'message' in err ? String(err.message) : 'An error occurred';
-        }
-        return 'An unknown error occurred';
-      });
-    
-    if (errors.length > 0) {
-      setErrorMessage(errors[0]); // Set the first error message
-    }
-  }, [profileError, statsError, recentWorkoutsLoading, favoritesError, upcomingError]);
+    const fetchData = async () => {
+      try {
+        // Placeholder for any dashboard-specific data fetching
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+      }
+    };
 
-  // Navigation handlers
-  const goToWorkouts = () => navigate('/workouts');
-  const goToExercises = () => navigate('/exercises');
-  const goToSchedule = () => navigate('/schedule');
+    fetchData();
+  }, [user]);
 
-  // Promise-based handlers for component props
-  const handleRefreshWorkouts = async (): Promise<void> => {
-    // This is a placeholder that returns a promise
-    return Promise.resolve();
+  if (error) {
+    return (
+      <AppLayout>
+        <DashboardError
+          message={error?.message || "Something went wrong. Please try again later."}
+          onRetry={() => window.location.reload()}
+        />
+      </AppLayout>
+    );
+  }
+
+  const handleStartWorkout = () => {
+    navigate('/workouts/new');
   };
 
-  const handleAddFavorite = () => {
-    // Placeholder implementation
+  const handleViewExercises = () => {
     navigate('/exercises');
   };
 
-  const handleRemoveFavorite = async (id: string): Promise<void> => {
-    // Placeholder implementation
-    return Promise.resolve();
+  const handleViewWorkouts = () => {
+    navigate('/workouts');
   };
 
-  // Handler for selecting workouts - fix signature type mismatch by adding parameter
-  const handleSelectWorkout = (id: string) => {
-    // Placeholder implementation
-    navigate(`/workout/${id}`);
-  };
-
-  // Mock data for achievements
-  const achievements = [
-    { id: '1', title: 'First Workout', description: 'Completed your first workout', date: '2023-04-01', icon: '🎯' },
-    { id: '2', title: 'Consistency', description: 'Worked out 3 days in a row', date: '2023-04-05', icon: '🔥' },
-  ];
-  
   return (
     <AppLayout>
       <div className="container mx-auto p-4 space-y-6">
-        {/* Header with correct prop name */}
         <DashboardHeader 
-          isLoading={isLoading}
-          onRefresh={handleRefreshWorkouts}
-          onStartWorkout={() => navigate('/workouts')}
+          name={profile?.first_name || 'User'} 
+          isLoading={profileLoading} 
         />
-        
-        {/* Handle error state */}
-        {errorMessage ? (
-          <DashboardError 
-            errorMessage={errorMessage} 
-          />
-        ) : (
-          <>
-            {/* Quick Actions Panel */}
-            <QuickActionsSection 
-              upcomingWorkouts={upcomingWorkouts || []}
-              isLoading={isLoading}
-              onGoToExerciseLibrary={goToExercises}
-              onScheduleWorkout={goToSchedule}
-              onRefreshWorkouts={handleRefreshWorkouts}
-            />
-            
-            {/* Metrics Section - Using correct prop name */}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Main Content - 8 columns on large screens */}
+          <div className="lg:col-span-8 space-y-6">
             <DashboardMetricsSection 
-              weeklyChartData={weeklyActivityData || []}
-              recentWorkouts={recentWorkouts || []}
-              isLoading={isLoading}
-              onSelectDate={() => {}}
-              onSelectWorkout={handleSelectWorkout}
+              weeklyActivityData={weeklyData || []}
+              isLoading={weeklyDataLoading} 
             />
-            
-            {/* Favorites and Achievements */}
+
             <FavoritesAndAchievementsSection 
-              favoriteExercises={favoriteExercises || []}
-              achievements={achievements}
-              isLoading={isLoading}
-              onAddFavorite={handleAddFavorite}
-              onRemoveFavorite={handleRemoveFavorite}
+              favoriteExercises={exercises}
+              isLoading={exercisesLoading}
+              onViewExercise={(id: string) => navigate(`/exercises/${id}`)}
+            />
+          </div>
+
+          {/* Sidebar - 4 columns on large screens */}
+          <div className="lg:col-span-4 space-y-6">
+            <QuickActionsSection
+              onStartWorkout={handleStartWorkout}
+              onViewExercises={handleViewExercises}
+              onViewWorkouts={handleViewWorkouts}
+            />
+
+            <UpcomingWorkouts 
+              workouts={workouts} 
+              isLoading={workoutsLoading}
+              onViewWorkout={(id: string) => navigate(`/workouts/${id}`)}
             />
             
-            {/* Recent Workouts */}
             <WorkoutHistory 
-              workouts={recentWorkouts || []}
-              isLoading={isLoading}
-              onSelectDate={() => {}}
-              onSelectWorkout={handleSelectWorkout}
+              workouts={recentWorkouts?.slice(0, 3) || []} 
+              isLoading={recentWorkoutsLoading}
+              onViewWorkout={(id: string) => navigate(`/workouts/${id}`)}
             />
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </AppLayout>
   );

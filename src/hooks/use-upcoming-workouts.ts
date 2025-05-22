@@ -35,7 +35,7 @@ export const useUpcomingWorkouts = () => {
             id,
             planned_for,
             workout_id,
-            prepared_workouts!workout_id (
+            prepared_workouts (
               title,
               duration_minutes,
               difficulty
@@ -51,7 +51,7 @@ export const useUpcomingWorkouts = () => {
           throw new Error(error.message);
         }
 
-        // Format the data safely with type checking
+        // Format the data safely with type checking and fallbacks
         const formattedWorkouts: UpcomingWorkout[] = (data || [])
           .filter(workout => workout.prepared_workouts) // Filter out entries without workout data
           .map(workout => {
