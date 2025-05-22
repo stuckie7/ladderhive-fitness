@@ -78,7 +78,10 @@ export const useAltWorkoutDetail = (id?: string) => {
           // Handle potential SelectQueryError by providing default values
           const exerciseData = ex.exercise || {};
           
-          // Use optional chaining with default values to avoid "property does not exist" errors
+          // Create safe fallback values for potentially undefined properties
+          const exerciseId = exerciseData.id ?? ex.exercise_id;
+          const stringId = typeof exerciseId === 'number' ? toStringId(exerciseId) : String(exerciseId);
+
           return {
             id: ex.id,
             workout_id: ex.workout_id,
@@ -89,10 +92,10 @@ export const useAltWorkoutDetail = (id?: string) => {
             order_index: ex.order_index,
             notes: ex.notes || '',
             exercise: {
-              id: toStringId((exerciseData?.id || ex.exercise_id) as number),
-              name: exerciseData?.name || 'Unknown Exercise',
-              video_url: exerciseData?.short_youtube_demo || undefined,
-              thumbnail_url: exerciseData?.youtube_thumbnail_url || undefined
+              id: stringId,
+              name: exerciseData.name || 'Unknown Exercise',
+              video_url: exerciseData.short_youtube_demo || undefined,
+              thumbnail_url: exerciseData.youtube_thumbnail_url || undefined
             }
           };
         });

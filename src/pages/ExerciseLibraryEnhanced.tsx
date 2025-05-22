@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useExerciseLibraryEnhanced } from "@/hooks/exercise-library/hooks/use-exercise-library-enhanced";
@@ -92,13 +91,25 @@ const ExerciseLibraryEnhanced = () => {
     );
   }
 
-  // Add missing properties required by ExerciseFormDialog to formState
-  const enhancedFormState = {
+  // Complete the formState with all required properties from ExerciseFormState
+  const completeFormState = {
+    // Existing properties
     ...formState,
-    // Add any missing required properties with sensible defaults
-    short_youtube_demo: formState.video_demonstration_url || "",
-    in_depth_youtube_exp: formState.video_explanation_url || "",
-    prime_mover_muscle: formState.target_muscle_group || "", // Ensure prime_mover_muscle is required
+    // Required properties that might be missing
+    name: formState.name || '',
+    prime_mover_muscle: formState.target_muscle_group || formState.prime_mover_muscle || '',
+    secondary_muscles: formState.secondary_muscles || [],
+    primary_equipment: formState.equipment || formState.primary_equipment || 'Bodyweight',
+    equipment_options: formState.equipment_options || [],
+    difficulty: formState.difficulty || 'Beginner',
+    exercise_type: formState.exercise_type || 'Strength',
+    intensity_level: formState.intensity_level || 'Medium',
+    rest_time: formState.rest_time || 60,
+    recommended_sets: formState.recommended_sets || 3,
+    recommended_reps: formState.recommended_reps || 10,
+    safety_notes: formState.safety_notes || '',
+    short_youtube_demo: formState.video_demonstration_url || formState.short_youtube_demo || '',
+    in_depth_youtube_exp: formState.video_explanation_url || formState.in_depth_youtube_exp || ''
   };
 
   return (
@@ -164,12 +175,14 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setIsAddDialogOpen}
         title="Add New Exercise"
         description="Create a new exercise in your database"
-        formState={enhancedFormState}
+        formState={completeFormState}
         onFormChange={adaptedFormChangeHandler}
         onSubmit={handleAddExercise}
         submitLabel="Add Exercise"
         muscleGroups={muscleGroups}
         equipmentTypes={equipmentTypes}
+        exerciseTypes={["Strength", "Cardio", "Flexibility", "Balance"]}
+        intensityLevels={["Low", "Medium", "High"]}
       />
       
       {/* Edit Exercise Dialog */}
@@ -178,12 +191,14 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setIsEditDialogOpen}
         title="Edit Exercise"
         description="Update the exercise details"
-        formState={enhancedFormState}
+        formState={completeFormState}
         onFormChange={adaptedFormChangeHandler}
         onSubmit={handleEditExercise}
         submitLabel="Save Changes"
         muscleGroups={muscleGroups}
         equipmentTypes={equipmentTypes}
+        exerciseTypes={["Strength", "Cardio", "Flexibility", "Balance"]}
+        intensityLevels={["Low", "Medium", "High"]}
       />
       
       {/* Delete Confirmation Dialog */}
