@@ -1,9 +1,16 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { ExerciseFull, Exercise, ExerciseFilters } from '@/types/exercise';
 import { searchExercisesFull } from '../services/exercise-search-service';
 import { useToast } from '@/components/ui/use-toast';
 import { mapExerciseFullToExercise } from '../mappers';
+
+interface PaginationState {
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
+  totalPages: number;
+}
 
 export interface UseExerciseLibraryReturn {
   exercises: ExerciseFull[];
@@ -13,12 +20,16 @@ export interface UseExerciseLibraryReturn {
   filters: ExerciseFilters;
   availableMuscleGroups: string[];
   availableEquipment: string[];
+  pagination: PaginationState;
   setActiveTab: (tab: string) => void;
   setFilters: (filters: Partial<ExerciseFilters>) => void;
+  setPage: (page: number) => void;
+  setItemsPerPage: (count: number) => void;
   resetFilters: () => void;
   getFilteredExercises: (muscleGroup?: string) => ExerciseFull[];
   handleSearchChange: (value: string) => void;
   handleSearch: (searchTerm: string) => Promise<Exercise[]>;
+  getPaginatedExercises: () => ExerciseFull[];
 }
 
 // Rename to match what's being imported elsewhere
@@ -32,6 +43,14 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     muscleGroup: '',
     equipment: '',
     difficulty: '',
+  });
+  
+  // Pagination state
+  const [pagination, setPagination] = useState<PaginationState>({
+    currentPage: 1,
+    itemsPerPage: 9, // Default to 9 items per page (3x3 grid)
+    totalItems: 0,
+    totalPages: 1,
   });
 
   const availableMuscleGroups = useMemo(() => {
@@ -64,34 +83,43 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     });
   }, []);
 
-  const getFilteredExercises = useCallback(
-    (muscleGroup?: string) => {
-      return exercises.filter((exercise) => {
-        const matchesMuscleGroup =
-          !muscleGroup ||
-          (exercise.prime_mover_muscle &&
-            exercise.prime_mover_muscle.toLowerCase() === muscleGroup.toLowerCase()) ||
-          (exercise.target_muscle_group &&
-            exercise.target_muscle_group.toLowerCase() === muscleGroup.toLowerCase());
+  const getFilteredExercises = useCallback((muscleGroup?: string) => {
+    let filtered = [...exercises];
 
-        const matchesFilter =
-          (!filters.muscleGroup ||
-            (exercise.prime_mover_muscle &&
-              exercise.prime_mover_muscle.toLowerCase() === filters.muscleGroup.toLowerCase()) ||
-            (exercise.target_muscle_group &&
-              exercise.target_muscle_group.toLowerCase() === filters.muscleGroup.toLowerCase())) &&
-          (!filters.equipment ||
-            (exercise.primary_equipment &&
-              exercise.primary_equipment.toLowerCase() === filters.equipment.toLowerCase())) &&
-          (!filters.difficulty ||
-            (exercise.difficulty &&
-              exercise.difficulty.toLowerCase() === filters.difficulty.toLowerCase()));
+    if (muscleGroup) {
+      filtered = filtered.filter(
+        (ex) => 
+          ex.prime_mover_muscle === muscleGroup || 
+          ex.target_muscle_group === muscleGroup
+      );
+    }
 
-        return matchesMuscleGroup && matchesFilter;
-      });
-    },
-    [exercises, filters]
-  );
+    if (filters.muscleGroup) {
+      filtered = filtered.filter(
+        (ex) => 
+          ex.prime_mover_muscle === filters.muscleGroup || 
+          ex.target_muscle_group === filters.muscleGroup
+      );
+    }
+
+    if (filters.equipment) {
+      filtered = filtered.filter(ex => ex.primary_equipment === filters.equipment);
+    }
+
+    if (filters.difficulty) {
+      filtered = filtered.filter(ex => ex.difficulty_level === filters.difficulty);
+    }
+
+    // Update pagination total items
+    setPagination(prev => ({
+      ...prev,
+      totalItems: filtered.length,
+      totalPages: Math.ceil(filtered.length / prev.itemsPerPage),
+      currentPage: 1, // Reset to first page when filters change
+    }));
+
+    return filtered;
+  }, [exercises, filters]);
 
   const handleSearch = useCallback(async (searchTerm: string): Promise<Exercise[]> => {
     setIsLoading(true);
@@ -116,19 +144,66 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     setSearchQuery(value);
   }, []);
 
+  // Get paginated exercises based on current page and items per page
+  const getPaginatedExercises = useCallback(() => {
+    const filtered = getFilteredExercises();
+    const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
+    const endIndex = startIndex + pagination.itemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  }, [getFilteredExercises, pagination.currentPage, pagination.itemsPerPage]);
+
+  // Handle page change
+  const setPage = useCallback((page: number) => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: Math.max(1, Math.min(page, prev.totalPages)),
+    }));
+  }, []);
+
+  // Handle items per page change
+  const setItemsPerPage = useCallback((itemsPerPage: number) => {
+    setPagination(prev => ({
+      ...prev,
+      itemsPerPage: Math.max(1, itemsPerPage),
+      currentPage: 1, // Reset to first page when changing items per page
+    }));
+  }, []);
+
+  // Update total pages when items per page changes
+  useEffect(() => {
+    setPagination(prev => ({
+      ...prev,
+      totalPages: Math.ceil(prev.totalItems / prev.itemsPerPage),
+      currentPage: Math.min(prev.currentPage, Math.ceil(prev.totalItems / prev.itemsPerPage) || 1),
+    }));
+  }, [pagination.itemsPerPage, pagination.totalItems]);
+
   return {
-    exercises,
+    exercises: getPaginatedExercises(),
     isLoading,
     searchQuery,
     activeTab,
     filters,
     availableMuscleGroups,
     availableEquipment,
+    pagination,
     setActiveTab,
-    setFilters,
-    resetFilters,
+    setFilters: (newFilters: Partial<ExerciseFilters>) => {
+      setFiltersState(prev => ({ ...prev, ...newFilters }));
+    },
+    setPage,
+    setItemsPerPage,
+    resetFilters: () => {
+      setFiltersState({
+        muscleGroup: '',
+        equipment: '',
+        difficulty: '',
+      });
+      setPage(1);
+    },
     getFilteredExercises,
     handleSearchChange,
     handleSearch,
+    getPaginatedExercises,
   };
 };

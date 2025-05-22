@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { mapExerciseFullToExercise } from "@/hooks/exercise-library/mappers";
 import { Exercise, ExerciseFull } from "@/types/exercise";
-import { ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ExerciseLibraryHeader = lazy(() => import("@/components/exercises/ExerciseLibraryHeader"));
 const SearchBar = lazy(() => import("@/components/exercises/SearchBar"));
@@ -32,8 +33,11 @@ const ExerciseLibrary = () => {
     availableEquipment,
     exercises,
     isLoading,
+    pagination,
     setActiveTab,
     setFilters,
+    setPage,
+    setItemsPerPage,
     resetFilters,
     getFilteredExercises,
     handleSearchChange,
@@ -99,16 +103,89 @@ const ExerciseLibrary = () => {
         </Suspense>
         
         <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-          <ExerciseTabs
+          <ExerciseTabs 
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            muscleGroups={availableMuscleGroups}
             exercises={convertedExercises}
+            muscleGroups={availableMuscleGroups}
             isLoading={isLoading}
             getFilteredExercises={getFilteredExercisesAdapter}
             resetFilters={resetFilters}
           />
         </Suspense>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+          <div className="text-sm text-muted-foreground">
+            Showing <span className="font-medium">{(pagination.currentPage - 1) * pagination.itemsPerPage + 1}</span> to{' '}
+            <span className="font-medium">
+              {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
+            </span>{' '}
+            of <span className="font-medium">{pagination.totalItems}</span> exercises
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
+              <p className="text-sm font-medium">Rows per page</p>
+              <Select
+                value={`${pagination.itemsPerPage}`}
+                onValueChange={(value) => setItemsPerPage(Number(value))}
+              >
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue placeholder={pagination.itemsPerPage} />
+                </SelectTrigger>
+                <SelectContent>
+                  {[9, 18, 27, 36].map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => setPage(1)}
+                disabled={pagination.currentPage === 1}
+              >
+                <span className="sr-only">Go to first page</span>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => setPage(Math.max(1, pagination.currentPage - 1))}
+                disabled={pagination.currentPage === 1}
+              >
+                <span className="sr-only">Go to previous page</span>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center justify-center text-sm font-medium w-8">
+                {pagination.currentPage}
+              </div>
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => setPage(Math.min(pagination.totalPages, pagination.currentPage + 1))}
+                disabled={pagination.currentPage >= pagination.totalPages}
+              >
+                <span className="sr-only">Go to next page</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => setPage(pagination.totalPages)}
+                disabled={pagination.currentPage >= pagination.totalPages}
+              >
+                <span className="sr-only">Go to last page</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-12 pt-6 border-t">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
