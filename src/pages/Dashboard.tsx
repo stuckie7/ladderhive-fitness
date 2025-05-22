@@ -32,19 +32,20 @@ const Dashboard = () => {
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
-    // Collect any errors
-    const errors = [profileError, statsError, recentWorkoutsError, favoritesError, upcomingError].filter(Boolean);
+    // Collect any errors - but make sure they're strings
+    const errors = [profileError, statsError, recentWorkoutsError, favoritesError, upcomingError]
+      .filter(Boolean)
+      .map(err => {
+        if (typeof err === 'string') return err;
+        if (err && typeof err === 'object') {
+          // Check if it has a message property
+          return 'message' in err ? String(err.message) : 'An error occurred';
+        }
+        return 'An unknown error occurred';
+      });
     
     if (errors.length > 0) {
-      // Handle the first error - ensure proper type checking
-      const firstError = errors[0];
-      if (typeof firstError === 'string') {
-        setErrorMessage(firstError);
-      } else if (firstError && typeof firstError === 'object' && 'message' in firstError) {
-        setErrorMessage(firstError.message as string);
-      } else {
-        setErrorMessage('An unknown error occurred');
-      }
+      setErrorMessage(errors[0]); // Set the first error message
     }
   }, [profileError, statsError, recentWorkoutsLoading, favoritesError, upcomingError]);
 

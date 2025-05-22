@@ -1,227 +1,414 @@
-import React, { useState } from "react";
-import AppLayout from "@/components/layout/AppLayout";
-import { useExerciseLibraryEnhanced } from "@/hooks/exercise-library/hooks/use-exercise-library-enhanced";
-import ExercisesEnhancedNavigation from "@/components/exercises/ExercisesEnhancedNavigation";
-import ExerciseSearchAndFilters from "@/components/exercises/ExerciseSearchAndFilters";
-import ExerciseCardGrid from "@/components/exercises/ExerciseCardGrid";
-import ExercisePagination from "@/components/exercises/ExercisePagination";
-import ExerciseFormDialog from "@/components/exercises/ExerciseFormDialog";
-import ExerciseDeleteDialog from "@/components/exercises/ExerciseDeleteDialog";
-import EnhancedExerciseHeader from "@/components/exercises/EnhancedExerciseHeader";
-import ExerciseTableNotFoundError from "@/components/exercises/ExerciseTableNotFoundError";
-import ExerciseCountDisplay from "@/components/exercises/ExerciseCountDisplay";
-import { Exercise } from "@/types/exercise";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AppLayout from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useExerciseLibrary } from '@/hooks/exercise-library';
+import { Exercise } from '@/types/exercise';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Dumbbell, Search, Filter, ArrowUpDown, Plus } from 'lucide-react';
+import ExerciseCard from '@/components/exercises/ExerciseCard';
+import ExerciseFilters from '@/components/exercises/ExerciseFilters';
+import ExerciseFormDialog from '@/components/exercises/ExerciseFormDialog';
+import { useToast } from '@/components/ui/use-toast';
+import { ensureNumber } from '@/hooks/exercise-library/exercise-form-helpers';
+
+// Define the form state interface
+interface ExerciseFormState {
+  name: string;
+  prime_mover_muscle: string;
+  secondary_muscles: string[];
+  primary_equipment: string;
+  equipment_options: string[];
+  difficulty: string;
+  exercise_type: string;
+  recommended_reps: number;
+  recommended_sets: number;
+  rest_time: number;
+  description: string;
+  video_url: string;
+  image_url: string;
+  instructions: string;
+}
 
 const ExerciseLibraryEnhanced = () => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortField, setSortField] = useState<string>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
   
-  const {
-    exercises,
-    loading,
-    searchQuery,
-    muscleGroups,
-    equipmentTypes,
-    difficultyLevels,
-    selectedMuscleGroup,
-    selectedEquipment,
-    selectedDifficulty,
-    currentPage,
-    totalCount,
-    tableExists,
-    formState,
-    currentExercise,
-    ITEMS_PER_PAGE,
-    handleSearchChange,
-    handleFilterChange,
+  // Exercise library hook
+  const { 
+    exercises, 
+    isLoading, 
+    error, 
+    fetchExercises,
+    filterOptions,
+    applyFilters,
+    activeFilters,
     resetFilters,
-    handleFormChange,
-    handleAddExercise,
-    handleEditExercise,
-    handleDeleteExercise,
-    openEditDialog,
-    openDeleteDialog,
-    handleRefresh,
-    setCurrentPage
-  } = useExerciseLibraryEnhanced();
+    addExercise,
+    updateExercise
+  } = useExerciseLibrary();
 
-  // Wrapper functions to handle dialog states
-  const handleOpenAddDialog = () => setIsAddDialogOpen(true);
-  
-  const handleOpenEditDialog = (exercise: Exercise) => {
-    openEditDialog(exercise);
-    setIsEditDialogOpen(true);
-  };
-  
-  const handleOpenDeleteDialog = (exercise: Exercise) => {
-    openDeleteDialog(exercise);
-    setIsDeleteDialogOpen(true);
-  };
-
-  // Convert form change handler to match form dialog component
-  const adaptedFormChangeHandler = (field: string, value: string) => {
-    const mockEvent = {
-      target: { name: field, value }
-    } as React.ChangeEvent<HTMLInputElement>;
-    handleFormChange(mockEvent);
+  // Initial form state
+  const initialFormState: ExerciseFormState = {
+    name: '',
+    prime_mover_muscle: '',
+    secondary_muscles: [],
+    primary_equipment: '',
+    equipment_options: [],
+    difficulty: 'Beginner',
+    exercise_type: 'Strength',
+    recommended_reps: 10,
+    recommended_sets: 3,
+    rest_time: 60,
+    description: '',
+    video_url: '',
+    image_url: '',
+    instructions: ''
   };
 
-  // Handle search changes with proper event typing
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleSearchChange(e);
+  const [formState, setFormState] = useState<ExerciseFormState>(initialFormState);
+
+  // Effect to load exercises on mount
+  useEffect(() => {
+    fetchExercises();
+  }, [fetchExercises]);
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
-  // Adapt the delete handler to match the expected signature
-  const handleDeleteConfirm = () => {
-    if (currentExercise) {
-      handleDeleteExercise(currentExercise);
-      setIsDeleteDialogOpen(false);
+  // Handle search submission
+  const handleSearch = () => {
+    applyFilters({ search: searchQuery });
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (filterType: string, value: string) => {
+    applyFilters({ [filterType]: value });
+  };
+
+  // Handle sort changes
+  const handleSortChange = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
     }
   };
 
-  // Convert the string values to numbers where needed
-  const convertFormToExercise = (form: any) => {
-    return {
-      ...form,
+  // Handle form submission
+  const handleFormSubmit = async (formData: Record<string, any>) => {
+    try {
       // Convert string values to numbers for numeric fields
-      recommended_sets: Number(form.recommended_sets || 0),
-      recommended_reps: Number(form.recommended_reps || 0),
-      rest_time: Number(form.rest_time || 0),
-      // Ensure array types
-      secondary_muscles: Array.isArray(form.secondary_muscles) ? form.secondary_muscles : [],
-      equipment_options: Array.isArray(form.equipment_options) ? form.equipment_options : []
+      const exerciseData = {
+        name: formData.name,
+        prime_mover_muscle: formData.prime_mover_muscle,
+        secondary_muscles: formData.secondary_muscles,
+        primary_equipment: formData.primary_equipment,
+        equipment_options: formData.equipment_options,
+        difficulty: formData.difficulty,
+        exercise_type: formData.exercise_type,
+        recommended_reps: Number(formData.recommended_reps),
+        recommended_sets: Number(formData.recommended_sets),
+        rest_time: Number(formData.rest_time),
+        description: formData.description,
+        video_url: formData.video_url,
+        image_url: formData.image_url,
+        instructions: formData.instructions
+      };
+
+      await addExercise(exerciseData);
+      setShowAddExerciseForm(false);
+      toast({
+        title: "Exercise Added",
+        description: "The exercise has been added to the library.",
+      });
+      
+      // Reset form state
+      setFormState(initialFormState);
+      
+      // Refresh exercises
+      fetchExercises();
+    } catch (error) {
+      console.error("Error adding exercise:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add exercise. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle exercise edit
+  const handleEditExercise = (exercise: Exercise) => {
+    // Convert exercise data to form state
+    const formData = {
+      name: exercise.name,
+      prime_mover_muscle: exercise.prime_mover_muscle || exercise.target_muscle_group || '',
+      secondary_muscles: Array.isArray(exercise.secondaryMuscles) ? exercise.secondaryMuscles : [],
+      primary_equipment: exercise.primary_equipment || exercise.equipment || '',
+      equipment_options: Array.isArray(exercise.equipment_options) ? exercise.equipment_options : [],
+      difficulty: exercise.difficulty || 'Beginner',
+      exercise_type: exercise.exercise_classification || 'Strength',
+      recommended_reps: Number(exercise.recommended_reps || 10),
+      recommended_sets: Number(exercise.recommended_sets || 3),
+      rest_time: Number(exercise.rest_time || 60),
+      description: exercise.description || '',
+      video_url: exercise.video_url || exercise.video_demonstration_url || '',
+      image_url: exercise.image_url || '',
+      instructions: Array.isArray(exercise.instructions) 
+        ? exercise.instructions.join('\n') 
+        : typeof exercise.instructions === 'string' 
+          ? exercise.instructions 
+          : ''
     };
+    
+    setFormState(formData);
+    setShowAddExerciseForm(true);
   };
 
-  // Render error state if table doesn't exist
-  if (!tableExists) {
-    return (
-      <AppLayout>
-        <div className="container mx-auto px-4 py-8">
-          <ExerciseTableNotFoundError />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // Modify the completeFormState inside the component to ensure all types are correct
-  const completeFormState = {
-    // Existing properties
-    ...formState,
-    // Required properties with proper types
-    name: formState.name || '',
-    prime_mover_muscle: formState.target_muscle_group || formState.prime_mover_muscle || '',
-    secondary_muscles: Array.isArray(formState.secondary_muscles) ? formState.secondary_muscles : (formState.secondary_muscles ? [formState.secondary_muscles] : []),
-    primary_equipment: formState.equipment || formState.primary_equipment || 'Bodyweight',
-    equipment_options: Array.isArray(formState.equipment_options) ? formState.equipment_options : (formState.equipment_options ? [formState.equipment_options] : []),
-    difficulty: formState.difficulty || 'Beginner',
-    exercise_type: formState.exercise_type || 'Strength',
-    intensity_level: formState.intensity_level || 'Medium',
-    // Ensure rest_time is a number
-    rest_time: typeof formState.rest_time === 'string' ? parseInt(formState.rest_time, 10) || 60 : formState.rest_time || 60,
-    recommended_sets: typeof formState.recommended_sets === 'string' ? Number(formState.recommended_sets) : (formState.recommended_sets || 3),
-    recommended_reps: formState.recommended_reps || 10,
-    safety_notes: formState.safety_notes || '',
-    short_youtube_demo: formState.video_demonstration_url || formState.short_youtube_demo || '',
-    in_depth_youtube_exp: formState.video_explanation_url || formState.in_depth_youtube_exp || '',
-  };
+  // Sort exercises
+  const sortedExercises = [...exercises].sort((a, b) => {
+    // Handle different field types
+    let valueA: any = a[sortField as keyof Exercise] || '';
+    let valueB: any = b[sortField as keyof Exercise] || '';
+    
+    // Convert to strings for comparison
+    valueA = String(valueA).toLowerCase();
+    valueB = String(valueB).toLowerCase();
+    
+    // Compare based on direction
+    if (sortDirection === 'asc') {
+      return valueA.localeCompare(valueB);
+    } else {
+      return valueB.localeCompare(valueA);
+    }
+  });
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <EnhancedExerciseHeader 
-          onRefresh={handleRefresh} 
-          onAddNew={handleOpenAddDialog} 
-        />
-        
-        {/* Navigation between different exercise views */}
-        <ExercisesEnhancedNavigation currentView="exercise-library" />
-        
-        {/* Search and filters */}
-        <ExerciseSearchAndFilters 
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchInputChange}
-          filters={{
-            muscleGroup: selectedMuscleGroup,
-            equipment: selectedEquipment,
-            difficulty: selectedDifficulty
-          }}
-          muscleGroups={muscleGroups}
-          equipmentTypes={equipmentTypes}
-          difficultyLevels={difficultyLevels}
-          onFilterChange={handleFilterChange}
-          onResetFilters={resetFilters}
-        />
-        
-        {/* Exercise count */}
-        {!loading && (
-          <ExerciseCountDisplay
-            count={exercises.length}
-            currentPage={currentPage}
-            itemsPerPage={ITEMS_PER_PAGE}
-            totalCount={totalCount}
-          />
-        )}
-        
-        {/* Exercise Cards */}
-        <ExerciseCardGrid 
-          exercises={exercises}
-          loading={loading}
-          onEdit={handleOpenEditDialog}
-          onDelete={handleOpenDeleteDialog}
-          onReset={resetFilters}
-        />
-        
-        {/* Pagination */}
-        {!loading && totalCount > ITEMS_PER_PAGE && (
-          <ExercisePagination 
-            currentPage={currentPage}
-            totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
-            onPageChange={setCurrentPage}
-          />
-        )}
+      <div className="container mx-auto p-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold mb-2">Exercise Library</h1>
+            <p className="text-muted-foreground">Browse and search through our collection of exercises</p>
+          </div>
+          <Button 
+            onClick={() => setShowAddExerciseForm(true)}
+            className="mt-4 md:mt-0 bg-fitness-primary hover:bg-fitness-primary/90"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Exercise
+          </Button>
+        </div>
+
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 flex gap-2">
+                <Input
+                  placeholder="Search exercises..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  className="flex-1"
+                />
+                <Button onClick={handleSearch}>
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => handleSortChange('name')}
+                >
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  Sort
+                </Button>
+              </div>
+            </div>
+
+            {showFilters && (
+              <div className="mt-4">
+                <ExerciseFilters 
+                  filterOptions={filterOptions}
+                  activeFilters={activeFilters}
+                  onFilterChange={handleFilterChange}
+                  onResetFilters={resetFilters}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Tabs defaultValue="grid" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="grid">Grid View</TabsTrigger>
+            <TabsTrigger value="list">List View</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="grid" className="w-full">
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <div className="aspect-video bg-muted">
+                      <Skeleton className="h-full w-full" />
+                    </div>
+                    <CardContent className="p-4">
+                      <Skeleton className="h-4 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : error ? (
+              <Card className="p-6 text-center">
+                <p className="text-red-500">{error}</p>
+                <Button onClick={fetchExercises} className="mt-4">
+                  Retry
+                </Button>
+              </Card>
+            ) : sortedExercises.length === 0 ? (
+              <Card className="p-6 text-center">
+                <Dumbbell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No exercises found</h3>
+                <p className="text-muted-foreground mb-4">
+                  Try adjusting your search or filters to find exercises.
+                </p>
+                <Button onClick={resetFilters}>
+                  Reset Filters
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {sortedExercises.map((exercise) => (
+                  <ExerciseCard 
+                    key={exercise.id} 
+                    exercise={exercise}
+                    onEdit={() => handleEditExercise(exercise)}
+                    onClick={() => navigate(`/exercises/${exercise.id}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="list">
+            {isLoading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <Skeleton className="h-12 w-12 rounded-md" />
+                      <div className="flex-1">
+                        <Skeleton className="h-4 w-1/3 mb-2" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : error ? (
+              <Card className="p-6 text-center">
+                <p className="text-red-500">{error}</p>
+                <Button onClick={fetchExercises} className="mt-4">
+                  Retry
+                </Button>
+              </Card>
+            ) : sortedExercises.length === 0 ? (
+              <Card className="p-6 text-center">
+                <Dumbbell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No exercises found</h3>
+                <p className="text-muted-foreground mb-4">
+                  Try adjusting your search or filters to find exercises.
+                </p>
+                <Button onClick={resetFilters}>
+                  Reset Filters
+                </Button>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {sortedExercises.map((exercise) => (
+                  <Card 
+                    key={exercise.id}
+                    className="hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/exercises/${exercise.id}`)}
+                  >
+                    <CardContent className="p-4 flex items-center gap-4">
+                      {exercise.image_url ? (
+                        <img 
+                          src={exercise.image_url} 
+                          alt={exercise.name}
+                          className="h-12 w-12 object-cover rounded-md"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 bg-muted rounded-md flex items-center justify-center">
+                          <Dumbbell className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <h3 className="font-medium">{exercise.name}</h3>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {exercise.muscle_group && (
+                            <Badge variant="outline" className="text-xs">
+                              {exercise.muscle_group}
+                            </Badge>
+                          )}
+                          {exercise.equipment && (
+                            <Badge variant="outline" className="text-xs">
+                              {exercise.equipment}
+                            </Badge>
+                          )}
+                          {exercise.difficulty && (
+                            <Badge variant="outline" className="text-xs">
+                              {exercise.difficulty}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditExercise(exercise);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
-      
-      {/* Add Exercise Dialog */}
-      <ExerciseFormDialog 
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        title="Add New Exercise"
-        description="Create a new exercise in your database"
-        formState={completeFormState}
-        onFormChange={adaptedFormChangeHandler}
-        onSubmit={handleAddExercise}
-        submitLabel="Add Exercise"
-        muscleGroups={muscleGroups}
-        equipmentTypes={equipmentTypes}
-        exerciseTypes={["Strength", "Cardio", "Flexibility", "Balance"]}
-        intensityLevels={["Low", "Medium", "High"]}
-      />
-      
-      {/* Edit Exercise Dialog */}
-      <ExerciseFormDialog 
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        title="Edit Exercise"
-        description="Update the exercise details"
-        formState={completeFormState}
-        onFormChange={adaptedFormChangeHandler}
-        onSubmit={handleEditExercise}
-        submitLabel="Save Changes"
-        muscleGroups={muscleGroups}
-        equipmentTypes={equipmentTypes}
-        exerciseTypes={["Strength", "Cardio", "Flexibility", "Balance"]}
-        intensityLevels={["Low", "Medium", "High"]}
-      />
-      
-      {/* Delete Confirmation Dialog */}
-      <ExerciseDeleteDialog 
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        exercise={currentExercise}
-        onConfirmDelete={handleDeleteConfirm}
+
+      <ExerciseFormDialog
+        open={showAddExerciseForm}
+        onOpenChange={setShowAddExerciseForm}
+        onSubmit={handleFormSubmit}
+        initialValues={formState}
+        filterOptions={filterOptions}
       />
     </AppLayout>
   );

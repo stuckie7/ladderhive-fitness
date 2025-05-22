@@ -61,9 +61,9 @@ export const getSuggestedExercisesForWorkout = async (
         muscle_group: ex.prime_mover_muscle || '',
         equipment: ex.primary_equipment || 'Bodyweight',
         difficulty: ex.difficulty || 'Beginner',
-        // For properties that might be missing in the database schema
-        description: ex.description || '', // Handle missing description safely
-        // Handle instructions with proper type safety
+        // Safely handle potentially missing properties
+        description: ex.description ?? '', // Use nullish coalescing for description
+        // Handle instructions with proper fallbacks
         instructions: Array.isArray(ex.instructions) 
           ? ex.instructions 
           : typeof ex.instructions === 'string' && ex.instructions 

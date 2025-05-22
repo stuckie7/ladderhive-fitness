@@ -28,14 +28,14 @@ export const useUpcomingWorkouts = () => {
         setIsLoading(true);
 
         // Query to get upcoming scheduled workouts
-        // Adjust the query to properly access the joined table fields
+        // Fixed query to properly join and select fields from the proper tables
         const { data, error } = await supabase
           .from('user_workouts')
           .select(`
             id,
             planned_for,
-            workout_id (
-              id,
+            workout_id,
+            prepared_workouts!workout_id (
               title,
               duration_minutes,
               difficulty
@@ -53,10 +53,10 @@ export const useUpcomingWorkouts = () => {
 
         // Format the data safely with type checking
         const formattedWorkouts: UpcomingWorkout[] = (data || [])
-          .filter(workout => workout.workout_id) // Filter out entries without workout data
+          .filter(workout => workout.prepared_workouts) // Filter out entries without workout data
           .map(workout => {
-            // Ensure workout_id is an object before accessing its properties
-            const workoutInfo = workout.workout_id as Record<string, any> || {};
+            // Safely access properties using optional chaining and default values
+            const workoutInfo = workout.prepared_workouts || {};
             
             return {
               id: workout.id,

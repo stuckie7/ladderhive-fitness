@@ -38,10 +38,12 @@ export const useFavoriteExercises = () => {
           muscle_group: ex.prime_mover_muscle || '',
           equipment: ex.primary_equipment || 'Bodyweight',
           difficulty: ex.difficulty || 'Beginner',
-          description: ex.description || '', // Safely handle missing description
+          // Use optional chaining and nullish coalescing for potentially missing properties
+          description: ex.description ?? '', // Safely handle missing description
+          // Handle instructions with proper fallbacks
           instructions: Array.isArray(ex.instructions) ? ex.instructions : 
                        typeof ex.instructions === 'string' ? [ex.instructions] : 
-                       [ex.name || 'No instructions available'], // Safely handle missing instructions
+                       [ex.name || 'No instructions available'], // Fallback if no instructions
           video_url: ex.short_youtube_demo || '',
           image_url: ex.youtube_thumbnail_url || '',
           target_muscle_group: ex.prime_mover_muscle || ''
