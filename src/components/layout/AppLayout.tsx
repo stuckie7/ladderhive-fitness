@@ -87,10 +87,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Exercises', href: '/exercises/enhanced', icon: <Dumbbell size={18} /> },
     { label: 'Workouts', href: '/workouts', icon: <PanelLeft size={18} /> },
     { label: 'Saved Workouts', href: '/saved-workouts', icon: <Bookmark size={18} /> },
-    { label: 'Mindful Movement', href: '/mindful-movement', icon: <Zap size={18} /> }, // Using Zap as a temporary replacement since Moon was removed
+    { label: 'Mindful Movement', href: '/mindful-movement', icon: <Zap size={18} /> },
     { label: 'Progress', href: '/progress', icon: <LineChart size={18} /> },
     { label: 'Schedule', href: '/schedule', icon: <CalendarDays size={18} /> },
     { label: 'WODs', href: '/wods', icon: <BookOpen size={18} /> },
+    { label: 'Demos', href: '/demos', icon: <Zap size={18} /> },
   ];
 
   const NavItem = ({ item }: { item: NavItem }) => {

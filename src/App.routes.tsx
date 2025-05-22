@@ -29,6 +29,7 @@ import MindfulMovementPage from "./pages/MindfulMovementPage";
 import YogaPage from "./pages/YogaPage";
 import YogaRoutineDetailPage from "./pages/YogaRoutineDetailPage";
 import Onboarding from "./pages/Onboarding";
+import DemosPage from "./pages/DemosPage";
 
 // Create a router with all routes
 const router = createBrowserRouter([
@@ -149,6 +150,10 @@ const router = createBrowserRouter([
   {
     path: "/yoga/:id",
     element: <YogaRoutineDetailPage />
+  },
+  {
+    path: "/demos",
+    element: <DemosPage />
   }
 ]);
 
