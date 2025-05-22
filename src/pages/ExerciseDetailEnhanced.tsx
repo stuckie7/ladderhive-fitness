@@ -6,7 +6,6 @@ import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-
 import { Button } from '@/components/ui/button';
 import { Bookmark, BookmarkCheck, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/components/layout/AppLayout';
 
 // Components
@@ -101,9 +100,9 @@ export default function ExerciseDetailEnhanced() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="max-w-4xl mx-auto p-4 space-y-8">
         {/* Header with Back Button and Save Button */}
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex justify-between items-start">
           <Button 
             variant="ghost" 
             size="sm"
@@ -127,75 +126,68 @@ export default function ExerciseDetailEnhanced() {
           </Button>
         </div>
 
-        {/* Main content with tabs */}
-        <div className="space-y-6">
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              {(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url) && (
-                <TabsTrigger value="video">Video</TabsTrigger>
-              )}
-              {(exercise.in_depth_youtube_exp || exercise.video_explanation_url) && (
-                <TabsTrigger value="tutorial">Tutorial</TabsTrigger>
-              )}
-            </TabsList>
-            
-            <TabsContent value="overview" className="space-y-6">
-              {/* Exercise Thumbnail */}
-              {exercise.youtube_thumbnail_url && (
-                <div className="rounded-lg overflow-hidden">
-                  <img 
-                    src={exercise.youtube_thumbnail_url} 
-                    alt={exercise.name}
-                    className="w-full h-auto object-cover"
+        {/* Main content in a single scrollable view */}
+        <div className="space-y-8">
+          {/* Exercise Thumbnail - Only show if there's no demo video */}
+          {!exercise.short_youtube_demo && !exercise.video_demonstration_url && !exercise.video_url && exercise.youtube_thumbnail_url && (
+            <div className="rounded-lg overflow-hidden shadow-lg">
+              <img 
+                src={exercise.youtube_thumbnail_url} 
+                alt={exercise.name}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          )}
+
+          {/* Demonstration Video Section */}
+          {(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url) && (
+            <section className="space-y-4">
+              <h2 className="text-xl font-semibold">Exercise Demonstration</h2>
+              <div className="bg-card rounded-lg p-6 shadow">
+                <div className="aspect-video rounded-md overflow-hidden bg-black">
+                  <iframe
+                    src={getEmbedUrl(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url || '')}
+                    title="Exercise Demonstration"
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
                   />
                 </div>
-              )}
-              
-              {/* Main Details */}
+              </div>
+            </section>
+          )}
+          
+          {/* Main Exercise Details */}
+          <section className="space-y-4">
+            <h2 className="text-xl font-semibold">Exercise Details</h2>
+            <div className="bg-card rounded-lg p-6 shadow">
               <ExerciseMainDetails exercise={exercise} />
-            </TabsContent>
+            </div>
+          </section>
 
-            {(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url) && (
-              <TabsContent value="video">
-                <div className="bg-card rounded-lg p-6">
-                  <h3 className="text-lg font-medium mb-4">Exercise Demonstration</h3>
-                  <div className="aspect-video rounded-md overflow-hidden bg-black">
-                    <iframe
-                      src={getEmbedUrl(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url || '')}
-                      title="Exercise Demonstration"
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                    />
-                  </div>
+          {/* In-Depth Tutorial Section */}
+          {(exercise.in_depth_youtube_exp || exercise.video_explanation_url) && (
+            <section className="space-y-4">
+              <h2 className="text-xl font-semibold">In-Depth Tutorial</h2>
+              <div className="bg-card rounded-lg p-6 shadow">
+                <div className="aspect-video rounded-md overflow-hidden bg-black">
+                  <iframe
+                    src={getEmbedUrl(exercise.in_depth_youtube_exp || exercise.video_explanation_url || '')}
+                    title="In-Depth Tutorial"
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
                 </div>
-              </TabsContent>
-            )}
-            
-            {(exercise.in_depth_youtube_exp || exercise.video_explanation_url) && (
-              <TabsContent value="tutorial">
-                <div className="bg-card rounded-lg p-6">
-                  <h3 className="text-lg font-medium mb-4">In-Depth Tutorial</h3>
-                  <div className="aspect-video rounded-md overflow-hidden bg-black">
-                    <iframe
-                      src={getEmbedUrl(exercise.in_depth_youtube_exp || exercise.video_explanation_url || '')}
-                      title="In-Depth Tutorial"
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-            )}
-          </Tabs>
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </AppLayout>
