@@ -43,7 +43,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { DotsHorizontalIcon } from "@radix-ui/react-icons"
+import { MoreHorizontal } from "lucide-react"
 import { Link } from 'react-router-dom';
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
@@ -173,12 +173,12 @@ const ExerciseLibraryEnhanced = () => {
     short_youtube_demo: ''
   };
 
-// Add this handler function to bridge the type mismatch
-const handleFormSubmit = () => {
-  if (formData) {
-    handleAddExercise(formData);
-  }
-};
+  // Create a type-compatible handler for the form submit
+  const handleFormSubmit = () => {
+    if (formData) {
+      handleAddExercise(formData);
+    }
+  };
 
   return (
     <div className="container mx-auto py-10">
@@ -269,7 +269,7 @@ const handleFormSubmit = () => {
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
-                            <DotsHorizontalIcon className="h-4 w-4" />
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
