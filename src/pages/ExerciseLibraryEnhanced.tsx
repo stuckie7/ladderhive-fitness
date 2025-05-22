@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -488,7 +487,7 @@ const ExerciseLibraryEnhanced = () => {
       <ExerciseFormDialog
         open={showAddExerciseForm}
         onOpenChange={setShowAddExerciseForm}
-        onSubmit={handleFormSubmit}
+        onSave={(formData) => handleAddExercise(formData)}
         initialValues={formState}
         filterOptions={mockFilterOptions}
       />

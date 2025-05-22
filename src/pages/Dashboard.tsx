@@ -19,9 +19,9 @@ import { Dumbbell } from 'lucide-react';
 import { useDailyProgress } from '@/hooks/use-daily-progress';
 import { useActivityProgress } from '@/hooks/use-activity-progress';
 
-// Import missing components
-import { UpcomingWorkouts } from '@/components/dashboard/UpcomingWorkouts';
-import { WorkoutHistory } from '@/components/dashboard/WorkoutHistory';
+// Import components with default exports
+import UpcomingWorkouts from '@/components/dashboard/UpcomingWorkouts';
+import WorkoutHistory from '@/components/dashboard/WorkoutHistory';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -55,8 +55,7 @@ const Dashboard = () => {
     return (
       <AppLayout>
         <DashboardError
-          message={error.message || "Something went wrong. Please try again later."}
-          onRetry={() => window.location.reload()}
+          errorMessage={error.message || "Something went wrong. Please try again later."}
         />
       </AppLayout>
     );
@@ -74,47 +73,70 @@ const Dashboard = () => {
     navigate('/workouts');
   };
 
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto p-4 space-y-6">
         <DashboardHeader 
-          name={profile?.first_name || 'User'} 
           isLoading={profileLoading} 
+          onRefresh={handleRefresh}
+          onStartWorkout={handleStartWorkout}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Main Content - 8 columns on large screens */}
           <div className="lg:col-span-8 space-y-6">
             <DashboardMetricsSection 
-              weeklyActivityData={weeklyData || []}
+              weeklyChartData={weeklyData || []}
+              recentWorkouts={recentWorkouts || []}
               isLoading={weeklyDataLoading} 
+              onSelectDate={(date) => console.log("Selected date", date)}
+              onSelectWorkout={(id) => navigate(`/workouts/${id}`)}
             />
 
             <FavoritesAndAchievementsSection 
               favoriteExercises={exercises}
+              achievements={[]}
               isLoading={exercisesLoading}
-              onViewExercise={(id: string) => navigate(`/exercises/${id}`)}
+              onAddFavorite={() => navigate('/exercises')}
+              onRemoveFavorite={async (id) => {
+                console.log("Remove favorite", id);
+                // Implementation would go here
+              }}
             />
           </div>
 
           {/* Sidebar - 4 columns on large screens */}
           <div className="lg:col-span-4 space-y-6">
             <QuickActionsSection
-              onStartWorkout={handleStartWorkout}
-              onViewExercises={handleViewExercises}
-              onViewWorkouts={handleViewWorkouts}
-            />
-
-            <UpcomingWorkouts 
-              workouts={workouts} 
+              upcomingWorkouts={workouts}
               isLoading={workoutsLoading}
-              onViewWorkout={(id: string) => navigate(`/workouts/${id}`)}
+              onGoToExerciseLibrary={handleViewExercises}
+              onScheduleWorkout={handleStartWorkout}
+              onRefreshWorkouts={() => console.log("Refresh workouts")}
+            />
+            
+            <UpcomingWorkouts 
+              workouts={workouts.map(w => ({
+                id: w.id,
+                title: w.title,
+                date: w.scheduled_date,
+                duration: w.duration_minutes,
+                difficulty: w.difficulty
+              }))}
+              isLoading={workoutsLoading}
+              onViewWorkout={(id) => navigate(`/workouts/${id}`)}
+              onScheduleWorkout={handleStartWorkout}
+              onRefresh={() => console.log("Refresh upcoming workouts")}
             />
             
             <WorkoutHistory 
               workouts={recentWorkouts?.slice(0, 3) || []} 
               isLoading={recentWorkoutsLoading}
-              onViewWorkout={(id: string) => navigate(`/workouts/${id}`)}
+              onSelectWorkout={(id, type) => navigate(`/workouts/${id}`)}
             />
           </div>
         </div>
