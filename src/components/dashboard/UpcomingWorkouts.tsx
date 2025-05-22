@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, ChevronRight, Dumbbell, PlusCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Link } from "react-router-dom";
 import { format, parseISO, isToday, isTomorrow, addDays, isBefore, differenceInDays } from 'date-fns';
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
 
 interface UpcomingWorkout {
   id: string;
@@ -13,15 +15,16 @@ interface UpcomingWorkout {
   date: string;
   duration: number;
   difficulty: string;
-  type?: 'wod' | 'workout'; // Add type to distinguish between WODs and workouts
+  type: 'wod' | 'workout' | 'mindful' | 'yoga'; // Added more workout types
+  thumbnail?: string;
 }
 
 interface UpcomingWorkoutsProps {
   workouts: UpcomingWorkout[];
   isLoading: boolean;
   onScheduleWorkout?: () => void;
-  onRefresh?: () => void; // Add refresh function
-  onViewWorkout: (id: string) => void; // Make onViewWorkout a required prop
+  onRefresh?: () => void;
+  onViewWorkout: (id: string) => void;
 }
 
 const UpcomingWorkouts = ({ 
@@ -32,6 +35,25 @@ const UpcomingWorkouts = ({
   onViewWorkout
 }: UpcomingWorkoutsProps) => {
   const { toast } = useToast();
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  
+  // Auto-refresh recommendations every 5 minutes
+  useEffect(() => {
+    let refreshInterval: NodeJS.Timeout;
+    
+    if (autoRefreshEnabled && onRefresh) {
+      refreshInterval = setInterval(() => {
+        console.log("Auto-refreshing workout recommendations");
+        onRefresh();
+      }, 5 * 60 * 1000); // 5 minutes
+    }
+    
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [autoRefreshEnabled, onRefresh]);
   
   const getFormattedDate = (dateStr: string) => {
     const date = parseISO(dateStr);
@@ -62,8 +84,8 @@ const UpcomingWorkouts = ({
       onScheduleWorkout();
     } else {
       toast({
-        title: "Coming soon!",
-        description: "Quick workout scheduling will be available soon.",
+        title: "Quick Scheduling",
+        description: "Scheduling a workout for your personal routine",
       });
     }
   };
@@ -72,7 +94,7 @@ const UpcomingWorkouts = ({
     if (onRefresh) {
       onRefresh();
       toast({
-        description: "Refreshed workout suggestions",
+        description: "Refreshed workout recommendations",
       });
     }
   };
@@ -90,12 +112,16 @@ const UpcomingWorkouts = ({
     }
   };
 
-  const getTypeColor = (type?: string) => {
-    switch(type?.toLowerCase()) {
+  const getTypeColor = (type: string) => {
+    switch(type.toLowerCase()) {
       case 'wod':
         return 'bg-purple-900/30 text-purple-400';
       case 'workout':
         return 'bg-blue-900/30 text-blue-400';
+      case 'mindful':
+        return 'bg-teal-900/30 text-teal-400';
+      case 'yoga':
+        return 'bg-green-900/30 text-green-400';
       default:
         return 'bg-gray-900/30 text-gray-400';
     }
@@ -103,10 +129,15 @@ const UpcomingWorkouts = ({
 
   // Function to determine the correct link based on workout type
   const getWorkoutLink = (workout: UpcomingWorkout) => {
-    if (workout.type === 'wod') {
-      return `/wods/${workout.id}`;
-    } else {
-      return `/workouts/${workout.id}`;
+    switch (workout.type) {
+      case 'wod':
+        return `/wods/${workout.id}`;
+      case 'mindful':
+        return `/mindful-movement/${workout.id}`;
+      case 'yoga':
+        return `/yoga/${workout.id}`;
+      default:
+        return `/workouts/${workout.id}`;
     }
   };
 
@@ -160,23 +191,34 @@ const UpcomingWorkouts = ({
                 onClick={() => onViewWorkout(workout.id)}
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium group-hover:text-fitness-secondary transition-colors">
-                      {workout.title}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-muted-foreground flex items-center">
-                        <Clock className="h-3.5 w-3.5 mr-1" />
-                        {workout.duration} minutes
-                      </p>
-                      <Badge className={`text-xs px-2 py-0.5 ${getDifficultyColor(workout.difficulty)}`}>
-                        {workout.difficulty}
-                      </Badge>
-                      {workout.type && (
-                        <Badge className={`text-xs px-2 py-0.5 ${getTypeColor(workout.type)}`}>
-                          {workout.type === 'wod' ? 'WOD' : 'Workout'}
+                  <div className="flex items-start gap-3">
+                    {workout.thumbnail && (
+                      <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                        <img 
+                          src={workout.thumbnail} 
+                          alt={workout.title} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="font-medium group-hover:text-fitness-secondary transition-colors">
+                        {workout.title}
+                      </h4>
+                      <div className="flex flex-wrap gap-2 mt-1 items-center text-sm text-muted-foreground">
+                        <p className="text-xs flex items-center">
+                          <Clock className="h-3.5 w-3.5 mr-1" />
+                          {workout.duration} minutes
+                        </p>
+                        <Badge className={`text-xs px-2 py-0.5 ${getDifficultyColor(workout.difficulty)}`}>
+                          {workout.difficulty}
                         </Badge>
-                      )}
+                        <Badge className={`text-xs px-2 py-0.5 ${getTypeColor(workout.type)}`}>
+                          {workout.type === 'wod' ? 'WOD' : 
+                           workout.type === 'mindful' ? 'Mindful' : 
+                           workout.type === 'yoga' ? 'Yoga' : 'Workout'}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                   <div className="text-xs px-3 py-1.5 rounded-md bg-fitness-secondary/10 text-fitness-secondary">

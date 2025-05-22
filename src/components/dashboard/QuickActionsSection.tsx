@@ -3,27 +3,43 @@ import React from 'react';
 import QuickActionsPanel from './QuickActionsPanel';
 import UpcomingWorkouts from "@/components/dashboard/UpcomingWorkouts";
 import { useNavigate } from 'react-router-dom';
+import { useRecommendedWorkouts } from '@/hooks/workouts/use-recommended-workouts';
 
 interface QuickActionsSectionProps {
-  upcomingWorkouts: any[];
-  isLoading: boolean;
   onGoToExerciseLibrary: () => void;
   onScheduleWorkout: () => void;
-  onRefreshWorkouts: () => void;
 }
 
 const QuickActionsSection: React.FC<QuickActionsSectionProps> = ({
-  upcomingWorkouts,
-  isLoading,
   onGoToExerciseLibrary,
   onScheduleWorkout,
-  onRefreshWorkouts
 }) => {
   const navigate = useNavigate();
+  const { recommendedWorkouts, isLoading, refreshRecommendations } = useRecommendedWorkouts();
   
-  // Add a function to handle viewing a workout
+  // Handle viewing a workout
   const handleViewWorkout = (id: string) => {
-    navigate(`/workouts/${id}`);
+    // Find the workout to determine its type
+    const workout = recommendedWorkouts.find(w => w.id === id);
+    
+    if (workout) {
+      switch (workout.type) {
+        case 'wod':
+          navigate(`/wods/${id}`);
+          break;
+        case 'yoga':
+          navigate(`/yoga/${id}`);
+          break;
+        case 'mindful':
+          navigate(`/mindful-movement/${id}`);
+          break;
+        default:
+          navigate(`/workouts/${id}`);
+      }
+    } else {
+      // Default to workouts route if type can't be determined
+      navigate(`/workouts/${id}`);
+    }
   };
   
   return (
@@ -31,10 +47,10 @@ const QuickActionsSection: React.FC<QuickActionsSectionProps> = ({
       <QuickActionsPanel onGoToExerciseLibrary={onGoToExerciseLibrary} />
       <div className="col-span-2">
         <UpcomingWorkouts 
-          workouts={upcomingWorkouts} 
+          workouts={recommendedWorkouts} 
           isLoading={isLoading}
           onScheduleWorkout={onScheduleWorkout}
-          onRefresh={onRefreshWorkouts}
+          onRefresh={refreshRecommendations}
           onViewWorkout={handleViewWorkout}
         />
       </div>

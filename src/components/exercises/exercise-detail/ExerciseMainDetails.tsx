@@ -1,130 +1,113 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Exercise } from "@/types/exercise";
+
+import { ExerciseFull } from "@/types/exercise";
 import ExerciseSpecItem from "./ExerciseSpecItem";
-import ExerciseVideoHandler from "@/components/exercises/ExerciseVideoHandler";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Dumbbell, Target, Activity, Info } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ExerciseMainDetailsProps {
-  exercise: Exercise;
+  exercise: ExerciseFull;
 }
 
-export const getEmbeddedYoutubeUrl = (url: string): string => {
-  if (!url) return '';
-  
-  // Remove quotes if they exist in the URL
-  let cleanUrl = url.replace(/^['"]|['"]$/g, '');
-  
-  // Handle youtube.com/watch?v= format
-  if (cleanUrl.includes('watch?v=')) {
-    return cleanUrl.replace(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/, 'https://www.youtube.com/embed/$1');
-  }
-  
-  // Handle youtu.be/ format
-  if (cleanUrl.includes('youtu.be/')) {
-    return cleanUrl.replace(/(?:https?:\/\/)?(?:www\.)?youtu\.be\/(.+)/, 'https://www.youtube.com/embed/$1');
-  }
-  
-  // If it's already in the embed format or can't be parsed, return as is
-  return cleanUrl;
-};
-
 export default function ExerciseMainDetails({ exercise }: ExerciseMainDetailsProps) {
-  // Ensure we have at least one video URL before showing video section
-  const videoUrls = [
-    exercise.in_depth_youtube_exp || '',
-    exercise.short_youtube_demo || '',
-    exercise.video_explanation_url || '',
-    exercise.video_demonstration_url || '',
-    exercise.video_url || ''
-  ].filter(url => url);
+  // Parse instructions if they exist as a string
+  const getInstructions = (): string[] => {
+    if (!exercise.instructions) return [];
+    
+    if (typeof exercise.instructions === 'string') {
+      // Try to parse JSON string
+      try {
+        const parsed = JSON.parse(exercise.instructions);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+        return exercise.instructions.split('\n').filter(line => line.trim() !== '');
+      } catch (e) {
+        // If not valid JSON, split by newlines
+        return exercise.instructions.split('\n').filter(line => line.trim() !== '');
+      }
+    }
+    
+    // If already an array
+    if (Array.isArray(exercise.instructions)) {
+      return exercise.instructions;
+    }
+    
+    return [];
+  };
   
-  const hasVideo = videoUrls.length > 0;
+  const instructions = getInstructions();
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Exercise Details</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-8">
-        {/* Video Content */}
-        {hasVideo && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium mb-2">Video Demonstration</h3>
-            <ExerciseVideoHandler
-              exercise={{
-                ...exercise,
-                in_depth_youtube_exp: exercise.in_depth_youtube_exp || '',
-                short_youtube_demo: exercise.short_youtube_demo || '',
-                video_explanation_url: exercise.video_explanation_url || '',
-                video_demonstration_url: exercise.video_demonstration_url || '',
-                video_url: exercise.video_url || ''
-              }}
-              title="Exercise Demonstration"
-              className="aspect-video bg-muted rounded-md overflow-hidden"
-            />
-          </div>
-        )}
-        
-        {/* Exercise Specifications */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium mb-2">Exercise Specifications</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ExerciseSpecItem
-              label="Equipment"
-              value={exercise.equipment || 'Bodyweight'}
-            />
-            <ExerciseSpecItem
-              label="Difficulty"
-              value={exercise.difficulty || 'Beginner'}
-            />
-            <ExerciseSpecItem
-              label="Target Muscle"
-              value={exercise.target || 'Unknown'}
-            />
-            <ExerciseSpecItem
-              label="Video Available"
-              value={hasVideo ? 'Yes' : 'No'}
-            />
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* Exercise Specifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Dumbbell className="h-5 w-5 text-primary" />
+            Exercise Specifications
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ExerciseSpecItem
+            label="Equipment"
+            value={exercise.primary_equipment || 'Bodyweight'}
+          />
+          <ExerciseSpecItem
+            label="Difficulty"
+            value={exercise.difficulty || 'Beginner'}
+          />
+          <ExerciseSpecItem
+            label="Primary Muscle"
+            value={exercise.prime_mover_muscle || 'N/A'}
+          />
+          <ExerciseSpecItem
+            label="Secondary Muscles"
+            value={exercise.secondary_muscle || 'N/A'}
+          />
+          <ExerciseSpecItem
+            label="Body Region"
+            value={exercise.body_region || 'N/A'}
+          />
+          <ExerciseSpecItem
+            label="Movement Type"
+            value={exercise.mechanics || 'N/A'}
+          />
+        </CardContent>
+      </Card>
 
-        {/* Exercise Mechanics */}
-        <div>
-          <h3 className="text-lg font-medium mb-2">Exercise Mechanics</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ExerciseSpecItem
-              label="Primary Equipment"
-              value={exercise.primary_equipment || 'N/A'}
-            />
-            <ExerciseSpecItem
-              label="Secondary Equipment"
-              value={exercise.secondary_equipment || 'N/A'}
-            />
-            <ExerciseSpecItem
-              label="Mechanics"
-              value={exercise.mechanics || 'N/A'}
-            />
-            <ExerciseSpecItem
-              label="Force Type"
-              value={exercise.force_type || 'N/A'}
-            />
-            <ExerciseSpecItem
-              label="Posture"
-              value={exercise.posture || 'N/A'}
-            />
-          </div>
-        </div>
-        {/* Description */}
-        <div>
-          <h3 className="text-lg font-medium mb-2">Description</h3>
-          <div className="space-y-4">
-            <ExerciseSpecItem
-              label="Description"
-              value={exercise.description || 'No description available'}
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Exercise Description */}
+      {exercise.description && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Description
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground whitespace-pre-line">{exercise.description}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Exercise Instructions */}
+      {instructions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Instructions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+              {instructions.map((instruction, index) => (
+                <li key={index} className="pl-1">{instruction}</li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

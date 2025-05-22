@@ -29,8 +29,6 @@ import MindfulMovementPage from "./pages/MindfulMovementPage";
 import YogaPage from "./pages/YogaPage";
 import YogaRoutineDetailPage from "./pages/YogaRoutineDetailPage";
 import Onboarding from "./pages/Onboarding";
-import AltWorkouts from "./pages/AltWorkouts";
-import AltWorkoutDetail from "./pages/AltWorkoutDetail";
 
 // Create a router with all routes
 const router = createBrowserRouter([
@@ -151,15 +149,6 @@ const router = createBrowserRouter([
   {
     path: "/yoga/:id",
     element: <YogaRoutineDetailPage />
-  },
-  // ALT Workouts routes
-  {
-    path: "/alt-workouts",
-    element: <AltWorkouts />
-  },
-  {
-    path: "/alt-workout/:id",
-    element: <AltWorkoutDetail />
   }
 ]);
 

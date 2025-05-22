@@ -4,9 +4,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ExerciseFull } from '@/types/exercise';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { Button } from '@/components/ui/button';
-import { Bookmark, BookmarkCheck } from 'lucide-react';
+import { Bookmark, BookmarkCheck, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AppLayout from '@/components/layout/AppLayout';
 
 // Components
 import ExerciseDetailSkeleton from '@/components/exercises/exercise-detail/ExerciseDetailSkeleton';
@@ -31,20 +32,7 @@ export default function ExerciseDetailEnhanced() {
           ? parseInt(id, 10) 
           : id;
         const exerciseData = await getExerciseFullById(exerciseId);
-        
-        // Update exercise data to use video_explanation_url and remove thumbnail
-        if (exerciseData) {
-          // Remove thumbnail URL
-          exerciseData.youtube_thumbnail_url = undefined;
-          
-          // Use video_explanation_url as the main video URL if available
-          if (exerciseData.video_explanation_url) {
-            exerciseData.video_url = exerciseData.video_explanation_url;
-          } else if (exerciseData.short_youtube_demo) {
-            exerciseData.video_url = exerciseData.short_youtube_demo;
-          }
-          setExercise(exerciseData);
-        }
+        setExercise(exerciseData);
       } catch (error) {
         console.error('Error fetching exercise:', error);
       } finally {
@@ -67,89 +55,114 @@ export default function ExerciseDetailEnhanced() {
     navigate('/exercises');
   };
 
+  const getEmbedUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // Convert YouTube URLs to embed URLs
+    if (url.includes('youtube.com/watch')) {
+      return url.replace('watch?v=', 'embed/');
+    } 
+    // Handle YouTube shortened URLs
+    else if (url.includes('youtu.be')) {
+      return `https://www.youtube.com/embed/${url.split('/').pop()}`;
+    }
+    return url; // Return as is if not matching any pattern
+  };
+
   if (loading) return <ExerciseDetailSkeleton />;
   if (!exercise) return <ExerciseNotFound onBackClick={handleBackClick} />;
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
-      {/* Header with Save Button */}
-      <div className="flex justify-between items-start mb-4">
-        <h1 className="text-2xl font-bold">{exercise.name}</h1>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={handleBackClick}
-          className="text-muted-foreground"
-        >
-          Dashboard
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={handleToggleSave}
-          className="text-muted-foreground"
-        >
-          {isSaved ? (
-            <BookmarkCheck className="h-5 w-5 text-primary" />
-          ) : (
-            <Bookmark className="h-5 w-5" />
-          )}
-        </Button>
-      </div>
-
-      {/* Main content with tabs */}
-      <div className="space-y-6">
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            {exercise.short_youtube_demo && (
-              <TabsTrigger value="video">Video</TabsTrigger>
+    <AppLayout>
+      <div className="max-w-4xl mx-auto p-4">
+        {/* Header with Back Button and Save Button */}
+        <div className="flex justify-between items-start mb-6">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleBackClick}
+            className="flex items-center"
+          >
+            <ArrowLeft className="h-5 w-5 mr-1" />
+            <span>Back</span>
+          </Button>
+          <h1 className="text-2xl font-bold text-center flex-1">{exercise.name}</h1>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleToggleSave}
+          >
+            {isSaved ? (
+              <BookmarkCheck className="h-5 w-5 text-primary" />
+            ) : (
+              <Bookmark className="h-5 w-5" />
             )}
-          </TabsList>
-          
-          <TabsContent value="overview" className="space-y-4">
-            {/* In-depth Video */}
-            {exercise.in_depth_youtube_exp && (
-              <div className="bg-card rounded-lg p-6">
-                <h3 className="text-lg font-medium mb-4">In-Depth Video Explanation</h3>
-                <div className="aspect-video rounded-md overflow-hidden">
-                  <iframe 
-                    src={`https://www.youtube.com/embed/${extractYoutubeId(exercise.in_depth_youtube_exp)}`} 
-                    title="In-Depth Explanation"
-                    className="w-full h-full"
-                    allowFullScreen
+          </Button>
+        </div>
+
+        {/* Main content with tabs */}
+        <div className="space-y-6">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              {exercise.short_youtube_demo && (
+                <TabsTrigger value="video">Video</TabsTrigger>
+              )}
+              {exercise.in_depth_youtube_exp && (
+                <TabsTrigger value="tutorial">Tutorial</TabsTrigger>
+              )}
+            </TabsList>
+            
+            <TabsContent value="overview" className="space-y-6">
+              {/* Exercise Thumbnail */}
+              {exercise.youtube_thumbnail_url && (
+                <div className="rounded-lg overflow-hidden">
+                  <img 
+                    src={exercise.youtube_thumbnail_url} 
+                    alt={exercise.name}
+                    className="w-full h-auto object-cover"
                   />
                 </div>
-              </div>
+              )}
+              
+              {/* Main Details */}
+              <ExerciseMainDetails exercise={exercise} />
+            </TabsContent>
+
+            {exercise.short_youtube_demo && (
+              <TabsContent value="video">
+                <div className="bg-card rounded-lg p-6">
+                  <h3 className="text-lg font-medium mb-4">Exercise Demonstration</h3>
+                  <div className="aspect-video rounded-md overflow-hidden">
+                    <iframe 
+                      src={getEmbedUrl(exercise.short_youtube_demo)}
+                      title="Exercise Demonstration"
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              </TabsContent>
             )}
             
-            {/* Main Details */}
-            <ExerciseMainDetails exercise={exercise} />
-          </TabsContent>
-
-          {exercise.short_youtube_demo && (
-            <TabsContent value="video">
-              <div className="bg-card rounded-lg p-6">
-                <div className="aspect-video rounded-md overflow-hidden">
-                  <iframe 
-                    src={`https://www.youtube.com/embed/${extractYoutubeId(exercise.short_youtube_demo)}`} 
-                    title="Quick Demonstration"
-                    className="w-full h-full"
-                    allowFullScreen
-                  />
+            {exercise.in_depth_youtube_exp && (
+              <TabsContent value="tutorial">
+                <div className="bg-card rounded-lg p-6">
+                  <h3 className="text-lg font-medium mb-4">In-Depth Tutorial</h3>
+                  <div className="aspect-video rounded-md overflow-hidden">
+                    <iframe 
+                      src={getEmbedUrl(exercise.in_depth_youtube_exp)}
+                      title="In-Depth Tutorial"
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  </div>
                 </div>
-              </div>
-            </TabsContent>
-          )}
-        </Tabs>
+              </TabsContent>
+            )}
+          </Tabs>
+        </div>
       </div>
-    </div>
+    </AppLayout>
   );
-}
-
-// Helper to extract YouTube ID from URL
-function extractYoutubeId(url: string) {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
 }
