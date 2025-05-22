@@ -90,6 +90,7 @@ export const useAltWorkoutDetail = (id?: string) => {
           
           // Map exercise details to workout exercises
           formattedExercises = exercisesData.map(ex => {
+            // Find the matching exercise detail or use a default with just the name
             const exerciseDetail = exerciseDetails?.find(detail => 
               detail.id === ex.exercise_id
             ) || { name: 'Unknown Exercise' };
@@ -106,8 +107,9 @@ export const useAltWorkoutDetail = (id?: string) => {
               exercise: {
                 id: toStringId(ex.exercise_id),
                 name: exerciseDetail.name || 'Unknown Exercise',
-                video_url: exerciseDetail.short_youtube_demo || undefined,
-                thumbnail_url: exerciseDetail.youtube_thumbnail_url || undefined
+                // Use optional chaining to safely access properties that might not exist
+                video_url: exerciseDetail?.short_youtube_demo,
+                thumbnail_url: exerciseDetail?.youtube_thumbnail_url
               }
             };
           });
