@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useExerciseLibraryEnhanced } from "@/hooks/exercise-library/hooks/use-exercise-library-enhanced";
@@ -67,7 +68,7 @@ const ExerciseLibraryEnhanced = () => {
     handleFormChange(mockEvent);
   };
 
-  // Handle search changes with proper event typing - this was the problematic part
+  // Handle search changes with proper event typing
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleSearchChange(e);
   };
@@ -91,11 +92,11 @@ const ExerciseLibraryEnhanced = () => {
     );
   }
 
-  // Modify the completeFormState inside the component:
+  // Modify the completeFormState inside the component to ensure all types are correct
   const completeFormState = {
     // Existing properties
     ...formState,
-    // Required properties that might be missing
+    // Required properties with proper types
     name: formState.name || '',
     prime_mover_muscle: formState.target_muscle_group || formState.prime_mover_muscle || '',
     secondary_muscles: Array.isArray(formState.secondary_muscles) ? formState.secondary_muscles : [],
@@ -104,12 +105,13 @@ const ExerciseLibraryEnhanced = () => {
     difficulty: formState.difficulty || 'Beginner',
     exercise_type: formState.exercise_type || 'Strength',
     intensity_level: formState.intensity_level || 'Medium',
-    rest_time: formState.rest_time || 60,
+    // Ensure rest_time is a number
+    rest_time: typeof formState.rest_time === 'string' ? parseInt(formState.rest_time, 10) || 60 : formState.rest_time || 60,
     recommended_sets: formState.recommended_sets || 3,
     recommended_reps: formState.recommended_reps || 10,
     safety_notes: formState.safety_notes || '',
     short_youtube_demo: formState.video_demonstration_url || formState.short_youtube_demo || '',
-    in_depth_youtube_exp: formState.video_explanation_url || formState.in_depth_youtube_exp || ''
+    in_depth_youtube_exp: formState.video_explanation_url || formState.in_depth_youtube_exp || '',
   };
 
   return (

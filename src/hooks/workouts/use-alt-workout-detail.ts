@@ -78,29 +78,44 @@ export const useAltWorkoutDetail = (id?: string) => {
           // Handle potential missing or empty exercise data
           const exerciseData = ex.exercise || {};
           
-          // Create safe default values for all exercise properties
-          const exerciseId = typeof exerciseData === 'object' && exerciseData !== null 
-            ? exerciseData.id ?? ex.exercise_id 
-            : ex.exercise_id;
+          // Safely type check and access properties
+          if (typeof exerciseData === 'object' && exerciseData !== null) {
+            const exerciseId = 'id' in exerciseData ? exerciseData.id : ex.exercise_id;
+            const stringId = typeof exerciseId === 'number' ? toStringId(exerciseId) : String(exerciseId);
             
-          const stringId = typeof exerciseId === 'number' ? toStringId(exerciseId) : String(exerciseId);
-
-          return {
-            id: ex.id,
-            workout_id: ex.workout_id,
-            exercise_id: toStringId(ex.exercise_id),
-            sets: ex.sets,
-            reps: ex.reps,
-            rest_seconds: ex.rest_seconds,
-            order_index: ex.order_index,
-            notes: ex.notes || '',
-            exercise: {
-              id: stringId,
-              name: typeof exerciseData === 'object' && exerciseData !== null ? exerciseData.name || 'Unknown Exercise' : 'Unknown Exercise',
-              video_url: typeof exerciseData === 'object' && exerciseData !== null ? exerciseData.short_youtube_demo || undefined : undefined,
-              thumbnail_url: typeof exerciseData === 'object' && exerciseData !== null ? exerciseData.youtube_thumbnail_url || undefined : undefined
-            }
-          };
+            return {
+              id: ex.id,
+              workout_id: ex.workout_id,
+              exercise_id: toStringId(ex.exercise_id),
+              sets: ex.sets,
+              reps: ex.reps,
+              rest_seconds: ex.rest_seconds,
+              order_index: ex.order_index,
+              notes: ex.notes || '',
+              exercise: {
+                id: stringId,
+                name: 'name' in exerciseData ? exerciseData.name || 'Unknown Exercise' : 'Unknown Exercise',
+                video_url: 'short_youtube_demo' in exerciseData ? exerciseData.short_youtube_demo || undefined : undefined,
+                thumbnail_url: 'youtube_thumbnail_url' in exerciseData ? exerciseData.youtube_thumbnail_url || undefined : undefined
+              }
+            };
+          } else {
+            // Fallback for when exercise data is not an object
+            return {
+              id: ex.id,
+              workout_id: ex.workout_id,
+              exercise_id: toStringId(ex.exercise_id),
+              sets: ex.sets,
+              reps: ex.reps,
+              rest_seconds: ex.rest_seconds,
+              order_index: ex.order_index,
+              notes: ex.notes || '',
+              exercise: {
+                id: String(ex.exercise_id),
+                name: 'Unknown Exercise'
+              }
+            };
+          }
         });
         
         setWorkout({

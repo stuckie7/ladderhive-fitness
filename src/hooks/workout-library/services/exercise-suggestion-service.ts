@@ -53,25 +53,30 @@ export const getSuggestedExercisesForWorkout = async (
     }
 
     // Convert exercise database records to Exercise type
-    const result: Exercise[] = exercises.map(ex => ({
-      id: toStringId(ex.id),
-      name: ex.name || 'Unknown Exercise',
-      // Safely handle properties that might not exist in the database
-      description: ex.description || '', 
-      muscle_group: ex.prime_mover_muscle || '',
-      equipment: ex.primary_equipment || 'Bodyweight',
-      difficulty: ex.difficulty || 'Beginner',
-      // Handle instructions safely - ensure it's always an array
-      instructions: Array.isArray(ex.instructions) 
-        ? ex.instructions 
-        : typeof ex.instructions === 'string' && ex.instructions 
-          ? [ex.instructions] 
-          : [ex.name || 'No instructions available'],
-      video_url: ex.short_youtube_demo || '',
-      image_url: ex.youtube_thumbnail_url || '',
-      video_demonstration_url: ex.short_youtube_demo || '',
-      target_muscle_group: ex.prime_mover_muscle || '',
-    }));
+    const result: Exercise[] = exercises.map(ex => {
+      // Create a base exercise object with required properties
+      const exercise: Exercise = {
+        id: toStringId(ex.id),
+        name: ex.name || 'Unknown Exercise',
+        muscle_group: ex.prime_mover_muscle || '',
+        equipment: ex.primary_equipment || 'Bodyweight',
+        difficulty: ex.difficulty || 'Beginner',
+        // Handle potentially missing properties
+        description: '', // Default empty string
+        // Handle instructions with a safe approach
+        instructions: Array.isArray(ex.instructions) 
+          ? ex.instructions 
+          : typeof ex.instructions === 'string' && ex.instructions 
+            ? [ex.instructions] 
+            : [ex.name || 'No instructions available'],
+        video_url: ex.short_youtube_demo || '',
+        image_url: ex.youtube_thumbnail_url || '',
+        video_demonstration_url: ex.short_youtube_demo || '',
+        target_muscle_group: ex.prime_mover_muscle || '',
+      };
+
+      return exercise;
+    });
 
     return result;
   } catch (error) {

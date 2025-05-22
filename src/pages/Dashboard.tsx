@@ -1,170 +1,110 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardError from '@/components/dashboard/DashboardError';
-import QuickActionsSection from '@/components/dashboard/QuickActionsSection';
-import DashboardMetricsSection from '@/components/dashboard/DashboardMetricsSection';
-import FavoritesAndAchievementsSection from '@/components/dashboard/FavoritesAndAchievementsSection';
-import UpcomingWorkouts from '@/components/dashboard/UpcomingWorkouts';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import DashboardMetricsSection from '@/components/dashboard/DashboardMetricsSection';
+import QuickActionsSection from '@/components/dashboard/QuickActionsSection';
+import FavoritesAndAchievementsSection from '@/components/dashboard/FavoritesAndAchievementsSection';
+import WorkoutHistory from '@/components/dashboard/WorkoutHistory';
 import { useProfile } from '@/hooks/use-profile';
 import { useWorkoutStats } from '@/hooks/use-workout-stats';
 import { useRecentWorkouts } from '@/hooks/use-recent-workouts';
 import { useFavoriteExercises } from '@/hooks/use-favorite-exercises';
 import { useUpcomingWorkouts } from '@/hooks/use-upcoming-workouts';
+import DashboardError from '@/components/dashboard/DashboardError';
 
 const Dashboard = () => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isError, setIsError] = useState(false);
-  
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user } = useAuth();
   
-  // Get user profile data
-  const { profile: profileData, isLoading: isProfileLoading } = useProfile();
-  
-  // Get workout statistics
-  const { 
-    weeklyActivityData,
-    isLoading: isStatsLoading,
-    error: statsError
-  } = useWorkoutStats();
-  
-  // Get recent workouts
-  const { 
-    workouts: recentWorkouts,
-    isLoading: isRecentWorkoutsLoading,
-    error: recentWorkoutsError
-  } = useRecentWorkouts();
-  
-  // Get favorite exercises
-  const {
-    exercises: favoriteExercises,
-    isLoading: isFavoritesLoading,
-    error: favoritesError
-  } = useFavoriteExercises();
-  
-  // Get upcoming workouts
-  const {
-    workouts: upcomingWorkouts,
-    isLoading: isUpcomingLoading,
-    error: upcomingError
-  } = useUpcomingWorkouts();
-  
-  // Combined loading state
-  const isLoading = 
-    isStatsLoading || 
-    isRecentWorkoutsLoading || 
-    isFavoritesLoading || 
-    isUpcomingLoading;
-  
-  // Handle errors
+  const { profile, isLoading: profileLoading, error: profileError } = useProfile();
+  const { weeklyActivityData, isLoading: statsLoading, error: statsError } = useWorkoutStats();
+  const { workouts: recentWorkouts, isLoading: recentWorkoutsLoading, error: recentWorkoutsError } = useRecentWorkouts();
+  const { exercises: favoriteExercises, isLoading: favoritesLoading, error: favoritesError } = useFavoriteExercises();
+  const { workouts: upcomingWorkouts, isLoading: upcomingLoading, error: upcomingError } = useUpcomingWorkouts();
+
+  // Aggregated loading state
+  const isLoading = profileLoading || statsLoading || recentWorkoutsLoading || favoritesLoading || upcomingLoading;
+
+  // Error state
+  const [errorMessage, setErrorMessage] = useState<string>('');
+
   useEffect(() => {
-    const errors = [statsError, recentWorkoutsError, favoritesError, upcomingError].filter(Boolean);
+    // Collect any errors
+    const errors = [profileError, statsError, recentWorkoutsError, favoritesError, upcomingError].filter(Boolean);
     
     if (errors.length > 0) {
-      setError(errors[0] || 'An error occurred while loading dashboard data');
-      setIsError(true);
-    } else {
-      setIsError(false);
-      setError(null);
+      // Convert the first error to string
+      const firstError = errors[0];
+      if (typeof firstError === 'string') {
+        setErrorMessage(firstError);
+      } else if (firstError instanceof Error) {
+        setErrorMessage(firstError.message);
+      } else {
+        setErrorMessage('An unknown error occurred');
+      }
     }
-  }, [statsError, recentWorkoutsError, favoritesError, upcomingError]);
+  }, [profileError, statsError, recentWorkoutsError, favoritesError, upcomingError]);
+
+  // Navigation handlers
+  const goToWorkouts = () => navigate('/workouts');
+  const goToExercises = () => navigate('/exercises');
+  const goToSchedule = () => navigate('/schedule');
+
+  // Mock data for achievements
+  const achievements = [
+    { id: '1', title: 'First Workout', description: 'Completed your first workout', date: '2023-04-01', icon: '🎯' },
+    { id: '2', title: 'Consistency', description: 'Worked out 3 days in a row', date: '2023-04-05', icon: '🔥' },
+  ];
   
-  // Handle workout selection
-  const handleSelectWorkout = (id: string) => {
-    navigate(`/workout/${id}`);
-  };
-
-  // Handle refresh and start workout actions
-  const handleRefresh = () => {
-    window.location.reload();
-  };
-
-  const handleStartWorkout = () => {
-    navigate('/workout-builder');
-  };
-
-  // Handle go to exercise library
-  const handleGoToExerciseLibrary = () => {
-    navigate('/exercise-library');
-  };
-
-  // Handle schedule workout
-  const handleScheduleWorkout = () => {
-    navigate('/schedule');
-  };
-
-  // Handle add/remove favorites
-  const handleAddFavorite = () => {
-    navigate('/exercise-library');
-  };
-
-  const handleRemoveFavorite = async (id: string) => {
-    toast({
-      title: "Removed from favorites",
-      description: "Exercise removed from favorites",
-    });
-    return Promise.resolve();
-  };
-
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto p-4 space-y-6">
+        {/* Header */}
         <DashboardHeader 
-          isLoading={isProfileLoading}
-          onRefresh={handleRefresh}
-          onStartWorkout={handleStartWorkout}
+          name={profile?.first_name || user?.email?.split('@')[0] || 'User'} 
+          isLoading={isLoading} 
         />
         
-        {isError ? (
+        {/* Handle error state */}
+        {errorMessage ? (
           <DashboardError 
-            errorMessage={error || 'An error occurred while loading dashboard data'} 
+            errorMessage={errorMessage} 
           />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <QuickActionsSection 
-                upcomingWorkouts={upcomingWorkouts}
-                isLoading={isLoading}
-                onGoToExerciseLibrary={handleGoToExerciseLibrary}
-                onScheduleWorkout={handleScheduleWorkout}
-                onRefreshWorkouts={handleRefresh}
-              />
-              
-              <div className="mb-6">
-                <DashboardMetricsSection 
-                  weeklyChartData={weeklyActivityData}
-                  recentWorkouts={recentWorkouts}
-                  isLoading={isLoading}
-                  onSelectDate={setSelectedDate}
-                  onSelectWorkout={handleSelectWorkout}
-                />
-              </div>
-            </div>
+          <>
+            {/* Quick Actions Panel */}
+            <QuickActionsSection 
+              upcomingWorkouts={upcomingWorkouts || []}
+              isLoading={isLoading}
+              onGoToExerciseLibrary={goToExercises}
+              onScheduleWorkout={goToSchedule}
+              onRefreshWorkouts={() => {}} // Placeholder for refresh function
+            />
             
-            <div className="lg:col-span-1">
-              <FavoritesAndAchievementsSection 
-                favoriteExercises={favoriteExercises}
-                achievements={[]}
-                isLoading={isLoading}
-                onAddFavorite={handleAddFavorite}
-                onRemoveFavorite={handleRemoveFavorite}
-              />
-              
-              <div className="mt-6">
-                <UpcomingWorkouts 
-                  workouts={upcomingWorkouts} 
-                  isLoading={isLoading}
-                  onScheduleWorkout={handleScheduleWorkout}
-                  onRefresh={handleRefresh}
-                />
-              </div>
-            </div>
-          </div>
+            {/* Metrics Section - Activity data */}
+            <DashboardMetricsSection 
+              weeklyActivityData={weeklyActivityData} 
+              isLoading={isLoading} 
+            />
+            
+            {/* Favorites and Achievements */}
+            <FavoritesAndAchievementsSection 
+              favoriteExercises={favoriteExercises || []}
+              achievements={achievements}
+              isLoading={isLoading}
+              onAddFavorite={() => {}} // Placeholder for add favorite function
+              onRemoveFavorite={() => {}} // Placeholder for remove favorite function
+            />
+            
+            {/* Recent Workouts */}
+            <WorkoutHistory 
+              workouts={recentWorkouts || []}
+              isLoading={isLoading}
+            />
+          </>
         )}
       </div>
     </AppLayout>
