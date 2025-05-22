@@ -73,6 +73,22 @@ export const getExerciseFullById = async (id: string | number): Promise<Exercise
       exerciseData.target_muscle_group = String(data.target_muscle_group || data.prime_mover_muscle || '');
     }
 
+    // Ensure video URLs are properly handled
+    const videoFields = [
+      'short_youtube_demo',
+      'in_depth_youtube_exp',
+      'video_explanation_url',
+      'video_demonstration_url',
+      'video_url'
+    ];
+
+    // Ensure all video fields are properly typed and not null
+    videoFields.forEach(field => {
+      if (field in data) {
+        exerciseData[field] = data[field] || '';
+      }
+    });
+
     // Cast the data to ExerciseFull, ensuring instructions is an array
     const result: ExerciseFull = {
       ...exerciseData,

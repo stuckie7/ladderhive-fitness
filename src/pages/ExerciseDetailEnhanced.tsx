@@ -32,6 +32,19 @@ export default function ExerciseDetailEnhanced() {
           ? parseInt(id, 10) 
           : id;
         const exerciseData = await getExerciseFullById(exerciseId);
+        
+        // Debug log to check the exercise data
+        console.log('Fetched exercise data:', {
+          id: exerciseData?.id,
+          name: exerciseData?.name,
+          short_youtube_demo: exerciseData?.short_youtube_demo,
+          in_depth_youtube_exp: exerciseData?.in_depth_youtube_exp,
+          video_url: exerciseData?.video_url,
+          video_demonstration_url: exerciseData?.video_demonstration_url,
+          video_explanation_url: exerciseData?.video_explanation_url,
+          youtube_thumbnail_url: exerciseData?.youtube_thumbnail_url
+        });
+        
         setExercise(exerciseData);
       } catch (error) {
         console.error('Error fetching exercise:', error);
@@ -105,10 +118,10 @@ export default function ExerciseDetailEnhanced() {
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="mb-4">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              {exercise.short_youtube_demo && (
+              {(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url) && (
                 <TabsTrigger value="video">Video</TabsTrigger>
               )}
-              {exercise.in_depth_youtube_exp && (
+              {(exercise.in_depth_youtube_exp || exercise.video_explanation_url) && (
                 <TabsTrigger value="tutorial">Tutorial</TabsTrigger>
               )}
             </TabsList>
@@ -129,13 +142,13 @@ export default function ExerciseDetailEnhanced() {
               <ExerciseMainDetails exercise={exercise} />
             </TabsContent>
 
-            {exercise.short_youtube_demo && (
+            {(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url) && (
               <TabsContent value="video">
                 <div className="bg-card rounded-lg p-6">
                   <h3 className="text-lg font-medium mb-4">Exercise Demonstration</h3>
                   <div className="aspect-video rounded-md overflow-hidden">
                     <iframe 
-                      src={getEmbedUrl(exercise.short_youtube_demo)}
+                      src={getEmbedUrl(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url || '')}
                       title="Exercise Demonstration"
                       className="w-full h-full"
                       allowFullScreen
@@ -145,13 +158,13 @@ export default function ExerciseDetailEnhanced() {
               </TabsContent>
             )}
             
-            {exercise.in_depth_youtube_exp && (
+            {(exercise.in_depth_youtube_exp || exercise.video_explanation_url) && (
               <TabsContent value="tutorial">
                 <div className="bg-card rounded-lg p-6">
                   <h3 className="text-lg font-medium mb-4">In-Depth Tutorial</h3>
                   <div className="aspect-video rounded-md overflow-hidden">
                     <iframe 
-                      src={getEmbedUrl(exercise.in_depth_youtube_exp)}
+                      src={getEmbedUrl(exercise.in_depth_youtube_exp || exercise.video_explanation_url || '')}
                       title="In-Depth Tutorial"
                       className="w-full h-full"
                       allowFullScreen
