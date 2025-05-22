@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table,
@@ -59,6 +60,23 @@ const mockFilterOptions = {
   intensityLevels: ['Low', 'Medium', 'High'],
 };
 
+// Define a type alias for ExerciseFormState to match what ExerciseFormDialog expects
+type ExerciseFormStateType = {
+  name: string;
+  prime_mover_muscle: string;
+  secondary_muscles: string[];
+  primary_equipment: string;
+  equipment_options: string[];
+  difficulty: string;
+  exercise_type: string;
+  intensity_level: string;
+  rest_time: number;
+  recommended_sets: number;
+  recommended_reps: number;
+  safety_notes: string;
+  short_youtube_demo: string;
+};
+
 const ExerciseLibraryEnhanced = () => {
   const { toast } = useToast();
   const {
@@ -88,7 +106,21 @@ const ExerciseLibraryEnhanced = () => {
   const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
   const [showEditExerciseForm, setShowEditExerciseForm] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [formData, setFormData] = useState<Record<string, any> | null>(null);
+  const [formData, setFormData] = useState<ExerciseFormStateType>({
+    name: '',
+    prime_mover_muscle: '',
+    secondary_muscles: [],
+    primary_equipment: '',
+    equipment_options: [],
+    difficulty: '',
+    exercise_type: '',
+    intensity_level: '',
+    rest_time: 0,
+    recommended_sets: 0,
+    recommended_reps: 0,
+    safety_notes: '',
+    short_youtube_demo: ''
+  });
 
   const handleOpenAddExerciseForm = () => {
     setShowAddExerciseForm(true);
@@ -101,19 +133,19 @@ const ExerciseLibraryEnhanced = () => {
   const handleOpenEditExerciseForm = (exercise: Exercise) => {
     openEditDialog(exercise);
     setFormData({
-      name: exercise.name,
-      prime_mover_muscle: exercise.prime_mover_muscle,
+      name: exercise.name || '',
+      prime_mover_muscle: exercise.prime_mover_muscle || '',
       secondary_muscles: [],
-      primary_equipment: exercise.primary_equipment,
+      primary_equipment: exercise.primary_equipment || '',
       equipment_options: [],
-      difficulty: exercise.difficulty,
+      difficulty: exercise.difficulty || '',
       exercise_type: '',
       intensity_level: '',
       rest_time: 0,
       recommended_sets: 0,
       recommended_reps: 0,
       safety_notes: '',
-      short_youtube_demo: exercise.video_demonstration_url
+      short_youtube_demo: exercise.video_demonstration_url || ''
     });
     setShowEditExerciseForm(true);
   };
@@ -132,14 +164,12 @@ const ExerciseLibraryEnhanced = () => {
   };
 
   const handleSubmitAddExercise = async () => {
-    if (formData) {
-      await handleAddExercise(formData);
-      handleCloseAddExerciseForm();
-    }
+    await handleAddExercise(formData);
+    handleCloseAddExerciseForm();
   };
 
   const handleSubmitEditExercise = async () => {
-    if (formData && currentExercise) {
+    if (currentExercise) {
       await handleEditExercise(formData);
       handleCloseEditExerciseForm();
     }
@@ -157,7 +187,8 @@ const ExerciseLibraryEnhanced = () => {
     }));
   };
 
-  const formState = {
+  // Initialize with default empty values that match ExerciseFormStateType
+  const defaultFormState: ExerciseFormStateType = {
     name: '',
     prime_mover_muscle: '',
     secondary_muscles: [],
@@ -175,9 +206,7 @@ const ExerciseLibraryEnhanced = () => {
 
   // Create a type-compatible handler for the form submit
   const handleFormSubmit = () => {
-    if (formData) {
-      handleAddExercise(formData);
-    }
+    handleAddExercise(formData);
   };
 
   return (
@@ -313,7 +342,7 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setShowAddExerciseForm}
         title="Add Exercise"
         description="Create a new exercise in the library."
-        formState={formState}
+        formState={formData}
         onFormChange={handleFormValueChange}
         onSubmit={handleFormSubmit}
         submitLabel="Create Exercise"
@@ -328,7 +357,7 @@ const ExerciseLibraryEnhanced = () => {
         onOpenChange={setShowEditExerciseForm}
         title="Edit Exercise"
         description="Edit the details of the selected exercise."
-        formState={formData || formState}
+        formState={formData}
         onFormChange={handleFormValueChange}
         onSubmit={handleSubmitEditExercise}
         submitLabel="Update Exercise"
