@@ -62,7 +62,7 @@ const ExerciseCardFull = ({ exercise, onEdit, onDelete }: ExerciseCardFullProps)
   
   // Handle navigation to exercise detail page
   const handleViewDetails = () => {
-    navigate(`/exercises/${exercise.id}`);
+    navigate(`/exercises/enhanced/${exercise.id}`);
   };
 
   // Get thumbnail from video URL

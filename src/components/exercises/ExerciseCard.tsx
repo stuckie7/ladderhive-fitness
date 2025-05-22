@@ -17,7 +17,7 @@ const ExerciseCard = ({ exercise, onEdit, onDelete }: ExerciseCardProps) => {
   const navigate = useNavigate();
   
   const handleViewDetails = () => {
-    navigate(`/exercises/${exercise.id}`);
+    navigate(`/exercises/enhanced/${exercise.id}`);
   };
   
   const handleAddToWorkout = () => {
