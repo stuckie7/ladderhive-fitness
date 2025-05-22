@@ -4,7 +4,26 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Clock, Dumbbell, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ExerciseVideoHandler from '@/components/exercises/ExerciseVideoHandler';
+
+// Helper function to extract YouTube video ID from URL
+const getYoutubeId = (url: string | undefined): string | null => {
+  if (!url) return null;
+  
+  // Handle youtu.be/ links
+  if (url.includes('youtu.be/')) {
+    return url.split('youtu.be/')[1].split(/[?&#]/)[0];
+  }
+  
+  // Handle youtube.com/watch?v= links
+  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  return match ? match[1] : null;
+};
+
+// Helper function to get YouTube thumbnail URL
+const getYoutubeThumbnail = (url: string | undefined, quality: 'default' | 'mqdefault' | 'hqdefault' | 'sddefault' | 'maxresdefault' = 'hqdefault'): string | null => {
+  const videoId = getYoutubeId(url);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/${quality}.jpg` : null;
+};
 
 interface Exercise {
   id: string;
@@ -82,30 +101,49 @@ const WorkoutExerciseList: React.FC<WorkoutExerciseListProps> = ({
                 )}
               </div>
 
-              {exercise.exercise && (
-                <div className="mb-4 relative group cursor-pointer" onClick={() => {
-                  const videoUrl = exercise.exercise?.short_youtube_demo || 
-                                 exercise.exercise?.video_explanation_url || 
-                                 exercise.exercise?.video_demonstration_url ||
-                                 exercise.exercise?.video_url;
-                  if (videoUrl) {
-                    window.open(videoUrl, '_blank');
-                  }
-                }}>
-                  <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-                    <img 
-                      src={exercise.exercise.thumbnail_url || exercise.exercise.image_url || '/placeholder-exercise.jpg'} 
-                      alt={exercise.exercise.name}
-                      className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-12 h-12 rounded-full bg-white/80 flex items-center justify-center">
-                        <Play className="h-6 w-6 text-primary" />
+              {exercise.exercise && (() => {
+                // Get the first available video URL
+                const videoUrl = exercise.exercise?.short_youtube_demo || 
+                               exercise.exercise?.video_explanation_url || 
+                               exercise.exercise?.video_demonstration_url ||
+                               exercise.exercise?.video_url;
+                
+                // Get the thumbnail URL (try YouTube thumbnail first, then fallback to provided thumbnail)
+                const thumbnailUrl = videoUrl 
+                  ? getYoutubeThumbnail(videoUrl, 'hqdefault') 
+                  : exercise.exercise.thumbnail_url || exercise.exercise.image_url || '/placeholder-exercise.jpg';
+                
+                if (!videoUrl || !thumbnailUrl) return null;
+                
+                return (
+                  <div 
+                    className="mb-4 relative group cursor-pointer" 
+                    onClick={() => window.open(videoUrl, '_blank')}
+                  >
+                    <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                      <img 
+                        src={thumbnailUrl}
+                        alt={exercise.exercise.name}
+                        className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                        onError={(e) => {
+                          // Fallback to a different quality if the first one fails
+                          const fallbackUrl = getYoutubeThumbnail(videoUrl, 'mqdefault');
+                          if (fallbackUrl && e.currentTarget.src !== fallbackUrl) {
+                            e.currentTarget.src = fallbackUrl;
+                          } else {
+                            e.currentTarget.src = '/placeholder-exercise.jpg';
+                          }
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-12 h-12 rounded-full bg-white/80 flex items-center justify-center">
+                          <Play className="h-6 w-6 text-primary" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="flex flex-col gap-1">
