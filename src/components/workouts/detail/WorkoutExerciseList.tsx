@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Clock, Dumbbell } from 'lucide-react';
+import { Check, Clock, Dumbbell, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ExerciseVideoHandler from '@/components/exercises/ExerciseVideoHandler';
 
@@ -15,6 +15,7 @@ interface Exercise {
   in_depth_youtube_exp?: string;
   video_demonstration_url?: string;
   video_explanation_url?: string;
+  image_url?: string;
 }
 
 interface WorkoutExercise {
@@ -82,11 +83,27 @@ const WorkoutExerciseList: React.FC<WorkoutExerciseListProps> = ({
               </div>
 
               {exercise.exercise && (
-                <div className="mb-4">
-                  <ExerciseVideoHandler 
-                    exercise={exercise.exercise}
-                    title={exercise.exercise.name}
-                  />
+                <div className="mb-4 relative group cursor-pointer" onClick={() => {
+                  const videoUrl = exercise.exercise?.short_youtube_demo || 
+                                 exercise.exercise?.video_explanation_url || 
+                                 exercise.exercise?.video_demonstration_url ||
+                                 exercise.exercise?.video_url;
+                  if (videoUrl) {
+                    window.open(videoUrl, '_blank');
+                  }
+                }}>
+                  <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                    <img 
+                      src={exercise.exercise.thumbnail_url || exercise.exercise.image_url || '/placeholder-exercise.jpg'} 
+                      alt={exercise.exercise.name}
+                      className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-12 h-12 rounded-full bg-white/80 flex items-center justify-center">
+                        <Play className="h-6 w-6 text-primary" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
