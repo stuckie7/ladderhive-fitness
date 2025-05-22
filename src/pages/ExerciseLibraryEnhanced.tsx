@@ -1,396 +1,265 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AppLayout from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal } from "lucide-react"
-import { Link } from 'react-router-dom';
-import { Skeleton } from "@/components/ui/skeleton"
-import { useToast } from "@/components/ui/use-toast"
+} from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
 import { Exercise, ExerciseFull } from '@/types/exercise';
-import { useExerciseLibraryEnhanced } from '@/hooks/exercise-library/hooks/use-exercise-library-enhanced';
-import ExerciseFormDialog from '@/components/exercises/ExerciseFormDialog';
+import { fetchExercisesFull, getMuscleGroups, getEquipmentTypes } from '@/hooks/exercise-library/services/exercise-fetch-service';
+import ExerciseCard from '@/components/exercises/ExerciseCard';
+import { ChevronLeft, Search } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
-// Mock data for filter options
-const mockFilterOptions = {
-  muscleGroups: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'],
-  equipmentTypes: ['Barbell', 'Dumbbell', 'Machine', 'Bodyweight', 'Cable'],
-  exerciseTypes: ['Strength', 'Cardio', 'Plyometrics', 'Stretching', 'Powerlifting', 'Olympic Weightlifting'],
-  intensityLevels: ['Low', 'Medium', 'High'],
-};
-
-// Define a type alias for ExerciseFormState to match what ExerciseFormDialog expects
-type ExerciseFormStateType = {
-  name: string;
-  prime_mover_muscle: string;
-  secondary_muscles: string[];
-  primary_equipment: string;
-  equipment_options: string[];
-  difficulty: string;
-  exercise_type: string;
-  intensity_level: string;
-  rest_time: number;
-  recommended_sets: number;
-  recommended_reps: number;
-  safety_notes: string;
-  short_youtube_demo: string;
-};
-
-const ExerciseLibraryEnhanced = () => {
+export default function ExerciseLibraryEnhanced() {
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const {
-    exercises,
-    loading,
-    searchQuery,
-    selectedMuscleGroup,
-    selectedEquipment,
-    selectedDifficulty,
-    currentPage,
-    totalCount,
-    currentExercise,
-    ITEMS_PER_PAGE,
-    handleSearchChange,
-    handleFilterChange,
-    resetFilters,
-    handleFormChange,
-    handleAddExercise,
-    handleEditExercise,
-    handleDeleteExercise,
-    openEditDialog,
-    openDeleteDialog,
-    handleRefresh,
-    setCurrentPage
-  } = useExerciseLibraryEnhanced();
+  const [exercises, setExercises] = useState<ExerciseFull[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState('all');
+  const [selectedEquipment, setSelectedEquipment] = useState('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [muscleGroups, setMuscleGroups] = useState<string[]>([]);
+  const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
   
-  const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
-  const [showEditExerciseForm, setShowEditExerciseForm] = useState(false);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [formData, setFormData] = useState<ExerciseFormStateType>({
-    name: '',
-    prime_mover_muscle: '',
-    secondary_muscles: [],
-    primary_equipment: '',
-    equipment_options: [],
-    difficulty: '',
-    exercise_type: '',
-    intensity_level: '',
-    rest_time: 0,
-    recommended_sets: 0,
-    recommended_reps: 0,
-    safety_notes: '',
-    short_youtube_demo: ''
-  });
+  const ITEMS_PER_PAGE = 12;
 
-  const handleOpenAddExerciseForm = () => {
-    setShowAddExerciseForm(true);
-  };
+  useEffect(() => {
+    fetchFilterOptions();
+    fetchExercises();
+  }, [selectedMuscleGroup, selectedEquipment, selectedDifficulty]);
 
-  const handleCloseAddExerciseForm = () => {
-    setShowAddExerciseForm(false);
-  };
+  const fetchFilterOptions = async () => {
+    try {
+      const muscleGroupsData = await getMuscleGroups();
+      setMuscleGroups(muscleGroupsData);
 
-  const handleOpenEditExerciseForm = (exercise: Exercise) => {
-    openEditDialog(exercise);
-    setFormData({
-      name: exercise.name || '',
-      prime_mover_muscle: exercise.prime_mover_muscle || '',
-      secondary_muscles: [],
-      primary_equipment: exercise.primary_equipment || '',
-      equipment_options: [],
-      difficulty: exercise.difficulty || '',
-      exercise_type: '',
-      intensity_level: '',
-      rest_time: 0,
-      recommended_sets: 0,
-      recommended_reps: 0,
-      safety_notes: '',
-      short_youtube_demo: exercise.video_demonstration_url || ''
-    });
-    setShowEditExerciseForm(true);
-  };
-
-  const handleCloseEditExerciseForm = () => {
-    setShowEditExerciseForm(false);
-  };
-
-  const handleOpenDeleteConfirmation = (exercise: Exercise) => {
-    openDeleteDialog(exercise);
-    setShowDeleteConfirmation(true);
-  };
-
-  const handleCloseDeleteConfirmation = () => {
-    setShowDeleteConfirmation(false);
-  };
-
-  const handleSubmitAddExercise = async () => {
-    await handleAddExercise(formData);
-    handleCloseAddExerciseForm();
-  };
-
-  const handleSubmitEditExercise = async () => {
-    if (currentExercise) {
-      await handleEditExercise(formData);
-      handleCloseEditExerciseForm();
+      const equipmentData = await getEquipmentTypes();
+      setEquipmentTypes(equipmentData);
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
     }
   };
 
-  const handleSubmitDeleteExercise = async () => {
-    await handleDeleteExercise();
-    handleCloseDeleteConfirmation();
+  const fetchExercises = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchExercisesFull(100, 0);
+      
+      // Filter based on search query and selected filters
+      let filteredData = data;
+      
+      if (searchQuery) {
+        filteredData = filteredData.filter(ex => 
+          ex.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+      
+      if (selectedMuscleGroup !== 'all') {
+        filteredData = filteredData.filter(ex => 
+          ex.prime_mover_muscle === selectedMuscleGroup
+        );
+      }
+      
+      if (selectedEquipment !== 'all') {
+        filteredData = filteredData.filter(ex => 
+          ex.primary_equipment === selectedEquipment
+        );
+      }
+      
+      if (selectedDifficulty !== 'all') {
+        filteredData = filteredData.filter(ex => 
+          ex.difficulty === selectedDifficulty
+        );
+      }
+      
+      setTotalCount(filteredData.length);
+      
+      // Paginate
+      const startIdx = currentPage * ITEMS_PER_PAGE;
+      const paginatedData = filteredData.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+      
+      setExercises(paginatedData);
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load exercises",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleFormValueChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(0);
   };
 
-  // Initialize with default empty values that match ExerciseFormStateType
-  const defaultFormState: ExerciseFormStateType = {
-    name: '',
-    prime_mover_muscle: '',
-    secondary_muscles: [],
-    primary_equipment: '',
-    equipment_options: [],
-    difficulty: '',
-    exercise_type: '',
-    intensity_level: '',
-    rest_time: 0,
-    recommended_sets: 0,
-    recommended_reps: 0,
-    safety_notes: '',
-    short_youtube_demo: ''
+  const handleFilterChange = (type: string, value: string) => {
+    setCurrentPage(0);
+    
+    switch (type) {
+      case 'muscleGroup':
+        setSelectedMuscleGroup(value);
+        break;
+      case 'equipment':
+        setSelectedEquipment(value);
+        break;
+      case 'difficulty':
+        setSelectedDifficulty(value);
+        break;
+      default:
+        break;
+    }
   };
 
-  // Create a type-compatible handler for the form submit
-  const handleFormSubmit = () => {
-    handleAddExercise(formData);
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedMuscleGroup('all');
+    setSelectedEquipment('all');
+    setSelectedDifficulty('all');
+    setCurrentPage(0);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchExercises();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, currentPage]);
+
+  const handleBackClick = () => {
+    navigate(-1);
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="mb-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Exercise Library</h1>
-        <Button onClick={handleOpenAddExerciseForm}>Add Exercise</Button>
-      </div>
+    <AppLayout>
+      <div className="bg-background min-h-screen text-foreground p-4">
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBackClick}
+            className="gap-1 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Workouts
+          </Button>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <Input
-          type="text"
-          placeholder="Search exercises..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-        />
-
-        <Select value={selectedMuscleGroup} onValueChange={(value) => handleFilterChange('muscleGroup', value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by Muscle Group" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Muscle Groups</SelectItem>
-            {mockFilterOptions.muscleGroups.map(group => (
-              <SelectItem key={group} value={group}>{group}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={selectedEquipment} onValueChange={(value) => handleFilterChange('equipment', value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by Equipment" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Equipment</SelectItem>
-            {mockFilterOptions.equipmentTypes.map(equipment => (
-              <SelectItem key={equipment} value={equipment}>{equipment}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={selectedDifficulty} onValueChange={(value) => handleFilterChange('difficulty', value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by Difficulty" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Difficulties</SelectItem>
-            <SelectItem value="Beginner">Beginner</SelectItem>
-            <SelectItem value="Intermediate">Intermediate</SelectItem>
-            <SelectItem value="Advanced">Advanced</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Name</TableHead>
-              <TableHead>Muscle Group</TableHead>
-              <TableHead>Equipment</TableHead>
-              <TableHead>Difficulty</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <>
-                {Array(ITEMS_PER_PAGE).fill(null).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton /></TableCell>
-                    <TableCell><Skeleton /></TableCell>
-                    <TableCell><Skeleton /></TableCell>
-                    <TableCell><Skeleton /></TableCell>
-                    <TableCell className="text-right"><Skeleton /></TableCell>
-                  </TableRow>
+        {/* Search bar */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search exercises by name"
+            className="pl-10"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+          <Button 
+            variant="outline" 
+            className="absolute right-2 top-1/2 transform -translate-y-1/2"
+            onClick={handleResetFilters}
+          >
+            Reset Filters
+          </Button>
+        </div>
+        
+        {/* Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div>
+            <label className="block text-sm font-medium mb-1">Muscle Group</label>
+            <Select
+              value={selectedMuscleGroup}
+              onValueChange={(value) => handleFilterChange('muscleGroup', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All muscle groups" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All muscle groups</SelectItem>
+                {muscleGroups.map((group) => (
+                  <SelectItem key={group} value={group}>{group}</SelectItem>
                 ))}
-              </>
-            ) : (
-              <>
-                {exercises.map(exercise => (
-                  <TableRow key={exercise.id}>
-                    <TableCell className="font-medium">{exercise.name}</TableCell>
-                    <TableCell>{exercise.muscle_group}</TableCell>
-                    <TableCell>{exercise.equipment}</TableCell>
-                    <TableCell>{exercise.difficulty}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleOpenEditExerciseForm(exercise)}>
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleOpenDeleteConfirmation(exercise)}>
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Equipment</label>
+            <Select
+              value={selectedEquipment}
+              onValueChange={(value) => handleFilterChange('equipment', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All equipment" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All equipment</SelectItem>
+                {equipmentTypes.map((equipment) => (
+                  <SelectItem key={equipment} value={equipment}>{equipment}</SelectItem>
                 ))}
-                {exercises.length === 0 && !loading && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center">No exercises found.</TableCell>
-                  </TableRow>
-                )}
-              </>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Difficulty</label>
+            <Select
+              value={selectedDifficulty}
+              onValueChange={(value) => handleFilterChange('difficulty', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All difficulties" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All difficulties</SelectItem>
+                <SelectItem value="Beginner">Beginner</SelectItem>
+                <SelectItem value="Intermediate">Intermediate</SelectItem>
+                <SelectItem value="Advanced">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        {/* Results count */}
+        <div className="mb-4 text-muted-foreground">
+          Showing {exercises.length} exercises
+          {totalCount > 0 ? ` (1-${Math.min(ITEMS_PER_PAGE, totalCount)} of ${totalCount})` : ''}
+        </div>
+        
+        {/* Exercise grid */}
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Spinner />
+            <span className="ml-2">Loading exercises...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {exercises.map((exercise) => (
+              <ExerciseCard key={exercise.id} exercise={exercise} />
+            ))}
+            
+            {exercises.length === 0 && (
+              <div className="col-span-3 text-center py-12 text-muted-foreground">
+                No exercises found matching your search criteria.
+              </div>
             )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex justify-between items-center mt-4">
-        <Button variant="outline" size="sm" onClick={handleRefresh}>
-          Refresh
-        </Button>
-        <Pagination>
-          <PaginationContent>
-            <PaginationPrevious href="#" onClick={() => setCurrentPage(currentPage - 1)} />
-            <PaginationNext href="#" onClick={() => setCurrentPage(currentPage + 1)} />
-          </PaginationContent>
-        </Pagination>
-      </div>
-
-      <ExerciseFormDialog
-        open={showAddExerciseForm}
-        onOpenChange={setShowAddExerciseForm}
-        title="Add Exercise"
-        description="Create a new exercise in the library."
-        formState={formData}
-        onFormChange={handleFormValueChange}
-        onSubmit={handleFormSubmit}
-        submitLabel="Create Exercise"
-        muscleGroups={mockFilterOptions.muscleGroups}
-        equipmentTypes={mockFilterOptions.equipmentTypes}
-        exerciseTypes={mockFilterOptions.exerciseTypes}
-        intensityLevels={mockFilterOptions.intensityLevels}
-      />
-
-      <ExerciseFormDialog
-        open={showEditExerciseForm}
-        onOpenChange={setShowEditExerciseForm}
-        title="Edit Exercise"
-        description="Edit the details of the selected exercise."
-        formState={formData}
-        onFormChange={handleFormValueChange}
-        onSubmit={handleSubmitEditExercise}
-        submitLabel="Update Exercise"
-        muscleGroups={mockFilterOptions.muscleGroups}
-        equipmentTypes={mockFilterOptions.equipmentTypes}
-        exerciseTypes={mockFilterOptions.exerciseTypes}
-        intensityLevels={mockFilterOptions.intensityLevels}
-      />
-
-      <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Delete Exercise</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this exercise? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input id="name" value={currentExercise?.name || ''} className="col-span-3" disabled />
-            </div>
           </div>
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="secondary" onClick={handleCloseDeleteConfirmation}>Cancel</Button>
-            <Button type="submit" variant="destructive" onClick={handleSubmitDeleteExercise}>Delete</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        )}
+      </div>
+    </AppLayout>
   );
-};
-
-export default ExerciseLibraryEnhanced;
+}

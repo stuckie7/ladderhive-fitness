@@ -1,27 +1,26 @@
 
-import React from "react";
+import React from 'react';
 
 export interface SpinnerProps {
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
-  size?: "sm" | "md" | "lg";
 }
 
-export const Spinner = ({ className, size = "md" }: SpinnerProps) => {
-  const sizeClass = {
-    sm: "w-4 h-4",
-    md: "w-6 h-6",
-    lg: "w-8 h-8"
-  }[size];
+export const Spinner = ({ size = 'md', className = '' }: SpinnerProps) => {
+  const sizeClasses = {
+    sm: 'h-4 w-4',
+    md: 'h-6 w-6',
+    lg: 'h-8 w-8',
+  };
 
   return (
-    <div className={`flex items-center justify-center ${className || ""}`}>
-      <div
-        className={`inline-block ${sizeClass} animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] text-primary`}
+    <div className={`inline-flex ${className}`}>
+      <div 
+        className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-current border-t-transparent text-primary`}
         role="status"
+        aria-label="loading"
       >
-        <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-          Loading...
-        </span>
+        <span className="sr-only">Loading...</span>
       </div>
     </div>
   );

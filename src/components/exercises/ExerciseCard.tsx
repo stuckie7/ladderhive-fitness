@@ -1,121 +1,157 @@
 
-import { Exercise } from "@/types/exercise";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Info, Play, Youtube, Dumbbell, Activity } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import ExerciseVideoHandler from "./ExerciseVideoHandler";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ExerciseFull } from '@/types/exercise';
+import { Info, Plus, Trash2, Edit, Video } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ExerciseCardProps {
-  exercise: Exercise;
+  exercise: ExerciseFull;
+  onEdit?: (exercise: ExerciseFull) => void;
+  onDelete?: (exercise: ExerciseFull) => void;
 }
 
-const ExerciseCard = ({ exercise }: ExerciseCardProps) => {
+const ExerciseCard = ({ exercise, onEdit, onDelete }: ExerciseCardProps) => {
   const navigate = useNavigate();
   
   const handleViewDetails = () => {
     navigate(`/exercises/${exercise.id}`);
   };
   
-  const getPrimaryIcon = () => {
-    if (exercise.video_url && exercise.video_url.includes('youtube')) {
-      return <Youtube className="h-5 w-5 text-red-500" />;
-    } else if (exercise.equipment && exercise.equipment.toLowerCase() !== 'bodyweight') {
-      return <Dumbbell className="h-5 w-5 text-blue-500" />;
-    } else {
-      return <Activity className="h-5 w-5 text-green-500" />;
-    }
+  const handleAddToWorkout = () => {
+    // This would be implemented later with a modal
+    console.log('Add to workout:', exercise.id);
   };
 
-  // Determine video URL from any available video field
-  const videoUrl = exercise.video_url || 
-                  exercise.video_demonstration_url || 
-                  exercise.short_youtube_demo;
+  // Helper function to extract YouTube video ID
+  const getYouTubeVideoId = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    
+    try {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    } catch {
+      return null;
+    }
+  };
   
+  // Get thumbnail from video URL
+  const videoId = getYouTubeVideoId(exercise.short_youtube_demo);
+  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
+
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg">{exercise.name}</CardTitle>
-          {getPrimaryIcon()}
-        </div>
-      </CardHeader>
-      <CardContent className="flex-1">
-        <div className="aspect-video bg-muted rounded-md mb-3 relative overflow-hidden">
-          {exercise.image_url ? (
-            <img
-              src={exercise.image_url}
-              alt={exercise.name}
+    <Card className="overflow-hidden bg-black/30 border-gray-800 h-full flex flex-col">
+      <div className="relative">
+        {/* Thumbnail */}
+        <div className="aspect-video bg-gray-900 relative overflow-hidden">
+          {thumbnailUrl ? (
+            <img 
+              src={thumbnailUrl} 
+              alt={exercise.name || "Exercise thumbnail"} 
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              No image available
+            <div className="w-full h-full flex items-center justify-center bg-gray-800">
+              <Video className="h-12 w-12 text-gray-600" />
             </div>
           )}
-          {videoUrl && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
-              <ExerciseVideoHandler
-                url={videoUrl}
-                title="Play Video"
-                className="rounded-full bg-white text-black border-0"
-                showPlaceholder={false}
-              />
+          
+          {/* Video overlay button */}
+          {exercise.short_youtube_demo && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Button 
+                size="sm"
+                variant="secondary" 
+                className="rounded-full bg-white/20 hover:bg-white/40"
+                onClick={handleViewDetails}
+              >
+                <Video className="h-5 w-5 text-white" />
+              </Button>
             </div>
           )}
-        </div>
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            {/* Target muscle group badge */}
-            {exercise.muscle_group && (
-              <Badge variant="outline" className="bg-muted/50">
-                {exercise.muscle_group}
-              </Badge>
+          
+          {/* Action buttons overlay */}
+          <div className="absolute top-2 right-2 flex gap-1">
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 bg-black/50 text-white hover:bg-black/70"
+                onClick={() => onEdit(exercise)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
             )}
-            
-            {/* Equipment badge */}
-            {exercise.equipment && (
-              <Badge variant="outline" className="bg-muted/50">
-                {exercise.equipment}
-              </Badge>
-            )}
-            
-            {/* Difficulty badge */}
-            {exercise.difficulty && (
-              <Badge className={`
-                ${exercise.difficulty === 'Beginner' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : ''}
-                ${exercise.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' : ''}
-                ${exercise.difficulty === 'Advanced' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : ''}
-              `}>
-                {exercise.difficulty}
-              </Badge>
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 bg-black/50 text-white hover:bg-black/70"
+                onClick={() => onDelete(exercise)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             )}
           </div>
-          
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {exercise.description || "No description available."}
-          </p>
-          
-          {/* Additional details for exercises with more information */}
-          {(exercise.secondaryMuscles?.length > 0 || exercise.bodyPart) && (
-            <div className="text-xs text-muted-foreground mt-2">
-              {exercise.bodyPart && exercise.bodyPart !== exercise.muscle_group && (
-                <p><span className="font-medium">Body Region:</span> {exercise.bodyPart}</p>
-              )}
-              {exercise.secondaryMuscles?.length > 0 && (
-                <p><span className="font-medium">Secondary Muscles:</span> {exercise.secondaryMuscles.join(', ')}</p>
-              )}
+        </div>
+      </div>
+      
+      <CardContent className="p-4 flex-1 flex flex-col">
+        {/* Title */}
+        <h3 className="text-lg font-medium mb-2 line-clamp-2">{exercise.name}</h3>
+        
+        {/* Tags/Badges */}
+        <div className="flex flex-wrap gap-1 mb-4">
+          {exercise.prime_mover_muscle && (
+            <Badge variant="outline" className="bg-gray-800/50 text-xs">
+              {exercise.prime_mover_muscle}
+            </Badge>
+          )}
+          {exercise.primary_equipment && (
+            <Badge variant="outline" className="bg-gray-800/50 text-xs">
+              {exercise.primary_equipment}
+            </Badge>
+          )}
+        </div>
+        
+        {/* Exercise specs */}
+        <div className="text-sm mb-4 flex-1">
+          {exercise.prime_mover_muscle && (
+            <div className="mb-1">
+              <span className="font-medium">Primary Muscle:</span>{" "}
+              <span className="text-muted-foreground">{exercise.prime_mover_muscle}</span>
+            </div>
+          )}
+          {exercise.mechanics && (
+            <div className="mb-1">
+              <span className="font-medium">Mechanics:</span>{" "}
+              <span className="text-muted-foreground">{exercise.mechanics}</span>
             </div>
           )}
         </div>
+        
+        {/* Buttons */}
+        <div className="mt-auto flex gap-2">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={handleViewDetails}
+          >
+            <Info className="h-4 w-4 mr-2" />
+            View Details
+          </Button>
+          <Button 
+            className="flex-1"
+            onClick={handleAddToWorkout}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add to Workout
+          </Button>
+        </div>
       </CardContent>
-      <CardFooter className="pt-2">
-        <Button variant="outline" className="w-full" onClick={handleViewDetails}>
-          <Info className="h-4 w-4 mr-2" />
-          View Details
-        </Button>
-      </CardFooter>
     </Card>
   );
 };
