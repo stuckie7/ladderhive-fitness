@@ -112,11 +112,8 @@ const Dashboard = () => {
           {/* Sidebar - 4 columns on large screens */}
           <div className="lg:col-span-4 space-y-6">
             <QuickActionsSection
-              upcomingWorkouts={workouts}
-              isLoading={workoutsLoading}
               onGoToExerciseLibrary={handleViewExercises}
               onScheduleWorkout={handleStartWorkout}
-              onRefreshWorkouts={() => console.log("Refresh workouts")}
             />
             
             <UpcomingWorkouts 
@@ -125,7 +122,8 @@ const Dashboard = () => {
                 title: w.title,
                 date: w.scheduled_date,
                 duration: w.duration_minutes,
-                difficulty: w.difficulty
+                difficulty: w.difficulty,
+                type: 'workout'  // Add the required type property
               }))}
               isLoading={workoutsLoading}
               onViewWorkout={(id) => navigate(`/workouts/${id}`)}

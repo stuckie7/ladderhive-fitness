@@ -4,7 +4,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Exercise, ExerciseFull } from '@/types/exercise';
 
-import { getEmbeddedYoutubeUrl } from '@/components/exercises/exercise-detail/ExerciseMainDetails';
 import { getExerciseById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { getExerciseFullById } from '@/hooks/exercise-library/services/exercise-detail-service';
 import { DynamicBreadcrumb } from '@/components/ui/dynamic-breadcrumb';
@@ -169,7 +168,7 @@ export default function ExerciseDetail(): JSX.Element {
                       <h3 className="text-lg font-medium mb-4">In-Depth Video Explanation</h3>
                       <div className="aspect-video bg-muted rounded-md overflow-hidden">
                         <iframe 
-                          src={getEmbeddedYoutubeUrl(exercise.in_depth_youtube_exp)} 
+                          src={exercise.in_depth_youtube_exp}
                           title="In-Depth Explanation"
                           className="w-full h-full"
                           allowFullScreen
@@ -198,6 +197,13 @@ export default function ExerciseDetail(): JSX.Element {
           </div>
         </div>
       </div>
+      {isAddToWorkoutOpen && exercise && (
+        <AddToWorkoutModal
+          exercise={exercise}
+          isOpen={isAddToWorkoutOpen}
+          onClose={() => setIsAddToWorkoutOpen(false)}
+        />
+      )}
     </AppLayout>
   );
 }
