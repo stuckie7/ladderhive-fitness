@@ -1,6 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ExerciseFull } from "@/types/exercise";
 import { checkExercisesFullTableExists } from "./exercise-fetch-service";
+import { toStringId } from "@/utils/id-conversion";
 
 const getBestVideoUrl = (exercise: any): string | null => {
   return exercise.short_youtube_demo || exercise.in_depth_youtube_exp || null;
@@ -25,9 +27,10 @@ export const deduplicateExercises = (data: any[]): ExerciseFull[] => {
         (currentHasVideo && existingHasVideo && 
          (item.in_depth_youtube_exp && !existingItem.in_depth_youtube_exp))) {
       
-      // Map the data to match ExerciseFull type
+      // Map the data to match ExerciseFull type with proper ID conversion
       const mappedItem: ExerciseFull = {
         ...item,
+        id: toStringId(item.id), // Ensure ID is a string
         video_demonstration_url: getBestVideoUrl(item),
         video_explanation_url: item.in_depth_youtube_exp || null,
         target_muscle_group: item.prime_mover_muscle || null
@@ -82,7 +85,13 @@ export const loadExerciseData = async (
   
   if (!data) return [];
   
-  return deduplicateExercises(data);
+  // Transform the data to ensure all IDs are strings
+  const transformedData = data.map(item => ({
+    ...item,
+    id: toStringId(item.id)
+  }));
+  
+  return deduplicateExercises(transformedData);
 };
 
 /**
@@ -196,7 +205,11 @@ export const createExercise = async (exerciseData: Partial<ExerciseFull>): Promi
       
     if (error) throw error;
     
-    return data as ExerciseFull;
+    // Ensure ID is a string in the returned object
+    return {
+      ...data,
+      id: toStringId(data.id)
+    } as ExerciseFull;
   } catch (error) {
     console.error("Error creating exercise:", error);
     throw error;
@@ -212,7 +225,7 @@ export const updateExercise = async (exerciseData: Partial<ExerciseFull>): Promi
       throw new Error('Exercise ID is required for updating');
     }
     
-    // Convert string id to number if needed
+    // Convert string id to number for database query
     const id = typeof exerciseData.id === 'string' ? parseInt(exerciseData.id, 10) : exerciseData.id;
     const { id: _, ...dataToUpdate } = exerciseData;
     
@@ -231,7 +244,11 @@ export const updateExercise = async (exerciseData: Partial<ExerciseFull>): Promi
       
     if (error) throw error;
     
-    return data as ExerciseFull;
+    // Ensure ID is a string in the returned object
+    return {
+      ...data,
+      id: toStringId(data.id)
+    } as ExerciseFull;
   } catch (error) {
     console.error("Error updating exercise:", error);
     throw error;

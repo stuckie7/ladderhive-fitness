@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutExercise } from '@/types/workout';
 import { Exercise } from '@/types/exercise';
+import { toStringId } from '@/utils/id-conversion';
 
 export interface WorkoutExerciseInput {
   exercise_id: string;
@@ -33,20 +34,20 @@ export async function createWorkout(
     if (workoutError) throw workoutError;
 
     // Insert workout exercises
-    const exerciseInserts = exercises.map((exercise) => ({
-      workout_id: workout.id,
-      exercise_id: parseInt(exercise.exercise_id), // Convert string to number for DB
-      sets: exercise.sets,
-      reps: exercise.reps,
-      rest_seconds: exercise.rest_seconds,
-      order_index: exercise.order_index,
-    }));
-
-    // Insert one by one to avoid type issues with the batch insert
-    for (const exerciseData of exerciseInserts) {
+    for (const exercise of exercises) {
+      // Convert string exercise_id to number for DB
+      const exerciseId = parseInt(exercise.exercise_id, 10);
+      
       const { error: exerciseError } = await supabase
         .from('user_workout_exercises')
-        .insert(exerciseData);
+        .insert({
+          workout_id: workout.id,
+          exercise_id: exerciseId,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          rest_seconds: exercise.rest_seconds,
+          order_index: exercise.order_index,
+        });
 
       if (exerciseError) throw exerciseError;
     }
@@ -85,11 +86,13 @@ export async function addExerciseToWorkout(
       if (preparedError) throw preparedError;
 
       // Insert into prepared_workout_exercises
+      const numericExerciseId = parseInt(exerciseId, 10); // Convert string to number for DB
+      
       const { error } = await supabase
         .from('prepared_workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: parseInt(exerciseId), // Convert string to number for DB
+          exercise_id: numericExerciseId,
           sets,
           reps,
           rest_seconds: restSeconds,
@@ -98,12 +101,12 @@ export async function addExerciseToWorkout(
 
       if (error) throw error;
     } else {
-      // Insert into workout_exercises
+      // Insert into workout_exercises using string ID
       const { error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseId, // No need to convert, assuming this table uses string IDs
+          exercise_id: exerciseId,
           sets,
           reps,
           rest_seconds: restSeconds,
