@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Dumbbell, Bookmark, BookmarkCheck, Play, MoreHorizontal } from "lucide-react";
+import { Calendar, Clock, Dumbbell, Bookmark, BookmarkCheck, Play, MoreHorizontal, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -8,6 +8,7 @@ import { useWorkouts } from "@/hooks/use-workouts";
 import { useToast } from "@/components/ui/use-toast";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+// Helper function to extract YouTube video ID from URL
+const getYoutubeId = (url: string | undefined): string | null => {
+  if (!url) return null;
+  
+  // Handle youtu.be/ links
+  if (url.includes('youtu.be/')) {
+    return url.split('youtu.be/')[1].split(/[?&#]/)[0];
+  }
+  
+  // Handle youtube.com/watch?v= links
+  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  return match ? match[1] : null;
+};
+
+// Helper function to get YouTube thumbnail URL
+const getYoutubeThumbnail = (url: string | undefined, quality: 'default' | 'mqdefault' | 'hqdefault' | 'sddefault' | 'maxresdefault' = 'hqdefault'): string | null => {
+  const videoId = getYoutubeId(url);
+  return videoId ? `https://img.youtube.com/vi/${videoId}/${quality}.jpg` : null;
+};
+
+// Helper function to get YouTube embed URL
+const getYoutubeEmbedUrl = (url: string | undefined): string | null => {
+  const videoId = getYoutubeId(url);
+  return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : null;
+};
 
 interface WorkoutCardProps {
   workout: {
@@ -44,6 +71,14 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { saveWorkout, unsaveWorkout } = useWorkouts();
   const [isHovered, setIsHovered] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  
+  // Get the first available video URL
+  const videoUrl = workout.video_url;
+  const embedUrl = getYoutubeEmbedUrl(videoUrl);
+  const thumbnailUrl = videoUrl 
+    ? getYoutubeThumbnail(videoUrl, 'hqdefault') 
+    : workout.thumbnail_url || '/placeholder-workout.jpg';
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
@@ -116,12 +151,19 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
   // Use YouTube video ID to get thumbnail if available, or fall back to thumbnail_url
   const getWorkoutThumbnail = () => {
     if (workout.video_url) {
-      const videoIdMatch = workout.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([\w-]{11})/);
-      if (videoIdMatch) {
-        return `https://img.youtube.com/vi/${videoIdMatch[1]}/hqdefault.jpg`;
-      }
+      const thumbnail = getYoutubeThumbnail(workout.video_url, 'hqdefault');
+      if (thumbnail) return thumbnail;
     }
-    return workout.thumbnail_url || '/placeholder.svg';
+    return workout.thumbnail_url || '/placeholder-workout.jpg';
+  };
+  
+  const handleThumbnailClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (embedUrl) {
+      setSelectedVideo(embedUrl);
+    } else {
+      handleStartWorkout();
+    }
   };
 
   return (
@@ -132,16 +174,33 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative">
+      <div className="relative group">
         <AspectRatio ratio={16/9}>
-          <img 
-            src={getWorkoutThumbnail()} 
-            alt={workout.title} 
-            className="object-cover w-full h-full rounded-t-lg"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/placeholder.svg';
-            }}
-          />
+          <div 
+            className="w-full h-full cursor-pointer relative"
+            onClick={handleThumbnailClick}
+          >
+            <img 
+              src={thumbnailUrl} 
+              alt={workout.title} 
+              className="object-cover w-full h-full rounded-t-lg transition-opacity group-hover:opacity-90"
+              onError={(e) => {
+                const fallbackUrl = videoUrl ? getYoutubeThumbnail(videoUrl, 'mqdefault') : null;
+                if (fallbackUrl && e.currentTarget.src !== fallbackUrl) {
+                  e.currentTarget.src = fallbackUrl;
+                } else {
+                  e.currentTarget.src = '/placeholder-workout.jpg';
+                }
+              }}
+            />
+            {videoUrl && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="bg-black/60 rounded-full p-3 group-hover:scale-110 transition-transform">
+                  <Play className="h-8 w-8 text-white" fill="currentColor" />
+                </div>
+              </div>
+            )}
+          </div>
         </AspectRatio>
         
         {/* Special badges */}
@@ -163,19 +222,30 @@ const WorkoutCard = ({ workout, isSaved = false }: WorkoutCardProps) => {
             {workout.difficulty}
           </Badge>
         </div>
-        
-        {/* Play button overlay */}
-        {workout.video_url && (
-          <div 
-            className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-            onClick={handleStartWorkout}
-          >
-            <div className="bg-black/50 rounded-full p-3">
-              <Play className="h-8 w-8 text-white" />
-            </div>
-          </div>
-        )}
       </div>
+      
+      {/* Video Modal */}
+      <Dialog open={!!selectedVideo} onOpenChange={(open) => !open && setSelectedVideo(null)} modal={true}>
+        <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 bg-transparent border-0">
+          <div className="relative w-full pt-[56.25%] rounded-lg overflow-hidden">
+            {selectedVideo && (
+              <iframe
+                src={selectedVideo}
+                className="absolute top-0 left-0 w-full h-full"
+                title={workout.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            )}
+          </div>
+          <button
+            onClick={() => setSelectedVideo(null)}
+            className="absolute right-4 top-4 rounded-full p-2 bg-black/50 text-white hover:bg-black/70 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </DialogContent>
+      </Dialog>
       
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
