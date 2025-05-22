@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { toStringId } from '@/utils/id-conversion';
 
 interface Exercise {
   id: string;
@@ -72,9 +73,19 @@ export const useAltWorkoutDetail = (id?: string) => {
           
         if (exercisesError) throw exercisesError;
         
+        // Convert exercise_id to string in each exercise
+        const formattedExercises = (exercisesData || []).map(ex => ({
+          ...ex,
+          exercise_id: toStringId(ex.exercise_id),
+          exercise: ex.exercise || {
+            id: toStringId(ex.exercise_id),
+            name: 'Unknown Exercise'
+          }
+        })) as WorkoutExercise[];
+        
         setWorkout({
           ...workoutData,
-          exercises: exercisesData || []
+          exercises: formattedExercises
         });
         
       } catch (err: any) {

@@ -11,15 +11,24 @@ import { useWorkoutHistory } from "@/hooks/use-workout-history";
 interface WorkoutHistoryProps {
   onSelectDate?: (date: Date) => void;
   onSelectWorkout?: (id: string, type?: string) => void;
+  workouts?: any[]; // Make workouts prop optional
+  isLoading?: boolean;  // Make isLoading prop optional
 }
 
 type ViewMode = 'day' | 'week';
 
 const WorkoutHistory = ({
   onSelectDate,
-  onSelectWorkout
+  onSelectWorkout,
+  workouts: externalWorkouts,
+  isLoading: externalLoading
 }: WorkoutHistoryProps) => {
-  const { workouts, loading, error } = useWorkoutHistory();
+  // Use internal hook if external workouts are not provided
+  const { workouts: hookWorkouts, loading: hookLoading } = useWorkoutHistory();
+
+  // Use either external or internal data
+  const workouts = externalWorkouts || hookWorkouts;
+  const loading = externalLoading !== undefined ? externalLoading : hookLoading;
 
   // Convert Supabase data to match our interface
   const formattedWorkouts = workouts.map(workout => ({

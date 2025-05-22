@@ -60,7 +60,7 @@ export const getSuggestedExercisesForWorkout = async (
       muscle_group: ex.prime_mover_muscle || '',
       equipment: ex.primary_equipment || 'Bodyweight',
       difficulty: ex.difficulty || 'Beginner',
-      instructions: ex.instructions || [],
+      instructions: ex.instructions ? (Array.isArray(ex.instructions) ? ex.instructions : [ex.instructions]) : [],
       video_url: ex.short_youtube_demo || '',
       image_url: ex.youtube_thumbnail_url || '',
       video_demonstration_url: ex.short_youtube_demo || '',

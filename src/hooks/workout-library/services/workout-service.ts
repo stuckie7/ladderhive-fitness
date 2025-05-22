@@ -5,7 +5,7 @@ import { Exercise } from '@/types/exercise';
 import { toStringId } from '@/utils/id-conversion';
 
 export interface WorkoutExerciseInput {
-  exercise_id: string;
+  exercise_id: string | number;
   sets: number;
   reps: string;
   rest_seconds: number;
@@ -36,7 +36,9 @@ export async function createWorkout(
     // Insert workout exercises
     for (const exercise of exercises) {
       // Convert string exercise_id to number for DB
-      const exerciseId = parseInt(exercise.exercise_id, 10);
+      const exerciseId = typeof exercise.exercise_id === 'string' 
+        ? parseInt(exercise.exercise_id, 10) 
+        : exercise.exercise_id;
       
       const { error: exerciseError } = await supabase
         .from('user_workout_exercises')
@@ -61,7 +63,7 @@ export async function createWorkout(
 
 export async function addExerciseToWorkout(
   workoutId: string,
-  exerciseId: string,
+  exerciseId: string | number,
   sets: number,
   reps: string,
   restSeconds: number,
@@ -86,7 +88,9 @@ export async function addExerciseToWorkout(
       if (preparedError) throw preparedError;
 
       // Insert into prepared_workout_exercises
-      const numericExerciseId = parseInt(exerciseId, 10); // Convert string to number for DB
+      const numericExerciseId = typeof exerciseId === 'string' 
+        ? parseInt(exerciseId, 10) 
+        : exerciseId;
       
       const { error } = await supabase
         .from('prepared_workout_exercises')
@@ -101,12 +105,15 @@ export async function addExerciseToWorkout(
 
       if (error) throw error;
     } else {
+      // Convert exerciseId to a string for workout_exercises
+      const stringExerciseId = exerciseId.toString();
+      
       // Insert into workout_exercises using string ID
       const { error } = await supabase
         .from('workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: exerciseId,
+          exercise_id: stringExerciseId,
           sets,
           reps,
           rest_seconds: restSeconds,

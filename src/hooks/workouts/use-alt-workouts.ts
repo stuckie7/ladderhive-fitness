@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { toStringId } from '@/utils/id-conversion';
 
 interface Exercise {
   id: string;
@@ -44,12 +45,12 @@ export const useAltWorkouts = () => {
       try {
         setIsLoading(true);
         
+        // Get all prepared workouts
         const { data, error } = await supabase
           .from('prepared_workouts')
           .select(`
             id, title, description, difficulty, duration_minutes, category, thumbnail_url
           `)
-          .eq('is_alt', true) // Filter for ALT workouts
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -71,13 +72,23 @@ export const useAltWorkouts = () => {
               return {
                 ...workout,
                 exercises: []
-              };
+              } as AltWorkout;
             }
+            
+            // Convert exercise_id from number to string in each exercise
+            const formattedExercises = (exercisesData || []).map(ex => ({
+              ...ex,
+              exercise_id: toStringId(ex.exercise_id),
+              exercise: ex.exercise || {
+                id: toStringId(ex.exercise_id),
+                name: 'Unknown Exercise'
+              }
+            })) as WorkoutExercise[];
             
             return {
               ...workout,
-              exercises: exercisesData || []
-            };
+              exercises: formattedExercises
+            } as AltWorkout;
           })
         );
 
