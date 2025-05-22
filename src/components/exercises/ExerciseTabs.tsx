@@ -9,7 +9,7 @@ interface ExerciseTabsProps {
   activeTab: string;
   setActiveTab: (value: string) => void;
   muscleGroups: string[];
-  exercises: Exercise[] | undefined;
+  exercises: Exercise[];
   isLoading: boolean;
   getFilteredExercises: (muscleGroup: string) => Exercise[];
   resetFilters: () => void;
@@ -70,9 +70,6 @@ interface ExerciseResultsProps {
 
 const ExerciseResults = ({ exercises, resetFilters }: ExerciseResultsProps) => (
   <>
-    <p className="mb-4 text-muted-foreground">
-      Showing {exercises.length} exercises
-    </p>
     {exercises.length === 0 ? (
       <div className="text-center py-10">
         <p className="text-lg text-muted-foreground mb-4">

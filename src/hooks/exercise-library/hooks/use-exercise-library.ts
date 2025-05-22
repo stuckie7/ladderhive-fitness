@@ -25,6 +25,7 @@ export interface UseExerciseLibraryReturn {
   setFilters: (filters: Partial<ExerciseFilters>) => void;
   setPage: (page: number) => void;
   setItemsPerPage: (count: number) => void;
+  setPagination: (pagination: PaginationState | ((prev: PaginationState) => PaginationState)) => void;
   resetFilters: () => void;
   getFilteredExercises: (muscleGroup?: string) => ExerciseFull[];
   handleSearchChange: (value: string) => void;
@@ -193,6 +194,7 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     },
     setPage,
     setItemsPerPage,
+    setPagination,
     resetFilters: () => {
       setFiltersState({
         muscleGroup: '',

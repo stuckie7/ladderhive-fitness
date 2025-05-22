@@ -1,5 +1,5 @@
 
-import React, { Suspense, lazy, useEffect, ChangeEvent } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useCallback, ChangeEvent } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Badge } from "@/components/ui/badge";
 import { useExerciseLibrary } from "@/hooks/exercise-library";
@@ -41,6 +41,7 @@ const ExerciseLibrary = () => {
     resetFilters,
     getFilteredExercises,
     handleSearchChange,
+    setPagination
   } = useExerciseLibrary();
   
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -49,18 +50,51 @@ const ExerciseLibrary = () => {
     navigate("/exercises/enhanced");
   };
 
-  // Adapter function to convert ExerciseFull[] to Exercise[]
-  const convertedExercises = exercises.map(mapExerciseFullToExercise);
+  // Get filtered exercises based on active tab
+  const getFilteredExercisesForTab = useCallback((tab: string) => {
+    const filtered = tab === 'all' 
+      ? exercises 
+      : exercises.filter(ex => 
+          ex.prime_mover_muscle?.toLowerCase() === tab.toLowerCase() || 
+          ex.target_muscle_group?.toLowerCase() === tab.toLowerCase()
+        );
+    return filtered;
+  }, [exercises]);
+
+  // Get paginated exercises for the current tab
+  const paginatedExercises = useMemo(() => {
+    const filtered = getFilteredExercisesForTab(activeTab);
+    const start = (pagination.currentPage - 1) * pagination.itemsPerPage;
+    const end = start + pagination.itemsPerPage;
+    return filtered.slice(start, end).map(mapExerciseFullToExercise);
+  }, [getFilteredExercisesForTab, activeTab, pagination.currentPage, pagination.itemsPerPage]);
+  
+  // Get total count of filtered exercises for the active tab
+  const filteredExercisesCount = useMemo(() => {
+    return getFilteredExercisesForTab(activeTab).length;
+  }, [getFilteredExercisesForTab, activeTab]);
+  
+  // Update pagination when filtered results change
+  useEffect(() => {
+    setPagination(prev => ({
+      ...prev,
+      totalItems: filteredExercisesCount,
+      totalPages: Math.max(1, Math.ceil(filteredExercisesCount / prev.itemsPerPage)),
+      currentPage: Math.min(prev.currentPage, Math.ceil(filteredExercisesCount / prev.itemsPerPage) || 1)
+    }));
+  }, [filteredExercisesCount, pagination.itemsPerPage]);
   
   // Event handler adapter for SearchBar
   const handleSearchChangeAdapter = (e: ChangeEvent<HTMLInputElement>) => {
     handleSearchChange(e.target.value);
+    setPage(1); // Reset to first page when search changes
   };
   
-  // Adapter function for getFilteredExercises
-  const getFilteredExercisesAdapter = (muscleGroup: string): Exercise[] => {
-    return getFilteredExercises(muscleGroup).map(mapExerciseFullToExercise);
-  };
+  // Adapter function for getFilteredExercises (used by ExerciseTabs)
+  const getFilteredExercisesAdapter = useCallback((tab: string): Exercise[] => {
+    if (!tab) return [];
+    return getFilteredExercisesForTab(tab).map(mapExerciseFullToExercise);
+  }, [getFilteredExercisesForTab]);
 
   return (
     <AppLayout>
@@ -106,11 +140,14 @@ const ExerciseLibrary = () => {
           <ExerciseTabs 
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            exercises={convertedExercises}
+            exercises={paginatedExercises}
             muscleGroups={availableMuscleGroups}
             isLoading={isLoading}
             getFilteredExercises={getFilteredExercisesAdapter}
-            resetFilters={resetFilters}
+            resetFilters={() => {
+              resetFilters();
+              setPage(1);
+            }}
           />
         </Suspense>
 
