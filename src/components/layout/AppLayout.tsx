@@ -137,11 +137,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="mb-6 px-2">
           <Link to="/" className="flex items-center gap-2 px-2">
             <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
-<<<<<<< HEAD
-            <h1 className="font-bold text-xl md:hidden" data-lovable-title="true" id="lovable-app-title" aria-label="Lovable App Title">FitTrack Pro beta</h1>
-=======
-            <AppTitle />
->>>>>>> feature/lovable-title
+            <h1 className="font-bold text-xl md:hidden" data-lovable-title="true" id="lovable-app-title" aria-label="Lovable App Title">FitTrack Pro v.beta</h1>
           </Link>
         </div>
 
