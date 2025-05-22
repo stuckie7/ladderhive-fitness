@@ -34,6 +34,15 @@ interface AltWorkout {
   exercises: WorkoutExercise[];
 }
 
+// Define a type for the exercise details that might come from the database
+interface ExerciseDetail {
+  id: number;
+  name: string;
+  short_youtube_demo?: string;
+  youtube_thumbnail_url?: string;
+  [key: string]: any; // Allow for other properties we might not be explicitly using
+}
+
 export const useAltWorkoutDetail = (id?: string) => {
   const [workout, setWorkout] = useState<AltWorkout | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,9 +100,9 @@ export const useAltWorkoutDetail = (id?: string) => {
           // Map exercise details to workout exercises
           formattedExercises = exercisesData.map(ex => {
             // Find the matching exercise detail or use a default with just the name
-            const exerciseDetail = exerciseDetails?.find(detail => 
+            const exerciseDetail: ExerciseDetail = exerciseDetails?.find(detail => 
               detail.id === ex.exercise_id
-            ) || { name: 'Unknown Exercise' };
+            ) || { id: ex.exercise_id, name: 'Unknown Exercise' };
             
             return {
               id: ex.id,
@@ -107,9 +116,9 @@ export const useAltWorkoutDetail = (id?: string) => {
               exercise: {
                 id: toStringId(ex.exercise_id),
                 name: exerciseDetail.name || 'Unknown Exercise',
-                // Use optional chaining to safely access properties that might not exist
-                video_url: exerciseDetail?.short_youtube_demo,
-                thumbnail_url: exerciseDetail?.youtube_thumbnail_url
+                // Now TypeScript knows these properties might exist on the ExerciseDetail type
+                video_url: exerciseDetail.short_youtube_demo,
+                thumbnail_url: exerciseDetail.youtube_thumbnail_url
               }
             };
           });
