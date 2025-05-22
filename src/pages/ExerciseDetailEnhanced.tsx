@@ -71,15 +71,23 @@ export default function ExerciseDetailEnhanced() {
   const getEmbedUrl = (url: string): string => {
     if (!url) return '';
     
-    // Convert YouTube URLs to embed URLs
-    if (url.includes('youtube.com/watch')) {
-      return url.replace('watch?v=', 'embed/');
-    } 
-    // Handle YouTube shortened URLs
-    else if (url.includes('youtu.be')) {
-      return `https://www.youtube.com/embed/${url.split('/').pop()}`;
+    try {
+      // Handle YouTube watch URLs
+      if (url.includes('youtube.com/watch')) {
+        const videoId = new URL(url).searchParams.get('v');
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+      } 
+      // Handle youtu.be shortened URLs
+      else if (url.includes('youtu.be/')) {
+        const videoId = new URL(url).pathname.split('/').pop();
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+      }
+      // If it's already an embed URL or some other format, return as is
+      return url;
+    } catch (error) {
+      console.error('Error parsing video URL:', url, error);
+      return '';
     }
-    return url; // Return as is if not matching any pattern
   };
 
   if (loading) return <ExerciseDetailSkeleton />;
@@ -147,11 +155,14 @@ export default function ExerciseDetailEnhanced() {
                 <div className="bg-card rounded-lg p-6">
                   <h3 className="text-lg font-medium mb-4">Exercise Demonstration</h3>
                   <div className="aspect-video rounded-md overflow-hidden">
-                    <iframe 
+                    <iframe
                       src={getEmbedUrl(exercise.short_youtube_demo || exercise.video_demonstration_url || exercise.video_url || '')}
                       title="Exercise Demonstration"
                       className="w-full h-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
+                      loading="lazy"
                     />
                   </div>
                 </div>
@@ -163,11 +174,14 @@ export default function ExerciseDetailEnhanced() {
                 <div className="bg-card rounded-lg p-6">
                   <h3 className="text-lg font-medium mb-4">In-Depth Tutorial</h3>
                   <div className="aspect-video rounded-md overflow-hidden">
-                    <iframe 
+                    <iframe
                       src={getEmbedUrl(exercise.in_depth_youtube_exp || exercise.video_explanation_url || '')}
                       title="In-Depth Tutorial"
                       className="w-full h-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
+                      loading="lazy"
                     />
                   </div>
                 </div>
