@@ -91,16 +91,16 @@ const ExerciseLibraryEnhanced = () => {
     );
   }
 
-  // Complete the formState with all required properties from ExerciseFormState
+  // Modify the completeFormState inside the component:
   const completeFormState = {
     // Existing properties
     ...formState,
     // Required properties that might be missing
     name: formState.name || '',
     prime_mover_muscle: formState.target_muscle_group || formState.prime_mover_muscle || '',
-    secondary_muscles: formState.secondary_muscles || [],
+    secondary_muscles: Array.isArray(formState.secondary_muscles) ? formState.secondary_muscles : [],
     primary_equipment: formState.equipment || formState.primary_equipment || 'Bodyweight',
-    equipment_options: formState.equipment_options || [],
+    equipment_options: Array.isArray(formState.equipment_options) ? formState.equipment_options : [],
     difficulty: formState.difficulty || 'Beginner',
     exercise_type: formState.exercise_type || 'Strength',
     intensity_level: formState.intensity_level || 'Medium',

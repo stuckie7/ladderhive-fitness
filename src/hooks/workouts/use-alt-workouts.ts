@@ -82,11 +82,14 @@ export const useAltWorkouts = () => {
             
             // Convert exercise_id to string in each exercise
             const formattedExercises = (exercisesData || []).map(ex => {
-              // Handle potential SelectQueryError by providing default values
+              // Handle potential missing or empty exercise data
               const exerciseData = ex.exercise || {};
               
-              // Create safe fallback values for potentially undefined properties
-              const exerciseId = exerciseData.id ?? ex.exercise_id;
+              // Create safe default values for all exercise properties
+              const exerciseId = typeof exerciseData === 'object' && exerciseData !== null 
+                ? exerciseData.id ?? ex.exercise_id 
+                : ex.exercise_id;
+                
               const stringId = typeof exerciseId === 'number' ? toStringId(exerciseId) : String(exerciseId);
               
               return {
@@ -100,9 +103,9 @@ export const useAltWorkouts = () => {
                 notes: ex.notes || '',
                 exercise: {
                   id: stringId,
-                  name: exerciseData.name || 'Unknown Exercise',
-                  video_url: exerciseData.short_youtube_demo || undefined,
-                  thumbnail_url: exerciseData.youtube_thumbnail_url || undefined
+                  name: typeof exerciseData === 'object' && exerciseData !== null ? exerciseData.name || 'Unknown Exercise' : 'Unknown Exercise',
+                  video_url: typeof exerciseData === 'object' && exerciseData !== null ? exerciseData.short_youtube_demo || undefined : undefined,
+                  thumbnail_url: typeof exerciseData === 'object' && exerciseData !== null ? exerciseData.youtube_thumbnail_url || undefined : undefined
                 }
               };
             });
