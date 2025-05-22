@@ -19,21 +19,51 @@ export const useWorkoutDetailEnhanced = (id?: string) => {
       try {
         setIsLoading(true);
         
-        const { data, error } = await supabase
+        // Fetch basic workout data
+        const { data: workoutData, error: workoutError } = await supabase
           .from('prepared_workouts')
-          .select(`
-            *,
-            exercises:prepared_workout_exercises(
-              *,
-              exercise:exercise_id(*)
-            )
-          `)
+          .select('*')
           .eq('id', id)
           .single();
         
-        if (error) throw error;
+        if (workoutError) throw workoutError;
         
-        setWorkout(data);
+        // Fetch exercises for this workout separately instead of using a join
+        const { data: exercisesData, error: exercisesError } = await supabase
+          .from('prepared_workout_exercises')
+          .select('*')
+          .eq('workout_id', id)
+          .order('order_index');
+        
+        if (exercisesError) throw exercisesError;
+        
+        // Get all exercise IDs to fetch their details
+        const exerciseIds = exercisesData.map(ex => ex.exercise_id);
+        
+        // Fetch exercise details
+        const { data: exerciseDetails, error: detailsError } = await supabase
+          .from('exercises_full')
+          .select('*')
+          .in('id', exerciseIds);
+          
+        if (detailsError) throw detailsError;
+        
+        // Match exercise details with the workout exercises
+        const exercisesWithDetails = exercisesData.map(ex => {
+          const details = exerciseDetails?.find(detail => detail.id === ex.exercise_id) || {};
+          return {
+            ...ex,
+            exercise: details
+          };
+        });
+        
+        // Combine everything into a complete workout object
+        const completeWorkout = {
+          ...workoutData,
+          exercises: exercisesWithDetails
+        };
+        
+        setWorkout(completeWorkout);
         
       } catch (err: any) {
         console.error('Error fetching workout detail:', err);

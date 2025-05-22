@@ -51,20 +51,18 @@ export const useFetchWorkoutExercises = (workoutId?: string): FetchWorkoutExerci
   }, []);
 
   // Function to transform raw data into WorkoutExercise objects
-  const mapExerciseData = useCallback((rawExercises: any[]): WorkoutExercise[] => {
-    return rawExercises.map(item => {
-      let exerciseData: Exercise | ExerciseFull;
+  const mapExerciseData = useCallback((rawExerciseData: any[], exerciseDetails: any[]): WorkoutExercise[] => {
+    return rawExerciseData.map(item => {
+      // Find the matching exercise detail by ID
+      const exerciseDetail = exerciseDetails.find(detail => detail.id === item.exercise_id);
       
-      // Check if exercise data is available
-      if (item.exercise && !item.exercise.error) {
-        exerciseData = item.exercise as ExerciseFull;
-      } else {
-        // Create a placeholder if no exercise data
-        exerciseData = {
-          id: item.exercise_id.toString(),
-          name: 'Unknown Exercise',
-        };
-      }
+      // Create a base Exercise object, even if details are missing
+      const exerciseData: Exercise = {
+        id: item.exercise_id.toString(),
+        name: exerciseDetail?.name || 'Unknown Exercise',
+        video_url: exerciseDetail?.short_youtube_demo,
+        image_url: exerciseDetail?.youtube_thumbnail_url,
+      };
       
       // Create a WorkoutExercise object
       return {
@@ -83,38 +81,64 @@ export const useFetchWorkoutExercises = (workoutId?: string): FetchWorkoutExerci
 
   // Fetch exercises for a user-created workout
   const fetchUserCreatedWorkoutExercises = useCallback(async (id: string): Promise<WorkoutExercise[]> => {
-    const { data, error } = await supabase
+    // Get the exercise relationships
+    const { data: exerciseRelations, error: relationsError } = await supabase
       .from('user_created_workout_exercises')
-      .select(`
-        *,
-        exercise:exercise_id(*)
-      `)
+      .select('*')
       .eq('workout_id', id)
       .order('order_index');
     
-    if (error) {
-      throw new Error(`Error fetching user workout exercises: ${error.message}`);
+    if (relationsError) {
+      throw new Error(`Error fetching user workout exercises: ${relationsError.message}`);
     }
     
-    return mapExerciseData(data || []);
+    if (!exerciseRelations || exerciseRelations.length === 0) {
+      return [];
+    }
+    
+    // Get the exercise details separately
+    const exerciseIds = exerciseRelations.map(rel => rel.exercise_id);
+    const { data: exerciseDetails, error: detailsError } = await supabase
+      .from('exercises_full')
+      .select('*')
+      .in('id', exerciseIds);
+      
+    if (detailsError) {
+      throw new Error(`Error fetching exercise details: ${detailsError.message}`);
+    }
+    
+    return mapExerciseData(exerciseRelations, exerciseDetails || []);
   }, [mapExerciseData]);
 
   // Fetch exercises for a prepared workout
   const fetchPreparedWorkoutExercises = useCallback(async (id: string): Promise<WorkoutExercise[]> => {
-    const { data, error } = await supabase
+    // Get the exercise relationships
+    const { data: exerciseRelations, error: relationsError } = await supabase
       .from('prepared_workout_exercises')
-      .select(`
-        *,
-        exercise:exercise_id(*)
-      `)
+      .select('*')
       .eq('workout_id', id)
       .order('order_index');
     
-    if (error) {
-      throw new Error(`Error fetching prepared workout exercises: ${error.message}`);
+    if (relationsError) {
+      throw new Error(`Error fetching prepared workout exercises: ${relationsError.message}`);
     }
     
-    return mapExerciseData(data || []);
+    if (!exerciseRelations || exerciseRelations.length === 0) {
+      return [];
+    }
+    
+    // Get the exercise details separately
+    const exerciseIds = exerciseRelations.map(rel => rel.exercise_id);
+    const { data: exerciseDetails, error: detailsError } = await supabase
+      .from('exercises_full')
+      .select('*')
+      .in('id', exerciseIds);
+      
+    if (detailsError) {
+      throw new Error(`Error fetching exercise details: ${detailsError.message}`);
+    }
+    
+    return mapExerciseData(exerciseRelations, exerciseDetails || []);
   }, [mapExerciseData]);
 
   // Fetch function that will be exposed for refetching

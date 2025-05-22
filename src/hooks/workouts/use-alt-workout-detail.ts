@@ -61,67 +61,59 @@ export const useAltWorkoutDetail = (id?: string) => {
         
         if (workoutError) throw workoutError;
         
-        // Fetch the associated exercises
+        // Modified approach: Fetch exercises in two steps to avoid relationship issues
+        // First, get the exercises linked to this workout
         const { data: exercisesData, error: exercisesError } = await supabase
           .from('prepared_workout_exercises')
           .select(`
-            id, workout_id, exercise_id, sets, reps, rest_seconds, order_index, notes,
-            exercise:exercises_full(id, name, short_youtube_demo, youtube_thumbnail_url)
+            id, workout_id, exercise_id, sets, reps, rest_seconds, order_index, notes
           `)
           .eq('workout_id', id)
           .order('order_index');
           
         if (exercisesError) throw exercisesError;
         
-        // Convert exercise_id to string in each exercise with proper type casting
-        const formattedExercises: WorkoutExercise[] = (exercisesData || []).map(ex => {
-          // Handle potential missing or empty exercise data
-          const exerciseData = ex.exercise || {};
-          
-          // Type guard for proper object access
-          if (typeof exerciseData === 'object' && exerciseData !== null) {
-            const exerciseId = 'id' in exerciseData ? exerciseData.id : ex.exercise_id;
-            const stringId = typeof exerciseId === 'number' ? toStringId(exerciseId) : String(exerciseId);
-            
-            // Create properly typed exercise object
-            return {
-              id: ex.id,
-              workout_id: ex.workout_id,
-              exercise_id: toStringId(ex.exercise_id),
-              sets: ex.sets,
-              reps: ex.reps,
-              rest_seconds: ex.rest_seconds,
-              order_index: ex.order_index,
-              notes: ex.notes || '',
-              exercise: {
-                id: stringId,
-                name: 'name' in exerciseData ? String(exerciseData.name || 'Unknown Exercise') : 'Unknown Exercise',
-                video_url: 'short_youtube_demo' in exerciseData ? 
-                  String(exerciseData.short_youtube_demo || '') : undefined,
-                thumbnail_url: 'youtube_thumbnail_url' in exerciseData ? 
-                  String(exerciseData.youtube_thumbnail_url || '') : undefined
-              }
-            };
-          } else {
-            // Fallback for when exercise data is not an object
-            return {
-              id: ex.id,
-              workout_id: ex.workout_id,
-              exercise_id: toStringId(ex.exercise_id),
-              sets: ex.sets,
-              reps: ex.reps,
-              rest_seconds: ex.rest_seconds,
-              order_index: ex.order_index,
-              notes: ex.notes || '',
-              exercise: {
-                id: String(ex.exercise_id),
-                name: 'Unknown Exercise'
-              }
-            };
-          }
-        });
+        // Now get the exercise details separately
+        let formattedExercises: WorkoutExercise[] = [];
         
-        // Set workout with proper TypeScript typing
+        if (exercisesData && exercisesData.length > 0) {
+          // Extract all exercise IDs
+          const exerciseIds = exercisesData.map(ex => ex.exercise_id);
+          
+          // Fetch exercise details
+          const { data: exerciseDetails, error: detailsError } = await supabase
+            .from('exercises_full')
+            .select('id, name, short_youtube_demo, youtube_thumbnail_url')
+            .in('id', exerciseIds);
+            
+          if (detailsError) throw detailsError;
+          
+          // Map exercise details to workout exercises
+          formattedExercises = exercisesData.map(ex => {
+            const exerciseDetail = exerciseDetails?.find(detail => 
+              detail.id === ex.exercise_id
+            ) || { name: 'Unknown Exercise' };
+            
+            return {
+              id: ex.id,
+              workout_id: ex.workout_id,
+              exercise_id: toStringId(ex.exercise_id),
+              sets: ex.sets,
+              reps: ex.reps,
+              rest_seconds: ex.rest_seconds,
+              order_index: ex.order_index,
+              notes: ex.notes || '',
+              exercise: {
+                id: toStringId(ex.exercise_id),
+                name: exerciseDetail.name || 'Unknown Exercise',
+                video_url: exerciseDetail.short_youtube_demo || undefined,
+                thumbnail_url: exerciseDetail.youtube_thumbnail_url || undefined
+              }
+            };
+          });
+        }
+        
+        // Set workout with properly mapped exercises
         setWorkout({
           ...workoutData,
           exercises: formattedExercises
