@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Bookmark, BookmarkCheck, Video, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Wod } from '@/types/wod';
-import { getYouTubeThumbnail, createDescriptionSnippet } from '@/utils/wodHelpers';
+import { getYouTubeThumbnail, createDescriptionSnippet, generateEngagingDescription } from '@/utils/wodHelpers';
 
 interface WodCardProps {
   wod: Wod;
@@ -19,7 +19,8 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
   console.log(`WOD ${wod.id} video URL:`, wod.video_url);
   const thumbnailUrl = getYouTubeThumbnail(wod.video_url);
   console.log(`WOD ${wod.id} thumbnail URL:`, thumbnailUrl);
-  const descriptionSnippet = createDescriptionSnippet(wod.description, 60);
+  // Generate an engaging description or use the existing one
+  const descriptionText = wod.description ? createDescriptionSnippet(wod.description, 120) : generateEngagingDescription(wod);
   const hasVideo = !!wod.video_url;
 
   const getDifficultyColor = (difficulty: string | undefined) => {
@@ -119,7 +120,7 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
       
       <CardContent className={`flex-grow relative z-10 ${thumbnailUrl ? 'text-white' : ''}`}>
         <p className={`text-sm mb-4 ${thumbnailUrl ? 'text-white/80' : 'text-muted-foreground'}`}>
-          {descriptionSnippet}
+          {descriptionText}
         </p>
         
         <div className={`flex items-center gap-2 text-sm ${thumbnailUrl ? 'text-white/70' : 'text-muted-foreground'}`}>
