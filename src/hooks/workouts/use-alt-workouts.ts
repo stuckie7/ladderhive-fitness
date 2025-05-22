@@ -51,7 +51,7 @@ export const useAltWorkouts = () => {
           .select(`
             id, title, description, difficulty, duration_minutes, category, thumbnail_url
           `)
-          .order('title');
+          .order('created_at', { ascending: false });
         
         if (workoutError) throw workoutError;
         
@@ -60,10 +60,10 @@ export const useAltWorkouts = () => {
           return;
         }
         
-        // For each workout, fetch its exercises
-        const workoutsWithExercises = await Promise.all(
+        // Fetch exercises for all workouts
+        const allWorkoutsWithExercises = await Promise.all(
           workoutData.map(async (workout) => {
-            const { data: exerciseData, error: exerciseError } = await supabase
+            const { data: exercisesData, error: exercisesError } = await supabase
               .from('prepared_workout_exercises')
               .select(`
                 id, workout_id, exercise_id, sets, reps, rest_seconds, order_index, notes,
@@ -71,17 +71,17 @@ export const useAltWorkouts = () => {
               `)
               .eq('workout_id', workout.id)
               .order('order_index');
-              
-            if (exerciseError) {
-              console.error(`Error fetching exercises for workout ${workout.id}:`, exerciseError);
+            
+            if (exercisesError) {
+              console.error('Error fetching exercises for workout:', exercisesError);
               return {
                 ...workout,
                 exercises: []
               };
             }
             
-            // Format the exercises data
-            const formattedExercises = (exerciseData || []).map(ex => {
+            // Convert exercise_id to string in each exercise
+            const formattedExercises = (exercisesData || []).map(ex => {
               // Handle potential SelectQueryError by providing default values
               const exerciseData = ex.exercise || {};
               
@@ -95,10 +95,10 @@ export const useAltWorkouts = () => {
                 order_index: ex.order_index,
                 notes: ex.notes || '',
                 exercise: {
-                  id: toStringId(exerciseData.id || ex.exercise_id),
-                  name: exerciseData.name || 'Unknown Exercise',
-                  video_url: exerciseData.short_youtube_demo || undefined,
-                  thumbnail_url: exerciseData.youtube_thumbnail_url || undefined
+                  id: toStringId((exerciseData?.id || ex.exercise_id) as number),
+                  name: exerciseData?.name || 'Unknown Exercise',
+                  video_url: exerciseData?.short_youtube_demo || undefined,
+                  thumbnail_url: exerciseData?.youtube_thumbnail_url || undefined
                 }
               };
             });
@@ -110,7 +110,7 @@ export const useAltWorkouts = () => {
           })
         );
         
-        setWorkouts(workoutsWithExercises);
+        setWorkouts(allWorkoutsWithExercises);
         
       } catch (err: any) {
         console.error('Error fetching workouts:', err);
