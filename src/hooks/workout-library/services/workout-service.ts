@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutExercise } from '@/types/workout';
 import { Exercise } from '@/types/exercise';
@@ -34,18 +35,21 @@ export async function createWorkout(
     // Insert workout exercises
     const exerciseInserts = exercises.map((exercise) => ({
       workout_id: workout.id,
-      exercise_id: exercise.exercise_id,
+      exercise_id: parseInt(exercise.exercise_id), // Convert string to number for DB
       sets: exercise.sets,
-      reps: parseInt(exercise.reps), // Convert string to number
-      rest_time: exercise.rest_seconds, // Use rest_time instead of rest_seconds
+      reps: exercise.reps,
+      rest_seconds: exercise.rest_seconds,
       order_index: exercise.order_index,
     }));
 
-    const { error: exerciseError } = await supabase
-      .from('workout_exercises')
-      .insert(exerciseInserts);
+    // Insert one by one to avoid type issues with the batch insert
+    for (const exerciseData of exerciseInserts) {
+      const { error: exerciseError } = await supabase
+        .from('user_workout_exercises')
+        .insert(exerciseData);
 
-    if (exerciseError) throw exerciseError;
+      if (exerciseError) throw exerciseError;
+    }
 
     return workout;
   } catch (error) {
@@ -83,32 +87,28 @@ export async function addExerciseToWorkout(
       // Insert into prepared_workout_exercises
       const { error } = await supabase
         .from('prepared_workout_exercises')
-        .insert([
-          {
-            workout_id: workoutId,
-            exercise_id: exerciseId,
-            sets,
-            reps,
-            rest_seconds: restSeconds,
-            order_index: orderIndex,
-          },
-        ]);
+        .insert({
+          workout_id: workoutId,
+          exercise_id: parseInt(exerciseId), // Convert string to number for DB
+          sets,
+          reps,
+          rest_seconds: restSeconds,
+          order_index: orderIndex,
+        });
 
       if (error) throw error;
     } else {
       // Insert into workout_exercises
       const { error } = await supabase
         .from('workout_exercises')
-        .insert([
-          {
-            workout_id: workoutId,
-            exercise_id: exerciseId,
-            sets,
-            reps,
-            rest_seconds: restSeconds,
-            order_index: orderIndex,
-          },
-        ]);
+        .insert({
+          workout_id: workoutId,
+          exercise_id: exerciseId, // No need to convert, assuming this table uses string IDs
+          sets,
+          reps,
+          rest_seconds: restSeconds,
+          order_index: orderIndex,
+        });
 
       if (error) throw error;
     }

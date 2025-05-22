@@ -43,7 +43,7 @@ export const getExerciseFullById = async (id: string | number): Promise<Exercise
     // Create the exercise full object with proper type safety
     const exerciseData: ExerciseFullData = {
       ...data,
-      id: data.id,
+      id: String(data.id), // Convert ID to string here
       name: data.name || '',
     };
     
@@ -123,7 +123,12 @@ export const updateExerciseInDatabase = async (exercise: Partial<ExerciseFull>):
     
     if (error) throw error;
     
-    return data as ExerciseFull;
+    // Ensure ID is converted to string in the result
+    if (data) {
+      return { ...data, id: String(data.id) } as ExerciseFull;
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error updating exercise:', error);
     throw error;
@@ -144,7 +149,12 @@ export const createExerciseInDatabase = async (exercise: Partial<ExerciseFull>):
     
     if (error) throw error;
     
-    return data as ExerciseFull;
+    // Ensure ID is converted to string in the result
+    if (data) {
+      return { ...data, id: String(data.id) } as ExerciseFull;
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error creating exercise:', error);
     throw error;

@@ -34,7 +34,7 @@ const DashboardMetricsSection: React.FC<DashboardMetricsSectionProps> = ({
       </div>
       <div className="col-span-1">
         <WorkoutHistory 
-          workouts={recentWorkouts} 
+          recentWorkouts={recentWorkouts} /* Changed from workouts to recentWorkouts to match component props */
           isLoading={isLoading}
           onSelectDate={onSelectDate}
           onSelectWorkout={onSelectWorkout}

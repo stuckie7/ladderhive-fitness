@@ -10,7 +10,8 @@ export interface ExerciseVideoHandlerProps {
   title?: string;
   className?: string;
   showPlaceholder?: boolean;
-  url?: string;  // Added direct URL property for flexibility
+  url?: string;  // Added proper URL property
+  thumbnailUrl?: string; // Added thumbnail URL property
 }
 
 const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({ 
@@ -18,7 +19,8 @@ const ExerciseVideoHandler: React.FC<ExerciseVideoHandlerProps> = ({
   title,
   className = '',
   showPlaceholder = true,
-  url
+  url,
+  thumbnailUrl
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 

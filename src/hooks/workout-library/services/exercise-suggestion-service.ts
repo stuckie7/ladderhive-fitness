@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ExerciseFull } from '@/types/exercise';
 
@@ -11,7 +12,7 @@ export async function getSuggestedExercisesForWorkout(
   workoutDifficulty: string,
   targetMuscles: string[],
   limit: number = 5
-): Promise<Exercise[]> {
+): Promise<ExerciseFull[]> {
   try {
     // Get all exercises from the full library
     const { data: exercises, error: fetchError } = await supabase
@@ -27,54 +28,21 @@ export async function getSuggestedExercisesForWorkout(
 
     // Filter and score exercises based on relevance
     const scoredExercises = exercises.map((exercise) => {
+      // Make sure to convert the id to string
+      const exerciseWithStringId = {
+        ...exercise,
+        id: String(exercise.id)
+      } as ExerciseFull;
+      
       const relevanceScore = calculateRelevanceScore(
-        exercise,
+        exerciseWithStringId,
         workoutCategory,
         workoutDifficulty,
         targetMuscles
       );
 
       return {
-        exercise,
-        relevanceScore,
-      } as SuggestedExercise;
-    });
-
-    // Sort by relevance and take top N
-    const sortedExercises = scoredExercises
-      .sort((a, b) => b.relevanceScore - a.relevanceScore)
-      .slice(0, limit);
-
-    // Convert to Exercise type
-    return sortedExercises.map((suggested) => suggested.exercise);
-  } catch (error) {
-    console.error('Error getting suggested exercises:', error);
-    throw error;
-  }
-  try {
-    // Get all exercises from the full library
-    const { data: exercises, error: fetchError } = await supabase
-      .from('exercises_full')
-      .select('*')
-      .order('difficulty', { ascending: true });
-
-    if (fetchError) throw fetchError;
-
-    if (!exercises || exercises.length === 0) {
-      return [];
-    }
-
-    // Filter and score exercises based on relevance
-    const scoredExercises = exercises.map((exercise) => {
-      const relevanceScore = calculateRelevanceScore(
-        exercise,
-        workoutCategory,
-        workoutDifficulty,
-        targetMuscles
-      );
-
-      return {
-        exercise,
+        exercise: exerciseWithStringId,
         relevanceScore,
       } as SuggestedExercise;
     });
