@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -199,9 +198,10 @@ export default function ExerciseDetail(): JSX.Element {
       </div>
       {isAddToWorkoutOpen && exercise && (
         <AddToWorkoutModal
-          exercise={exercise}
-          isOpen={isAddToWorkoutOpen}
-          onClose={() => setIsAddToWorkoutOpen(false)}
+          open={isAddToWorkoutOpen}
+          onOpenChange={setIsAddToWorkoutOpen}
+          exerciseId={exercise.id.toString()}
+          exerciseName={exercise.name}
         />
       )}
     </AppLayout>
