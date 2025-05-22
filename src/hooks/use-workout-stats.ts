@@ -1,46 +1,82 @@
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
+interface ActivityDataPoint {
+  date: string;
+  count: number;
+  minutes?: number;
+  calories?: number;
+}
+
 export const useWorkoutStats = () => {
-  const [weeklyActivityData, setWeeklyActivityData] = useState<any[]>([]);
+  const [weeklyActivityData, setWeeklyActivityData] = useState<ActivityDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchWorkoutStats = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
-        
-        // Get current user
-        const { data: userData } = await supabase.auth.getUser();
-        
-        if (!userData || !userData.user) {
-          throw new Error('User not authenticated');
+
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 6);
+
+        // Format dates for query
+        const startDate = sevenDaysAgo.toISOString().split('T')[0];
+        const endDate = today.toISOString().split('T')[0];
+
+        // Fetch workouts for last 7 days
+        const { data, error } = await supabase
+          .from('workout_history')
+          .select('date, duration_minutes')
+          .eq('user_id', user.id)
+          .gte('date', startDate)
+          .lte('date', endDate)
+          .order('date', { ascending: true });
+
+        if (error) {
+          throw new Error(error.message);
         }
-        
-        // Mock data for weekly chart for now
-        const mockWeeklyData = [
-          { day: 'Mon', workouts: 1, minutes: 30 },
-          { day: 'Tue', workouts: 0, minutes: 0 },
-          { day: 'Wed', workouts: 1, minutes: 45 },
-          { day: 'Thu', workouts: 0, minutes: 0 },
-          { day: 'Fri', workouts: 1, minutes: 35 },
-          { day: 'Sat', workouts: 2, minutes: 90 },
-          { day: 'Sun', workouts: 0, minutes: 0 }
-        ];
-        
-        setWeeklyActivityData(mockWeeklyData);
-      } catch (err: any) {
+
+        // Create array of last 7 days
+        const activityData: ActivityDataPoint[] = [];
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(sevenDaysAgo);
+          date.setDate(sevenDaysAgo.getDate() + i);
+          const dateStr = date.toISOString().split('T')[0];
+          
+          // Find workouts for this day
+          const dayWorkouts = data?.filter(w => w.date === dateStr) || [];
+          const count = dayWorkouts.length;
+          const minutes = dayWorkouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0);
+          
+          activityData.push({
+            date: dateStr,
+            count,
+            minutes
+          });
+        }
+
+        setWeeklyActivityData(activityData);
+      } catch (err) {
         console.error('Error fetching workout stats:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Failed to load workout statistics');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchWorkoutStats();
-  }, []);
+  }, [user]);
 
   return { weeklyActivityData, isLoading, error };
 };

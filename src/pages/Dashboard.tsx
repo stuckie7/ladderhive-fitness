@@ -53,6 +53,22 @@ const Dashboard = () => {
   const goToExercises = () => navigate('/exercises');
   const goToSchedule = () => navigate('/schedule');
 
+  // Promise-based handlers for component props
+  const handleRefreshWorkouts = async (): Promise<void> => {
+    // This is a placeholder that returns a promise
+    return Promise.resolve();
+  };
+
+  const handleAddFavorite = async (id: string): Promise<void> => {
+    // Placeholder implementation
+    return Promise.resolve();
+  };
+
+  const handleRemoveFavorite = async (id: string): Promise<void> => {
+    // Placeholder implementation
+    return Promise.resolve();
+  };
+
   // Mock data for achievements
   const achievements = [
     { id: '1', title: 'First Workout', description: 'Completed your first workout', date: '2023-04-01', icon: '🎯' },
@@ -62,9 +78,9 @@ const Dashboard = () => {
   return (
     <AppLayout>
       <div className="container mx-auto p-4 space-y-6">
-        {/* Header */}
+        {/* Header - fixed to use expected prop name */}
         <DashboardHeader 
-          name={profile?.first_name || user?.email?.split('@')[0] || 'User'} 
+          firstName={profile?.first_name || user?.email?.split('@')[0] || 'User'} 
           isLoading={isLoading} 
         />
         
@@ -81,12 +97,12 @@ const Dashboard = () => {
               isLoading={isLoading}
               onGoToExerciseLibrary={goToExercises}
               onScheduleWorkout={goToSchedule}
-              onRefreshWorkouts={() => {}} // Placeholder for refresh function
+              onRefreshWorkouts={handleRefreshWorkouts}
             />
             
             {/* Metrics Section - Activity data */}
             <DashboardMetricsSection 
-              weeklyActivityData={weeklyActivityData} 
+              activityData={weeklyActivityData || []} 
               isLoading={isLoading} 
             />
             
@@ -95,8 +111,8 @@ const Dashboard = () => {
               favoriteExercises={favoriteExercises || []}
               achievements={achievements}
               isLoading={isLoading}
-              onAddFavorite={() => {}} // Placeholder for add favorite function
-              onRemoveFavorite={() => {}} // Placeholder for remove favorite function
+              onAddFavorite={handleAddFavorite}
+              onRemoveFavorite={handleRemoveFavorite}
             />
             
             {/* Recent Workouts */}

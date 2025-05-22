@@ -60,8 +60,8 @@ export const useAltWorkouts = () => {
           return;
         }
         
-        // Fetch exercises for all workouts
-        const allWorkoutsWithExercises = await Promise.all(
+        // Fetch exercises for all workouts with proper type safety
+        const allWorkoutsWithExercises: AltWorkout[] = await Promise.all(
           workoutData.map(async (workout) => {
             const { data: exercisesData, error: exercisesError } = await supabase
               .from('prepared_workout_exercises')
@@ -80,12 +80,12 @@ export const useAltWorkouts = () => {
               };
             }
             
-            // Convert exercise_id to string in each exercise
-            const formattedExercises = (exercisesData || []).map(ex => {
+            // Convert exercise_id to string in each exercise with proper typing
+            const formattedExercises: WorkoutExercise[] = (exercisesData || []).map(ex => {
               // Handle potential missing or empty exercise data
               const exerciseData = ex.exercise || {};
               
-              // Safely type check and access properties
+              // Type guard for proper object access
               if (typeof exerciseData === 'object' && exerciseData !== null) {
                 const exerciseId = 'id' in exerciseData ? exerciseData.id : ex.exercise_id;
                 const stringId = typeof exerciseId === 'number' ? toStringId(exerciseId) : String(exerciseId);
@@ -101,9 +101,11 @@ export const useAltWorkouts = () => {
                   notes: ex.notes || '',
                   exercise: {
                     id: stringId,
-                    name: 'name' in exerciseData ? exerciseData.name || 'Unknown Exercise' : 'Unknown Exercise',
-                    video_url: 'short_youtube_demo' in exerciseData ? exerciseData.short_youtube_demo || undefined : undefined,
-                    thumbnail_url: 'youtube_thumbnail_url' in exerciseData ? exerciseData.youtube_thumbnail_url || undefined : undefined
+                    name: 'name' in exerciseData ? String(exerciseData.name || 'Unknown Exercise') : 'Unknown Exercise',
+                    video_url: 'short_youtube_demo' in exerciseData ? 
+                      String(exerciseData.short_youtube_demo || '') : undefined,
+                    thumbnail_url: 'youtube_thumbnail_url' in exerciseData ? 
+                      String(exerciseData.youtube_thumbnail_url || '') : undefined
                   }
                 };
               } else {

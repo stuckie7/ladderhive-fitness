@@ -73,16 +73,17 @@ export const useAltWorkoutDetail = (id?: string) => {
           
         if (exercisesError) throw exercisesError;
         
-        // Convert exercise_id to string in each exercise
+        // Convert exercise_id to string in each exercise with proper type casting
         const formattedExercises: WorkoutExercise[] = (exercisesData || []).map(ex => {
           // Handle potential missing or empty exercise data
           const exerciseData = ex.exercise || {};
           
-          // Safely type check and access properties
+          // Type guard for proper object access
           if (typeof exerciseData === 'object' && exerciseData !== null) {
             const exerciseId = 'id' in exerciseData ? exerciseData.id : ex.exercise_id;
             const stringId = typeof exerciseId === 'number' ? toStringId(exerciseId) : String(exerciseId);
             
+            // Create properly typed exercise object
             return {
               id: ex.id,
               workout_id: ex.workout_id,
@@ -94,9 +95,11 @@ export const useAltWorkoutDetail = (id?: string) => {
               notes: ex.notes || '',
               exercise: {
                 id: stringId,
-                name: 'name' in exerciseData ? exerciseData.name || 'Unknown Exercise' : 'Unknown Exercise',
-                video_url: 'short_youtube_demo' in exerciseData ? exerciseData.short_youtube_demo || undefined : undefined,
-                thumbnail_url: 'youtube_thumbnail_url' in exerciseData ? exerciseData.youtube_thumbnail_url || undefined : undefined
+                name: 'name' in exerciseData ? String(exerciseData.name || 'Unknown Exercise') : 'Unknown Exercise',
+                video_url: 'short_youtube_demo' in exerciseData ? 
+                  String(exerciseData.short_youtube_demo || '') : undefined,
+                thumbnail_url: 'youtube_thumbnail_url' in exerciseData ? 
+                  String(exerciseData.youtube_thumbnail_url || '') : undefined
               }
             };
           } else {
@@ -118,6 +121,7 @@ export const useAltWorkoutDetail = (id?: string) => {
           }
         });
         
+        // Set workout with proper TypeScript typing
         setWorkout({
           ...workoutData,
           exercises: formattedExercises

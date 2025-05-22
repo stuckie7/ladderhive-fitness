@@ -1,29 +1,61 @@
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Exercise } from '@/types/exercise';
 
 export const useFavoriteExercises = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const fetchFavorites = async () => {
+    const fetchFavoriteExercises = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
-        // This would normally fetch from an API or database
-        // For now, returning an empty array
-        setExercises([]);
+
+        // This is a placeholder since we don't know the exact table structure
+        // In a real application, you would fetch user's favorite exercises from a database
+        const { data, error } = await supabase
+          .from('exercises_full')
+          .select('*')
+          .limit(5);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        // Convert database exercises to Exercise type
+        const formattedExercises: Exercise[] = (data || []).map(ex => ({
+          id: String(ex.id),
+          name: ex.name || 'Unknown Exercise',
+          muscle_group: ex.prime_mover_muscle || '',
+          equipment: ex.primary_equipment || 'Bodyweight',
+          difficulty: ex.difficulty || 'Beginner',
+          description: ex.description || '',
+          instructions: ex.instructions || [],
+          video_url: ex.short_youtube_demo || '',
+          image_url: ex.youtube_thumbnail_url || '',
+          target_muscle_group: ex.prime_mover_muscle || ''
+        }));
+
+        setExercises(formattedExercises);
       } catch (err) {
         console.error('Error fetching favorite exercises:', err);
-        setError(err as Error);
+        setError(err instanceof Error ? err.message : 'Failed to load favorite exercises');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchFavorites();
-  }, []);
+    fetchFavoriteExercises();
+  }, [user]);
 
   return { exercises, isLoading, error };
 };

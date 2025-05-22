@@ -61,14 +61,14 @@ export const getSuggestedExercisesForWorkout = async (
         muscle_group: ex.prime_mover_muscle || '',
         equipment: ex.primary_equipment || 'Bodyweight',
         difficulty: ex.difficulty || 'Beginner',
-        // Handle potentially missing properties
+        // For properties that might be missing in the database schema
         description: '', // Default empty string
-        // Handle instructions with a safe approach
+        // Handle instructions with proper type safety
         instructions: Array.isArray(ex.instructions) 
           ? ex.instructions 
           : typeof ex.instructions === 'string' && ex.instructions 
             ? [ex.instructions] 
-            : [ex.name || 'No instructions available'],
+            : [ex.name || 'No instructions available'], // Fallback to name if instructions are missing
         video_url: ex.short_youtube_demo || '',
         image_url: ex.youtube_thumbnail_url || '',
         video_demonstration_url: ex.short_youtube_demo || '',
