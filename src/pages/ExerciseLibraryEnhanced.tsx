@@ -487,7 +487,7 @@ const ExerciseLibraryEnhanced = () => {
       <ExerciseFormDialog
         open={showAddExerciseForm}
         onOpenChange={setShowAddExerciseForm}
-        onSave={(formData) => handleAddExercise(formData)}
+        onSubmit={handleFormSubmit}
         initialValues={formState}
         filterOptions={mockFilterOptions}
       />

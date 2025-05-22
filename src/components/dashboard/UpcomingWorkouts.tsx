@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, ChevronRight, Dumbbell, PlusCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,13 +21,15 @@ interface UpcomingWorkoutsProps {
   isLoading: boolean;
   onScheduleWorkout?: () => void;
   onRefresh?: () => void; // Add refresh function
+  onViewWorkout: (id: string) => void; // Make onViewWorkout a required prop
 }
 
 const UpcomingWorkouts = ({ 
   workouts, 
   isLoading,
   onScheduleWorkout,
-  onRefresh
+  onRefresh,
+  onViewWorkout
 }: UpcomingWorkoutsProps) => {
   const { toast } = useToast();
   
@@ -153,10 +154,10 @@ const UpcomingWorkouts = ({
         ) : displayWorkouts.length > 0 ? (
           <div className="space-y-3">
             {displayWorkouts.map((workout) => (
-              <Link
+              <div
                 key={workout.id}
-                to={getWorkoutLink(workout)}
-                className="block p-3 border border-gray-800/50 rounded-lg hover:border-fitness-secondary/50 hover:bg-gray-900/30 transition-all group"
+                className="block p-3 border border-gray-800/50 rounded-lg hover:border-fitness-secondary/50 hover:bg-gray-900/30 transition-all group cursor-pointer"
+                onClick={() => onViewWorkout(workout.id)}
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -182,7 +183,7 @@ const UpcomingWorkouts = ({
                     {getFormattedDate(workout.date)}
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
             
             {displayWorkouts.length < upcomingWorkouts.length && (

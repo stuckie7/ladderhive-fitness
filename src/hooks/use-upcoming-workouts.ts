@@ -55,7 +55,7 @@ export const useUpcomingWorkouts = () => {
         const formattedWorkouts: UpcomingWorkout[] = (data || [])
           .filter(workout => workout.prepared_workouts) // Filter out entries without workout data
           .map(workout => {
-            // Safely access properties using optional chaining and default values
+            // Safely access properties with type checking and default values
             const workoutInfo = workout.prepared_workouts || {};
             
             return {
