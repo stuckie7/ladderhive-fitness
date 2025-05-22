@@ -70,7 +70,6 @@ export const useAltWorkoutDetail = (id?: string) => {
         
         if (workoutError) throw workoutError;
         
-        // Modified approach: Fetch exercises in two steps to avoid relationship issues
         // First, get the exercises linked to this workout
         const { data: exercisesData, error: exercisesError } = await supabase
           .from('prepared_workout_exercises')
