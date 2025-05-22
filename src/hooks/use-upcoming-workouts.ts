@@ -27,8 +27,7 @@ export const useUpcomingWorkouts = () => {
       try {
         setIsLoading(true);
 
-        // Query to get upcoming scheduled workouts
-        // Fixed query to properly join and select fields from the proper tables
+        // Corrected query to properly join and select fields from the proper tables
         const { data, error } = await supabase
           .from('user_workouts')
           .select(`
@@ -36,6 +35,7 @@ export const useUpcomingWorkouts = () => {
             planned_for,
             workout_id,
             prepared_workouts (
+              id,
               title,
               duration_minutes,
               difficulty

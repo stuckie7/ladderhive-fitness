@@ -135,7 +135,7 @@ export const useExerciseLibraryEnhanced = () => {
         short_youtube_demo: formData.video_url,
       };
       
-      // Insert into database
+      // Insert into database - Convert string ID to number
       const { error } = await supabase.from('exercises_full').insert(exerciseData);
       
       if (error) {
@@ -181,11 +181,13 @@ export const useExerciseLibraryEnhanced = () => {
         short_youtube_demo: formData.video_url,
       };
       
-      // Update in database
+      // Update in database - Convert string ID to number if needed
+      const idAsNumber = typeof currentExercise.id === 'string' ? parseInt(currentExercise.id, 10) : currentExercise.id;
+      
       const { error } = await supabase
         .from('exercises_full')
         .update(exerciseData)
-        .eq('id', currentExercise.id);
+        .eq('id', idAsNumber);
       
       if (error) {
         throw error;
@@ -219,11 +221,13 @@ export const useExerciseLibraryEnhanced = () => {
     try {
       setLoading(true);
       
-      // Delete from database
+      // Delete from database - Convert string ID to number if needed
+      const idAsNumber = typeof currentExercise.id === 'string' ? parseInt(currentExercise.id, 10) : currentExercise.id;
+      
       const { error } = await supabase
         .from('exercises_full')
         .delete()
-        .eq('id', currentExercise.id);
+        .eq('id', idAsNumber);
       
       if (error) {
         throw error;

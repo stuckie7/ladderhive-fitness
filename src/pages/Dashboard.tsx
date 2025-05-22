@@ -1,22 +1,27 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { DashboardMetricsSection } from '@/components/dashboard/DashboardMetricsSection';
-import { QuickActionsSection } from '@/components/dashboard/QuickActionsSection';
-import { FavoritesAndAchievementsSection } from '@/components/dashboard/FavoritesAndAchievementsSection';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import DashboardMetricsSection from '@/components/dashboard/DashboardMetricsSection';
+import QuickActionsSection from '@/components/dashboard/QuickActionsSection';
+import FavoritesAndAchievementsSection from '@/components/dashboard/FavoritesAndAchievementsSection';
 import { useFavoriteExercises } from '@/hooks/use-favorite-exercises';
 import { useUpcomingWorkouts } from '@/hooks/use-upcoming-workouts';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-import { DashboardError } from '@/components/dashboard/DashboardError';
+import DashboardError from '@/components/dashboard/DashboardError';
 import { useProfile } from '@/hooks/use-profile';
 import { useWorkouts } from '@/hooks/workouts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dumbbell } from 'lucide-react';
 import { useDailyProgress } from '@/hooks/use-daily-progress';
 import { useActivityProgress } from '@/hooks/use-activity-progress';
+
+// Import missing components
+import { UpcomingWorkouts } from '@/components/dashboard/UpcomingWorkouts';
+import { WorkoutHistory } from '@/components/dashboard/WorkoutHistory';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -35,7 +40,11 @@ const Dashboard = () => {
         // Placeholder for any dashboard-specific data fetching
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
-        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        if (err instanceof Error) {
+          setError(err);
+        } else {
+          setError(new Error('An unknown error occurred'));
+        }
       }
     };
 
@@ -46,7 +55,7 @@ const Dashboard = () => {
     return (
       <AppLayout>
         <DashboardError
-          message={error?.message || "Something went wrong. Please try again later."}
+          message={error.message || "Something went wrong. Please try again later."}
           onRetry={() => window.location.reload()}
         />
       </AppLayout>
