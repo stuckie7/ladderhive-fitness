@@ -21,7 +21,7 @@ export function toNumericId(id: string | number): number {
  * @returns string ID
  */
 export function toStringId(id: string | number): string {
-  return id.toString();
+  return id?.toString() || '';
 }
 
 /**

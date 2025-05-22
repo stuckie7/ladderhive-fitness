@@ -42,7 +42,6 @@ export default function AutoPopulateButton({
     try {
       const targetMuscles = getTargetMuscles(workoutCategory);
       
-      // Call with correct number of arguments
       const exercises = await getSuggestedExercisesForWorkout(
         workoutCategory, 
         workoutDifficulty,

@@ -66,7 +66,7 @@ export const useAltWorkoutDetail = (id?: string) => {
           .from('prepared_workout_exercises')
           .select(`
             id, workout_id, exercise_id, sets, reps, rest_seconds, order_index, notes,
-            exercise:exercise_id(id, name, video_url, thumbnail_url)
+            exercise:exercises_full(id, name, short_youtube_demo, youtube_thumbnail_url)
           `)
           .eq('workout_id', id)
           .order('order_index');
@@ -74,14 +74,19 @@ export const useAltWorkoutDetail = (id?: string) => {
         if (exercisesError) throw exercisesError;
         
         // Convert exercise_id to string in each exercise
-        const formattedExercises = (exercisesData || []).map(ex => ({
+        const formattedExercises: WorkoutExercise[] = (exercisesData || []).map(ex => ({
           ...ex,
           exercise_id: toStringId(ex.exercise_id),
-          exercise: ex.exercise || {
+          exercise: ex.exercise ? {
+            id: toStringId(ex.exercise.id),
+            name: ex.exercise.name || 'Unknown Exercise',
+            video_url: ex.exercise.short_youtube_demo || undefined,
+            thumbnail_url: ex.exercise.youtube_thumbnail_url || undefined
+          } : {
             id: toStringId(ex.exercise_id),
             name: 'Unknown Exercise'
           }
-        })) as WorkoutExercise[];
+        }));
         
         setWorkout({
           ...workoutData,

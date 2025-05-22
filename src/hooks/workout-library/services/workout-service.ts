@@ -41,7 +41,7 @@ export async function createWorkout(
         : exercise.exercise_id;
       
       const { error: exerciseError } = await supabase
-        .from('user_workout_exercises')
+        .from('user_created_workout_exercises')
         .insert({
           workout_id: workout.id,
           exercise_id: exerciseId,
@@ -105,15 +105,17 @@ export async function addExerciseToWorkout(
 
       if (error) throw error;
     } else {
-      // Convert exerciseId to a string for workout_exercises
-      const stringExerciseId = exerciseId.toString();
+      // For user created workouts, we'll convert the ID to number for DB
+      const numericExerciseId = typeof exerciseId === 'string'
+        ? parseInt(exerciseId, 10)
+        : exerciseId;
       
-      // Insert into workout_exercises using string ID
+      // Insert into user_created_workout_exercises
       const { error } = await supabase
-        .from('workout_exercises')
+        .from('user_created_workout_exercises')
         .insert({
           workout_id: workoutId,
-          exercise_id: stringExerciseId,
+          exercise_id: numericExerciseId,
           sets,
           reps,
           rest_seconds: restSeconds,

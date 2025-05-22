@@ -1,110 +1,78 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AIGenerationParams, GeneratedWorkout, AIWorkoutGeneratorState } from '@/types/workouts/ai-generator/types';
 
-export const useAIWorkoutGenerator = () => {
-  const [state, setState] = useState<AIWorkoutGeneratorState>({
-    params: {
-      workoutType: 'strength',
-      difficulty: 'intermediate',
-      targetMuscleGroups: [],
-      equipment: [],
-      duration: 45,
-      intensity: 7,
-    },
-    generatedWorkout: null,
-    isGenerating: false,
-    error: null,
-    suggestions: [],
-  });
+// Define workout types to avoid deep instantiation
+export type AIWorkoutGenerator = {
+  generateWorkout: (params: any) => Promise<any>;
+  saveWorkout: (workout: any) => Promise<any>;
+  isGenerating: boolean;
+  error: string | null;
+};
 
-  const fetchExerciseData = useCallback(async () => {
-    const { data: exercises } = await supabase
-      .from('exercises')
-      .select('*')
-      .eq('is_active', true);
+export function useAIWorkoutGenerator(): AIWorkoutGenerator {
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generateWorkout = useCallback(async (params: any) => {
+    setIsGenerating(true);
+    setError(null);
     
-    return exercises || [];
+    try {
+      // This is a placeholder - would need to implement actual workout generation
+      console.log("Generating workout with params:", params);
+      
+      // Return mock workout data
+      return {
+        title: "Generated Workout",
+        description: "AI generated workout",
+        difficulty: "intermediate",
+        duration: 45,
+        exercises: []
+      };
+    } catch (err: any) {
+      setError(err.message || "Failed to generate workout");
+      console.error("Error generating workout:", err);
+      return null;
+    } finally {
+      setIsGenerating(false);
+    }
   }, []);
 
-  const generateWorkout = useCallback(async (params: AIGenerationParams) => {
-    setState(prev => ({ ...prev, isGenerating: true, error: null }));
-
+  const saveWorkout = useCallback(async (workout: any) => {
     try {
-      const exercises = await fetchExerciseData();
-      
-      // TODO: Implement AI generation logic here
-      // For now, return a mock workout
-      const mockWorkout: GeneratedWorkout = {
-        name: `${params.workoutType} Workout - ${params.difficulty}`,
-        description: `A ${params.duration}-minute ${params.workoutType} workout tailored to your ${params.difficulty} level`,
-        exercises: [
-          // Mock exercises - replace with AI-generated ones
-          {
-            name: 'Squat',
-            sets: 3,
-            reps: 8,
-            rest: 90,
-            intensity: 8,
-            muscleGroups: ['quads', 'glutes', 'hamstrings'],
-            equipment: ['barbell'],
-            alternatives: ['Goblet Squat', 'Bodyweight Squat'],
-            notes: 'Focus on depth and form',
-          },
-          // Add more mock exercises...
-        ],
-        totalVolume: 0, // Calculate based on exercises
-        estimatedDuration: params.duration,
-        recommendations: [
-          'Start with a 5-10 minute warmup',
-          'Focus on form over weight',
-          'Rest at least 48 hours between similar workouts'
-        ],
-        rationale: 'This workout was designed to balance intensity and recovery while targeting your selected muscle groups.'
+      // Convert workout to proper format for database
+      const workoutToSave = {
+        title: workout.title || "AI Generated Workout",
+        description: workout.description || "",
+        difficulty: workout.difficulty || "intermediate",
+        duration: workout.duration || 30,
+        exercises: workout.exercises?.length || 0,
+        user_id: "user_id",  // This should be replaced with actual user ID
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
-      setState(prev => ({ ...prev, generatedWorkout: mockWorkout }));
-    } catch (error) {
-      setState(prev => ({ ...prev, error: 'Failed to generate workout' }));
-    } finally {
-      setState(prev => ({ ...prev, isGenerating: false }));
-    }
-  }, [fetchExerciseData]);
-
-  const refineWorkout = useCallback((exerciseIndex: number, changes: Partial<GeneratedWorkout['exercises'][number]>) => {
-    if (!state.generatedWorkout) return;
-
-    const updatedWorkout = { ...state.generatedWorkout };
-    updatedWorkout.exercises[exerciseIndex] = { ...updatedWorkout.exercises[exerciseIndex], ...changes };
-
-    setState(prev => ({ ...prev, generatedWorkout: updatedWorkout }));
-  }, [state.generatedWorkout]);
-
-  const saveWorkout = useCallback(async () => {
-    if (!state.generatedWorkout) return;
-
-    try {
-      const { error } = await supabase
+      // Save to database
+      const { data, error } = await supabase
         .from('workouts')
-        .insert([{
-          name: state.generatedWorkout.name,
-          description: state.generatedWorkout.description,
-          exercises: state.generatedWorkout.exercises,
-          duration: state.generatedWorkout.estimatedDuration,
-          user_id: 'user_id_here', // TODO: Get actual user ID
-          created_at: new Date().toISOString(),
-        }]);
+        .insert([workoutToSave])
+        .select();
 
       if (error) throw error;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: 'Failed to save workout' }));
+      return data;
+    } catch (err: any) {
+      console.error("Error saving workout:", err);
+      throw err;
     }
-  }, [state.generatedWorkout]);
+  }, []);
 
   return {
-    ...state,
     generateWorkout,
-    refineWorkout,
     saveWorkout,
+    isGenerating,
+    error
   };
-};
+}
+
+export default useAIWorkoutGenerator;
