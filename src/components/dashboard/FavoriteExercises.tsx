@@ -54,7 +54,7 @@ const FavoriteExercises: React.FC<FavoriteExercisesProps> = ({
                 <div>
                   <p className="font-medium">{exercise.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {exercise.target || exercise.bodyPart || exercise.muscle_group || 'General'}
+                    {exercise.target || exercise.bodyPart || exercise.muscle_groups?.[0] || exercise.prime_mover_muscle || 'General'}
                   </p>
                 </div>
                 <Button

@@ -1,8 +1,9 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import { resolve } from "path";
-import { componentTagger } from "lovable-tagger";
+import path from "path";
 import { visualizer } from "rollup-plugin-visualizer";
+import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -26,11 +27,11 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
-      "@": "./src",
+      "@": path.resolve(__dirname, "./src"),
     },
   },
   optimizeDeps: {
-    include: ['@radix-ui/react-icons', 'lovable-tagger'],
+    exclude: ["lovable-tagger"], 
   },
   define: {
     'process.env': {},

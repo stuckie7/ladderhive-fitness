@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ExerciseFull } from '@/types/exercise';
+import { toStringId } from '@/utils/id-conversion';
 
 export const fetchExercisesFull = async (
   limit = 50, 
@@ -29,10 +30,10 @@ export const fetchExercisesFull = async (
       console.log('No data returned from exercises_full table. Please check if the table exists and has data.');
     }
     
-    // Transform the data to match our ExerciseFull type
+    // Transform the data to match our ExerciseFull type, ensuring IDs are strings
     const transformedData: ExerciseFull[] = (data || []).map(item => ({
       ...item,
-      // Map properties correctly
+      id: toStringId(item.id), // Convert ID to string for type compatibility
       target_muscle_group: item.prime_mover_muscle || null,
       video_demonstration_url: item.short_youtube_demo || null,
       video_explanation_url: item.in_depth_youtube_exp || null
@@ -140,9 +141,10 @@ export const searchExercisesFull = async (
     
     console.log(`Found ${data?.length || 0} exercises matching search criteria`);
     
-    // Transform the data to match our ExerciseFull type
+    // Transform the data to match our ExerciseFull type, ensuring IDs are strings
     const transformedData: ExerciseFull[] = (data || []).map(item => ({
       ...item,
+      id: toStringId(item.id), // Convert ID to string for type compatibility
       // Map properties correctly
       target_muscle_group: item.prime_mover_muscle || null,
       video_demonstration_url: item.short_youtube_demo || null,
@@ -157,12 +159,15 @@ export const searchExercisesFull = async (
 };
 
 // Get exercise by id
-export const getExerciseFullById = async (id: number): Promise<ExerciseFull | null> => {
+export const getExerciseFullById = async (id: number | string): Promise<ExerciseFull | null> => {
   try {
+    // Convert id to number for database query if it's a string
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    
     const { data, error } = await supabase
       .from('exercises_full')
       .select('*')
-      .eq('id', id)
+      .eq('id', numericId)
       .single();
       
     if (error) {
@@ -177,6 +182,7 @@ export const getExerciseFullById = async (id: number): Promise<ExerciseFull | nu
     // Transform the data to match our ExerciseFull type
     const transformedData: ExerciseFull = {
       ...data,
+      id: toStringId(data.id), // Convert ID to string for type compatibility
       // Map properties correctly
       target_muscle_group: data.prime_mover_muscle || null,
       video_demonstration_url: data.short_youtube_demo || null,

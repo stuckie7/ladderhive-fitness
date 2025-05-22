@@ -36,7 +36,13 @@ export const useExercisesFull = () => {
         .order('name', { ascending: true });
 
       if (error) throw error;
-      return data as ExerciseFull[];
+      
+      // Ensure all IDs are converted to strings
+      return (data || []).map(item => ({
+        ...item,
+        id: String(item.id)
+      })) as ExerciseFull[];
+      
     } catch (err) {
       console.error('Error fetching exercises:', err);
       return [];
@@ -94,7 +100,13 @@ export const useExercisesFull = () => {
         .limit(20);
 
       if (error) throw error;
-      return data as ExerciseFull[];
+      
+      // Ensure all IDs are converted to strings
+      return (data || []).map(item => ({
+        ...item,
+        id: String(item.id)
+      })) as ExerciseFull[];
+      
     } catch (err) {
       console.error('Error searching exercises:', err);
       return [];

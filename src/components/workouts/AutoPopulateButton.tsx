@@ -1,80 +1,76 @@
-import { useState } from 'react';
-import { toast } from '@/components/ui/use-toast';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Wand2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { Exercise } from '@/types/exercise';
 import { getSuggestedExercisesForWorkout } from '@/hooks/workout-library/services/exercise-suggestion-service';
-import { ExerciseFull } from '@/types/exercise';
-import type { WorkoutExercise } from '@/types/workout';
-import { addExerciseToWorkout } from '@/hooks/workout-library/services/workout-service';
 
 interface AutoPopulateButtonProps {
-  workoutId: string;
-  workoutCategory: string;
-  workoutDifficulty: string;
-  targetMuscles: string[];
-  onPopulate: (exercises: WorkoutExercise[]) => void;
+  onExercisesGenerated: (exercises: Exercise[]) => void;
+  workoutCategory?: string;
+  workoutDifficulty?: string;
 }
 
-
-
-export default function AutoPopulateButton({
-  workoutId,
-  workoutCategory,
-  workoutDifficulty,
-  targetMuscles,
-  onPopulate,
+export default function AutoPopulateButton({ 
+  onExercisesGenerated,
+  workoutCategory = 'full body',
+  workoutDifficulty = 'intermediate'
 }: AutoPopulateButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-
+  const { toast } = useToast();
+  
+  // Define a set of default target muscles for different categories
+  const getTargetMuscles = (category: string): string[] => {
+    const targetMap: Record<string, string[]> = {
+      'upper body': ['chest', 'back', 'shoulders', 'biceps', 'triceps'],
+      'lower body': ['quadriceps', 'hamstrings', 'glutes', 'calves'],
+      'full body': ['chest', 'back', 'shoulders', 'quadriceps', 'hamstrings', 'glutes'],
+      'core': ['abs', 'obliques', 'lower back'],
+      'cardio': ['heart', 'lungs'],
+      'arms': ['biceps', 'triceps', 'forearms'],
+      'chest': ['chest', 'shoulders', 'triceps'],
+      'back': ['back', 'lats', 'traps'],
+      'legs': ['quadriceps', 'hamstrings', 'glutes', 'calves'],
+    };
+    
+    return targetMap[category.toLowerCase()] || ['chest', 'back', 'legs'];
+  };
+  
   const handleAutoPopulate = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const suggestedExercises = await getSuggestedExercisesForWorkout(
-        workoutCategory,
+      const targetMuscles = getTargetMuscles(workoutCategory);
+      
+      // Call with consistent number of arguments
+      const exercises = await getSuggestedExercisesForWorkout(
+        workoutCategory, 
         workoutDifficulty,
-        targetMuscles
+        targetMuscles,
+        5, // Limit
+        true, // includeDetails
+        [] // excludeExerciseIds
       );
-
-      if (suggestedExercises.length === 0) {
+      
+      if (exercises && exercises.length > 0) {
+        onExercisesGenerated(exercises);
         toast({
-          title: "No exercises found",
-          description: "No exercises match the workout criteria.",
-          variant: "destructive"
+          title: "Exercises Added",
+          description: `Added ${exercises.length} suggested exercises to your workout.`,
         });
-        setIsLoading(false);
-        return;
+      } else {
+        toast({
+          title: "No Exercises Found",
+          description: "Couldn't find suitable exercises for this workout type.",
+          variant: "destructive",
+        });
       }
-
-      // Convert exercises to WorkoutExercise format
-      const workoutExercises = suggestedExercises.map((exercise, index) => ({
-        exercise_id: exercise.id.toString(),
-        sets: 3,
-        reps: "10",
-        rest_seconds: 60,
-        order_index: index,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        id: `${exercise.id}-${index}-${Date.now()}`,
-        workout_id: workoutId
-      }));
-
-      // Add exercises to workout
-      for (const we of workoutExercises) {
-        await addExerciseToWorkout(workoutId, we);
-      }
-
-      onPopulate(workoutExercises);
-      toast({
-        title: "Exercises added",
-        description: `${workoutExercises.length} exercises have been added to your workout.`,
-        variant: "default"
-      });
     } catch (error) {
-      console.error('Error auto-populating workout:', error);
+      console.error("Error auto-populating exercises:", error);
       toast({
         title: "Error",
-        description: "Failed to add exercises to workout.",
-        variant: "destructive"
+        description: "Failed to auto-populate exercises.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -82,19 +78,14 @@ export default function AutoPopulateButton({
   };
 
   return (
-    <Button
+    <Button 
       variant="outline"
       onClick={handleAutoPopulate}
       disabled={isLoading}
+      className="flex items-center"
     >
-      {isLoading ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Populating...
-        </>
-      ) : (
-        "Auto-Populate Workout"
-      )}
+      <Wand2 className="h-4 w-4 mr-2" />
+      {isLoading ? "Adding..." : "Auto-Populate"}
     </Button>
   );
 }

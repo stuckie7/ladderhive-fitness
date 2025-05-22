@@ -7,10 +7,11 @@ import {
   updateExerciseInDatabase, 
   deleteExerciseFromDatabase 
 } from '../services/exercise-detail-service';
+import { convertExerciseId } from '@/hooks/exercise-library';
 
 // Update the ExerciseFormState type to match what's used in ExerciseFormDialog
 export interface ExerciseFormState {
-  id: string | number;
+  id: string;  // Always use string for the ID in the form
   name: string;
   description: string;
   target_muscle_group: string;
@@ -22,7 +23,7 @@ export interface ExerciseFormState {
   image_url: string;
   instructions: string;
   // Additional fields
-  [key: string]: string | number | undefined | null;
+  [key: string]: string | undefined | null;
 }
 
 export const useExerciseCrud = () => {
@@ -67,7 +68,7 @@ export const useExerciseCrud = () => {
   // Initialize form with exercise data for editing
   const initFormWithExercise = useCallback((exercise: Exercise | ExerciseFull) => {
     setFormState({
-      id: exercise.id,
+      id: String(exercise.id), // Ensure ID is a string
       name: exercise.name || '',
       description: exercise.description || '',
       target_muscle_group: exercise.target_muscle_group || exercise.target || '',
@@ -75,7 +76,7 @@ export const useExerciseCrud = () => {
       secondary_muscle: exercise.secondary_muscle || '',
       primary_equipment: exercise.primary_equipment || exercise.equipment || '',
       difficulty: exercise.difficulty || 'Beginner',
-      video_demonstration_url: exercise.video_demonstration_url || exercise.video_url || '',
+      video_demonstration_url: (exercise as ExerciseFull).video_demonstration_url || exercise.video_url || '',
       image_url: exercise.image_url || '',
       instructions: Array.isArray(exercise.instructions) 
         ? exercise.instructions.join('\n') 
@@ -87,7 +88,7 @@ export const useExerciseCrud = () => {
   const handleAddExercise = useCallback(async (): Promise<boolean> => {
     try {
       // Convert form state to ExerciseFull format
-      const exerciseData = {
+      const exerciseData: Partial<ExerciseFull> = {
         name: formState.name,
         description: formState.description,
         target_muscle_group: formState.target_muscle_group,
@@ -129,9 +130,9 @@ export const useExerciseCrud = () => {
         throw new Error('Exercise ID is required for updating');
       }
 
-      // Convert form state to ExerciseFull format
-      const exerciseData = {
-        id: formState.id,
+      // Convert form state to ExerciseFull format, ensuring the ID is properly formatted
+      const exerciseData: Partial<ExerciseFull> = {
+        id: formState.id, // ID is already a string
         name: formState.name,
         description: formState.description,
         target_muscle_group: formState.target_muscle_group,

@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ExerciseFull } from '@/types/exercise';
+import { normalizeExerciseId } from '../mappers';
 
 const getBestVideoUrl = (exercise: any): string | null => {
   return exercise.short_youtube_demo || exercise.in_depth_youtube_exp || null;
@@ -41,6 +42,7 @@ export const searchExercisesFull = async (
         // Map the data to match ExerciseFull type
         const mappedItem: ExerciseFull = {
           ...item as any,
+          id: normalizeExerciseId(item.id), // Ensure ID is a string
           video_demonstration_url: getBestVideoUrl(item),
           video_explanation_url: item.in_depth_youtube_exp || null,
           target_muscle_group: item.prime_mover_muscle || null

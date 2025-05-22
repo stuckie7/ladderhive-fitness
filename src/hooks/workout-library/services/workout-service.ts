@@ -1,6 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutExercise } from '@/types/workout';
 import { Exercise } from '@/types/exercise';
+import { toStringId } from '@/utils/id-conversion';
 
 export interface WorkoutExerciseInput {
   exercise_id: string;
@@ -32,20 +34,23 @@ export async function createWorkout(
     if (workoutError) throw workoutError;
 
     // Insert workout exercises
-    const exerciseInserts = exercises.map((exercise) => ({
-      workout_id: workout.id,
-      exercise_id: exercise.exercise_id,
-      sets: exercise.sets,
-      reps: parseInt(exercise.reps), // Convert string to number
-      rest_time: exercise.rest_seconds, // Use rest_time instead of rest_seconds
-      order_index: exercise.order_index,
-    }));
+    for (const exercise of exercises) {
+      // Convert string exercise_id to number for DB
+      const exerciseId = parseInt(exercise.exercise_id, 10);
+      
+      const { error: exerciseError } = await supabase
+        .from('user_workout_exercises')
+        .insert({
+          workout_id: workout.id,
+          exercise_id: exerciseId,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          rest_seconds: exercise.rest_seconds,
+          order_index: exercise.order_index,
+        });
 
-    const { error: exerciseError } = await supabase
-      .from('workout_exercises')
-      .insert(exerciseInserts);
-
-    if (exerciseError) throw exerciseError;
+      if (exerciseError) throw exerciseError;
+    }
 
     return workout;
   } catch (error) {
@@ -81,34 +86,32 @@ export async function addExerciseToWorkout(
       if (preparedError) throw preparedError;
 
       // Insert into prepared_workout_exercises
+      const numericExerciseId = parseInt(exerciseId, 10); // Convert string to number for DB
+      
       const { error } = await supabase
         .from('prepared_workout_exercises')
-        .insert([
-          {
-            workout_id: workoutId,
-            exercise_id: exerciseId,
-            sets,
-            reps,
-            rest_seconds: restSeconds,
-            order_index: orderIndex,
-          },
-        ]);
+        .insert({
+          workout_id: workoutId,
+          exercise_id: numericExerciseId,
+          sets,
+          reps,
+          rest_seconds: restSeconds,
+          order_index: orderIndex,
+        });
 
       if (error) throw error;
     } else {
-      // Insert into workout_exercises
+      // Insert into workout_exercises using string ID
       const { error } = await supabase
         .from('workout_exercises')
-        .insert([
-          {
-            workout_id: workoutId,
-            exercise_id: exerciseId,
-            sets,
-            reps,
-            rest_seconds: restSeconds,
-            order_index: orderIndex,
-          },
-        ]);
+        .insert({
+          workout_id: workoutId,
+          exercise_id: exerciseId,
+          sets,
+          reps,
+          rest_seconds: restSeconds,
+          order_index: orderIndex,
+        });
 
       if (error) throw error;
     }

@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { useWorkoutDetailEnhanced } from '@/hooks/workouts/use-workout-detail-enhanced';
@@ -12,7 +13,6 @@ import WorkoutAdditionalInfo from '@/components/workouts/detail/WorkoutAdditiona
 import VideoEmbed from '@/components/workouts/detail/VideoEmbed';
 import WorkoutCircuit from '@/components/workouts/detail/WorkoutCircuit';
 import WorkoutExerciseList from '@/components/workouts/detail/WorkoutExerciseList';
-import { useState } from 'react';
 
 const WorkoutDetailEnhanced: React.FC = () => {
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
@@ -42,6 +42,16 @@ const WorkoutDetailEnhanced: React.FC = () => {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
+  
+  const handleExerciseComplete = (exerciseId: string) => {
+    setCompletedExercises(prev => {
+      if (prev.includes(exerciseId)) {
+        return prev.filter(id => id !== exerciseId);
+      } else {
+        return [...prev, exerciseId];
+      }
+    });
+  };
 
   return (
     <AppLayout>
@@ -52,53 +62,6 @@ const WorkoutDetailEnhanced: React.FC = () => {
         </Button>
         
         {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-64 w-full rounded-lg" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-8">
-            <p className="text-red-500">Error loading workout details</p>
-          </div>
-        ) : workout ? (
-          <div className="space-y-6">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-bold">{workout.name}</h1>
-              <div className="flex gap-4 flex-wrap">
-                <Badge variant="outline" className={getDifficultyColor(workout.difficulty)}>
-                  {workout.difficulty}
-                </Badge>
-                <Badge variant="outline">
-                  <Clock className="h-4 w-4 mr-2" />
-                  {workout.duration} min
-                </Badge>
-              </div>
-            </div>
-
-            <DescriptionCard
-              description={workout.description}
-              benefits={workout.benefits}
-            />
-
-            <WorkoutAdditionalInfo
-              equipment={workout.equipment}
-              muscleGroups={workout.muscle_groups}
-            />
-
-            <VideoEmbed videoUrl={workout.video_url} />
-
-            <WorkoutCircuit circuit={workout.circuit} />
-
-            <WorkoutExerciseList
-              exercises={workout.exercises}
-              onExerciseComplete={(exerciseId) => {
-                setCompletedExercises(prev => [...prev, exerciseId]);
-              }}
-            />
-          </div>
-        ) : null}
           <div className="space-y-6">
             <Skeleton className="h-10 w-2/3" />
             <div className="flex gap-2">
@@ -190,11 +153,25 @@ const WorkoutDetailEnhanced: React.FC = () => {
               benefits={workout.benefits} 
             />
             
+            {/* Exercise List */}
+            {workout.exercises && workout.exercises.length > 0 && (
+              <WorkoutExerciseList 
+                exercises={workout.exercises.map(ex => ({
+                  ...ex,
+                  exercise: ex.exercise
+                }))}
+                completedExercises={completedExercises}
+                onExerciseComplete={handleExerciseComplete}
+              />
+            )}
+            
             {/* Exercise Circuit */}
-            <WorkoutCircuit 
-              exercises={workout.exercises || []} 
-              isLoading={isLoading}
-            />
+            {workout.exercises && workout.exercises.length > 0 && (
+              <WorkoutCircuit 
+                exercises={workout.exercises} 
+                isLoading={isLoading}
+              />
+            )}
             
             {/* Additional Info */}
             <WorkoutAdditionalInfo

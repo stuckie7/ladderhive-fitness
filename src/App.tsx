@@ -24,6 +24,7 @@ function App() {
         <AuthProvider>
           <RouterProvider router={router} />
           <Toaster />
+          <TestTagger />
         </AuthProvider>
       </QueryClientProvider>
     </React.StrictMode>
