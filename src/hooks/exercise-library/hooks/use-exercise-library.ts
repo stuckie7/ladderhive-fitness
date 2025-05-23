@@ -46,13 +46,28 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     difficulty: '',
   });
   
-  // Pagination state
-  const [pagination, setPagination] = useState<PaginationState>({
-    currentPage: 1,
-    itemsPerPage: 9, // Default to 9 items per page (3x3 grid)
-    totalItems: 0,
-    totalPages: 1,
+  // Pagination state - persist in localStorage
+  const [pagination, setPagination] = useState<PaginationState>(() => {
+    const savedPagination = localStorage.getItem('exercisePagination');
+    if (savedPagination) {
+      try {
+        return JSON.parse(savedPagination);
+      } catch (e) {
+        console.error('Error parsing saved pagination', e);
+      }
+    }
+    return {
+      currentPage: 1,
+      itemsPerPage: 24, // Default to 24 items per page (4x6 grid)
+      totalItems: 0,
+      totalPages: 1,
+    };
   });
+
+  // Save pagination settings to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('exercisePagination', JSON.stringify(pagination));
+  }, [pagination.currentPage, pagination.itemsPerPage]);
 
   const availableMuscleGroups = useMemo(() => {
     const groups = Array.from(
@@ -82,6 +97,7 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
       equipment: '',
       difficulty: '',
     });
+    setPage(1); // Reset to first page when filters are reset
   }, []);
 
   const getFilteredExercises = useCallback((muscleGroup?: string) => {
@@ -115,8 +131,8 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     setPagination(prev => ({
       ...prev,
       totalItems: filtered.length,
-      totalPages: Math.ceil(filtered.length / prev.itemsPerPage),
-      currentPage: 1, // Reset to first page when filters change
+      totalPages: Math.max(1, Math.ceil(filtered.length / prev.itemsPerPage)),
+      currentPage: Math.min(prev.currentPage, Math.ceil(filtered.length / prev.itemsPerPage) || 1)
     }));
 
     return filtered;
@@ -175,18 +191,23 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
   }, []);
 
   const setItemsPerPage = useCallback((items: number) => {
-    setPagination(prev => ({
-      ...prev,
-      itemsPerPage: items,
-      currentPage: 1, // Reset to first page when changing items per page
-    }));
+    setPagination(prev => {
+      const newTotalPages = Math.max(1, Math.ceil(prev.totalItems / items));
+      return {
+        ...prev,
+        itemsPerPage: items,
+        totalPages: newTotalPages,
+        // Adjust current page if it would be out of bounds with new page size
+        currentPage: Math.min(prev.currentPage, newTotalPages)
+      };
+    });
   }, []);
 
-  // Update total pages when items per page changes
+  // Update total pages when items per page changes or totalItems changes
   useEffect(() => {
     setPagination(prev => ({
       ...prev,
-      totalPages: Math.ceil(prev.totalItems / prev.itemsPerPage),
+      totalPages: Math.max(1, Math.ceil(prev.totalItems / prev.itemsPerPage)),
       currentPage: Math.min(prev.currentPage, Math.ceil(prev.totalItems / prev.itemsPerPage) || 1),
     }));
   }, [pagination.itemsPerPage, pagination.totalItems]);
@@ -201,20 +222,11 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     availableEquipment,
     pagination,
     setActiveTab,
-    setFilters: (newFilters: Partial<ExerciseFilters>) => {
-      setFiltersState(prev => ({ ...prev, ...newFilters }));
-    },
+    setFilters,
     setPage,
     setItemsPerPage,
     setPagination,
-    resetFilters: () => {
-      setFiltersState({
-        muscleGroup: '',
-        equipment: '',
-        difficulty: '',
-      });
-      setPage(1);
-    },
+    resetFilters,
     getFilteredExercises,
     handleSearchChange,
     handleSearch,

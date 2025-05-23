@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,13 @@ import { fetchExercisesFull, getMuscleGroups, getEquipmentTypes } from '@/hooks/
 import ExerciseCard from '@/components/exercises/ExerciseCard';
 import { ChevronLeft, Search } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import ExercisePagination from '@/components/exercises/ExercisePagination';
 
 export default function ExerciseLibraryEnhanced() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [exercises, setExercises] = useState<ExerciseFull[]>([]);
+  const [allExercises, setAllExercises] = useState<ExerciseFull[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState('all');
@@ -29,15 +31,34 @@ export default function ExerciseLibraryEnhanced() {
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [muscleGroups, setMuscleGroups] = useState<string[]>([]);
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0);
   
-  const ITEMS_PER_PAGE = 12;
+  // Pagination state - persist in localStorage
+  const [pagination, setPagination] = useState(() => {
+    const savedPagination = localStorage.getItem('enhancedExercisePagination');
+    if (savedPagination) {
+      try {
+        return JSON.parse(savedPagination);
+      } catch (e) {
+        console.error('Error parsing saved pagination', e);
+      }
+    }
+    return {
+      currentPage: 1,
+      itemsPerPage: 24,
+      totalItems: 0,
+      totalPages: 1,
+    };
+  });
+
+  // Save pagination settings to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('enhancedExercisePagination', JSON.stringify(pagination));
+  }, [pagination]);
 
   useEffect(() => {
     fetchFilterOptions();
     fetchExercises();
-  }, [selectedMuscleGroup, selectedEquipment, selectedDifficulty]);
+  }, []);
 
   const fetchFilterOptions = async () => {
     try {
@@ -54,42 +75,18 @@ export default function ExerciseLibraryEnhanced() {
   const fetchExercises = async () => {
     setLoading(true);
     try {
-      const data = await fetchExercisesFull(100, 0);
+      // Load all exercises at once, then apply pagination client-side
+      const data = await fetchExercisesFull(1000, 0);
+      setAllExercises(data);
       
-      // Filter based on search query and selected filters
-      let filteredData = data;
+      // Update pagination info
+      setPagination(prev => ({
+        ...prev,
+        totalItems: data.length,
+        totalPages: Math.ceil(data.length / prev.itemsPerPage),
+      }));
       
-      if (searchQuery) {
-        filteredData = filteredData.filter(ex => 
-          ex.name?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-      
-      if (selectedMuscleGroup !== 'all') {
-        filteredData = filteredData.filter(ex => 
-          ex.prime_mover_muscle === selectedMuscleGroup
-        );
-      }
-      
-      if (selectedEquipment !== 'all') {
-        filteredData = filteredData.filter(ex => 
-          ex.primary_equipment === selectedEquipment
-        );
-      }
-      
-      if (selectedDifficulty !== 'all') {
-        filteredData = filteredData.filter(ex => 
-          ex.difficulty === selectedDifficulty
-        );
-      }
-      
-      setTotalCount(filteredData.length);
-      
-      // Paginate
-      const startIdx = currentPage * ITEMS_PER_PAGE;
-      const paginatedData = filteredData.slice(startIdx, startIdx + ITEMS_PER_PAGE);
-      
-      setExercises(paginatedData);
+      applyFiltersAndPagination(data);
     } catch (error) {
       console.error("Error fetching exercises:", error);
       toast({
@@ -102,13 +99,60 @@ export default function ExerciseLibraryEnhanced() {
     }
   };
 
+  const applyFiltersAndPagination = useCallback((data = allExercises) => {
+    // Filter based on search query and selected filters
+    let filteredData = data;
+    
+    if (searchQuery) {
+      filteredData = filteredData.filter(ex => 
+        ex.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    if (selectedMuscleGroup !== 'all') {
+      filteredData = filteredData.filter(ex => 
+        ex.prime_mover_muscle === selectedMuscleGroup
+      );
+    }
+    
+    if (selectedEquipment !== 'all') {
+      filteredData = filteredData.filter(ex => 
+        ex.primary_equipment === selectedEquipment
+      );
+    }
+    
+    if (selectedDifficulty !== 'all') {
+      filteredData = filteredData.filter(ex => 
+        ex.difficulty === selectedDifficulty
+      );
+    }
+    
+    // Update pagination totals
+    setPagination(prev => ({
+      ...prev,
+      totalItems: filteredData.length,
+      totalPages: Math.max(1, Math.ceil(filteredData.length / prev.itemsPerPage)),
+      currentPage: Math.min(prev.currentPage, Math.ceil(filteredData.length / prev.itemsPerPage) || 1)
+    }));
+    
+    // Apply pagination
+    const startIdx = (pagination.currentPage - 1) * pagination.itemsPerPage;
+    const paginatedData = filteredData.slice(startIdx, startIdx + pagination.itemsPerPage);
+    
+    setExercises(paginatedData);
+  }, [allExercises, searchQuery, selectedMuscleGroup, selectedEquipment, selectedDifficulty, pagination.currentPage, pagination.itemsPerPage]);
+
+  useEffect(() => {
+    applyFiltersAndPagination();
+  }, [applyFiltersAndPagination]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(0);
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to first page
   };
 
   const handleFilterChange = (type: string, value: string) => {
-    setCurrentPage(0);
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to first page
     
     switch (type) {
       case 'muscleGroup':
@@ -130,19 +174,37 @@ export default function ExerciseLibraryEnhanced() {
     setSelectedMuscleGroup('all');
     setSelectedEquipment('all');
     setSelectedDifficulty('all');
-    setCurrentPage(0);
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to first page
   };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchExercises();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, currentPage]);
 
   const handleBackClick = () => {
     navigate(-1);
   };
+
+  const handlePageChange = (page: number) => {
+    setPagination(prev => ({ ...prev, currentPage: page }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePageSizeChange = (pageSize: number) => {
+    setPagination(prev => {
+      const newTotalPages = Math.ceil(prev.totalItems / pageSize);
+      return {
+        ...prev,
+        itemsPerPage: pageSize,
+        totalPages: newTotalPages,
+        currentPage: Math.min(prev.currentPage, newTotalPages)
+      };
+    });
+  };
+
+  // Apply debounce to search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      applyFiltersAndPagination();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, applyFiltersAndPagination]);
 
   return (
     <AppLayout>
@@ -234,12 +296,6 @@ export default function ExerciseLibraryEnhanced() {
           </div>
         </div>
         
-        {/* Results count */}
-        <div className="mb-4 text-muted-foreground">
-          Showing {exercises.length} exercises
-          {totalCount > 0 ? ` (1-${Math.min(ITEMS_PER_PAGE, totalCount)} of ${totalCount})` : ''}
-        </div>
-        
         {/* Exercise grid */}
         {loading ? (
           <div className="flex justify-center items-center py-12">
@@ -247,17 +303,32 @@ export default function ExerciseLibraryEnhanced() {
             <span className="ml-2">Loading exercises...</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {exercises.map((exercise) => (
-              <ExerciseCard key={exercise.id} exercise={exercise} />
-            ))}
-            
-            {exercises.length === 0 && (
-              <div className="col-span-3 text-center py-12 text-muted-foreground">
+          <>
+            {exercises.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {exercises.map((exercise) => (
+                  <ExerciseCard key={exercise.id} exercise={exercise} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
                 No exercises found matching your search criteria.
               </div>
             )}
-          </div>
+            
+            {/* Enhanced pagination component */}
+            {pagination.totalItems > 0 && (
+              <ExercisePagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.totalItems}
+                pageSize={pagination.itemsPerPage}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                className="mt-8"
+              />
+            )}
+          </>
         )}
       </div>
     </AppLayout>
