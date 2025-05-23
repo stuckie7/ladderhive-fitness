@@ -55,10 +55,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       href: '/workout-builder' 
     },
     { 
-      icon: <Dumbbell size={24} />, 
-      label: 'Exercises', 
-      href: '/exercises/enhanced',
-      onClick: handleExerciseClick
+      icon: <Zap size={24} />, 
+      label: 'Mindful Movement', 
+      href: '/mindful-movement'
     },
     { 
       icon: <CalendarDays size={24} />, 
