@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,6 +44,7 @@ interface WorkoutExerciseSectionProps {
   isLoading: boolean;
   onAddExercise: (exercise: Exercise) => Promise<void>;
   onRemoveExercise?: (exerciseId: string) => void;
+  viewMode?: string; // Add the missing viewMode prop
 }
 
 const WorkoutExerciseSection = ({ 
@@ -52,7 +52,8 @@ const WorkoutExerciseSection = ({
   exercises, 
   isLoading, 
   onAddExercise,
-  onRemoveExercise
+  onRemoveExercise,
+  viewMode = "list" // Default to list view if not provided
 }: WorkoutExerciseSectionProps) => {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
