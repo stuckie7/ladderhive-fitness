@@ -116,28 +116,11 @@ const Dashboard = () => {
                 }}
               />
               
-              <div className="space-y-6">
-                <UpcomingWorkouts 
-                  workouts={workouts.map(w => ({
-                    id: w.id,
-                    title: w.title,
-                    date: w.scheduled_date,
-                    duration: w.duration_minutes,
-                    difficulty: w.difficulty,
-                    type: 'workout'
-                  }))}
-                  isLoading={workoutsLoading}
-                  onViewWorkout={(id) => navigate(`/workouts/${id}`)}
-                  onScheduleWorkout={handleStartWorkout}
-                  onRefresh={() => console.log("Refresh upcoming workouts")}
-                />
-                
-                <WorkoutHistory 
-                  workouts={recentWorkouts?.slice(0, 3) || []} 
-                  isLoading={recentWorkoutsLoading}
-                  onSelectWorkout={(id, type) => navigate(`/workouts/${id}`)}
-                />
-              </div>
+              <WorkoutHistory 
+                workouts={recentWorkouts?.slice(0, 3) || []} 
+                isLoading={recentWorkoutsLoading}
+                onSelectWorkout={(id, type) => navigate(`/workouts/${id}`)}
+              />
             </div>
           </div>
         </div>
