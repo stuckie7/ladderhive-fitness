@@ -66,7 +66,11 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
 
   // Save pagination settings to localStorage when they change
   useEffect(() => {
-    localStorage.setItem('exercisePagination', JSON.stringify(pagination));
+    localStorage.setItem('exercisePagination', JSON.stringify({
+      currentPage: pagination.currentPage,
+      itemsPerPage: pagination.itemsPerPage,
+      // Don't need to store dynamic counts
+    }));
   }, [pagination.currentPage, pagination.itemsPerPage]);
 
   const availableMuscleGroups = useMemo(() => {
@@ -97,9 +101,13 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
       equipment: '',
       difficulty: '',
     });
-    setPage(1); // Reset to first page when filters are reset
+    setPagination(prev => ({
+      ...prev,
+      currentPage: 1 // Reset to first page when filters are reset
+    }));
   }, []);
 
+  // This function returns filtered exercises but doesn't update pagination
   const getFilteredExercises = useCallback((muscleGroup?: string) => {
     let filtered = [...exercises];
 
@@ -127,14 +135,7 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
       filtered = filtered.filter(ex => ex.difficulty_level === filters.difficulty);
     }
 
-    // Update pagination total items
-    setPagination(prev => ({
-      ...prev,
-      totalItems: filtered.length,
-      totalPages: Math.max(1, Math.ceil(filtered.length / prev.itemsPerPage)),
-      currentPage: Math.min(prev.currentPage, Math.ceil(filtered.length / prev.itemsPerPage) || 1)
-    }));
-
+    // Just return filtered exercises, don't update pagination here
     return filtered;
   }, [exercises, filters]);
 
@@ -168,7 +169,10 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-      setPage(1); // Reset to first page when search changes
+      setPagination(prev => ({
+        ...prev,
+        currentPage: 1 // Reset to first page when search changes
+      }));
     }, 300);
     return () => clearTimeout(handler);
   }, [searchQuery]);
@@ -203,17 +207,8 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     });
   }, []);
 
-  // Update total pages when items per page changes or totalItems changes
-  useEffect(() => {
-    setPagination(prev => ({
-      ...prev,
-      totalPages: Math.max(1, Math.ceil(prev.totalItems / prev.itemsPerPage)),
-      currentPage: Math.min(prev.currentPage, Math.ceil(prev.totalItems / prev.itemsPerPage) || 1),
-    }));
-  }, [pagination.itemsPerPage, pagination.totalItems]);
-
   return {
-    exercises: getPaginatedExercises(),
+    exercises,
     isLoading,
     searchQuery,
     activeTab,

@@ -50,7 +50,7 @@ const ExerciseLibrary = () => {
     navigate("/exercises/enhanced");
   };
 
-  // Get filtered exercises based on active tab
+  // Get filtered exercises based on active tab - memoize to prevent infinite loops
   const getFilteredExercisesForTab = useCallback((tab: string) => {
     const filtered = tab === 'all' 
       ? exercises 
@@ -61,7 +61,7 @@ const ExerciseLibrary = () => {
     return filtered;
   }, [exercises]);
 
-  // Get paginated exercises for the current tab
+  // Get paginated exercises for the current tab - memoize result
   const paginatedExercises = useMemo(() => {
     const filtered = getFilteredExercisesForTab(activeTab);
     const start = (pagination.currentPage - 1) * pagination.itemsPerPage;
@@ -69,20 +69,28 @@ const ExerciseLibrary = () => {
     return filtered.slice(start, end).map(mapExerciseFullToExercise);
   }, [getFilteredExercisesForTab, activeTab, pagination.currentPage, pagination.itemsPerPage]);
   
-  // Get total count of filtered exercises for the active tab
+  // Get total count of filtered exercises for the active tab - memoize result
   const filteredExercisesCount = useMemo(() => {
     return getFilteredExercisesForTab(activeTab).length;
   }, [getFilteredExercisesForTab, activeTab]);
   
-  // Update pagination when filtered results change
+  // Update pagination when filtered results change - using memoized value to prevent loops
   useEffect(() => {
-    setPagination(prev => ({
-      ...prev,
-      totalItems: filteredExercisesCount,
-      totalPages: Math.max(1, Math.ceil(filteredExercisesCount / prev.itemsPerPage)),
-      currentPage: Math.min(prev.currentPage, Math.ceil(filteredExercisesCount / prev.itemsPerPage) || 1)
-    }));
-  }, [filteredExercisesCount, pagination.itemsPerPage, setPagination]);
+    const totalPages = Math.max(1, Math.ceil(filteredExercisesCount / pagination.itemsPerPage));
+    const currentPage = Math.min(pagination.currentPage, totalPages || 1);
+    
+    // Only update if values actually changed to prevent unnecessary rerenders
+    if (pagination.totalItems !== filteredExercisesCount || 
+        pagination.totalPages !== totalPages || 
+        pagination.currentPage !== currentPage) {
+      setPagination(prev => ({
+        ...prev,
+        totalItems: filteredExercisesCount,
+        totalPages: totalPages,
+        currentPage: currentPage
+      }));
+    }
+  }, [filteredExercisesCount, pagination.itemsPerPage, pagination.currentPage, pagination.totalItems, pagination.totalPages, setPagination]);
   
   // Event handler adapter for SearchBar
   const handleSearchChangeAdapter = (e: ChangeEvent<HTMLInputElement>) => {
