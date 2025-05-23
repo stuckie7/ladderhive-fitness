@@ -6,12 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import { useRecommendedWorkouts } from '@/hooks/workouts/use-recommended-workouts';
 
 interface QuickActionsSectionProps {
-  onGoToExerciseLibrary: () => void;
   onScheduleWorkout: () => void;
 }
 
 const QuickActionsSection: React.FC<QuickActionsSectionProps> = ({
-  onGoToExerciseLibrary,
   onScheduleWorkout,
 }) => {
   const navigate = useNavigate();
@@ -44,7 +42,7 @@ const QuickActionsSection: React.FC<QuickActionsSectionProps> = ({
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <QuickActionsPanel onGoToExerciseLibrary={onGoToExerciseLibrary} />
+      <QuickActionsPanel />
       <div className="col-span-2">
         <UpcomingWorkouts 
           workouts={recommendedWorkouts} 

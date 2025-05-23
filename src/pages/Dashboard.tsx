@@ -90,7 +90,6 @@ const Dashboard = () => {
           {/* Quick Actions Bar */}
           <div className="w-full">
             <QuickActionsSection
-              onGoToExerciseLibrary={handleViewExercises}
               onScheduleWorkout={handleStartWorkout}
             />
           </div>

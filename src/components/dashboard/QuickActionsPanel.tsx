@@ -5,11 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Dumbbell, Plus } from "lucide-react";
 
-interface QuickActionsPanelProps {
-  onGoToExerciseLibrary: () => void;
-}
-
-const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ onGoToExerciseLibrary }) => {
+const QuickActionsPanel: React.FC = () => {
   return (
     <Card className="col-span-1 glass-panel">
       <CardContent className="space-y-4 p-4">
@@ -28,13 +24,14 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ onGoToExerciseLib
             <Calendar className="mr-2 h-5 w-5 text-fitness-secondary group-hover:animate-pulse-soft" /> Schedule
           </Button>
         </Link>
-        <Button 
-          variant="outline" 
-          className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-orange group"
-          onClick={onGoToExerciseLibrary}
-        >
-          <Dumbbell className="mr-2 h-5 w-5 text-fitness-orange group-hover:animate-pulse-soft" /> Exercise Library
-        </Button>
+        <Link to="/exercises">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-orange group"
+          >
+            <Dumbbell className="mr-2 h-5 w-5 text-fitness-orange group-hover:animate-pulse-soft" /> Exercise Library
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   );
