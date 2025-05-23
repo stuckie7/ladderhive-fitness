@@ -227,26 +227,39 @@ const UpcomingWorkouts = ({
                   <div className="flex items-start gap-3">
                     <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
                       {workout.thumbnail ? (
-                        <img 
-                          src={workout.thumbnail} 
-                          alt={workout.title} 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to placeholder if image fails to load
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const placeholder = target.parentElement?.querySelector('.workout-thumbnail-placeholder');
-                            if (placeholder) {
-                              (placeholder as HTMLElement).style.display = 'flex';
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <div 
-                        className={`${getPlaceholderGradient(workout.type)} w-full h-full flex items-center justify-center ${workout.thumbnail ? 'hidden' : ''} workout-thumbnail-placeholder`}
-                      >
-                        {getWorkoutIcon(workout.type)}
-                      </div>
+                        <>
+                          <img 
+                            src={workout.thumbnail} 
+                            alt={workout.title} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              try {
+                                const target = e.target as HTMLImageElement;
+                                if (target) {
+                                  target.style.display = 'none';
+                                  const placeholder = target.nextElementSibling as HTMLElement;
+                                  if (placeholder && placeholder.classList.contains('workout-thumbnail-placeholder')) {
+                                    placeholder.style.display = 'flex';
+                                  }
+                                }
+                              } catch (error) {
+                                console.error('Error handling image load:', error);
+                              }
+                            }}
+                          />
+                          <div 
+                            className={`${getPlaceholderGradient(workout.type)} w-full h-full hidden items-center justify-center workout-thumbnail-placeholder`}
+                          >
+                            {getWorkoutIcon(workout.type)}
+                          </div>
+                        </>
+                      ) : (
+                        <div 
+                          className={`${getPlaceholderGradient(workout.type)} w-full h-full flex items-center justify-center workout-thumbnail-placeholder`}
+                        >
+                          {getWorkoutIcon(workout.type)}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium group-hover:text-fitness-secondary transition-colors truncate">
