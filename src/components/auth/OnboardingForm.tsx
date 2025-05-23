@@ -2,44 +2,46 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
-import type { Database } from "@/integrations/supabase/types";
+
+type FitnessGoal = 'build-muscle' | 'lose-weight' | 'strength' | 'endurance' | 'athletic' | 'general';
+type WorkoutDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
 const OnboardingForm = () => {
   const [activeTab, setActiveTab] = useState("basics");
-  const [height, setHeight] = useState(175); // in cm
-  const [weight, setWeight] = useState(70); // in kg
-  const [age, setAge] = useState(30);
-  const [gender, setGender] = useState("not-selected"); 
-  const [fitnessLevel, setFitnessLevel] = useState("");
-  const [fitnessGoals, setFitnessGoals] = useState<string[]>([]);
-  const [workoutDays, setWorkoutDays] = useState<string[]>([]);
+  const [height, setHeight] = useState<number>(175); // in cm
+  const [weight, setWeight] = useState<number>(70); // in kg
+  const [age, setAge] = useState<number>(30);
+  const [gender, setGender] = useState<string>("");
+  const [fitnessLevel, setFitnessLevel] = useState<string>("");
+  const [fitnessGoals, setFitnessGoals] = useState<FitnessGoal[]>([]);
+  const [workoutDays, setWorkoutDays] = useState<WorkoutDay[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const handleAddGoal = (goal: string) => {
-    if (fitnessGoals.includes(goal)) {
-      setFitnessGoals(fitnessGoals.filter(g => g !== goal));
-    } else {
-      setFitnessGoals([...fitnessGoals, goal]);
-    }
+  const handleAddGoal = (goal: FitnessGoal) => {
+    setFitnessGoals(prev => 
+      prev.includes(goal) 
+        ? prev.filter(g => g !== goal) 
+        : [...prev, goal]
+    );
   };
 
-  const handleAddWorkoutDay = (day: string) => {
-    if (workoutDays.includes(day)) {
-      setWorkoutDays(workoutDays.filter(d => d !== day));
-    } else {
-      setWorkoutDays([...workoutDays, day]);
-    }
+  const handleAddWorkoutDay = (day: WorkoutDay) => {
+    setWorkoutDays(prev => 
+      prev.includes(day) 
+        ? prev.filter(d => d !== day) 
+        : [...prev, day]
+    );
   };
 
   const handleContinue = () => {
@@ -125,184 +127,202 @@ const OnboardingForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Set Up Your Profile</CardTitle>
-        <CardDescription>Tell us about yourself to personalize your experience</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="w-full grid grid-cols-4">
-            <TabsTrigger value="basics">Basics</TabsTrigger>
-            <TabsTrigger value="fitness">Fitness</TabsTrigger>
-            <TabsTrigger value="goals">Goals</TabsTrigger>
-            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+    <Card className="w-full max-w-md mx-auto border-0 shadow-lg overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-center text-2xl font-bold text-foreground">
+            Complete Your Profile
+          </CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            {activeTab === "basics" && "Tell us about yourself"}
+            {activeTab === "fitness" && "What's your fitness level?"}
+            {activeTab === "goals" && "What are your fitness goals?"}
+            {activeTab === "schedule" && "When do you want to work out?"}
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="px-6 py-4">
+          <TabsList className="w-full grid grid-cols-4 mb-6 bg-muted/50">
+            <TabsTrigger value="basics" className="py-2 text-xs md:text-sm">Basics</TabsTrigger>
+            <TabsTrigger value="fitness" className="py-2 text-xs md:text-sm">Fitness</TabsTrigger>
+            <TabsTrigger value="goals" className="py-2 text-xs md:text-sm">Goals</TabsTrigger>
+            <TabsTrigger value="schedule" className="py-2 text-xs md:text-sm">Schedule</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="basics" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="height">Height (cm)</Label>
-              <Input
-                id="height"
-                type="number"
-                value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
-                min={100}
-                max={250}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="weight">Weight (kg)</Label>
-              <Input
-                id="weight"
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(Number(e.target.value))}
-                min={30}
-                max={250}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="age">Age</Label>
-              <Input
-                id="age"
-                type="number"
-                value={age}
-                onChange={(e) => setAge(Number(e.target.value))}
-                min={16}
-                max={100}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
-              <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="non-binary">Non-binary</SelectItem>
-                  <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="fitness" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Fitness Level</Label>
-              <div className="space-y-2 pt-2">
-                {["Beginner", "Intermediate", "Advanced", "Elite"].map((level) => (
-                  <Button
-                    key={level}
-                    type="button"
-                    variant={fitnessLevel === level.toLowerCase() ? "default" : "outline"}
-                    className={`w-full justify-start ${
-                      fitnessLevel === level.toLowerCase() ? "bg-fitness-primary" : ""
-                    }`}
-                    onClick={() => setFitnessLevel(level.toLowerCase())}
-                  >
-                    {level}
-                  </Button>
-                ))}
+          <div className="space-y-6">
+            {/* Basics Tab */}
+            <TabsContent value="basics" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="height">Height (cm)</Label>
+                <Input
+                  id="height"
+                  type="number"
+                  value={height}
+                  onChange={(e) => setHeight(Number(e.target.value))}
+                  min={100}
+                  max={250}
+                />
               </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="goals" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Fitness Goals (Select all that apply)</Label>
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                {[
-                  "Build Muscle", 
-                  "Lose Weight", 
-                  "Increase Strength", 
-                  "Improve Endurance",
-                  "Athletic Performance",
-                  "General Fitness"
-                ].map((goal) => (
-                  <Button
-                    key={goal}
-                    type="button"
-                    variant="outline"
-                    className={`${
-                      fitnessGoals.includes(goal.toLowerCase()) 
-                        ? "bg-fitness-primary text-white border-fitness-primary" 
-                        : ""
-                    }`}
-                    onClick={() => handleAddGoal(goal.toLowerCase())}
-                  >
-                    {goal}
-                  </Button>
-                ))}
+              <div className="space-y-2">
+                <Label htmlFor="weight">Weight (kg)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  value={weight}
+                  onChange={(e) => setWeight(Number(e.target.value))}
+                  min={30}
+                  max={250}
+                />
               </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="schedule" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Workout Days</Label>
-              <div className="grid grid-cols-7 gap-2 pt-2">
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                  <Button
-                    key={day}
-                    type="button"
-                    variant="outline"
-                    className={`${
-                      workoutDays.includes(day.toLowerCase()) 
-                        ? "bg-fitness-primary text-white border-fitness-primary" 
-                        : ""
-                    }`}
-                    onClick={() => handleAddWorkoutDay(day.toLowerCase())}
-                  >
-                    {day}
-                  </Button>
-                ))}
+              <div className="space-y-2">
+                <Label htmlFor="age">Age</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  value={age}
+                  onChange={(e) => setAge(Number(e.target.value))}
+                  min={16}
+                  max={100}
+                />
               </div>
-            </div>
-            <div className="space-y-2 pt-4">
-              <Label>Workout Duration (minutes per session)</Label>
-              <Slider 
-                defaultValue={[45]} 
-                max={120} 
-                min={15} 
-                step={5}
-              />
-              <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                <span>15 min</span>
-                <span>45 min</span>
-                <span>120 min</span>
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="non-binary">Non-binary</SelectItem>
+                    <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+            </TabsContent>
+            
+            {/* Fitness Level Tab */}
+            <TabsContent value="fitness" className="space-y-4">
+              <div className="space-y-2">
+                <Label>Fitness Level</Label>
+                <div className="space-y-2 pt-2">
+                  {["Beginner", "Intermediate", "Advanced", "Elite"].map((level) => (
+                    <Button
+                      key={level}
+                      type="button"
+                      variant={fitnessLevel === level.toLowerCase() ? "default" : "outline"}
+                      className={`w-full justify-start ${
+                        fitnessLevel === level.toLowerCase() ? "bg-primary" : ""
+                      }`}
+                      onClick={() => setFitnessLevel(level.toLowerCase())}
+                    >
+                      {level}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Goals Tab */}
+            <TabsContent value="goals" className="space-y-4">
+              <div className="space-y-4">
+                <Label className="text-base">Fitness Goals</Label>
+                <p className="text-sm text-muted-foreground mb-4">Select all that apply</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { id: "build-muscle" as const, label: "Build Muscle" },
+                    { id: "lose-weight" as const, label: "Lose Weight" },
+                    { id: "strength" as const, label: "Increase Strength" },
+                    { id: "endurance" as const, label: "Improve Endurance" },
+                    { id: "athletic" as const, label: "Athletic Performance" },
+                    { id: "general" as const, label: "General Fitness" }
+                  ].map((goal) => (
+                    <Button
+                      key={goal.id}
+                      type="button"
+                      variant={fitnessGoals.includes(goal.id) ? "default" : "outline"}
+                      className={`h-auto py-3 whitespace-normal text-left ${
+                        fitnessGoals.includes(goal.id) ? "bg-primary" : ""
+                      }`}
+                      onClick={() => handleAddGoal(goal.id)}
+                    >
+                      {goal.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Schedule Tab */}
+            <TabsContent value="schedule" className="space-y-4">
+              <div className="space-y-4">
+                <Label className="text-base">Preferred Workout Days</Label>
+                <p className="text-sm text-muted-foreground mb-4">Select your regular workout days</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { id: "monday" as const, label: "Monday" },
+                    { id: "tuesday" as const, label: "Tuesday" },
+                    { id: "wednesday" as const, label: "Wednesday" },
+                    { id: "thursday" as const, label: "Thursday" },
+                    { id: "friday" as const, label: "Friday" },
+                    { id: "saturday" as const, label: "Saturday" },
+                    { id: "sunday" as const, label: "Sunday" }
+                  ].map((day) => (
+                    <Button
+                      key={day.id}
+                      type="button"
+                      variant={workoutDays.includes(day.id) ? "default" : "outline"}
+                      className={`h-auto py-3 whitespace-normal ${
+                        workoutDays.includes(day.id) ? "bg-primary" : ""
+                      }`}
+                      onClick={() => handleAddWorkoutDay(day.id)}
+                    >
+                      {day.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Navigation Buttons */}
+            <div className="mt-8 flex justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (activeTab === "fitness") setActiveTab("basics");
+                  else if (activeTab === "goals") setActiveTab("fitness");
+                  else if (activeTab === "schedule") setActiveTab("goals");
+                }}
+                disabled={activeTab === "basics"}
+                className="min-w-[100px]"
+              >
+                Back
+              </Button>
+              <Button
+                type="button"
+                onClick={handleContinue}
+                disabled={isLoading}
+                className="min-w-[100px] bg-primary hover:bg-primary/90"
+              >
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </span>
+                ) : activeTab === "schedule" ? (
+                  "Finish"
+                ) : (
+                  "Next"
+                )}
+              </Button>
             </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        {activeTab !== "basics" && (
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              if (activeTab === "fitness") setActiveTab("basics");
-              else if (activeTab === "goals") setActiveTab("fitness");
-              else if (activeTab === "schedule") setActiveTab("goals");
-            }}
-          >
-            Back
-          </Button>
-        )}
-        <div className="flex-1"></div>
-        <Button 
-          onClick={handleContinue}
-          className="bg-fitness-primary hover:bg-fitness-primary/90"
-          disabled={isLoading}
-        >
-          {activeTab === "schedule" 
-            ? (isLoading ? "Saving..." : "Complete Setup") 
-            : "Continue"
-          }
-        </Button>
-      </CardFooter>
+          </div>
+        </CardContent>
+      </Tabs>
     </Card>
   );
 };
