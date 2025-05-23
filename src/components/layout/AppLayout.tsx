@@ -192,8 +192,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Sidebar */}
       <div className="w-64 bg-card border-r border-border md:block p-4 hidden">
         <div className="mb-6 px-2">
-          <Link to="/" className="flex items-center gap-2 px-2">
-            <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-auto" />
+          <Link to="/" className="flex items-center gap-3 px-2">
+            <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center shadow-md">
+              <img src="/fitapp icon 48x48.jpg" alt="FitTrack Logo" className="h-8 w-8" />
+            </div>
             <h1 className="font-bold text-xl md:hidden" data-lovable-title>FitTrack Pro v.beta</h1>
           </Link>
         </div>
