@@ -145,6 +145,18 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     setSearchQuery(value);
   }, []);
 
+  // Debounced search query
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  // Update debounced search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setPage(1); // Reset to first page when search changes
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   // Get paginated exercises based on current page and items per page
   const getPaginatedExercises = useCallback(() => {
     const filtered = getFilteredExercises();
@@ -153,19 +165,19 @@ export const useExerciseLibrary = (): UseExerciseLibraryReturn => {
     return filtered.slice(startIndex, endIndex);
   }, [getFilteredExercises, pagination.currentPage, pagination.itemsPerPage]);
 
-  // Handle page change
   const setPage = useCallback((page: number) => {
     setPagination(prev => ({
       ...prev,
-      currentPage: Math.max(1, Math.min(page, prev.totalPages)),
+      currentPage: Math.max(1, Math.min(page, prev.totalPages || 1)),
     }));
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Handle items per page change
-  const setItemsPerPage = useCallback((itemsPerPage: number) => {
+  const setItemsPerPage = useCallback((items: number) => {
     setPagination(prev => ({
       ...prev,
-      itemsPerPage: Math.max(1, itemsPerPage),
+      itemsPerPage: items,
       currentPage: 1, // Reset to first page when changing items per page
     }));
   }, []);
