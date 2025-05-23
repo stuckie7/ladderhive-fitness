@@ -16,14 +16,24 @@ export const useWeeklyData = () => {
   const fetchWeeklyData = async () => {
     setIsLoading(true);
     try {
+      // For demo purposes, generate mock data if no user is logged in
       if (!user) {
-        // In a real app, you might want to handle this case differently
-        console.log('No user logged in, using demo data');
+        const dates = getLastNDays(7);
+        const mockData = dates.map(date => ({
+          date,
+          day: format(new Date(date), 'E'),
+          steps: Math.floor(Math.random() * 10000) + 2000,
+          active_minutes: Math.floor(Math.random() * 60) + 15,
+          workouts: Math.random() > 0.6 ? 1 : 0
+        }));
+        setWeeklyData(mockData);
         return;
       }
 
       // Get date range for last 7 days
       const dates = getLastNDays(7);
+      
+      // Format the date strings for the query
       const startDate = dates[0];
       const endDate = dates[dates.length - 1];
 
@@ -45,44 +55,24 @@ export const useWeeklyData = () => {
       console.error('Error fetching weekly progress:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load your weekly progress data. Please try refreshing the page.',
+        description: 'Failed to load your weekly progress data.',
         variant: 'destructive',
       });
+      
+      // Fallback to demo data in case of error
+      const dates = getLastNDays(7);
+      const mockData = dates.map(date => ({
+        date,
+        day: format(new Date(date), 'E'),
+        steps: Math.floor(Math.random() * 10000) + 2000,
+        active_minutes: Math.floor(Math.random() * 60) + 15,
+        workouts: Math.random() > 0.6 ? 1 : 0
+      }));
+      setWeeklyData(mockData);
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!user) return;
-
-    // Initial fetch
-    fetchWeeklyData();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('daily_progress_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'daily_progress',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        console.log('Change received!', payload);
-        fetchWeeklyData(); // Refresh data on any change
-      })
-      .subscribe();
-
-    // Set up a refresh interval (e.g., every 5 minutes)
-    const intervalId = setInterval(fetchWeeklyData, 300000);
-    
-    // Cleanup function
-    return () => {
-      channel.unsubscribe();
-      clearInterval(intervalId);
-    };
-  }, [user]);
 
   useEffect(() => {
     fetchWeeklyData();

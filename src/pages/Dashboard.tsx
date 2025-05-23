@@ -77,28 +77,6 @@ const Dashboard = () => {
     window.location.reload();
   };
 
-  // Combine loading states
-  const isLoading = profileLoading || exercisesLoading || workoutsLoading || recentWorkoutsLoading || weeklyDataLoading;
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="container mx-auto px-4 py-6 max-w-6xl">
-          <div className="animate-pulse space-y-8">
-            <div className="h-16 bg-gray-800 rounded-lg w-full"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-800 rounded-lg"></div>
-              ))}
-            </div>
-            <div className="h-64 bg-gray-800 rounded-lg"></div>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
-
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -123,7 +101,7 @@ const Dashboard = () => {
               weeklyChartData={weeklyData || []}
               recentWorkouts={recentWorkouts || []}
               isLoading={weeklyDataLoading} 
-              onSelectDate={(date) => navigate(`/workouts?date=${date.toISOString()}`)}
+              onSelectDate={(date) => console.log("Selected date", date)}
               onSelectWorkout={(id) => navigate(`/workouts/${id}`)}
             />
 
@@ -134,43 +112,31 @@ const Dashboard = () => {
                 isLoading={exercisesLoading}
                 onAddFavorite={() => navigate('/exercises')}
                 onRemoveFavorite={async (id) => {
-                  try {
-                    // Add your favorite removal logic here
-                    toast({
-                      title: "Favorite removed",
-                      description: "Exercise has been removed from your favorites.",
-                    });
-                  } catch (error) {
-                    console.error("Error removing favorite:", error);
-                    toast({
-                      title: "Error",
-                      description: "Failed to remove favorite. Please try again.",
-                      variant: "destructive",
-                    });
-                  }
+                  console.log("Remove favorite", id);
+                  // Implementation would go here
                 }}
               />
               
               <div className="space-y-6">
                 <UpcomingWorkouts 
-                  workouts={workouts?.map(w => ({
+                  workouts={workouts.map(w => ({
                     id: w.id,
                     title: w.title,
                     date: w.scheduled_date,
                     duration: w.duration_minutes,
                     difficulty: w.difficulty,
                     type: 'workout'
-                  })) || []}
+                  }))}
                   isLoading={workoutsLoading}
                   onViewWorkout={(id) => navigate(`/workouts/${id}`)}
                   onScheduleWorkout={handleStartWorkout}
-                  onRefresh={handleRefresh}
+                  onRefresh={() => console.log("Refresh upcoming workouts")}
                 />
                 
                 <WorkoutHistory 
                   workouts={recentWorkouts?.slice(0, 3) || []} 
                   isLoading={recentWorkoutsLoading}
-                  onSelectWorkout={(id) => navigate(`/workouts/${id}`)}
+                  onSelectWorkout={(id, type) => navigate(`/workouts/${id}`)}
                 />
               </div>
             </div>
