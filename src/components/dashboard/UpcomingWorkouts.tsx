@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, ChevronRight, Dumbbell, PlusCircle, RefreshCw } from "lucide-react";
+import { Calendar, Clock, ChevronRight, Dumbbell, PlusCircle, RefreshCw, Activity, Heart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
@@ -127,6 +127,39 @@ const UpcomingWorkouts = ({
     }
   };
 
+  // Get appropriate icon based on workout type
+  const getWorkoutIcon = (type: string) => {
+    const iconClass = "h-5 w-5";
+    switch(type.toLowerCase()) {
+      case 'wod':
+        return <Activity className={iconClass} />;
+      case 'workout':
+        return <Dumbbell className={iconClass} />;
+      case 'mindful':
+        return <Heart className={`${iconClass} text-pink-400`} />;
+      case 'yoga':
+        return <Sparkles className={`${iconClass} text-green-400`} />;
+      default:
+        return <Dumbbell className={iconClass} />;
+    }
+  };
+
+  // Get a placeholder gradient based on workout type
+  const getPlaceholderGradient = (type: string) => {
+    switch(type.toLowerCase()) {
+      case 'wod':
+        return 'bg-gradient-to-br from-purple-900 to-purple-700';
+      case 'workout':
+        return 'bg-gradient-to-br from-blue-900 to-blue-700';
+      case 'mindful':
+        return 'bg-gradient-to-br from-teal-900 to-teal-700';
+      case 'yoga':
+        return 'bg-gradient-to-br from-green-900 to-green-700';
+      default:
+        return 'bg-gradient-to-br from-gray-900 to-gray-700';
+    }
+  };
+
   // Function to determine the correct link based on workout type
   const getWorkoutLink = (workout: UpcomingWorkout) => {
     switch (workout.type) {
@@ -192,28 +225,42 @@ const UpcomingWorkouts = ({
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-start gap-3">
-                    {workout.thumbnail && (
-                      <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                    <div className="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
+                      {workout.thumbnail ? (
                         <img 
                           src={workout.thumbnail} 
                           alt={workout.title} 
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to placeholder if image fails to load
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const placeholder = target.parentElement?.querySelector('.workout-thumbnail-placeholder');
+                            if (placeholder) {
+                              (placeholder as HTMLElement).style.display = 'flex';
+                            }
+                          }}
                         />
+                      ) : null}
+                      <div 
+                        className={`${getPlaceholderGradient(workout.type)} w-full h-full flex items-center justify-center ${workout.thumbnail ? 'hidden' : ''} workout-thumbnail-placeholder`}
+                      >
+                        {getWorkoutIcon(workout.type)}
                       </div>
-                    )}
-                    <div>
-                      <h4 className="font-medium group-hover:text-fitness-secondary transition-colors">
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium group-hover:text-fitness-secondary transition-colors truncate">
                         {workout.title}
                       </h4>
                       <div className="flex flex-wrap gap-2 mt-1 items-center text-sm text-muted-foreground">
                         <p className="text-xs flex items-center">
-                          <Clock className="h-3.5 w-3.5 mr-1" />
-                          {workout.duration} minutes
+                          <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                          {workout.duration} min
                         </p>
-                        <Badge className={`text-xs px-2 py-0.5 ${getDifficultyColor(workout.difficulty)}`}>
+                        <Badge className={`text-[10px] px-1.5 py-0.5 ${getDifficultyColor(workout.difficulty)}`}>
                           {workout.difficulty}
                         </Badge>
-                        <Badge className={`text-xs px-2 py-0.5 ${getTypeColor(workout.type)}`}>
+                        <Badge className={`text-[10px] px-1.5 py-0.5 ${getTypeColor(workout.type)}`}>
                           {workout.type === 'wod' ? 'WOD' : 
                            workout.type === 'mindful' ? 'Mindful' : 
                            workout.type === 'yoga' ? 'Yoga' : 'Workout'}
@@ -221,7 +268,7 @@ const UpcomingWorkouts = ({
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs px-3 py-1.5 rounded-md bg-fitness-secondary/10 text-fitness-secondary">
+                  <div className="text-xs px-2 py-1 rounded-md bg-fitness-secondary/10 text-fitness-secondary whitespace-nowrap ml-2">
                     {getFormattedDate(workout.date)}
                   </div>
                 </div>
