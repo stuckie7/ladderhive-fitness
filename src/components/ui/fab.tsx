@@ -46,11 +46,18 @@ export function Fab({ className, actions }: FabProps) {
 }
 
 function QuickAction({ icon, label, href, onClick }: QuickActionProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault();
+      onClick(e);
+    }
+  };
+
   if (onClick) {
     return (
       <a 
         href={href}
-        onClick={onClick}
+        onClick={handleClick}
         className="flex flex-col items-center p-4 border rounded-lg"
       >
         {icon}

@@ -3,6 +3,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Container } from '@/components/ui/container';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { 
   Home, 
   Dumbbell, 
@@ -25,6 +26,7 @@ type NavItem = {
   label: string;
   href: string;
   icon: React.ReactNode;
+  onClick?: (e: React.MouseEvent) => void;
 };
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
@@ -47,12 +49,69 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     exerciseNav.goToExerciseLibrary();
   };
 
+  const handleStartWorkout = async () => {
+    try {
+      // Get all available workout types
+      const [
+        { data: preparedWorkouts, error: preparedError },
+        { data: wods, error: wodsError },
+        { data: mindfulMovements, error: mindfulError }
+      ] = await Promise.all([
+        supabase.from('prepared_workouts').select('*').limit(100),
+        supabase.from('wods').select('*').limit(100),
+        supabase.from('mindful_movements').select('*').limit(100)
+      ]);
+      
+      // Log any errors but continue with available data
+      if (preparedError) console.error('Error fetching prepared workouts:', preparedError);
+      if (wodsError) console.error('Error fetching WODs:', wodsError);
+      if (mindfulError) console.error('Error fetching mindful movements:', mindfulError);
+      
+      // Filter out any empty or invalid responses
+      const allOptions = [
+        ...(preparedWorkouts || []).map((w: any) => ({ ...w, type: 'workout' })),
+        ...(wods || []).map((w: any) => ({ ...w, type: 'wod' })),
+        ...(mindfulMovements || []).map((m: any) => ({ ...m, type: 'mindful' }))
+      ].filter(Boolean);
+      
+      if (allOptions.length === 0) {
+        navigate('/workouts/new');
+        return;
+      }
+      
+      // Select a random item
+      const randomItem = allOptions[Math.floor(Math.random() * allOptions.length)];
+      
+      // Navigate based on the type
+      switch (randomItem.type) {
+        case 'workout':
+          navigate(`/workouts/${randomItem.id}`);
+          break;
+        case 'wod':
+          navigate(`/wods/${randomItem.id}`);
+          break;
+        case 'mindful':
+          navigate(`/mindful-movement/${randomItem.id}`);
+          break;
+        default:
+          navigate('/workouts/new');
+      }
+    } catch (error) {
+      console.error('Error in handleStartWorkout:', error);
+      navigate('/workouts/new');
+    }
+  };
+
   // Quick actions for the FAB
   const quickActions = [
     { 
       icon: <Zap size={24} />, 
-      label: 'Start Workout', 
-      href: '/workout-builder' 
+      label: 'Start Workout',
+      onClick: (e: React.MouseEvent) => {
+        e.preventDefault();
+        handleStartWorkout();
+      },
+      href: '#'
     },
     { 
       icon: <Zap size={24} />, 
