@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Zap, ArrowRight } from "lucide-react";
+import { Zap, ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { AppTitle } from "@/components/ui/AppTitle";
@@ -39,8 +39,19 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <Button 
             className="btn-fitness-primary"
             onClick={onStartWorkout}
+            disabled={isLoading}
           >
-            <Zap className="mr-2 h-4 w-4" /> Start Workout
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Selecting...
+              </>
+            ) : (
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                Start Workout
+              </>
+            )}
           </Button>
         </div>
       </div>

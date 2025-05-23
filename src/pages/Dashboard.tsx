@@ -31,6 +31,7 @@ const Dashboard = () => {
   const { workouts: recentWorkouts, isLoading: recentWorkoutsLoading } = useWorkouts();
   const { weeklyData, isLoading: weeklyDataLoading } = useActivityProgress();
   const [error, setError] = useState<Error | null>(null);
+  const [isLoadingRandom, setIsLoadingRandom] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,8 +60,68 @@ const Dashboard = () => {
     );
   }
 
-  const handleStartWorkout = () => {
-    navigate('/workouts/new');
+  const handleStartWorkout = async () => {
+    try {
+      setIsLoadingRandom(true);
+      
+      // Fetch all available options
+      const [workoutsRes, wodsRes, mindfulRes] = await Promise.all([
+        fetch('/api/workouts?limit=100'),
+        fetch('/api/wods?limit=100'),
+        fetch('/api/mindful-movements?limit=100')
+      ]);
+      
+      if (!workoutsRes.ok || !wodsRes.ok || !mindfulRes.ok) {
+        throw new Error('Failed to fetch workout options');
+      }
+      
+      const [workoutsData, wodsData, mindfulData] = await Promise.all([
+        workoutsRes.json(),
+        wodsRes.json(),
+        mindfulRes.json()
+      ]);
+      
+      // Filter out any empty or invalid responses
+      const allOptions = [
+        ...(workoutsData?.data || []).map((w: any) => ({ ...w, type: 'workout' })),
+        ...(wodsData?.data || []).map((w: any) => ({ ...w, type: 'wod' })),
+        ...(mindfulData?.data || []).map((m: any) => ({ ...m, type: 'mindful' }))
+      ];
+      
+      if (allOptions.length === 0) {
+        // Fallback to creating a new workout if no options are available
+        navigate('/workouts/new');
+        return;
+      }
+      
+      // Select a random item
+      const randomItem = allOptions[Math.floor(Math.random() * allOptions.length)];
+      
+      // Navigate based on the type
+      switch (randomItem.type) {
+        case 'workout':
+          navigate(`/workouts/${randomItem.id}`);
+          break;
+        case 'wod':
+          navigate(`/wods/${randomItem.id}`);
+          break;
+        case 'mindful':
+          navigate(`/mindful-movement/${randomItem.id}`);
+          break;
+        default:
+          navigate('/workouts/new');
+      }
+    } catch (error) {
+      console.error('Error selecting random workout:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to select a random workout. Creating a new one instead.',
+        variant: 'destructive',
+      });
+      navigate('/workouts/new');
+    } finally {
+      setIsLoadingRandom(false);
+    }
   };
 
   const handleViewExercises = () => {
@@ -79,7 +140,7 @@ const Dashboard = () => {
     <AppLayout>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <DashboardHeader 
-          isLoading={profileLoading} 
+          isLoading={profileLoading || isLoadingRandom} 
           onRefresh={handleRefresh}
           onStartWorkout={handleStartWorkout}
         />
