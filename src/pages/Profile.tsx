@@ -111,11 +111,13 @@ const Profile = () => {
   
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto">
+      <div className="pb-24 md:pb-0">
         {isLoading ? (
           <ProfileSkeleton />
+        ) : userData ? (
+          <UserProfile userData={userData} />
         ) : (
-          userData && <UserProfile userData={userData} />
+          <div>No user data available</div>
         )}
       </div>
     </AppLayout>

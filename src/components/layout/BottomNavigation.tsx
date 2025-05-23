@@ -21,7 +21,7 @@ export function BottomNavigation() {
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background/80 backdrop-blur-sm z-40">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm z-40 shadow-lg">
       <nav className="flex justify-between items-center p-2">
         <Link to="/dashboard" className="flex flex-col items-center py-1 px-3 space-y-1">
           <Home 

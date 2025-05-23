@@ -43,7 +43,7 @@ const Wods: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6 pb-24 md:pb-6">
         <h1 className="text-3xl font-bold gradient-heading mb-6">
           Workouts of the Day
         </h1>
