@@ -91,7 +91,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Progress', href: '/progress', icon: <LineChart size={18} /> },
     { label: 'Schedule', href: '/schedule', icon: <CalendarDays size={18} /> },
     { label: 'WODs', href: '/wods', icon: <BookOpen size={18} /> },
-    { label: 'Demos', href: '/demos', icon: <Zap size={18} /> },
   ];
 
   const NavItem = ({ item }: { item: NavItem }) => {
