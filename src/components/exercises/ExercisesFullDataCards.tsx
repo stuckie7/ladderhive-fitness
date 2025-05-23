@@ -11,7 +11,7 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import ExerciseCardFull from "./ExerciseCardFull";
 import { ExerciseFull } from "@/types/exercise";
 import RawExercisesData from "./RawExercisesData";

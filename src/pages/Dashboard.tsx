@@ -10,6 +10,7 @@ import FavoritesAndAchievementsSection from '@/components/dashboard/FavoritesAnd
 import { useFavoriteExercises } from '@/hooks/use-favorite-exercises';
 import { useUpcomingWorkouts } from '@/hooks/use-upcoming-workouts';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import DashboardError from '@/components/dashboard/DashboardError';
 import { useProfile } from '@/hooks/use-profile';
@@ -64,28 +65,34 @@ const Dashboard = () => {
     try {
       setIsLoadingRandom(true);
       
-      // Fetch all available options
-      const [workoutsRes, wodsRes, mindfulRes] = await Promise.all([
-        fetch('/api/workouts?limit=100'),
-        fetch('/api/wods?limit=100'),
-        fetch('/api/mindful-movements?limit=100')
-      ]);
+      // First try to get prepared workouts
+      const { data: preparedWorkouts, error: preparedError } = await supabase
+        .from('prepared_workouts')
+        .select('*')
+        .limit(100);
       
-      if (!workoutsRes.ok || !wodsRes.ok || !mindfulRes.ok) {
+      // Then get WODs
+      const { data: wods, error: wodsError } = await supabase
+        .from('wods')
+        .select('*')
+        .limit(100);
+      
+      // Then get mindful movements
+      const { data: mindfulMovements, error: mindfulError } = await supabase
+        .from('mindful_movements')
+        .select('*')
+        .limit(100);
+      
+      if (preparedError || wodsError || mindfulError) {
+        console.error('Error fetching workout options:', { preparedError, wodsError, mindfulError });
         throw new Error('Failed to fetch workout options');
       }
       
-      const [workoutsData, wodsData, mindfulData] = await Promise.all([
-        workoutsRes.json(),
-        wodsRes.json(),
-        mindfulRes.json()
-      ]);
-      
       // Filter out any empty or invalid responses
       const allOptions = [
-        ...(workoutsData?.data || []).map((w: any) => ({ ...w, type: 'workout' })),
-        ...(wodsData?.data || []).map((w: any) => ({ ...w, type: 'wod' })),
-        ...(mindfulData?.data || []).map((m: any) => ({ ...m, type: 'mindful' }))
+        ...(preparedWorkouts || []).map((w: any) => ({ ...w, type: 'workout' })),
+        ...(wods || []).map((w: any) => ({ ...w, type: 'wod' })),
+        ...(mindfulMovements || []).map((m: any) => ({ ...m, type: 'mindful' }))
       ];
       
       if (allOptions.length === 0) {

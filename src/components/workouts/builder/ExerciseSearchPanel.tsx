@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Search, Plus, Filter, Dumbbell } from "lucide-react";
 import { ExerciseFull } from "@/types/exercise";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 interface ExerciseSearchPanelProps {
   searchQuery: string;

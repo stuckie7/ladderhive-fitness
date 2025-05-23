@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { getUserWorkouts, addExerciseToWorkout, createWorkout } from "@/hooks/workout-library/services/workout-service";
 
 interface AddToWorkoutModalProps {

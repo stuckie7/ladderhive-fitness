@@ -4,7 +4,7 @@ import {
   fetchGithubCsvData 
 } from "@/utils/githubDataFetcher";
 import { PreparedWorkout, PreparedWorkoutExercise } from "@/types/workout";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 
 interface GitHubWorkoutSource {

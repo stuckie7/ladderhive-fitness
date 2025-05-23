@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useExercises } from '@/hooks/useExercises';
 import { Exercise, ExerciseFull } from '@/types/exercise';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 // This hook provides compatibility for ExerciseLibrarySimple and other components
 export const useExercisesFull = () => {

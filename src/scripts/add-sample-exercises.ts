@@ -2,7 +2,7 @@
  * This script adds sample exercises to the database.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 // Sample exercise data
 const sampleExercises = [

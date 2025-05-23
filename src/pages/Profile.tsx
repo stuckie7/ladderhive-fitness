@@ -3,7 +3,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import UserProfile from "@/components/profile/UserProfile";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 

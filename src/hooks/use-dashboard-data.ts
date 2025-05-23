@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Exercise } from "@/types/exercise";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Wod } from "@/types/wod";
 import { PreparedWorkout } from "@/types/workout";
 import { addDays, isBefore, parseISO } from "date-fns";

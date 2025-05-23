@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { PreparedWorkout, PreparedWorkoutExercise } from '@/types/workout';
 import { Exercise, ExerciseFull } from "@/types/exercise";

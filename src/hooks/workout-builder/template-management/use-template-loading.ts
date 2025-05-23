@@ -1,6 +1,6 @@
 
 import { useCallback, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { WorkoutTemplate, TemplateExercise } from './template-types';
 

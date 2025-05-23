@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { Exercise, ExerciseFull } from '@/types/exercise';
 import { useToast } from '@/components/ui/use-toast';
 import { useExerciseFiltersState } from './use-exercise-filters-state';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { ensureNumber } from '../exercise-form-helpers';
 
 export const useExerciseLibraryEnhanced = () => {

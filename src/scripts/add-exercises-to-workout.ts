@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 const workoutId = '9a46e21a-da14-4bc5-ad13-2806f7acfa89';
 

@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { ExerciseFull } from "@/types/exercise";
 import { checkExercisesFullTableExists } from "./exercise-fetch-service";
 import { toStringId } from "@/utils/id-conversion";

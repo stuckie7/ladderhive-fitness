@@ -12,7 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Loader2, Save, User } from "lucide-react";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
 

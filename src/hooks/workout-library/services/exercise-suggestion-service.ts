@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Exercise } from '@/types/exercise';
 import { toStringId } from '@/utils/id-conversion';
 

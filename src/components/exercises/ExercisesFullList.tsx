@@ -15,7 +15,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { loadExerciseData } from '@/hooks/exercise-library/services/exercise-enhanced-service';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 const ExercisesFullList = () => {
   const [exercises, setExercises] = useState<ExerciseFull[]>([]);

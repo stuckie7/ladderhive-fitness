@@ -9,7 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { Database } from "@/integrations/supabase/types";
 
 const OnboardingForm = () => {
