@@ -24,7 +24,7 @@ const QuickActionsPanel: React.FC = () => {
             <Calendar className="mr-2 h-5 w-5 text-fitness-secondary group-hover:animate-pulse-soft" /> Schedule
           </Button>
         </Link>
-        <Link to="/exercises">
+        <Link to="/exercises/enhanced">
           <Button 
             variant="outline" 
             className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-orange group"
