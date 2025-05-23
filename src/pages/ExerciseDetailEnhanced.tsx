@@ -64,7 +64,7 @@ export default function ExerciseDetailEnhanced() {
   };
 
   const handleBackClick = () => {
-    navigate('/exercises');
+    navigate('/dashboard');
   };
 
   const getEmbedUrl = (url: string): string => {

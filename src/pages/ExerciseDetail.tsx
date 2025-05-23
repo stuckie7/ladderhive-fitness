@@ -29,7 +29,7 @@ export default function ExerciseDetail(): JSX.Element {
   const navigate = useNavigate();
 
   const handleBackClick = () => {
-    navigate(-1);
+    navigate('/dashboard');
   };
 
   const handleAddToWorkout = () => {
