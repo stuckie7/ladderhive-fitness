@@ -3,7 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Exercise } from '@/types/exercise';
 import { Button } from '@/components/ui/button';
-import { Dumbbell, Loader2, Plus, Star } from 'lucide-react';
+import { Dumbbell, Loader2, Plus, Star, Image as ImageIcon } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface FavoriteExercisesProps {
   exercises: Exercise[];
@@ -49,13 +50,28 @@ const FavoriteExercises: React.FC<FavoriteExercisesProps> = ({
             {exercises.map((exercise) => (
               <div
                 key={exercise.id}
-                className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
+                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
               >
-                <div>
-                  <p className="font-medium">{exercise.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {exercise.target || exercise.bodyPart || exercise.muscle_groups?.[0] || exercise.prime_mover_muscle || 'General'}
-                  </p>
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-12 w-12 rounded-md">
+                    {exercise.image_url || exercise.gifUrl || exercise.youtube_thumbnail_url ? (
+                      <AvatarImage 
+                        src={exercise.image_url || exercise.gifUrl || exercise.youtube_thumbnail_url} 
+                        alt={exercise.name}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <AvatarFallback className="bg-muted rounded-md">
+                        <Dumbbell className="h-5 w-5 text-muted-foreground" />
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-sm">{exercise.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {exercise.target || exercise.bodyPart || exercise.muscle_groups?.[0] || exercise.prime_mover_muscle || 'General'}
+                    </p>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
