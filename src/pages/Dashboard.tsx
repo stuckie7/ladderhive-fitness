@@ -79,16 +79,24 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-4 space-y-6">
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
         <DashboardHeader 
           isLoading={profileLoading} 
           onRefresh={handleRefresh}
           onStartWorkout={handleStartWorkout}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Main Content - 8 columns on large screens */}
-          <div className="lg:col-span-8 space-y-6">
+        <div className="flex flex-col space-y-8">
+          {/* Quick Actions Bar */}
+          <div className="w-full">
+            <QuickActionsSection
+              onGoToExerciseLibrary={handleViewExercises}
+              onScheduleWorkout={handleStartWorkout}
+            />
+          </div>
+
+          {/* Main Content */}
+          <div className="w-full space-y-8">
             <DashboardMetricsSection 
               weeklyChartData={weeklyData || []}
               recentWorkouts={recentWorkouts || []}
@@ -97,45 +105,41 @@ const Dashboard = () => {
               onSelectWorkout={(id) => navigate(`/workouts/${id}`)}
             />
 
-            <FavoritesAndAchievementsSection 
-              favoriteExercises={exercises}
-              achievements={[]}
-              isLoading={exercisesLoading}
-              onAddFavorite={() => navigate('/exercises')}
-              onRemoveFavorite={async (id) => {
-                console.log("Remove favorite", id);
-                // Implementation would go here
-              }}
-            />
-          </div>
-
-          {/* Sidebar - 4 columns on large screens */}
-          <div className="lg:col-span-4 space-y-6">
-            <QuickActionsSection
-              onGoToExerciseLibrary={handleViewExercises}
-              onScheduleWorkout={handleStartWorkout}
-            />
-            
-            <UpcomingWorkouts 
-              workouts={workouts.map(w => ({
-                id: w.id,
-                title: w.title,
-                date: w.scheduled_date,
-                duration: w.duration_minutes,
-                difficulty: w.difficulty,
-                type: 'workout'  // Add the required type property
-              }))}
-              isLoading={workoutsLoading}
-              onViewWorkout={(id) => navigate(`/workouts/${id}`)}
-              onScheduleWorkout={handleStartWorkout}
-              onRefresh={() => console.log("Refresh upcoming workouts")}
-            />
-            
-            <WorkoutHistory 
-              workouts={recentWorkouts?.slice(0, 3) || []} 
-              isLoading={recentWorkoutsLoading}
-              onSelectWorkout={(id, type) => navigate(`/workouts/${id}`)}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FavoritesAndAchievementsSection 
+                favoriteExercises={exercises}
+                achievements={[]}
+                isLoading={exercisesLoading}
+                onAddFavorite={() => navigate('/exercises')}
+                onRemoveFavorite={async (id) => {
+                  console.log("Remove favorite", id);
+                  // Implementation would go here
+                }}
+              />
+              
+              <div className="space-y-6">
+                <UpcomingWorkouts 
+                  workouts={workouts.map(w => ({
+                    id: w.id,
+                    title: w.title,
+                    date: w.scheduled_date,
+                    duration: w.duration_minutes,
+                    difficulty: w.difficulty,
+                    type: 'workout'
+                  }))}
+                  isLoading={workoutsLoading}
+                  onViewWorkout={(id) => navigate(`/workouts/${id}`)}
+                  onScheduleWorkout={handleStartWorkout}
+                  onRefresh={() => console.log("Refresh upcoming workouts")}
+                />
+                
+                <WorkoutHistory 
+                  workouts={recentWorkouts?.slice(0, 3) || []} 
+                  isLoading={recentWorkoutsLoading}
+                  onSelectWorkout={(id, type) => navigate(`/workouts/${id}`)}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

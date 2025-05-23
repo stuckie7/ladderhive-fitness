@@ -22,8 +22,8 @@ const DashboardMetricsSection: React.FC<DashboardMetricsSectionProps> = ({
 }) => {
   const { metrics } = useMetrics();
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[calc(100vh-12rem)]">
-      <div className="col-span-2 md:col-span-1">
+    <div className="flex flex-col gap-6">
+      <div className="w-full">
         <MetricsCard 
           title="Workout Metrics" 
           icon={<Activity className="h-5 w-5" />}
@@ -32,7 +32,7 @@ const DashboardMetricsSection: React.FC<DashboardMetricsSectionProps> = ({
           isLoading={isLoading} 
         />
       </div>
-      <div className="col-span-1">
+      <div className="w-full">
         <WorkoutHistory 
           workouts={recentWorkouts}
           isLoading={isLoading}
