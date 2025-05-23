@@ -16,12 +16,10 @@ import { useProfile } from '@/hooks/use-profile';
 import { useWorkouts } from '@/hooks/workouts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dumbbell } from 'lucide-react';
-import { useDailyProgress } from '@/hooks/use-daily-progress';
 import { useActivityProgress } from '@/hooks/use-activity-progress';
 
 // Import components with default exports
 import UpcomingWorkouts from '@/components/dashboard/UpcomingWorkouts';
-import WorkoutHistory from '@/components/dashboard/WorkoutHistory';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -104,24 +102,16 @@ const Dashboard = () => {
               onSelectWorkout={(id) => navigate(`/workouts/${id}`)}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FavoritesAndAchievementsSection 
-                favoriteExercises={exercises}
-                achievements={[]}
-                isLoading={exercisesLoading}
-                onAddFavorite={() => navigate('/exercises')}
-                onRemoveFavorite={async (id) => {
-                  console.log("Remove favorite", id);
-                  // Implementation would go here
-                }}
-              />
-              
-              <WorkoutHistory 
-                workouts={recentWorkouts?.slice(0, 3) || []} 
-                isLoading={recentWorkoutsLoading}
-                onSelectWorkout={(id, type) => navigate(`/workouts/${id}`)}
-              />
-            </div>
+            <FavoritesAndAchievementsSection 
+              favoriteExercises={exercises}
+              achievements={[]}
+              isLoading={exercisesLoading}
+              onAddFavorite={() => navigate('/exercises')}
+              onRemoveFavorite={async (id) => {
+                console.log("Remove favorite", id);
+                // Implementation would go here
+              }}
+            />
           </div>
         </div>
       </div>

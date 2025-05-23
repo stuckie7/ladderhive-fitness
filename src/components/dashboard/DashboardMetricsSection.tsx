@@ -80,32 +80,21 @@ const DashboardMetricsSection: React.FC<DashboardMetricsSectionProps> = ({
       </div>
       
       {/* Activity Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-800/50">
-          <h3 className="text-lg font-semibold text-white mb-4">Activity Summary</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {activityMetrics.map((metric) => (
-              <div 
-                key={metric.name}
-                className="bg-gray-800/30 p-3 rounded-lg border border-gray-700/50"
-              >
-                <div className="text-xs text-gray-400">{metric.name}</div>
-                <div className="text-lg font-semibold text-white">
-                  {metric.value}
-                  {metric.unit && <span className="text-xs ml-1 text-gray-400">{metric.unit}</span>}
-                </div>
+      <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-800/50">
+        <h3 className="text-lg font-semibold text-white mb-4">Activity Summary</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {activityMetrics.map((metric) => (
+            <div 
+              key={metric.name}
+              className="bg-gray-800/30 p-3 rounded-lg border border-gray-700/50"
+            >
+              <div className="text-xs text-gray-400">{metric.name}</div>
+              <div className="text-lg font-semibold text-white">
+                {metric.value}
+                {metric.unit && <span className="text-xs ml-1 text-gray-400">{metric.unit}</span>}
               </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-800/50">
-          <WorkoutHistory 
-            workouts={recentWorkouts}
-            isLoading={isLoading}
-            onSelectDate={onSelectDate}
-            onSelectWorkout={onSelectWorkout}
-          />
+            </div>
+          ))}
         </div>
       </div>
     </div>
