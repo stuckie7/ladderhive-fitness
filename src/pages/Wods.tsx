@@ -21,8 +21,6 @@ const Wods: React.FC = () => {
   const activeTab = searchParams.get(TAB_PARAM) || ALL_TAB;
   const { toast } = useToast();
   
-  console.log('Rendering Wods component, activeTab:', activeTab);
-  
   // Initialize WOD browser hook
   const {
     wods = [],
@@ -36,8 +34,6 @@ const Wods: React.FC = () => {
     activeFilterCount = 0,
     resetFilters
   } = useWodBrowser();
-  
-  console.log('WODs data:', { wods, totalWods, isLoading });
   
   // Initialize optimized favorites hook
   const { 
@@ -82,21 +78,26 @@ const Wods: React.FC = () => {
 
   // Memoize filtered WODs to prevent unnecessary re-renders
   const { currentWods, totalItems, isCurrentLoading } = useMemo(() => {
+    let filteredWods = [...wods];
+    
+    // Apply difficulty filter if active
+    if (filters.difficulty.length > 0) {
+      filteredWods = filteredWods.filter(wod => 
+        wod.difficulty && filters.difficulty.includes(wod.difficulty.toLowerCase())
+      );
+    }
+    
+    // Apply favorites filter if active tab is favorites
     if (activeTab === FAVORITES_TAB) {
-      const favoriteWods = filterFavorites(wods);
-      return {
-        currentWods: favoriteWods,
-        totalItems: favoriteWods.length,
-        isCurrentLoading: isLoading || isLoadingFavorites
-      };
+      filteredWods = filterFavorites(filteredWods);
     }
     
     return {
-      currentWods: wods,
-      totalItems: totalWods,
-      isCurrentLoading: isLoading
+      currentWods: filteredWods,
+      totalItems: filteredWods.length,
+      isCurrentLoading: isLoading || (activeTab === FAVORITES_TAB && isLoadingFavorites)
     };
-  }, [activeTab, wods, totalWods, isLoading, isLoadingFavorites, filterFavorites]);
+  }, [activeTab, wods, filters.difficulty, isLoading, isLoadingFavorites, filterFavorites]);
 
   // Show skeleton loader when data is loading
   if (isCurrentLoading && currentWods.length === 0) {
@@ -166,7 +167,7 @@ const Wods: React.FC = () => {
                   totalItems={totalItems}
                   itemsPerPage={itemsPerPage}
                   onPageChange={handlePageChange}
-                  isFavorite={isFavorite}
+                  isFavorite={(wodId: string) => isFavorite(wodId)}
                 />
               )}
             </TabsContent>

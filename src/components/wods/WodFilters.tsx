@@ -15,7 +15,7 @@ interface WodFiltersProps {
 
 const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
   const handleDifficultyChange = (value: string) => {
-    const newValue = value === 'all' ? [] : [value];
+    const newValue = value === 'all' ? [] : [value.toLowerCase()];
     onChange({ ...filters, difficulty: newValue });
   };
 
@@ -42,7 +42,8 @@ const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
   const hasFilters = filters.category.length > 0 || filters.difficulty.length > 0 || filters.duration.length > 0;
   
   const getDifficultyValue = () => {
-    return filters.difficulty && filters.difficulty.length > 0 ? filters.difficulty[0] : 'all';
+    if (!filters.difficulty || filters.difficulty.length === 0) return 'all';
+    return filters.difficulty[0].toLowerCase();
   };
   
   const getCategoryValue = () => {
