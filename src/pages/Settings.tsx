@@ -1,4 +1,3 @@
-
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
@@ -13,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { supabase } from "@/lib/supabase";
-import { Loader2, Save, User } from "lucide-react";
+import { Loader2, Save, User, Smartphone } from "lucide-react";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
 
 const profileFormSchema = z.object({
@@ -160,6 +159,9 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="account" onClick={() => setDefaultTab("account")}>
               Account
+            </TabsTrigger>
+            <TabsTrigger value="devices" onClick={() => setDefaultTab("devices")}>
+              Devices
             </TabsTrigger>
           </TabsList>
           
@@ -364,6 +366,47 @@ const Settings = () => {
                       Delete Account
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="devices" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Connected Devices & Services</CardTitle>
+                <CardDescription>
+                  Manage your connected fitness trackers and services to sync your activity data.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium flex items-center">
+                      <Smartphone className="mr-2 h-5 w-5" /> Fitbit
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Connect your Fitbit account to sync steps, activities, and more.
+                    </p>
+                    <Button variant="outline" className="mt-2">
+                      Connect Fitbit
+                    </Button>
+                    {/* TODO: Add disconnect button and status if connected */}
+                  </div>
+                  <hr />
+                  <div>
+                    <h3 className="text-lg font-medium flex items-center">
+                      <Smartphone className="mr-2 h-5 w-5" /> Garmin
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Connect your Garmin account to sync activities, heart rate, and other metrics.
+                    </p>
+                    <Button variant="outline" className="mt-2">
+                      Connect Garmin
+                    </Button>
+                    {/* TODO: Add disconnect button and status if connected */}
+                  </div>
+                   {/* Add more services here as needed */}
                 </div>
               </CardContent>
             </Card>
