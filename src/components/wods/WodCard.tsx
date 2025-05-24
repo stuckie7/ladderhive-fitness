@@ -174,23 +174,46 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
         </div>
       </CardHeader>
       
-      <CardContent className={`flex-grow relative z-10 ${thumbnailUrl ? 'text-white' : ''}`}>
-        <p className={`text-sm mb-4 ${thumbnailUrl ? 'text-white/80' : 'text-muted-foreground'}`}>
-          {descriptionText}
-        </p>
+      <CardContent className={`flex-grow relative z-10 ${thumbnailUrl ? 'text-white' : ''} space-y-3`}>
+        <div className="space-y-2">
+          <p className={`text-sm ${thumbnailUrl ? 'text-white/80' : 'text-muted-foreground'}`}>
+            {descriptionText}
+          </p>
+          
+          {/* Display parts if they exist */}
+          {[wod.part_1, wod.part_2, wod.part_3, wod.part_4, wod.part_5, wod.part_6, wod.part_7, wod.part_8, wod.part_9, wod.part_10]
+            .filter(part => part && part.trim() !== '')
+            .map((part, index) => (
+              <div key={index} className="flex items-start">
+                <span className="inline-block w-6 h-6 bg-primary/20 text-primary rounded-full flex items-center justify-center text-xs font-medium mr-2 mt-0.5">
+                  {index + 1}
+                </span>
+                <p className={`text-sm flex-1 ${thumbnailUrl ? 'text-white/80' : 'text-muted-foreground'}`}>
+                  {part}
+                </p>
+              </div>
+            ))}
+        </div>
         
-        <div className={`flex items-center gap-2 text-sm ${thumbnailUrl ? 'text-white/70' : 'text-muted-foreground'}`}>
-          {wod.avg_duration_minutes && (
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 mr-1" />
+        <div className={`flex flex-wrap items-center gap-3 text-sm ${thumbnailUrl ? 'text-white/70' : 'text-muted-foreground'} pt-2 border-t border-white/10`}>
+          {wod.avg_duration_minutes > 0 && (
+            <div className="flex items-center bg-white/10 px-2 py-1 rounded-md">
+              <Clock className="h-3.5 w-3.5 mr-1.5" />
               <span>{wod.avg_duration_minutes} min</span>
             </div>
           )}
           
           {hasVideo && (
-            <div className="flex items-center">
-              <Video className="h-4 w-4 mr-1" />
+            <div className="flex items-center bg-white/10 px-2 py-1 rounded-md">
+              <Video className="h-3.5 w-3.5 mr-1.5" />
               <span>Video demo</span>
+            </div>
+          )}
+          
+          {wod.components && Object.keys(wod.components).length > 0 && (
+            <div className="flex items-center bg-white/10 px-2 py-1 rounded-md">
+              <Dumbbell className="h-3.5 w-3.5 mr-1.5" />
+              <span>{Object.keys(wod.components).length} components</span>
             </div>
           )}
         </div>

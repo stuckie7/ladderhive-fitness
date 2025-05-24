@@ -143,91 +143,93 @@ const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {
         )
       )}
       
-      {/* Components */}
+      {/* Components and Parts */}
       <Card>
         <CardContent className="pt-6">
-          <h2 className="text-xl font-semibold mb-4">Workout Components</h2>
-          <div className="space-y-4">
-            {/* Structured components */}
-            {wod.components.length > 0 && (
-              <ul className="list-disc pl-5 space-y-3 mb-4">
-                {wod.components
-                  .sort((a, b) => a.order - b.order)
-                  .map((component) => (
-                    <li key={component.order} className="py-1">
-                      <p className="whitespace-pre-line">{component.description}</p>
-                    </li>
-                  ))}
-              </ul>
-            )}
-
-            {/* Additional parts from part_1 to part_10 */}
-            {partFields.length > 0 && (
-              <div className="space-y-3">
-                {wod.components.length > 0 && (
-                  <div className="border-t border-muted my-4"></div>
-                )}
-                <h3 className="font-medium text-md mt-2 mb-3">Additional Instructions</h3>
-                <ul className="list-disc pl-5 space-y-3">
-                  {wod.part_1 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_1}</p>
-                    </li>
-                  )}
-                  {wod.part_2 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_2}</p>
-                    </li>
-                  )}
-                  {wod.part_3 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_3}</p>
-                    </li>
-                  )}
-                  {wod.part_4 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_4}</p>
-                    </li>
-                  )}
-                  {wod.part_5 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_5}</p>
-                    </li>
-                  )}
-                  {wod.part_6 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_6}</p>
-                    </li>
-                  )}
-                  {wod.part_7 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_7}</p>
-                    </li>
-                  )}
-                  {wod.part_8 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_8}</p>
-                    </li>
-                  )}
-                  {wod.part_9 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_9}</p>
-                    </li>
-                  )}
-                  {wod.part_10 && (
-                    <li className="py-1">
-                      <p className="whitespace-pre-line">{wod.part_10}</p>
-                    </li>
-                  )}
-                </ul>
+          <h2 className="text-xl font-semibold mb-4">Workout Details</h2>
+          <div className="space-y-6">
+            {/* Display all parts in a structured way */}
+            {partFields && partFields.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Workout Structure</h3>
+                {partFields.map((part, index) => (
+                  <div key={index} className="flex items-start bg-muted/30 p-4 rounded-lg">
+                    <div className="bg-primary/10 text-primary rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0 mr-3 mt-0.5">
+                      <span className="font-medium text-sm">{index + 1}</span>
+                    </div>
+                    <p className="whitespace-pre-line flex-1">{part}</p>
+                  </div>
+                ))}
               </div>
             )}
-            
-            {wod.components.length === 0 && partFields.length === 0 && wod.description ? (
-              <p className="text-muted-foreground">See description above for workout details.</p>
-            ) : wod.components.length === 0 && partFields.length === 0 ? (
-              <p className="text-muted-foreground">No workout components available.</p>
-            ) : null}
+
+            {/* JSON Components */}
+            {wod.components && Object.keys(wod.components).length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Workout Components</h3>
+                <div className="bg-muted/30 p-4 rounded-lg overflow-x-auto">
+                  <pre className="text-sm">
+                    {JSON.stringify(wod.components, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* Video Section */}
+            {videoUrl && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Video Demonstration</h3>
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  {embedUrl ? (
+                    <div className="aspect-video rounded-lg overflow-hidden">
+                      <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src={embedUrl}
+                        title={`${wod.name} Demo`}
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen
+                        className="rounded-lg"
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center p-6 bg-muted/50 rounded-lg">
+                      <Video className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+                      <p className="mb-3">Video demonstration available</p>
+                      <a 
+                        href={videoUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="inline-flex items-center text-primary hover:underline"
+                      >
+                        Open video in new tab <ExternalLink className="ml-1 h-4 w-4" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Metadata */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium text-muted-foreground">Category</h4>
+                <div>{wod.category || 'Not specified'}</div>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium text-muted-foreground">Difficulty</h4>
+                <div className="capitalize">{wod.difficulty || 'Not specified'}</div>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium text-muted-foreground">Duration</h4>
+                <div>{wod.avg_duration_minutes ? `${wod.avg_duration_minutes} minutes` : 'Not specified'}</div>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium text-muted-foreground">Created</h4>
+                <div>{wod.created_at ? new Date(wod.created_at).toLocaleDateString() : 'Unknown'}</div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
