@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -22,12 +21,6 @@ interface ScheduledWod {
   category: string;
   created_at: string;
   is_favorite?: boolean;
-}
-
-interface ScheduledWorkout extends Omit<PreparedWorkout, 'goal'> {
-  scheduledDate: string;
-  goal?: string;
-  type?: string;
 }
 
 // This function will fetch dashboard data from various data sources
@@ -261,7 +254,7 @@ const fetchDashboardData = async (userId: string) => {
   };
 };
 
-// Update the function that processes scheduled Wods
+// Update the processScheduledWorkouts function to handle the updated ScheduledWod interface
 const processScheduledWorkouts = (workoutData: any[]): ScheduledWod[] => {
   if (!workoutData || workoutData.length === 0) return [];
   

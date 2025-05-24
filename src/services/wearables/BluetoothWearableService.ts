@@ -1,3 +1,4 @@
+
 import { 
   WearableDevice, 
   WearableDeviceType, 
@@ -70,7 +71,7 @@ export class BluetoothWearableService {
     try {
       const device = await navigator.bluetooth.requestDevice({
         filters: this.getRequestFilters(),
-        optionalServices: Object.values(GATT_SERVICES) as string[]
+        optionalServices: Object.values(GATT_SERVICES) as BluetoothServiceUUID[]
       });
       
       if (!device) {
@@ -113,7 +114,7 @@ export class BluetoothWearableService {
           id: device.id,
           connected: true,
           name: device.name || 'Unknown Device',
-          type: 'bluetooth' as WearableDeviceType,
+          type: 'bluetooth',
           lastSync: new Date(),
           manufacturer: this.deviceRecords.find(d => d.id === device.id)?.manufacturer,
           model: this.deviceRecords.find(d => d.id === device.id)?.model,
@@ -138,7 +139,7 @@ export class BluetoothWearableService {
           id: device.id,
           connected: true,
           name: device.name || 'Unknown Device',
-          type: 'bluetooth' as WearableDeviceType,
+          type: 'bluetooth',
           lastSync: new Date(),
           manufacturer: this.deviceRecords.find(d => d.id === device.id)?.manufacturer,
           model: this.deviceRecords.find(d => d.id === device.id)?.model,
@@ -294,7 +295,7 @@ export class BluetoothWearableService {
             id: device.id,
             connected: true,
             name: device.name,
-            type: 'bluetooth' as WearableDeviceType,
+            type: 'bluetooth',
             lastSync: new Date(),
             manufacturer: manufacturerValue.toString(),
             model: modelNumberValue.toString(),

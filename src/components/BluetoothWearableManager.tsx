@@ -51,13 +51,6 @@ const BluetoothWearableManager: React.FC = () => {
   const [showDisconnectSuccess, setShowDisconnectSuccess] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<WearableDevice | null>(null);
   
-  // Auto-select the connected device
-  useEffect(() => {
-    if (connectedDevice) {
-      setSelectedDevice(connectedDevice);
-    }
-  }, [connectedDevice]);
-  
   // Handle device selection
   const handleDeviceSelect = (device: WearableDevice) => {
     setSelectedDevice(device);
