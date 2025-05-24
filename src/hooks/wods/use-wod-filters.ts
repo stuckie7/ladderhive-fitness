@@ -50,7 +50,6 @@ export const useWodFilters = () => {
   }, []);
 
   const resetFilters = useCallback(() => {
-<<<<<<< HEAD
     setFilters({
       search: '',
       difficulty: [],
@@ -68,20 +67,11 @@ export const useWodFilters = () => {
     return count;
   }, 0);
 
-=======
-    setFilters({});
-  }, []);
-
->>>>>>> c57dc56863e7fe2b8ce70ae08fe202abf8951f15
   return {
     filters,
     setFilters,
     applyFilters,
-<<<<<<< HEAD
     resetFilters,
     activeFilterCount
-=======
-    resetFilters
->>>>>>> c57dc56863e7fe2b8ce70ae08fe202abf8951f15
   };
 };
