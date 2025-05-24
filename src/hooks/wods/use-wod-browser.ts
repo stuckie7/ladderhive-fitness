@@ -1,14 +1,14 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
+import { WodFilters } from '@/types/wod';
 import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
-import { Wod, WodFilters } from '@/types/wod';
 
 export const useWodBrowser = () => {
   // State management
-  const [wods, setWods] = useState<Wod[]>([]);
+  const [wods, setWods] = useState<any[]>([]);
   const [totalWods, setTotalWods] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -21,7 +21,7 @@ export const useWodBrowser = () => {
     special: []
   });
   const itemsPerPage = 12;
-  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
 
   // Calculate active filter count for the badge
@@ -43,7 +43,7 @@ export const useWodBrowser = () => {
     
     // Apply search filter
     if (filters.search) {
-      q = q.textSearch('name', filters.search, {
+      q = q.textSearch('title', filters.search, {
         config: 'english',
         type: 'websearch'
       });
@@ -61,43 +61,22 @@ export const useWodBrowser = () => {
 
     // Apply duration filters
     if (filters.duration.length > 0) {
-      // Translate duration strings to minute ranges
-      const durationRanges = filters.duration.map(duration => {
-        switch (duration) {
-          case '<15min': return { min: 0, max: 15 };
-          case '15-30min': return { min: 15, max: 30 };
-          case '30-45min': return { min: 30, max: 45 };
-          case '45+min': return { min: 45, max: 999 };
-          default: return null;
-        }
-      }).filter(Boolean) as Array<{min: number, max: number}>;
-      
-      if (durationRanges.length > 0) {
-        // Apply each duration range as an OR condition
-        const durationConditions = durationRanges.map(range => 
-          `avg_duration_minutes.gte.${range.min}.and.avg_duration_minutes.lte.${range.max}`
-        );
-        
-        q = q.or(durationConditions.join(','));
+      // Handle duration as a range in minutes
+      const maxDuration = parseInt(filters.duration[0], 10);
+      if (!isNaN(maxDuration)) {
+        q = q.lte('duration_minutes', maxDuration);
       }
     }
 
     // Apply equipment filters
     if (filters.equipment.length > 0) {
-      // For each equipment, add a condition that checks for equipment in description
-      const equipmentConditions = filters.equipment.map(equip => 
-        `description.ilike.%${equip}%`
-      );
-      
-      // If multiple equipment are selected, we want to match ANY of them
-      q = q.or(equipmentConditions.join(','));
+      // For each equipment, add a condition that checks if equipment_needed contains the equipment
+      filters.equipment.forEach(equip => {
+        q = q.contains('equipment_needed', [equip]);
+      });
     }
 
     // Special filters
-    if (filters.special.includes('With Videos')) {
-      q = q.not('video_url', 'is', null);
-    }
-    
     if (filters.special.includes('New This Week')) {
       // Filter for wods created in the last 7 days
       const lastWeek = new Date();
@@ -113,15 +92,38 @@ export const useWodBrowser = () => {
     return q;
   };
 
+  // Enhanced logging for debugging
+  const logQueryDetails = useCallback((query: any, type: 'count' | 'data') => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[${type.toUpperCase()}] Current query:`, {
+        filters,
+        currentPage,
+        query: query.toPostgrestFilter()
+      });
+    }
+  }, [filters, currentPage]);
+
   // Fetch wods based on current filters and pagination
   const fetchWods = useCallback(async () => {
     setIsLoading(true);
     console.log("Fetching wods with filters:", filters);
     
     try {
-      // Get user ID for favorites
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
+      let userId: string | null = null;
+      const savedFilter = filters.special.includes('Favorites');
+      
+      // Handle favorites filter
+      if (savedFilter) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          // If user is not logged in but Favorites filter is selected, return empty results
+          setWods([]);
+          setTotalWods(0);
+          setIsLoading(false);
+          return;
+        }
+        userId = user.id;
+      }
       
       // Build base query
       let query = supabase
@@ -131,33 +133,52 @@ export const useWodBrowser = () => {
       // Apply filters to the query
       query = buildQuery(query);
       
+      // Handle favorites query
+      if (savedFilter && userId) {
+        const { data: favoriteWods, error: favError } = await supabase
+          .from('user_favorite_wods')
+          .select('wod_id')
+          .eq('user_id', userId);
+          
+        if (favError) throw favError;
+        
+        const favoriteWodIds = favoriteWods.map(fw => fw.wod_id);
+        
+        if (favoriteWodIds.length === 0) {
+          setWods([]);
+          setTotalWods(0);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Apply favorite wod IDs filter
+        query = query.in('id', favoriteWodIds);
+      }
+      
       // Execute the query
       const { data, error, count } = await query;
       
       if (error) throw error;
       
-      // Get favorite WODs if user is logged in
-      let favorites: Record<string, boolean> = {};
+      // Get favorite WODs for the current user to mark them in the results
+      let favoriteWodIds: string[] = [];
       if (userId) {
-        const { data: favs, error: favError } = await supabase
+        const { data: favoriteWods } = await supabase
           .from('user_favorite_wods')
           .select('wod_id')
           .eq('user_id', userId);
-          
-        if (!favError && favs) {
-          favorites = favs.reduce((acc, fav) => {
-            acc[fav.wod_id] = true;
-            return acc;
-          }, {} as Record<string, boolean>);
+        
+        if (favoriteWods) {
+          favoriteWodIds = favoriteWods.map(fw => fw.wod_id);
         }
       }
       
       // Process the data
       const processedWods = (data || []).map(wod => ({
         ...wod,
-        is_favorite: favorites[wod.id] || false,
-        is_new: new Date(wod.created_at || '').getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000,
-      })) as Wod[];
+        is_new: new Date(wod.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000,
+        is_favorite: favoriteWodIds.includes(wod.id)
+      }));
       
       setWods(processedWods);
       setTotalWods(count || 0);
@@ -166,7 +187,7 @@ export const useWodBrowser = () => {
       console.error('Error fetching wods:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load WODs. Please try again.',
+        description: 'Failed to load workouts. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -181,16 +202,15 @@ export const useWodBrowser = () => {
 
   // Handle URL parameters for deep linking
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const searchQuery = searchParams.get('search');
-    const category = searchParams.get('category');
-    const difficulty = searchParams.get('difficulty');
+    const search = searchParams.get('search') || '';
+    const category = searchParams.get('category')?.split(',') || [];
+    const difficulty = searchParams.get('difficulty')?.split(',') || [];
     
     let newFilters = { ...filters };
     
-    if (searchQuery) newFilters.search = searchQuery;
-    if (category) newFilters.category = [category];
-    if (difficulty) newFilters.difficulty = [difficulty];
+    if (search) newFilters.search = search;
+    if (category.length > 0) newFilters.category = category;
+    if (difficulty.length > 0) newFilters.difficulty = difficulty;
     
     // Only update if filters are different
     const hasChanged = 
@@ -201,7 +221,7 @@ export const useWodBrowser = () => {
     if (hasChanged) {
       setFilters(newFilters);
     }
-  }, [location, filters]);
+  }, [searchParams, filters]);
 
   // Apply filters
   const handleFilterChange = useCallback((newFilters: WodFilters) => {
@@ -212,7 +232,21 @@ export const useWodBrowser = () => {
       }
       return prevFilters;
     });
-  }, []);
+    
+    // Update URL params for deep linking
+    const params = new URLSearchParams();
+    if (newFilters.search) params.set('search', newFilters.search);
+    if (newFilters.category.length > 0) params.set('category', newFilters.category.join(','));
+    if (newFilters.difficulty.length > 0) params.set('difficulty', newFilters.difficulty.join(','));
+    
+    setSearchParams(params);
+  }, [setSearchParams]);
+
+  // Change page
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo(0, 0); // Scroll back to top
+  };
 
   // Reset filters
   const resetFilters = useCallback(() => {
@@ -224,13 +258,8 @@ export const useWodBrowser = () => {
       equipment: [],
       special: []
     });
-  }, []);
-
-  // Change page
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo(0, 0); // Scroll back to top
-  };
+    setSearchParams({});
+  }, [setSearchParams]);
 
   return {
     wods,
@@ -239,9 +268,9 @@ export const useWodBrowser = () => {
     currentPage,
     itemsPerPage, 
     filters,
-    activeFilterCount,
     handleFilterChange,
     handlePageChange,
-    resetFilters,
+    activeFilterCount,
+    resetFilters
   };
 };

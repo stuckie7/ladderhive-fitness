@@ -15,24 +15,47 @@ interface WodFiltersProps {
 
 const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
   const handleDifficultyChange = (value: string) => {
-    const newValue = value === 'all' ? undefined : value;
+    const newValue = value === 'all' ? [] : [value];
     onChange({ ...filters, difficulty: newValue });
   };
 
   const handleCategoryChange = (value: string) => {
-    const newValue = value === 'all' ? undefined : value;
+    const newValue = value === 'all' ? [] : [value];
     onChange({ ...filters, category: newValue });
   };
 
   const handleDurationChange = (value: number[]) => {
-    onChange({ ...filters, duration: value[0] });
+    onChange({ ...filters, duration: [`${value[0]}`] });
   };
 
   const handleReset = () => {
-    onChange({});
+    onChange({
+      search: '',
+      difficulty: [],
+      category: [],
+      duration: [],
+      equipment: [],
+      special: []
+    });
   };
 
-  const hasFilters = filters.category || filters.difficulty || filters.duration;
+  const hasFilters = filters.category.length > 0 || filters.difficulty.length > 0 || filters.duration.length > 0;
+  
+  const getDifficultyValue = () => {
+    return filters.difficulty && filters.difficulty.length > 0 ? filters.difficulty[0] : 'all';
+  };
+  
+  const getCategoryValue = () => {
+    return filters.category && filters.category.length > 0 ? filters.category[0] : 'all';
+  };
+  
+  const getDurationValue = () => {
+    if (filters.duration && filters.duration.length > 0) {
+      const value = parseInt(filters.duration[0], 10);
+      return isNaN(value) ? 60 : value;
+    }
+    return 60;
+  };
 
   return (
     <Card className="sticky top-24">
@@ -54,7 +77,7 @@ const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
         <div className="space-y-2">
           <Label htmlFor="difficulty">Difficulty</Label>
           <Select 
-            value={filters.difficulty || 'all'} 
+            value={getDifficultyValue()} 
             onValueChange={handleDifficultyChange}
           >
             <SelectTrigger id="difficulty">
@@ -73,7 +96,7 @@ const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
           <Select 
-            value={filters.category || 'all'} 
+            value={getCategoryValue()} 
             onValueChange={handleCategoryChange}
           >
             <SelectTrigger id="category">
@@ -91,14 +114,14 @@ const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
         <div className="space-y-4">
           <div className="flex justify-between">
             <Label htmlFor="duration">Max Duration</Label>
-            <span className="text-sm">{filters.duration || 60} min</span>
+            <span className="text-sm">{getDurationValue()} min</span>
           </div>
           <Slider
             id="duration"
             min={5}
             max={60}
             step={5}
-            value={[filters.duration || 60]}
+            value={[getDurationValue()]}
             onValueChange={handleDurationChange}
           />
         </div>
