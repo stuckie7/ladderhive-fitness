@@ -33,29 +33,32 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
     }
   };
   const navigate = useNavigate();
-  // Get YouTube thumbnail URL if video URL is available
+  // Get the best available video URL (prefer video_url, fall back to video_demo)
+  const videoUrl = wod.video_url || (wod as any).video_demo;
+  
+  // State for thumbnail handling
   const [thumbnailUrl, setThumbnailUrl] = React.useState<string | null>(null);
   const [thumbnailError, setThumbnailError] = React.useState(false);
   
   // Handle thumbnail loading and errors
   React.useEffect(() => {
-    if (wod.video_url) {
+    if (videoUrl) {
       // First try to get the highest quality thumbnail
-      const url = getYouTubeThumbnail(wod.video_url);
+      const url = getYouTubeThumbnail(videoUrl);
       setThumbnailUrl(url);
       setThumbnailError(false);
     } else if (wod.image_url) {
-      // Fall back to image_url if video_url is not available
+      // Fall back to image_url if no video URL is available
       setThumbnailUrl(wod.image_url);
       setThumbnailError(false);
     } else {
       setThumbnailUrl(null);
     }
-  }, [wod.video_url, wod.image_url]);
+  }, [videoUrl, wod.image_url]);
 
   // Generate an engaging description or use the existing one
   const descriptionText = wod.description ? createDescriptionSnippet(wod.description, 120) : generateEngagingDescription(wod);
-  const hasVideo = !!wod.video_url;
+  const hasVideo = !!videoUrl;
   
   // Default thumbnail for when no video thumbnail is available
   const defaultThumbnail = '/fitapp%20icon%2048x48.jpg';
@@ -105,9 +108,9 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
 
   const handleVideoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (wod.video_url) {
+    if (videoUrl) {
       // Open video in a new tab
-      window.open(wod.video_url, '_blank', 'noopener,noreferrer');
+      window.open(videoUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -130,16 +133,16 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
             alt={`${wod.name} thumbnail`}
             className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-200"
             onError={(e) => {
-              // Fallback to YouTube thumbnail on error
+              // Fallback to lower quality thumbnails on error
               const img = e.target as HTMLImageElement;
-              if (wod.video_url) {
+              if (videoUrl) {
                 // Try different YouTube thumbnail qualities
-                const videoId = getYouTubeVideoId(wod.video_url);
+                const videoId = getYouTubeVideoId(videoUrl);
                 if (videoId) {
-                  // Try lower quality thumbnails
-                  const qualities = ['hqdefault.jpg', 'mqdefault.jpg', 'default.jpg'];
-                  const currentSrc = img.src.split('/').pop();
-                  const currentQualityIndex = qualities.findIndex(q => currentSrc?.includes(q));
+                  // Try lower quality thumbnails in order of preference
+                  const qualities = ['maxresdefault.jpg', 'hqdefault.jpg', 'mqdefault.jpg', 'default.jpg'];
+                  const currentSrc = img.src.split('/').pop() || '';
+                  const currentQualityIndex = qualities.findIndex(q => currentSrc.includes(q));
                   
                   if (currentQualityIndex < qualities.length - 1) {
                     // Try next lower quality
@@ -152,11 +155,19 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
                     img.src = defaultThumbnail;
                     setThumbnailError(true);
                   }
+                } else if (wod.image_url) {
+                  // If we can't get a video ID but have an image URL, use that
+                  img.src = wod.image_url;
                 } else {
+                  // Final fallback to default thumbnail
                   img.src = defaultThumbnail;
                   setThumbnailError(true);
                 }
+              } else if (wod.image_url) {
+                // If no video URL but we have an image URL, use that
+                img.src = wod.image_url;
               } else {
+                // Final fallback to default thumbnail
                 img.src = defaultThumbnail;
                 setThumbnailError(true);
               }
