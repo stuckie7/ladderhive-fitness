@@ -68,9 +68,17 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
     await onToggleFavorite(wod.id);
   };
 
+  const handleVideoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (wod.video_url) {
+      // Open video in a new tab
+      window.open(wod.video_url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <Card 
-      className="h-full flex flex-col hover:shadow-md transition-shadow transform hover:scale-[1.01] overflow-hidden relative"
+      className="h-full flex flex-col hover:shadow-md transition-shadow transform hover:scale-[1.01] overflow-hidden relative group"
       onClick={handleViewDetails}
     >
       <div className="absolute inset-0 z-0">
@@ -78,27 +86,41 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
           className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"
           aria-hidden="true"
         />
-        {thumbnailUrl ? (
-          <img 
-            src={thumbnailUrl} 
-            alt={`${wod.name} thumbnail`}
-            className="w-full h-full object-cover opacity-70"
-            onError={(e) => {
-              // Fallback to default image on error
-              const img = e.target as HTMLImageElement;
-              img.src = defaultThumbnail;
-              img.onerror = null; // Prevent infinite loop if default image fails
-            }}
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center">
-            <img 
-              src={defaultThumbnail} 
-              alt="Default workout thumbnail"
-              className="w-full h-full object-cover opacity-70"
-            />
-          </div>
-        )}
+        <div 
+          className="relative w-full h-full cursor-pointer"
+          onClick={handleVideoClick}
+        >
+          {thumbnailUrl ? (
+            <>
+              <img 
+                src={thumbnailUrl} 
+                alt={`${wod.name} thumbnail`}
+                className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-200"
+                onError={(e) => {
+                  // Fallback to default image on error
+                  const img = e.target as HTMLImageElement;
+                  img.src = defaultThumbnail;
+                  img.onerror = null; // Prevent infinite loop if default image fails
+                }}
+              />
+              {wod.video_url && (
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="bg-black/50 rounded-full p-4">
+                    <Play className="h-12 w-12 text-white" fill="white" />
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center">
+              <img 
+                src={defaultThumbnail} 
+                alt="Default workout thumbnail"
+                className="w-full h-full object-cover opacity-70"
+              />
+            </div>
+          )}
+        </div>
       </div>
       
       <CardHeader className={`pb-2 relative z-10 ${thumbnailUrl ? 'text-white' : ''}`}>
