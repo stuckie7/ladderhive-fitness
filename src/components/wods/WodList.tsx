@@ -14,6 +14,7 @@ interface WodListProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  isFavorite?: (wodId: string) => boolean;
 }
 
 const WodList: React.FC<WodListProps> = ({ 
@@ -23,7 +24,8 @@ const WodList: React.FC<WodListProps> = ({
   currentPage, 
   totalItems, 
   itemsPerPage, 
-  onPageChange 
+  onPageChange,
+  isFavorite = () => false // Default to false if not provided
 }) => {
   // Add logging to debug wod data
   console.log("WODs in WodList:", wods);
@@ -76,9 +78,10 @@ const WodList: React.FC<WodListProps> = ({
         {wods.map(wod => (
           <WodCard 
             key={wod.id} 
-          wod={wod} 
-          onToggleFavorite={onToggleFavorite} 
-        />
+            wod={wod} 
+            onToggleFavorite={onToggleFavorite}
+            isFavorite={isFavorite(wod.id)}
+          />
         ))}
       </div>
 

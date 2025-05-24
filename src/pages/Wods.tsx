@@ -1,64 +1,109 @@
 
-import React, { useEffect } from 'react';
+import React, { useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WodList from '@/components/wods/WodList';
 import { WodFilterBar } from '@/components/wods/WodFilterBar';
-import { useWodBrowser } from '@/hooks/wods';
-import { useWodFavorites } from '@/hooks/wods';
+import { WodListSkeleton } from '@/components/wods/WodCardSkeleton';
+import { useWodBrowser } from '@/hooks/wods/use-wod-browser';
+import { useFavoritesOptimized } from '@/hooks/wods/use-favorites-optimized';
 import { useToast } from '@/components/ui/use-toast';
+import { useSearchParams } from 'react-router-dom';
+import { Wod } from '@/types/wod';
+
+// Constants for tab values and URL params
+const TAB_PARAM = 'tab';
+const ALL_TAB = 'all';
+const FAVORITES_TAB = 'favorites';
 
 const Wods: React.FC = () => {
-  const [activeTab, setActiveTab] = React.useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get(TAB_PARAM) || ALL_TAB;
   const { toast } = useToast();
   
+  // Initialize WOD browser hook
   const {
-    wods,
-    totalWods,
+    wods = [],
+    totalWods = 0,
     isLoading,
-    currentPage,
-    itemsPerPage,
+    currentPage = 0,
+    itemsPerPage = 12,
     filters,
     handleFilterChange,
     handlePageChange,
-    activeFilterCount,
+    activeFilterCount = 0,
     resetFilters
   } = useWodBrowser();
   
-  const { toggleFavorite } = useWodFavorites();
-  
+  // Initialize optimized favorites hook
+  const { 
+    isFavorite, 
+    toggleFavorite, 
+    filterFavorites, 
+    isLoading: isLoadingFavorites 
+  } = useFavoritesOptimized();
+
   // Handle tab change
   const handleTabChange = (value: string) => {
-    setActiveTab(value);
+    // Update URL with the new tab
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set(TAB_PARAM, value);
+    setSearchParams(newSearchParams);
+    
     // Reset filters when switching to favorites tab
-    if (value === 'favorites') {
+    if (value === FAVORITES_TAB) {
       resetFilters();
+    } else {
+      // Update filters based on tab
+      handleFilterChange({
+        ...filters,
+        category: value === ALL_TAB ? [] : [value]
+      });
     }
   };
-  
-  // Handle favorite toggle
+
+  // Handle favorite toggle with optimistic updates
   const handleToggleFavorite = async (wodId: string) => {
     try {
       await toggleFavorite(wodId);
-      
-      toast({
-        title: 'Favorite status updated',
-        variant: 'default',
-      });
     } catch (error) {
       console.error('Error toggling favorite:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update favorites. Please try again.',
+        description: 'Failed to update favorites',
         variant: 'destructive',
       });
     }
   };
-  
-  // Filter WODs based on active tab
-  const filteredWods = activeTab === 'favorites' 
-    ? wods.filter(wod => wod.is_favorite)
-    : wods;
+
+  // Memoize filtered WODs to prevent unnecessary re-renders
+  const { currentWods, totalItems, isCurrentLoading } = useMemo(() => {
+    if (activeTab === FAVORITES_TAB) {
+      const favoriteWods = filterFavorites(wods);
+      return {
+        currentWods: favoriteWods,
+        totalItems: favoriteWods.length,
+        isCurrentLoading: isLoading || isLoadingFavorites
+      };
+    }
+    
+    return {
+      currentWods: wods,
+      totalItems: totalWods,
+      isCurrentLoading: isLoading
+    };
+  }, [activeTab, wods, totalWods, isLoading, isLoadingFavorites, filterFavorites]);
+
+  // Show skeleton loader when data is loading
+  if (isCurrentLoading && currentWods.length === 0) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto px-4 py-6 pb-24 md:pb-6">
+          <WodListSkeleton count={6} />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -67,50 +112,83 @@ const Wods: React.FC = () => {
           Workouts of the Day
         </h1>
         
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <div className="flex justify-between items-center">
-            <TabsList>
-              <TabsTrigger value="all">All WODs</TabsTrigger>
-              <TabsTrigger value="favorites">My Favorites</TabsTrigger>
+        <Tabs 
+          value={activeTab} 
+          onValueChange={handleTabChange} 
+          className="space-y-6"
+          defaultValue={ALL_TAB}
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value={ALL_TAB} className="px-4">All WODs</TabsTrigger>
+              <TabsTrigger value={FAVORITES_TAB} className="px-4">
+                <span className="flex items-center gap-1">
+                  <span>My Favorites</span>
+                  {activeTab === FAVORITES_TAB && currentWods.length > 0 && (
+                    <span className="text-xs bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center">
+                      {currentWods.length}
+                    </span>
+                  )}
+                </span>
+              </TabsTrigger>
             </TabsList>
             
-            <div className="text-sm text-muted-foreground">
-              {totalWods} {totalWods === 1 ? 'WOD' : 'WODs'} found
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+              {totalItems} {totalItems === 1 ? 'WOD' : 'WODs'} found
             </div>
           </div>
           
-          {/* Filter bar */}
-          <WodFilterBar 
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            activeFilterCount={activeFilterCount}
-            isSticky={true}
-          />
+          {/* Filter bar - Only show for non-favorites tab */}
+          {activeTab !== FAVORITES_TAB && (
+            <WodFilterBar 
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              activeFilterCount={activeFilterCount}
+              isSticky={true}
+            />
+          )}
           
           {/* Main content */}
           <div className="space-y-6">
-            <TabsContent value="all" className="mt-0">
-              <WodList
-                wods={filteredWods}
-                isLoading={isLoading}
-                onToggleFavorite={handleToggleFavorite}
-                currentPage={currentPage}
-                totalItems={totalWods}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-              />
+            <TabsContent value={ALL_TAB} className="mt-0">
+              {isCurrentLoading && currentWods.length === 0 ? (
+                <WodListSkeleton count={6} />
+              ) : (
+                <WodList
+                  wods={currentWods}
+                  isLoading={isCurrentLoading}
+                  onToggleFavorite={handleToggleFavorite}
+                  currentPage={currentPage}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                  isFavorite={isFavorite}
+                />
+              )}
             </TabsContent>
             
-            <TabsContent value="favorites" className="mt-0">
-              <WodList
-                wods={filteredWods}
-                isLoading={isLoading}
-                onToggleFavorite={handleToggleFavorite}
-                currentPage={currentPage}
-                totalItems={filteredWods.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-              />
+            <TabsContent value={FAVORITES_TAB} className="mt-0">
+              {isLoadingFavorites ? (
+                <WodListSkeleton count={4} />
+              ) : currentWods.length === 0 ? (
+                <div className="text-center py-12">
+                  <h3 className="text-lg font-medium">No favorite workouts yet</h3>
+                  <p className="text-muted-foreground mt-2">
+                    Click the heart icon on any WOD to save it here
+                  </p>
+                </div>
+              ) : (
+                <WodList
+                  wods={currentWods}
+                  isLoading={false}
+                  onToggleFavorite={handleToggleFavorite}
+                  currentPage={0}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={() => {}}
+                  isFavorite={isFavorite}
+                />
+              )}
             </TabsContent>
           </div>
         </Tabs>

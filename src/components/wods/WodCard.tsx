@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,9 +11,27 @@ import { getYouTubeThumbnail, createDescriptionSnippet, generateEngagingDescript
 interface WodCardProps {
   wod: Wod;
   onToggleFavorite: (wodId: string) => Promise<void>;
+  isFavorite?: boolean;
 }
 
-const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
+const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: isInitiallyFavorite = false }) => {
+  const [isFavorite, setIsFavorite] = useState(isInitiallyFavorite);
+  
+  // Update local state when prop changes
+  useEffect(() => {
+    setIsFavorite(isInitiallyFavorite);
+  }, [isInitiallyFavorite]);
+  
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await onToggleFavorite(wod.id);
+      setIsFavorite(prev => !prev);
+    } catch (error) {
+      // Error handling is done in the parent component
+      console.error('Error toggling favorite:', error);
+    }
+  };
   const navigate = useNavigate();
   // Add logging to debug video URL and thumbnail generation
   console.log(`WOD ${wod.id} video URL:`, wod.video_url);
@@ -207,6 +225,19 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
             )}
           </Button>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 z-10"
+          onClick={handleFavoriteClick}
+          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          {isFavorite ? (
+            <BookmarkCheck className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+          ) : (
+            <Bookmark className="h-5 w-5" />
+          )}
+        </Button>
       </CardFooter>
       
       {hasVideo && (
