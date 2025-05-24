@@ -1,4 +1,3 @@
-
 import { DataViewWithHelpers } from "./bufferUtils";
 import { GATT_CHARACTERISTICS } from "../constants/gatt";
 
@@ -138,6 +137,7 @@ export function processDeviceInformation(
       result.softwareRevision = data.toString();
       break;
     default:
+      // Handle the PNP_ID case - use the UUID string comparison instead of constant
       if (characteristicUuid.toLowerCase().includes('2a50')) { // PNP_ID UUID
         // Process PNP ID data
         const vendorIdSource = data.getUint8(0);
@@ -145,6 +145,7 @@ export function processDeviceInformation(
         const productId = data.getUint16(3, true);
         const productVersion = data.getUint16(5, true);
         
+        // Convert the array to a JSON string for storage
         result.systemId = JSON.stringify({
           vendorIdSource,
           vendorId,

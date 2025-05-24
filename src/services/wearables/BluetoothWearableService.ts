@@ -1,539 +1,425 @@
-import { GATT_SERVICES, GATT_CHARACTERISTICS } from './constants/gatt';
 import { 
   WearableDevice, 
-  FitnessData, 
-  DeviceConnectionOptions,
-  UserProfile,
-  FitnessGoals
-} from './types';
-import {
-  WearableError,
-  DeviceNotFoundError,
-  DeviceNotConnectedError,
-  ServiceNotFoundError,
-  CharacteristicNotFoundError,
-  PermissionDeniedError,
-  TimeoutError,
-  DataProcessingError
-} from './utils/errors';
+  WearableDeviceType, 
+  WearableConnectionState,
+  WearableDataType,
+  WearableMeasurement,
+  BluetoothDeviceFilter
+} from '@/types/wearable';
+import { GATT_SERVICES, GATT_CHARACTERISTICS } from './constants/gatt';
 import { DataViewWithHelpers } from './utils/bufferUtils';
-import {
-  processHeartRateData,
+import { 
+  processHeartRateData, 
   processBatteryLevel,
   processDeviceInformation,
   processCyclingSpeedAndCadenceData,
   processRunningSpeedAndCadenceData
 } from './utils/dataProcessors';
+import { WebBluetoothApiNotAvailableError } from './utils/errors';
 
-type NotificationCallback = (data: FitnessData) => void;
-type DeviceDisconnectCallback = (deviceId: string) => void;
+interface BluetoothRequestDeviceFilter {
+  services?: BluetoothServiceUUID[];
+  name?: string;
+  namePrefix?: string;
+}
 
+/**
+ * Service for interacting with Bluetooth Low Energy (BLE) wearable devices.
+ * This service abstracts the Web Bluetooth API to provide a simplified interface
+ * for connecting to, reading data from, and managing wearable devices.
+ */
 export class BluetoothWearableService {
-  private static instance: BluetoothWearableService;
+  private deviceFilters: BluetoothDeviceFilter[] = [];
+  private deviceRecords: {
+    id?: string;
+    connected?: boolean;
+    name?: string;
+    type?: WearableDeviceType;
+    lastSync?: Date;
+    manufacturer?: string;
+    model?: string;
+    firmwareVersion?: string;
+    hardwareVersion?: string;
+    serialNumber?: string;
+    batteryLevel?: number;
+    heartRate?: number;
+    cadence?: number;
+    speed?: number;
+    distance?: number;
+    maxHeartRate?: number;
+  }[] = [];
   
-  private devices: Map<string, BluetoothDevice> = new Map();
-  private deviceInfo: Map<string, Partial<WearableDevice>> = new Map();
-  private notificationCallbacks: Map<string, Set<NotificationCallback>> = new Map();
-  private disconnectCallbacks: Map<string, Set<DeviceDisconnectCallback>> = new Map();
-  private notificationCleanups: Map<string, () => void> = new Map();
+  /**
+   * Constructor for the BluetoothWearableService.
+   * @param deviceFilters An array of filters to use when scanning for devices.
+   */
+  constructor(deviceFilters: BluetoothDeviceFilter[] = []) {
+    this.deviceFilters = deviceFilters;
+  }
   
-  private userProfile: UserProfile | null = null;
-  private fitnessGoals: FitnessGoals | null = null;
+  /**
+   * Checks if the Web Bluetooth API is available in the current environment.
+   * @returns A promise that resolves with a boolean indicating availability.
+   */
+  public async isBluetoothAvailable(): Promise<boolean> {
+    try {
+      return !!navigator.bluetooth;
+    } catch (error) {
+      return false;
+    }
+  }
   
-  // Connection options with defaults
-  private connectionOptions: Required<DeviceConnectionOptions> = {
-    autoReconnect: true,
-    reconnectAttempts: 3,
-    connectionTimeout: 10000, // 10 seconds
-    requestEcho: false
-  };
-
-  private constructor() {
-    // Private constructor to enforce singleton
-  }
-
   /**
-   * Get the singleton instance of the BluetoothWearableService
+   * Requests a Bluetooth device from the user, prompting them to select a device
+   * from a list of available devices that match the service's device filters.
+   * @returns A promise that resolves with a WearableDevice object representing
+   *          the selected device, or null if no device was selected.
+   * @throws {WebBluetoothApiNotAvailableError} If the Web Bluetooth API is not available.
    */
-  public static getInstance(): BluetoothWearableService {
-    if (!BluetoothWearableService.instance) {
-      BluetoothWearableService.instance = new BluetoothWearableService();
-    }
-    return BluetoothWearableService.instance;
-  }
-
-  /**
-   * Check if Web Bluetooth is supported in the current browser
-   */
-  public isSupported(): boolean {
-    return typeof navigator !== 'undefined' && 'bluetooth' in navigator;
-  }
-
-  /**
-   * Request Bluetooth device from the user
-   */
-  public async requestDevice(
-    filters: BluetoothRequestDeviceFilter[] = [],
-    options: DeviceConnectionOptions = {}
-  ): Promise<WearableDevice> {
-    if (!this.isSupported()) {
-      throw new Error('Web Bluetooth API is not supported in this browser');
-    }
-
-    try {
-      // Update connection options if provided
-      this.connectionOptions = { ...this.connectionOptions, ...options };
-
-      // Request device from the user
-      const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: filters.length === 0,
-        filters: filters.length > 0 ? filters : undefined,
-        optionalServices: [
-          GATT_SERVICES.BATTERY,
-          GATT_SERVICES.DEVICE_INFORMATION,
-          GATT_SERVICES.HEART_RATE,
-          GATT_SERVICES.FITNESS_MACHINE,
-          GATT_SERVICES.CYCLING_SPEED_AND_CADENCE,
-          GATT_SERVICES.RUNNING_SPEED_AND_CADENCE,
-        ],
-      });
-
-      // Set up disconnect handler
-      device.addEventListener('gattserverdisconnected', this.handleDisconnect.bind(this, device));
-      
-      // Store the device
-      this.devices.set(device.id, device);
-      
-      // Create device info
-      const deviceInfo: WearableDevice = {
-        id: device.id,
-        name: device.name || 'Unknown Device',
-        type: this.determineDeviceType(device),
-        connected: false,
-      };
-      
-      this.deviceInfo.set(device.id, deviceInfo);
-      
-      return { ...deviceInfo };
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'NotFoundError') {
-          throw new DeviceNotFoundError('No device selected');
-        } else if (error.name === 'SecurityError') {
-          throw new PermissionDeniedError('Bluetooth permission denied');
-        } else if (error.name === 'NotAllowedError') {
-          throw new PermissionDeniedError('User cancelled the request');
-        }
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Connect to a Bluetooth device
-   */
-  public async connect(deviceId: string, options: DeviceConnectionOptions = {}): Promise<boolean> {
-    const device = this.devices.get(deviceId);
-    if (!device) {
-      throw new DeviceNotFoundError(deviceId);
-    }
-
-    // Update connection options if provided
-    this.connectionOptions = { ...this.connectionOptions, ...options };
-
-    try {
-      // Already connected
-      if (device.gatt?.connected) {
-        return true;
-      }
-
-      // Connect to the device
-      await device.gatt?.connect();
-      
-      // Update device info
-      const deviceInfo = this.deviceInfo.get(deviceId);
-      if (deviceInfo) {
-        deviceInfo.connected = true;
-        deviceInfo.lastSync = new Date();
-      }
-
-      // Discover services and characteristics
-      await this.discoverServices(device);
-      
-      // Set up notifications for relevant characteristics
-      await this.setupNotifications(device);
-
-      return true;
-    } catch (error) {
-      console.error('Connection error:', error);
-      
-      // Attempt reconnection if autoReconnect is enabled
-      if (this.connectionOptions.autoReconnect) {
-        return this.attemptReconnect(device, 0);
-      }
-      
-      throw error;
-    }
-  }
-
-  /**
-   * Disconnect from a Bluetooth device
-   */
-  public async disconnect(deviceId: string): Promise<void> {
-    const device = this.devices.get(deviceId);
-    if (!device) {
-      throw new DeviceNotFoundError(deviceId);
-    }
-
-    try {
-      // Clean up notifications
-      const cleanup = this.notificationCleanups.get(deviceId);
-      if (cleanup) {
-        cleanup();
-        this.notificationCleanups.delete(deviceId);
-      }
-      
-      // Disconnect if connected
-      if (device.gatt?.connected) {
-        device.gatt.disconnect();
-      }
-      
-      // Update device info
-      const deviceInfo = this.deviceInfo.get(deviceId);
-      if (deviceInfo) {
-        deviceInfo.connected = false;
-      }
-    } catch (error) {
-      console.error('Disconnection error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get a list of all known devices
-   */
-  public async getDevices(): Promise<WearableDevice[]> {
-    return Array.from(this.deviceInfo.values()).map(device => ({
-      ...device,
-      connected: this.devices.get(device.id)?.gatt?.connected || false
-    }));
-  }
-
-  /**
-   * Get device information
-   */
-  public async getDeviceInfo(deviceId: string): Promise<Partial<WearableDevice>> {
-    const deviceInfo = this.deviceInfo.get(deviceId);
-    if (!deviceInfo) {
-      throw new DeviceNotFoundError(deviceId);
+  public async requestDevice(): Promise<WearableDevice | null> {
+    if (!navigator.bluetooth) {
+      throw new WebBluetoothApiNotAvailableError('Web Bluetooth API not available.');
     }
     
-    return { ...deviceInfo };
-  }
-
-  /**
-   * Get battery level of a device
-   */
-  public async getBatteryLevel(deviceId: string): Promise<number | null> {
-    const device = this.devices.get(deviceId);
-    if (!device) {
-      throw new DeviceNotFoundError(deviceId);
-    }
-
-    if (!device.gatt?.connected) {
-      throw new DeviceNotConnectedError(deviceId);
-    }
-
     try {
-      // Get battery service
-      const batteryService = await device.gatt.getPrimaryService(GATT_SERVICES.BATTERY);
+      const device = await navigator.bluetooth.requestDevice({
+        filters: this.getRequestFilters(),
+        optionalServices: Object.values(GATT_SERVICES)
+      });
       
-      // Get battery level characteristic
-      const batteryLevelChar = await batteryService.getCharacteristic(GATT_CHARACTERISTICS.BATTERY_LEVEL);
+      if (!device) {
+        return null;
+      }
       
-      // Read battery level
-      const batteryLevel = await batteryLevelChar.readValue();
-      
-      // Process and return battery level (0-100%)
-      return batteryLevel.getUint8(0);
+      return await this.connectToDevice(device);
     } catch (error) {
-      console.error('Error reading battery level:', error);
+      console.error('Error requesting Bluetooth device:', error);
       return null;
     }
   }
-
-  /**
-   * Subscribe to device notifications
-   */
-  public subscribe(
-    deviceId: string,
-    callback: (data: FitnessData) => void
-  ): () => void {
-    if (!this.notificationCallbacks.has(deviceId)) {
-      this.notificationCallbacks.set(deviceId, new Set());
-    }
-    
-    const callbacks = this.notificationCallbacks.get(deviceId)!;
-    callbacks.add(callback);
-    
-    // Return unsubscribe function
-    return () => {
-      callbacks.delete(callback);
-      
-      // Clean up if no more callbacks
-      if (callbacks.size === 0) {
-        this.notificationCallbacks.delete(deviceId);
-      }
-    };
-  }
-
-  /**
-   * Set the user profile for fitness calculations
-   */
-  public setUserProfile(profile: UserProfile): void {
-    this.userProfile = profile;
-    
-    // Update max heart rate if not provided using common formula
-    if (!this.userProfile.maxHeartRate && this.userProfile.age) {
-      this.userProfile.maxHeartRate = 220 - this.userProfile.age;
-    }
-  }
-
-  /**
-   * Set fitness goals
-   */
-  public setFitnessGoals(goals: FitnessGoals): void {
-    this.fitnessGoals = goals;
-  }
-
-  /**
-   * Handle device disconnection
-   */
-  private handleDisconnect(device: BluetoothDevice): void {
-    const deviceId = device.id;
-    
-    // Update device info
-    const deviceInfo = this.deviceInfo.get(deviceId);
-    if (deviceInfo) {
-      deviceInfo.connected = false;
-    }
-    
-    // Call disconnect callbacks
-    const callbacks = this.disconnectCallbacks.get(deviceId);
-    if (callbacks) {
-      callbacks.forEach(callback => callback(deviceId));
-    }
-    
-    // Attempt reconnection if autoReconnect is enabled
-    if (this.connectionOptions.autoReconnect) {
-      this.attemptReconnect(device, 0);
-    }
-  }
-
-  /**
-   * Attempt to reconnect to a device
-   */
-  private async attemptReconnect(device: BluetoothDevice, attempt: number): Promise<boolean> {
-    if (attempt >= (this.connectionOptions.reconnectAttempts || 3)) {
-      console.error(`Failed to reconnect after ${attempt} attempts`);
-      return false;
-    }
-
-    console.log(`Attempting to reconnect (${attempt + 1}/${this.connectionOptions.reconnectAttempts})...`);
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
-      await device.gatt?.connect();
-      
-      // Update device info
-      const deviceInfo = this.deviceInfo.get(device.id);
-      if (deviceInfo) {
-        deviceInfo.connected = true;
-        deviceInfo.lastSync = new Date();
-      }
-      
-      // Set up notifications again
-      await this.setupNotifications(device);
-      
-      console.log('Reconnection successful');
-      return true;
-    } catch (error) {
-      console.error(`Reconnection attempt ${attempt + 1} failed:`, error);
-      return this.attemptReconnect(device, attempt + 1);
-    }
-  }
-
-  /**
-   * Discover services and characteristics for a device
-   */
-  private async discoverServices(device: BluetoothDevice): Promise<void> {
-    if (!device.gatt?.connected) {
-      throw new DeviceNotConnectedError(device.id);
-    }
-
-    try {
-      // Get all primary services
-      const services = await device.gatt.getPrimaryServices();
-      
-      // Process each service
-      for (const service of services) {
-        try {
-          // Get all characteristics for the service
-          const characteristics = await service.getCharacteristics();
-          
-          // Update device info based on services and characteristics
-          await this.updateDeviceInfo(device.id, service, characteristics);
-        } catch (error) {
-          console.error(`Error discovering characteristics for service ${service.uuid}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error('Error discovering services:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Set up notifications for relevant characteristics
-   */
-  private async setupNotifications(device: BluetoothDevice): Promise<void> {
-    if (!device.gatt?.connected) {
-      return;
-    }
-
-    try {
-      // Clean up any existing notifications
-      const existingCleanup = this.notificationCleanups.get(device.id);
-      if (existingCleanup) {
-        existingCleanup();
-      }
-
-      const cleanupFunctions: Array<() => void> = [];
-      
-      // Set up heart rate notifications if available
+  
+  private connectToDevice(device: BluetoothDevice): Promise<WearableDevice> {
+    return new Promise(async (resolve, reject) => {
       try {
-        const hrService = await device.gatt.getPrimaryService(GATT_SERVICES.HEART_RATE);
-        const hrChar = await hrService.getCharacteristic(GATT_CHARACTERISTICS.HEART_RATE_MEASUREMENT);
+        if (!device.gatt) {
+          reject('GATT Server not available on device.');
+          return;
+        }
         
-        const hrHandler = (event: Event) => {
-          const value = (event.target as BluetoothRemoteGATTCharacteristic).value;
-          if (!value) return;
-          
-          const data = processHeartRateData(DataViewWithHelpers.from(value.buffer));
-          this.handleNotification(device.id, {
-            timestamp: new Date(),
-            deviceId: device.id,
-            heartRate: data.heartRate,
-            // Add more data as needed
-          });
+        const server = await device.gatt.connect();
+        
+        // Read device information
+        await this.readDeviceInformation(device);
+        
+        // Setup heart rate measurement
+        await this.setupHeartRateMeasurement(device);
+        
+        // Get all services
+        const services = await server.getPrimaryServices();
+        
+        for (const service of services) {
+          const characteristics = await service.getCharacteristics();
+          await this.readAllCharacteristics(characteristics, service);
+        }
+        
+        // Add to connected devices
+        const deviceRecord = {
+          id: device.id,
+          connected: true,
+          name: device.name,
+          type: 'bluetooth',
+          lastSync: new Date(),
+          manufacturer: this.deviceRecords.find(d => d.id === device.id)?.manufacturer,
+          model: this.deviceRecords.find(d => d.id === device.id)?.model,
+          firmwareVersion: this.deviceRecords.find(d => d.id === device.id)?.firmwareVersion,
+          hardwareVersion: this.deviceRecords.find(d => d.id === device.id)?.hardwareVersion,
+          serialNumber: this.deviceRecords.find(d => d.id === device.id)?.serialNumber,
+          batteryLevel: this.deviceRecords.find(d => d.id === device.id)?.batteryLevel,
+          heartRate: this.deviceRecords.find(d => d.id === device.id)?.heartRate,
+          cadence: this.deviceRecords.find(d => d.id === device.id)?.cadence,
+          speed: this.deviceRecords.find(d => d.id === device.id)?.speed,
+          distance: this.deviceRecords.find(d => d.id === device.id)?.distance,
+          maxHeartRate: this.deviceRecords.find(d => d.id === device.id)?.maxHeartRate
         };
         
-        await hrChar.startNotifications();
-        hrChar.addEventListener('characteristicvaluechanged', hrHandler);
+        this.deviceRecords.push(deviceRecord);
         
-        cleanupFunctions.push(async () => {
-          try {
-            await hrChar.stopNotifications();
-            hrChar.removeEventListener('characteristicvaluechanged', hrHandler);
-          } catch (error) {
-            console.error('Error cleaning up heart rate notifications:', error);
-          }
+        // Setup disconnect handler
+        device.addEventListener('gattserverdisconnected', () => this.onDeviceDisconnected(device));
+        
+        // Resolve with the new device
+        resolve({
+          id: device.id,
+          connected: true,
+          name: device.name,
+          type: 'bluetooth',
+          lastSync: new Date(),
+          manufacturer: this.deviceRecords.find(d => d.id === device.id)?.manufacturer,
+          model: this.deviceRecords.find(d => d.id === device.id)?.model,
+          firmwareVersion: this.deviceRecords.find(d => d.id === device.id)?.firmwareVersion,
+          hardwareVersion: this.deviceRecords.find(d => d.id === device.id)?.hardwareVersion,
+          serialNumber: this.deviceRecords.find(d => d.id === device.id)?.serialNumber,
+          batteryLevel: this.deviceRecords.find(d => d.id === device.id)?.batteryLevel,
+          heartRate: this.deviceRecords.find(d => d.id === device.id)?.heartRate,
+          cadence: this.deviceRecords.find(d => d.id === device.id)?.cadence,
+          speed: this.deviceRecords.find(d => d.id === device.id)?.speed,
+          distance: this.deviceRecords.find(d => d.id === device.id)?.distance,
+          maxHeartRate: this.deviceRecords.find(d => d.id === device.id)?.maxHeartRate
         });
       } catch (error) {
-        console.error('Error setting up heart rate notifications:', error);
+        console.error('Error connecting to Bluetooth device:', error);
+        reject(error);
       }
-
-      // Add more notification setups for other services as needed
-      
-      // Store cleanup function
-      this.notificationCleanups.set(device.id, () => {
-        cleanupFunctions.forEach(cleanup => cleanup());
-      });
-    } catch (error) {
-      console.error('Error setting up notifications:', error);
-    }
+    });
   }
-
+  
+  private getRequestFilters(): BluetoothRequestDeviceFilter[] {
+    // Convert our custom filter type to the Web Bluetooth API filter type
+    return this.deviceFilters.map(filter => {
+      return {
+        services: filter.services,
+        name: filter.name,
+        namePrefix: filter.namePrefix
+      } as BluetoothRequestDeviceFilter;
+    });
+  }
+  
   /**
-   * Update device information based on discovered services and characteristics
+   * Gets the connection state of a specific device.
+   * @param deviceId The unique identifier of the device.
+   * @returns A promise that resolves with a WearableConnectionState indicating
+   *          the current connection state of the device.
    */
-  private async updateDeviceInfo(
-    deviceId: string,
-    service: BluetoothRemoteGATTService,
-    characteristics: BluetoothCharacteristicProperties[]
-  ): Promise<void> {
-    const deviceInfo = this.deviceInfo.get(deviceId);
-    if (!deviceInfo) return;
-
-    const serviceUuid = service.uuid.toLowerCase();
+  public async getDeviceConnectionState(deviceId: string): Promise<WearableConnectionState> {
+    const device = this.deviceRecords.find(device => device.id === deviceId);
+    return device ? (device.connected ? 'connected' : 'disconnected') : 'disconnected';
+  }
+  
+  /**
+   * Gets a list of all devices that are currently connected to the service.
+   * @returns An array of WearableDevice objects representing the connected devices.
+   */
+  public getConnectedDevices(): WearableDevice[] {
+    // Map our internal device records to the WearableDevice type
+    return this.deviceRecords.map(record => {
+      // Ensure all required properties are present
+      return {
+        id: record.id || 'unknown',
+        connected: record.connected || false,
+        name: record.name || 'Unknown Device',
+        type: record.type || 'unknown',
+        lastSync: record.lastSync,
+        manufacturer: record.manufacturer,
+        model: record.model,
+        firmwareVersion: record.firmwareVersion,
+        hardwareVersion: record.hardwareVersion,
+        serialNumber: record.serialNumber,
+        batteryLevel: record.batteryLevel,
+        heartRate: record.heartRate,
+        cadence: record.cadence,
+        speed: record.speed,
+        distance: record.distance,
+        maxHeartRate: record.maxHeartRate
+      } as WearableDevice;
+    });
+  }
+  
+  /**
+   * Disconnects from a specific device.
+   * @param deviceId The unique identifier of the device to disconnect from.
+   * @returns A promise that resolves when the device has been disconnected.
+   */
+  public async disconnectDevice(deviceId: string): Promise<void> {
+    const deviceRecord = this.deviceRecords.find(device => device.id === deviceId);
     
-    // Process device information service
-    if (serviceUuid === GATT_SERVICES.DEVICE_INFORMATION.toLowerCase()) {
-      for (const char of characteristics) {
-        try {
-          const value = await char.readValue();
-          const charUuid = char.uuid.toLowerCase();
-          
-          // Process different device information characteristics
-          if (charUuid === GATT_CHARACTERISTICS.MANUFACTURER_NAME.toLowerCase()) {
-            deviceInfo.manufacturer = new TextDecoder().decode(value);
-          } else if (charUuid === GATT_CHARACTERISTICS.MODEL_NUMBER.toLowerCase()) {
-            deviceInfo.model = new TextDecoder().decode(value);
-          } else if (charUuid === GATT_CHARACTERISTICS.FIRMWARE_REVISION.toLowerCase()) {
-            deviceInfo.firmwareVersion = new TextDecoder().decode(value);
-          } else if (charUuid === GATT_CHARACTERISTICS.HARDWARE_REVISION.toLowerCase()) {
-            deviceInfo.hardwareVersion = new TextDecoder().decode(value);
-          } else if (charUuid === GATT_CHARACTERISTICS.SOFTWARE_REVISION.toLowerCase()) {
-            deviceInfo.softwareVersion = new TextDecoder().decode(value);
-          }
-        } catch (error) {
-          console.error(`Error reading characteristic ${char.uuid}:`, error);
+    if (deviceRecord && deviceRecord.connected && navigator.bluetooth) {
+      try {
+        const device = await navigator.bluetooth.getDevices().then(devices =>
+          devices.find(device => device.id === deviceId)
+        );
+        
+        if (device && device.gatt) {
+          device.gatt.disconnect();
         }
+      } catch (error) {
+        console.error('Error disconnecting from Bluetooth device:', error);
       }
     }
-    
-    // Process other services as needed
   }
-
-  /**
-   * Handle incoming notifications
-   */
-  private handleNotification(deviceId: string, data: FitnessData): void {
-    const callbacks = this.notificationCallbacks.get(deviceId);
-    if (callbacks) {
-      callbacks.forEach(callback => callback(data));
-    }
-  }
-
-  /**
-   * Determine device type based on available services
-   */
-  private determineDeviceType(device: BluetoothDevice): WearableDevice['type'] {
-    // This is a simplified implementation
-    // In a real app, you'd check the device's services and characteristics
+  
+  private async onDeviceDisconnected(device: BluetoothDevice): Promise<void> {
+    const deviceRecordIndex = this.deviceRecords.findIndex(record => record.id === device.id);
     
-    if (device.name?.toLowerCase().includes('watch')) {
-      return 'smartwatch';
-    } else if (device.name?.toLowerCase().includes('band')) {
-      return 'fitness_band';
-    } else if (device.name?.toLowerCase().includes('scale')) {
-      return 'smart_scale';
-    } else if (device.name?.toLowerCase().includes('bike') || 
-               device.name?.toLowerCase().includes('cycling')) {
-      return 'cycling_sensor';
-    } else if (device.name?.toLowerCase().includes('run') || 
-               device.name?.toLowerCase().includes('pod')) {
-      return 'running_pod';
-    } else if (device.name?.toLowerCase().includes('hr') || 
-               device.name?.toLowerCase().includes('heart')) {
-      return 'heart_rate_monitor';
+    if (deviceRecordIndex !== -1) {
+      this.deviceRecords[deviceRecordIndex].connected = false;
     }
     
-    return 'fitness_band'; // Default
+    console.log(`Device ${device.id} disconnected.`);
+  }
+  
+  private async readDeviceInformation(device: BluetoothDevice): Promise<void> {
+    if (!device.gatt) {
+      console.error('GATT Server not available on device.');
+      return;
+    }
+    
+    try {
+      const server = device.gatt;
+      
+      // Get Device Information service
+      const service = await server.getPrimaryService(GATT_SERVICES.DEVICE_INFORMATION);
+      
+      // Get characteristics
+      const manufacturerCharacteristic = await service.getCharacteristic(GATT_CHARACTERISTICS.MANUFACTURER_NAME);
+      const modelNumberCharacteristic = await service.getCharacteristic(GATT_CHARACTERISTICS.MODEL_NUMBER);
+      const serialNumberCharacteristic = await service.getCharacteristic(GATT_CHARACTERISTICS.SERIAL_NUMBER);
+      const hardwareRevisionCharacteristic = await service.getCharacteristic(GATT_CHARACTERISTICS.HARDWARE_REVISION);
+      const firmwareRevisionCharacteristic = await service.getCharacteristic(GATT_CHARACTERISTICS.FIRMWARE_REVISION);
+      const softwareRevisionCharacteristic = await service.getCharacteristic(GATT_CHARACTERISTICS.SOFTWARE_REVISION);
+      
+      // Read characteristic values
+      const manufacturerValue = await manufacturerCharacteristic.readValue();
+      const modelNumberValue = await modelNumberCharacteristic.readValue();
+      const serialNumberValue = await serialNumberCharacteristic.readValue();
+      const hardwareRevisionValue = await hardwareRevisionCharacteristic.readValue();
+      const firmwareRevisionValue = await firmwareRevisionCharacteristic.readValue();
+      const softwareRevisionValue = await softwareRevisionCharacteristic.readValue();
+      
+      // Update device record
+      const deviceRecordIndex = this.deviceRecords.findIndex(record => record.id === device.id);
+      
+      if (deviceRecordIndex !== -1) {
+        this.deviceRecords[deviceRecordIndex].manufacturer = manufacturerValue.toString();
+        this.deviceRecords[deviceRecordIndex].model = modelNumberValue.toString();
+        this.deviceRecords[deviceRecordIndex].serialNumber = serialNumberValue.toString();
+        this.deviceRecords[deviceRecordIndex].hardwareVersion = hardwareRevisionValue.toString();
+        this.deviceRecords[deviceRecordIndex].firmwareVersion = firmwareRevisionValue.toString();
+        this.deviceRecords[deviceRecordIndex].softwareVersion = softwareRevisionValue.toString();
+      } else {
+        this.deviceRecords.push({
+          id: device.id,
+          connected: true,
+          name: device.name,
+          type: 'bluetooth',
+          lastSync: new Date(),
+          manufacturer: manufacturerValue.toString(),
+          model: modelNumberValue.toString(),
+          serialNumber: serialNumberValue.toString(),
+          hardwareVersion: hardwareRevisionValue.toString(),
+          firmwareVersion: firmwareRevisionValue.toString(),
+          softwareVersion: softwareRevisionValue.toString(),
+        });
+      }
+    } catch (error) {
+      console.error('Error reading device information:', error);
+    }
+  }
+  
+  private async setupHeartRateMeasurement(device: BluetoothDevice): Promise<void> {
+    if (!device.gatt) {
+      console.error('GATT Server not available on device.');
+      return;
+    }
+    
+    try {
+      const server = device.gatt;
+      
+      // Get Heart Rate service
+      const service = await server.getPrimaryService(GATT_SERVICES.HEART_RATE);
+      
+      // Get Heart Rate Measurement characteristic
+      const characteristic = await service.getCharacteristic(GATT_CHARACTERISTICS.HEART_RATE_MEASUREMENT);
+      
+      // Start notifications
+      await characteristic.startNotifications();
+      
+      // Add event listener for characteristic value changes
+      characteristic.addEventListener('characteristicvaluechanged', (event) => this.onHeartRateChanged(event));
+    } catch (error) {
+      console.error('Error setting up heart rate measurement:', error);
+    }
+  }
+  
+  private handleCharacteristicChanged(characteristics: BluetoothRemoteGATTCharacteristic[], event: Event): void {
+  try {
+    // Need to cast the event target to the correct type
+    const characteristic = event.target as unknown as BluetoothRemoteGATTCharacteristic;
+    
+    // Find the device record
+    const deviceRecordIndex = this.deviceRecords.findIndex(record => record.id === characteristic.service.device.id);
+    
+    if (deviceRecordIndex === -1) {
+      console.warn(`Device record not found for device ID: ${characteristic.service.device.id}`);
+      return;
+    }
+    
+    // Process the characteristic value
+    this.processCharacteristicValue(characteristic.uuid, characteristic.value as DataView, false);
+  } catch (error) {
+    console.error('Error handling characteristic change:', error);
   }
 }
-
-// Export a singleton instance
-export const bluetoothWearableService = BluetoothWearableService.getInstance();
-
-export default bluetoothWearableService;
+  
+  private onHeartRateChanged(event: Event): void {
+  try {
+    // Need to cast the event target to the correct type
+    const characteristic = event.target as unknown as BluetoothRemoteGATTCharacteristic;
+    
+    const dataView = characteristic.value;
+    if (!dataView) {
+      console.warn('Heart Rate Measurement characteristic value is null.');
+      return;
+    }
+    
+    const data = new DataViewWithHelpers(dataView.buffer);
+    const heartRateData = processHeartRateData(data);
+    
+    // Find the device record
+    const deviceRecordIndex = this.deviceRecords.findIndex(record => record.id === characteristic.service.device.id);
+    
+    if (deviceRecordIndex === -1) {
+      console.warn(`Device record not found for device ID: ${characteristic.service.device.id}`);
+      return;
+    }
+    
+    // Update the heart rate in the device record
+    this.deviceRecords[deviceRecordIndex].heartRate = heartRateData.heartRate;
+  } catch (error) {
+    console.error('Error processing heart rate data:', error);
+  }
+}
+  
+  private async readAllCharacteristics(characteristics: BluetoothRemoteGATTCharacteristic[], service: BluetoothRemoteGATTService): Promise<void> {
+  for (const characteristic of characteristics) {
+    try {
+      // Only attempt to read if the characteristic has the 'read' property
+      if (characteristic.properties.read) {
+        const value = await characteristic.readValue();
+        this.processCharacteristicValue(characteristic.uuid, value, true);
+      }
+    } catch (error) {
+      console.error(`Error reading characteristic ${characteristic.uuid}:`, error);
+    }
+  }
+}
+  
+  private processCharacteristicValue(characteristicId: string, value: DataView, isRead: boolean = false): void {
+    const data = new DataViewWithHelpers(value.buffer);
+    
+    switch (characteristicId) {
+      case GATT_CHARACTERISTICS.BATTERY_LEVEL:
+        const batteryLevelData = processBatteryLevel(data);
+        console.log(`Battery Level: ${batteryLevelData.batteryLevel}%`);
+        break;
+      default:
+        const deviceInfo = processDeviceInformation(characteristicId, data);
+        if (deviceInfo.manufacturer) {
+          console.log(`Manufacturer Name: ${deviceInfo.manufacturer}`);
+        }
+        if (deviceInfo.model) {
+          console.log(`Model Number: ${deviceInfo.model}`);
+        }
+        break;
+    }
+  }
+}

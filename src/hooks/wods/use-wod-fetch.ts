@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { Wod, WodFilters } from '@/types/wod';
-import { parseWodComponents } from '@/utils/wodHelpers';
+import { parseWodComponents, standardizeWodData } from '@/utils/wodHelpers';
 
 export const useWodFetch = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -18,16 +18,19 @@ export const useWodFetch = () => {
       let query = supabase.from('wods').select('*');
       
       // Apply filters
-      if (filterOptions?.difficulty) {
-        query = query.eq('difficulty', filterOptions.difficulty);
+      if (filterOptions?.difficulty && filterOptions.difficulty.length > 0) {
+        query = query.eq('difficulty', filterOptions.difficulty[0]);
       }
       
-      if (filterOptions?.category) {
-        query = query.eq('category', filterOptions.category);
+      if (filterOptions?.category && filterOptions.category.length > 0) {
+        query = query.eq('category', filterOptions.category[0]);
       }
       
-      if (filterOptions?.duration) {
-        query = query.lte('avg_duration_minutes', filterOptions.duration);
+      if (filterOptions?.duration && filterOptions.duration.length > 0) {
+        const durationValue = parseInt(filterOptions.duration[0], 10);
+        if (!isNaN(durationValue)) {
+          query = query.lte('avg_duration_minutes', durationValue);
+        }
       }
       
       const { data, error } = await query;
@@ -49,21 +52,13 @@ export const useWodFetch = () => {
         }
       }
       
-      // Map results and mark favorites, ensuring proper component type conversion
+      // Map results and mark favorites, ensuring proper component type conversion and standardization
       const mappedWods: Wod[] = data?.map(wod => {
-        // Safely parse components based on type
-        const components = wod.components ? parseWodComponents(wod.components) : [];
-        
-        // Ensure video URLs are properly extracted
-        // Use video_demo for compatibility with existing data
-        const videoUrl = wod.video_demo || null;
-        
-        return {
+        // Use the standardize function to ensure all fields match our Wod interface
+        return standardizeWodData({
           ...wod,
-          components,
-          is_favorite: userFavorites.includes(wod.id),
-          video_url: videoUrl // Set video_url to the value from video_demo for compatibility
-        };
+          is_favorite: userFavorites.includes(wod.id)
+        });
       }) || [];
       
       return mappedWods;
@@ -108,21 +103,11 @@ export const useWodFetch = () => {
         isFavorite = !favoriteError && !!favoriteData;
       }
       
-      // Safely parse components based on type
-      const components = data.components ? parseWodComponents(data.components) : [];
-      
-      // Ensure video URLs are properly extracted
-      // Use video_demo for compatibility with existing data
-      const videoUrl = data.video_demo || null;
-      
-      const wodWithTypedComponents: Wod = {
+      // Standardize data to ensure it matches our Wod interface
+      return standardizeWodData({
         ...data,
-        components,
-        is_favorite: isFavorite,
-        video_url: videoUrl // Set video_url to the value from video_demo for compatibility
-      };
-      
-      return wodWithTypedComponents;
+        is_favorite: isFavorite
+      });
     } catch (error: any) {
       console.error("Error fetching wod:", error);
       toast({
@@ -150,38 +135,17 @@ export const useWodFetch = () => {
       
       if (error) throw error;
       
-      // Convert data structure and ensure proper component types
+      // Convert and standardize data structure to ensure proper types
       const favoriteWods: Wod[] = data
         .filter(item => item.wods) // Filter out any potentially null items
         .map(item => {
           const wodData = item.wods as any; // Cast to any first for safer access
           
-          // Safely parse components based on type
-          const components = wodData.components ? parseWodComponents(wodData.components) : [];
-          
-          return {
-            id: wodData.id,
-            name: wodData.name,
-            description: wodData.description,
-            components,
-            is_favorite: true,
-            video_url: wodData.video_demo || null,
-            video_demo: wodData.video_demo || null,
-            category: wodData.category || null,
-            difficulty: wodData.difficulty || null,
-            avg_duration_minutes: wodData.avg_duration_minutes || null,
-            created_at: wodData.created_at || null,
-            part_1: wodData.part_1 || null,
-            part_2: wodData.part_2 || null,
-            part_3: wodData.part_3 || null,
-            part_4: wodData.part_4 || null,
-            part_5: wodData.part_5 || null,
-            part_6: wodData.part_6 || null,
-            part_7: wodData.part_7 || null,
-            part_8: wodData.part_8 || null,
-            part_9: wodData.part_9 || null,
-            part_10: wodData.part_10 || null
-          } as Wod;
+          // Use standardize function to ensure correct format
+          return standardizeWodData({
+            ...wodData,
+            is_favorite: true
+          });
         });
       
       return favoriteWods;

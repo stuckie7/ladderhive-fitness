@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -11,9 +10,8 @@ import { addDays, isBefore, parseISO } from "date-fns";
 // Define extended types with scheduledDate property but make problematic required properties optional
 interface ScheduledWod extends Omit<Wod, 'components'> {
   scheduledDate: string;
-  components?: Wod['components'];
-  duration_minutes?: number;
-  type?: string;
+  type: string;
+  duration_minutes?: number; // Make this optional to match the current usage pattern
 }
 
 interface ScheduledWorkout extends Omit<PreparedWorkout, 'goal'> {
@@ -245,6 +243,47 @@ const fetchDashboardData = async (userId: string) => {
     metrics,
     weeklyChartData
   };
+};
+
+// Update the function that processes scheduled Wods
+const processScheduledWorkouts = (workoutData: any[]): ScheduledWod[] => {
+  if (!workoutData || workoutData.length === 0) return [];
+  
+  // Map the data to our ScheduledWod interface
+  return workoutData.map(item => {
+    return {
+      id: item.id,
+      title: item.name || item.title || '', // Use name or title
+      name: item.name || item.title || '',  // Add name for compatibility
+      scheduledDate: item.scheduledDate || new Date().toISOString(),
+      type: item.type || 'workout',
+      description: item.description || '',
+      difficulty: item.difficulty || 'intermediate',
+      duration_minutes: item.duration_minutes || item.avg_duration_minutes || 30,
+      avg_duration_minutes: item.avg_duration_minutes || item.duration_minutes || 30, // Add for compatibility
+      category: item.category || '',
+      created_at: item.created_at || new Date().toISOString(),
+      is_favorite: item.is_favorite || false
+    };
+  });
+};
+
+// Update the groupWorkoutsByDay function to handle the updated ScheduledWod interface
+const groupWorkoutsByDay = (workouts: ScheduledWod[]) => {
+  const grouped: { [key: string]: ScheduledWod[] } = {};
+  
+  workouts.forEach(workout => {
+    const date = new Date(workout.scheduledDate).toISOString().split('T')[0];
+    if (!grouped[date]) {
+      grouped[date] = [];
+    }
+    grouped[date].push({
+      ...workout,
+      title: workout.title || workout.name || '',  // Use title or name
+    });
+  });
+  
+  return grouped;
 };
 
 export const useDashboardData = () => {

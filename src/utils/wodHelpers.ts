@@ -1,241 +1,120 @@
 
-import { WodComponent } from '@/types/wod';
+import { Wod, WodComponent, SimpleWodComponent } from '@/types/wod';
 
-/**
- * Safely parses WOD components from various formats
- * Handles both string JSON and actual JSON objects
- */
-export const parseWodComponents = (componentsData: any): WodComponent[] => {
-  try {
-    // If it's already an array, just make sure each item has the required structure
-    if (Array.isArray(componentsData)) {
-      return componentsData.map((component, index) => ({
-        order: component.order || index + 1,
-        description: component.description || 'No description'
-      }));
-    }
-    
-    // If it's a string, try to parse it
-    if (typeof componentsData === 'string') {
-      try {
-        const parsed = JSON.parse(componentsData);
-        if (Array.isArray(parsed)) {
-          return parsed.map((component, index) => ({
-            order: component.order || index + 1,
-            description: component.description || 'No description'
-          }));
-        }
-      } catch (e) {
-        // If JSON parsing fails, treat as a single component
-        return [{
-          order: 1,
-          description: componentsData
-        }];
-      }
-    }
-    
-    // If it's an object but not an array (generic JSON type)
-    if (componentsData && typeof componentsData === 'object') {
-      // Try to convert it to array if possible
-      const values = Object.values(componentsData);
-      if (values.length > 0) {
-        return values.map((component: any, index) => {
-          // If component is a string, create a simple component
-          if (typeof component === 'string') {
-            return {
-              order: index + 1,
-              description: component
-            };
-          }
-          
-          // Otherwise, use component object structure
+// Function to extract YouTube video ID from various YouTube URL formats
+export function getYouTubeVideoId(url?: string): string | null {
+  if (!url) return null;
+  
+  // Regular expression to match various YouTube URL formats
+  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+  const match = url.match(regExp);
+  
+  return (match && match[7].length === 11) ? match[7] : null;
+}
+
+// Parse WOD components based on type
+export function parseWodComponents(components: any): WodComponent[] {
+  if (!components) return [];
+  
+  // If it's already an array of objects with required fields
+  if (Array.isArray(components) && components.length > 0 && 'id' in components[0]) {
+    return components as WodComponent[];
+  }
+  
+  // If it's a string, try to parse it as JSON
+  if (typeof components === 'string') {
+    try {
+      const parsedComponents = JSON.parse(components);
+      if (Array.isArray(parsedComponents)) {
+        return parsedComponents.map((component, index) => {
           return {
-            order: component.order || index + 1,
-            description: component.description || 'No description'
+            id: `component-${index}`,
+            wod_id: 'generated',
+            type: 'standard',
+            description: component.description || '',
+            order: component.order || index,
           };
         });
       }
+    } catch (e) {
+      console.error('Error parsing WOD components:', e);
     }
-    
-    // Fallback if we can't parse it properly
-    return [];
-    
-  } catch (error) {
-    console.error("Error parsing WOD components:", error);
-    return [];
   }
-};
-
-/**
- * Extracts YouTube video ID from various YouTube URL formats
- */
-export const getYouTubeVideoId = (url: string | null | undefined): string | null => {
-  if (!url) return null;
   
-  try {
-    console.log("Parsing YouTube URL:", url);
-    
-    // Clean the URL if it has quotes
-    const cleanUrl = url.replace(/^["']|["']$/g, '');
-    
-    // Enhanced regex to handle more YouTube URL formats
-    const patterns = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/, // Standard formats
-      /(?:youtube\.com\/v\/|youtube\.com\/watch\?.*v=)([a-zA-Z0-9_-]{11})/, // Other formats
-      /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/ // YouTube Shorts
-    ];
-    
-    for (const pattern of patterns) {
-      const match = cleanUrl.match(pattern);
-      if (match && match[1]) {
-        console.log("Extracted video ID:", match[1]);
-        return match[1];
-      }
-    }
-    
-    console.log("No video ID found in URL:", cleanUrl);
-    return null;
-  } catch (error) {
-    console.error("Error extracting YouTube video ID:", error);
-    return null;
+  // If it's an array of simple objects with just order and description
+  if (Array.isArray(components)) {
+    return components.map((component, index) => {
+      return {
+        id: `component-${index}`,
+        wod_id: 'generated',
+        type: 'standard',
+        description: component.description || '',
+        order: component.order || index,
+      };
+    });
   }
-};
+  
+  return [];
+}
 
-/**
- * Gets YouTube thumbnail URL from video URL
- */
-export const getYouTubeThumbnail = (url: string | null | undefined): string | null => {
+// Function to get YouTube embed URL
+export function getYouTubeEmbedUrl(url?: string): string | null {
   const videoId = getYouTubeVideoId(url);
-  if (!videoId) {
-    console.log("No video ID found for URL:", url);
-    return null;
-  }
-  
-  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-};
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+}
 
-/**
- * Convert YouTube URL to embed format
- */
-export const getYouTubeEmbedUrl = (url: string | null | undefined): string | null => {
+// Function to get YouTube thumbnail URL
+export function getYouTubeThumbnail(url?: string): string | null {
   const videoId = getYouTubeVideoId(url);
-  if (!videoId) return null;
-  
-  return `https://www.youtube.com/embed/${videoId}`;
-};
+  return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
+}
 
-/**
- * Creates an engaging and attractive workout description snippet
- */
-export const createDescriptionSnippet = (description: string | undefined, maxLength: number = 120): string => {
-  if (!description) return '🔥 Challenge yourself with this intense workout! 💪';
+// Function to create a snippet from a description
+export function createDescriptionSnippet(description: string, maxLength: number = 100): string {
+  if (!description) return '';
+  if (description.length <= maxLength) return description;
   
-  // Clean up the description
-  let cleanDescription = description
-    .replace(/[\r\n]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return `${description.substring(0, maxLength).trim()}...`;
+}
 
-  // If the description is already short enough, return it as is
-  if (cleanDescription.length <= maxLength) return cleanDescription;
+// Function to generate an engaging description when none is provided
+export function generateEngagingDescription(wod: Wod): string {
+  const difficultyText = wod.difficulty ? `${wod.difficulty} level` : '';
+  const categoryText = wod.category ? `${wod.category} workout` : 'workout';
   
-  // Common patterns to find complete sentences
-  const sentenceEnders = ['. ', '! ', '? ', '; ', '\n', '\r\n'];
-  
-  // Find the last sentence ender within the max length
-  let lastGoodIndex = maxLength;
-  for (const ender of sentenceEnders) {
-    const index = cleanDescription.lastIndexOf(ender, maxLength);
-    if (index > 0 && index < maxLength + 20) { // Allow some leeway
-      lastGoodIndex = index + ender.length;
-      break;
-    }
-  }
-  
-  // If we found a good breaking point, use it
-  if (lastGoodIndex > maxLength / 2) {
-    return cleanDescription.substring(0, lastGoodIndex).trim() + '..';
-  }
-  
-  // Otherwise, just truncate at maxLength and add ellipsis
-  return cleanDescription.substring(0, maxLength).trim() + '...';
-};
+  return `A ${difficultyText} ${categoryText} designed to challenge and improve your fitness.`;
+}
 
-/**
- * Generates an engaging workout description based on WOD details
- */
-export const generateEngagingDescription = (wod: any): string => {
-  const { 
-    name, 
-    difficulty, 
-    avg_duration_minutes, 
-    category,
-    description
-  } = wod;
-  
-  // If there's already a good description, enhance it
-  if (description && description.trim().length > 0) {
-    return description;
-  }
-  
-  // Generate a description based on WOD properties
-  const difficultyAdjectives = {
-    beginner: ['Perfect for beginners', 'Great for starters', 'Ideal for newcomers'],
-    intermediate: ['Challenging', 'Intense', 'Powerful'],
-    advanced: ['Brutal', 'Extreme', 'High-intensity'],
-    elite: ['Elite-level', 'Pro-level', 'Championship-worthy']
+// Function to standardize workout data from different sources
+export function standardizeWodData(wod: any): Wod {
+  return {
+    id: wod.id,
+    title: wod.title || wod.name || 'Unnamed Workout',
+    name: wod.name || wod.title || 'Unnamed Workout',
+    description: wod.description || '',
+    category: wod.category || 'General',
+    difficulty: wod.difficulty || 'Intermediate',
+    duration_minutes: wod.duration_minutes || wod.avg_duration_minutes || 30,
+    avg_duration_minutes: wod.avg_duration_minutes || wod.duration_minutes || 30,
+    created_at: wod.created_at || new Date().toISOString(),
+    equipment_needed: wod.equipment_needed || [],
+    is_featured: wod.is_featured || false,
+    is_favorite: wod.is_favorite || false,
+    is_new: wod.is_new || false,
+    components: wod.components ? parseWodComponents(wod.components) : [],
+    video_url: wod.video_url || wod.video_demo || null,
+    video_demo: wod.video_demo || wod.video_url || null,
+    image_url: wod.image_url || null,
+    // Include part fields
+    part_1: wod.part_1 || null,
+    part_2: wod.part_2 || null,
+    part_3: wod.part_3 || null,
+    part_4: wod.part_4 || null,
+    part_5: wod.part_5 || null,
+    part_6: wod.part_6 || null,
+    part_7: wod.part_7 || null,
+    part_8: wod.part_8 || null,
+    part_9: wod.part_9 || null,
+    part_10: wod.part_10 || null
   };
-  
-  const categoryTitles = {
-    girl: ['Girl WOD', 'Classic Benchmark', 'Legendary Challenge'],
-    hero: ['Hero WOD', 'Tribute Workout', 'Memorial Challenge'],
-    benchmark: ['Benchmark Workout', 'Standard Challenge', 'Fitness Test'],
-    default: ['Custom Workout', 'Special Challenge', 'Unique Routine']
-  };
-  
-  const timeFrames = {
-    short: ['Quick blast', 'Fast-paced session', 'Rapid workout'],
-    medium: ['Solid workout', 'Complete session', 'Full routine'],
-    long: ['Endurance challenge', 'Marathon session', 'Ultimate test']
-  };
-  
-  // Determine time frame
-  let timeFrame = 'medium';
-  if (avg_duration_minutes) {
-    if (avg_duration_minutes < 10) timeFrame = 'short';
-    else if (avg_duration_minutes > 20) timeFrame = 'long';
-  }
-  
-  // Get random elements
-  const getRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-  
-  // Build description parts
-  const parts = [];
-  
-  // Add category title if available
-  if (category) {
-    const categoryTitle = categoryTitles[category.toLowerCase() as keyof typeof categoryTitles] || categoryTitles.default;
-    parts.push(getRandom(categoryTitle));
-  }
-  
-  // Add difficulty level
-  if (difficulty) {
-    const difficultyKey = difficulty.toLowerCase() as keyof typeof difficultyAdjectives;
-    if (difficultyAdjectives[difficultyKey]) {
-      parts.push(getRandom(difficultyAdjectives[difficultyKey]));
-    }
-  }
-  
-  // Add time frame
-  parts.push(getRandom(timeFrames[timeFrame as keyof typeof timeFrames]));
-  
-  // Add some action verbs
-  const actions = ['designed to push your limits', 'to boost your fitness', 'for maximum gains', 'to test your mettle'];
-  parts.push(getRandom(actions));
-  
-  // Add emojis
-  const emojis = ['💪', '🔥', '⚡', '🏋️', '🚀', '🏆', '💯'];
-  const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-  
-  return `${parts.join(' ')} ${randomEmoji}`;
-};
+}
