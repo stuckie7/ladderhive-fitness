@@ -1,3 +1,4 @@
+
 export type WearableDeviceType = 
   | 'heart_rate_monitor' 
   | 'fitness_band' 
@@ -51,6 +52,9 @@ export interface WearableDevice {
   serviceUuids?: string[];
   maxHeartRate?: number;
   features?: string[];
+  firmwareVersion?: string;
+  hardwareVersion?: string;
+  serialNumber?: string;
 }
 
 export interface FitnessData {

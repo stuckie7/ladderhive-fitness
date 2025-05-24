@@ -17,7 +17,7 @@ interface ScheduledWod {
   name?: string;
   description: string;
   difficulty: string;
-  duration_minutes?: number;
+  duration_minutes?: number;  // Made optional to match Wod type
   avg_duration_minutes?: number;
   category: string;
   created_at: string;
@@ -135,10 +135,16 @@ const fetchDashboardData = async (userId: string) => {
     
     if (wodData && wodData.length > 0) {
       wods = wodData.map(wod => ({
-        ...wod,
         id: wod.id,
+        title: wod.name || '',  // Ensure title is set for ScheduledWod
+        name: wod.name,
         scheduledDate: new Date(Date.now() + Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
         duration_minutes: wod.avg_duration_minutes || 30,
+        avg_duration_minutes: wod.avg_duration_minutes,
+        description: wod.description || '',
+        difficulty: wod.difficulty || 'intermediate',
+        category: wod.category || '',
+        created_at: new Date().toISOString(),
         type: 'wod'
       }));
     }
@@ -172,9 +178,9 @@ const fetchDashboardData = async (userId: string) => {
   const upcomingWorkouts = [
     ...wods.map(wod => ({
       id: wod.id,
-      title: wod.name, 
+      title: wod.name || wod.title, 
       date: wod.scheduledDate, 
-      duration: wod.avg_duration_minutes || 30,
+      duration: wod.avg_duration_minutes || wod.duration_minutes || 30,
       difficulty: wod.difficulty || "Intermediate",
       type: 'wod'
     })),

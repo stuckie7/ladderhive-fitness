@@ -1,12 +1,14 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { bluetoothWearableService } from '../services/wearables/BluetoothWearableService';
-import { WearableDevice, FitnessData } from '../types/wearable';
+import { WearableDevice, FitnessData, UserProfile, FitnessGoals } from '../types/wearable';
+import type { BluetoothWearableService } from '../services/wearables/BluetoothWearableService';
 
 type BluetoothStatus = 'idle' | 'searching' | 'connecting' | 'connected' | 'error' | 'disconnected';
 
 interface UseBluetoothWearableReturn {
   // Service instance
-  service: BluetoothWearableService;
+  service: typeof bluetoothWearableService;
   
   // State
   isSupported: boolean;
@@ -49,7 +51,9 @@ export function useBluetoothWearable(): UseBluetoothWearableReturn {
         
         // Update connected device if it exists
         const connected = deviceList.find(device => device.connected) || null;
-        setConnectedDevice(connected);
+        if (connected) {
+          setConnectedDevice(connected);
+        }
       }
     } catch (err) {
       console.error('Error updating devices:', err);
@@ -115,6 +119,10 @@ export function useBluetoothWearable(): UseBluetoothWearableReturn {
       setError(null);
       
       const device = await bluetoothWearableService.requestDevice();
+      
+      if (!device) {
+        throw new Error('No device was selected');
+      }
       
       if (isMounted.current) {
         await updateDevices();
