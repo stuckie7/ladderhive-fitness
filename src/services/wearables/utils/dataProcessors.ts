@@ -137,7 +137,6 @@ export function processDeviceInformation(
     case GATT_CHARACTERISTICS.SOFTWARE_REVISION:
       result.softwareRevision = data.toString();
       break;
-    // PNP_ID not defined in our GATT_CHARACTERISTICS so we'll handle it differently
     default:
       if (characteristicUuid.toLowerCase().includes('2a50')) { // PNP_ID UUID
         // Process PNP ID data
@@ -146,12 +145,12 @@ export function processDeviceInformation(
         const productId = data.getUint16(3, true);
         const productVersion = data.getUint16(5, true);
         
-        result.systemId = {
+        result.systemId = JSON.stringify({
           vendorIdSource,
           vendorId,
           productId,
           productVersion
-        } as unknown as string;
+        });
       }
       break;
   }
