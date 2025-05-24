@@ -21,6 +21,8 @@ const Wods: React.FC = () => {
   const activeTab = searchParams.get(TAB_PARAM) || ALL_TAB;
   const { toast } = useToast();
   
+  console.log('Rendering Wods component, activeTab:', activeTab);
+  
   // Initialize WOD browser hook
   const {
     wods = [],
@@ -34,6 +36,8 @@ const Wods: React.FC = () => {
     activeFilterCount = 0,
     resetFilters
   } = useWodBrowser();
+  
+  console.log('WODs data:', { wods, totalWods, isLoading });
   
   // Initialize optimized favorites hook
   const { 

@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+const SUPABASE_URL = 'https://jrwyptpespjvjisrwnbh.supabase.co';
 import { useToast } from '@/components/ui/use-toast';
 import { WodFilters } from '@/types/wod';
 import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
@@ -107,6 +108,11 @@ export const useWodBrowser = () => {
   const fetchWods = useCallback(async () => {
     setIsLoading(true);
     console.log("Fetching wods with filters:", filters);
+    console.log("Supabase URL:", SUPABASE_URL);
+    console.log("Supabase client:", supabase);
+    
+    // Clear any previous errors
+    toast.dismiss();
     
     try {
       let userId: string | null = null;
