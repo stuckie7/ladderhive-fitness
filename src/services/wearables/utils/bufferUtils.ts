@@ -1,3 +1,4 @@
+
 /**
  * Custom DataView implementation with additional helper methods
  * for working with Bluetooth GATT characteristic values
@@ -183,5 +184,5 @@ export function hexToDataView(hex: string): DataViewWithHelpers {
   return DataViewWithHelpers.from(hexToArrayBuffer(hex));
 }
 
-// Re-export standard DataView for convenience
-export { DataView };
+// Remove the problematic re-export
+// export { DataView };

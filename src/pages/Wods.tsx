@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WodList from '@/components/wods/WodList';
 import { WodFilterBar } from '@/components/wods/WodFilterBar';
-import { useWodBrowser } from '@/hooks/wods/use-wod-browser';
-import { useWodFavorites } from '@/hooks/wods/use-wod-favorites';
+import { useWodBrowser } from '@/hooks/wods';
+import { useWodFavorites } from '@/hooks/wods';
 import { useToast } from '@/components/ui/use-toast';
-import { Wod } from '@/types/wod';
 
 const Wods: React.FC = () => {
-  // State for favorites
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = React.useState('all');
   const { toast } = useToast();
   
   const {
@@ -27,7 +25,7 @@ const Wods: React.FC = () => {
     resetFilters
   } = useWodBrowser();
   
-  const { toggleFavorite, isFavorite } = useWodFavorites();
+  const { toggleFavorite } = useWodFavorites();
   
   // Handle tab change
   const handleTabChange = (value: string) => {
@@ -41,17 +39,10 @@ const Wods: React.FC = () => {
   // Handle favorite toggle
   const handleToggleFavorite = async (wodId: string) => {
     try {
-      const wasFavorite = favorites[wodId] || false;
       await toggleFavorite(wodId);
       
-      // Optimistically update the UI
-      setFavorites(prev => ({
-        ...prev,
-        [wodId]: !wasFavorite
-      }));
-      
       toast({
-        title: wasFavorite ? 'Removed from favorites' : 'Added to favorites',
+        title: 'Favorite status updated',
         variant: 'default',
       });
     } catch (error) {
@@ -64,35 +55,10 @@ const Wods: React.FC = () => {
     }
   };
   
-  // Update favorites when WODs change
-  useEffect(() => {
-    const updateFavorites = async () => {
-      const favs: Record<string, boolean> = {};
-      for (const wod of wods) {
-        favs[wod.id] = await isFavorite(wod.id);
-      }
-      setFavorites(favs);
-    };
-    
-    updateFavorites();
-  }, [wods, isFavorite]);
-  
-  // Enhance WODs with favorite status
-  const enhancedWods = wods.map(wod => ({
-    ...wod,
-    is_favorite: favorites[wod.id] || false
-  }));
-  
   // Filter WODs based on active tab
   const filteredWods = activeTab === 'favorites' 
-    ? enhancedWods.filter(wod => wod.is_favorite)
-    : enhancedWods;
-
-  // Initial fetch of wods
-  useEffect(() => {
-    // The useWodBrowser hook already handles fetching WODs
-    // No need for separate fetchWods or getFavoriteWods functions
-  }, [activeTab]);
+    ? wods.filter(wod => wod.is_favorite)
+    : wods;
 
   return (
     <AppLayout>

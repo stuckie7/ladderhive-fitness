@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Home, Dumbbell, LineChart, User, Menu } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Dumbbell, LineChart, User, Menu, Bluetooth } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
