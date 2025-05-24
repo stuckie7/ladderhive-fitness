@@ -25,14 +25,14 @@ const Wods: React.FC = () => {
     if (value === 'favorites') {
       getFavoriteWods();
     } else {
-      fetchWods(filters);
+      fetchWods();
     }
   };
 
   const handleFiltersChange = (newFilters: FiltersType) => {
     setFilters(newFilters);
     if (activeTab === 'all') {
-      fetchWods(newFilters);
+      fetchWods();
     }
   };
   
@@ -44,14 +44,14 @@ const Wods: React.FC = () => {
     if (activeTab === 'favorites') {
       getFavoriteWods();
     } else {
-      fetchWods(filters);
+      fetchWods();
     }
   };
 
   // Initial fetch of wods
   useEffect(() => {
     if (activeTab === 'all') {
-      fetchWods(filters);
+      fetchWods();
     } else {
       getFavoriteWods();
     }
