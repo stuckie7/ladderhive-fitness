@@ -1,9 +1,11 @@
-
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-const SUPABASE_URL = 'https://jrwyptpespjvjisrwnbh.supabase.co';
 import { useToast } from '@/components/ui/use-toast';
+
+// Debug logging
+const SUPABASE_URL = 'https://jrwyptpespjvjisrwnbh.supabase.co';
+console.log('Supabase initialized with URL:', SUPABASE_URL);
 import { WodFilters } from '@/types/wod';
 import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 
@@ -24,6 +26,20 @@ export const useWodBrowser = () => {
   const itemsPerPage = 12;
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  
+  // Simple toast wrapper to avoid errors
+  const showError = useCallback((message: string) => {
+    console.error('WOD Browser Error:', message);
+    try {
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+    } catch (error) {
+      console.error('Failed to show toast:', error);
+    }
+  }, [toast]);
 
   // Calculate active filter count for the badge
   const activeFilterCount = Object.entries(filters).reduce((count, [key, value]) => {
@@ -109,10 +125,10 @@ export const useWodBrowser = () => {
     setIsLoading(true);
     console.log("Fetching wods with filters:", filters);
     console.log("Supabase URL:", SUPABASE_URL);
-    console.log("Supabase client:", supabase);
+    console.log("Supabase client initialized:", !!supabase);
     
     // Clear any previous errors
-    toast.dismiss();
+    // No need to dismiss, we'll just show the new error if any
     
     try {
       let userId: string | null = null;
@@ -190,12 +206,9 @@ export const useWodBrowser = () => {
       setTotalWods(count || 0);
       
     } catch (error) {
-      console.error('Error fetching wods:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load workouts. Please try again.',
-        variant: 'destructive',
-      });
+      console.error('Error fetching WODs:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load workouts';
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }
