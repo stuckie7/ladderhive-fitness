@@ -33,7 +33,7 @@ export interface Wod {
   description: string;
   category: string;
   difficulty: string;
-  duration_minutes: number;
+  duration_minutes?: number; // Make this optional to match current usage
   avg_duration_minutes?: number; // Adding this field for backward compatibility
   created_at: string;
   equipment_needed?: string[];

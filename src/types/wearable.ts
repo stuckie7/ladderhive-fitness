@@ -5,7 +5,38 @@ export type WearableDeviceType =
   | 'smart_scale' 
   | 'cycling_sensor' 
   | 'running_pod' 
-  | 'strength_trainer';
+  | 'strength_trainer'
+  | 'bluetooth';  // Added 'bluetooth' as a valid type
+
+export type WearableConnectionState = 
+  | 'connected'
+  | 'disconnected'
+  | 'connecting'
+  | 'disconnecting'
+  | 'error';
+
+export type WearableDataType =
+  | 'heart_rate'
+  | 'steps'
+  | 'distance'
+  | 'calories'
+  | 'battery'
+  | 'speed'
+  | 'cadence';
+
+export interface WearableMeasurement {
+  timestamp: Date;
+  type: WearableDataType;
+  value: number;
+  unit?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface BluetoothDeviceFilter {
+  services?: string[];
+  name?: string;
+  namePrefix?: string;
+}
 
 export interface WearableDevice {
   id: string;

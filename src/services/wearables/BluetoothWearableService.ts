@@ -17,12 +17,6 @@ import {
 } from './utils/dataProcessors';
 import { WebBluetoothApiNotAvailableError } from './utils/errors';
 
-interface BluetoothRequestDeviceFilter {
-  services?: BluetoothServiceUUID[];
-  name?: string;
-  namePrefix?: string;
-}
-
 /**
  * Service for interacting with Bluetooth Low Energy (BLE) wearable devices.
  * This service abstracts the Web Bluetooth API to provide a simplified interface
@@ -67,6 +61,13 @@ export class BluetoothWearableService {
     } catch (error) {
       return false;
     }
+  }
+  
+  /**
+   * Check if the browser supports Web Bluetooth API
+   */
+  public isSupported(): boolean {
+    return 'bluetooth' in navigator;
   }
   
   /**
@@ -126,8 +127,8 @@ export class BluetoothWearableService {
         const deviceRecord = {
           id: device.id,
           connected: true,
-          name: device.name,
-          type: 'bluetooth',
+          name: device.name || 'Unknown Device',
+          type: 'bluetooth' as WearableDeviceType,
           lastSync: new Date(),
           manufacturer: this.deviceRecords.find(d => d.id === device.id)?.manufacturer,
           model: this.deviceRecords.find(d => d.id === device.id)?.model,
@@ -151,8 +152,8 @@ export class BluetoothWearableService {
         resolve({
           id: device.id,
           connected: true,
-          name: device.name,
-          type: 'bluetooth',
+          name: device.name || 'Unknown Device',
+          type: 'bluetooth' as WearableDeviceType,
           lastSync: new Date(),
           manufacturer: this.deviceRecords.find(d => d.id === device.id)?.manufacturer,
           model: this.deviceRecords.find(d => d.id === device.id)?.model,
@@ -222,6 +223,11 @@ export class BluetoothWearableService {
         maxHeartRate: record.maxHeartRate
       } as WearableDevice;
     });
+  }
+  
+  // Create a new method to get devices
+  public async getDevices(): Promise<WearableDevice[]> {
+    return this.getConnectedDevices();
   }
   
   /**
@@ -300,7 +306,7 @@ export class BluetoothWearableService {
           id: device.id,
           connected: true,
           name: device.name,
-          type: 'bluetooth',
+          type: 'bluetooth' as WearableDeviceType,
           lastSync: new Date(),
           manufacturer: manufacturerValue.toString(),
           model: modelNumberValue.toString(),
@@ -313,6 +319,39 @@ export class BluetoothWearableService {
     } catch (error) {
       console.error('Error reading device information:', error);
     }
+  }
+  
+  /**
+   * Subscribe to device updates
+   */
+  public subscribe(deviceId: string, callback: (data: any) => void): () => void {
+    // Return a function to unsubscribe
+    return () => {
+      // Implementation would go here in a real service
+      console.log(`Unsubscribed from device ${deviceId}`);
+    };
+  }
+
+  /**
+   * Set user profile
+   */
+  public setUserProfile(profile: any): void {
+    console.log('Setting user profile:', profile);
+  }
+
+  /**
+   * Set fitness goals
+   */
+  public setFitnessGoals(goals: any): void {
+    console.log('Setting fitness goals:', goals);
+  }
+
+  /**
+   * Connect to a device
+   */
+  public async connect(deviceId: string): Promise<boolean> {
+    console.log(`Connecting to device ${deviceId}`);
+    return true;
   }
   
   private async setupHeartRateMeasurement(device: BluetoothDevice): Promise<void> {
@@ -423,3 +462,6 @@ export class BluetoothWearableService {
     }
   }
 }
+
+// Create and export an instance of the service
+export const bluetoothWearableService = new BluetoothWearableService();

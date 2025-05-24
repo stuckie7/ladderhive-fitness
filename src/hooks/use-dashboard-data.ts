@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -8,10 +9,19 @@ import { PreparedWorkout } from "@/types/workout";
 import { addDays, isBefore, parseISO } from "date-fns";
 
 // Define extended types with scheduledDate property but make problematic required properties optional
-interface ScheduledWod extends Omit<Wod, 'components'> {
+interface ScheduledWod {
+  id: string;
   scheduledDate: string;
   type: string;
-  duration_minutes?: number; // Make this optional to match the current usage pattern
+  title: string;
+  name?: string;
+  description: string;
+  difficulty: string;
+  duration_minutes?: number;
+  avg_duration_minutes?: number;
+  category: string;
+  created_at: string;
+  is_favorite?: boolean;
 }
 
 interface ScheduledWorkout extends Omit<PreparedWorkout, 'goal'> {
@@ -251,9 +261,10 @@ const processScheduledWorkouts = (workoutData: any[]): ScheduledWod[] => {
   
   // Map the data to our ScheduledWod interface
   return workoutData.map(item => {
+    const title = item.name || item.title || '';
     return {
       id: item.id,
-      title: item.name || item.title || '', // Use name or title
+      title: title,
       name: item.name || item.title || '',  // Add name for compatibility
       scheduledDate: item.scheduledDate || new Date().toISOString(),
       type: item.type || 'workout',
