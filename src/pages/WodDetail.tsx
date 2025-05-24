@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import WodDetailComponent from '@/components/wods/WodDetail';
@@ -23,7 +23,6 @@ const WodDetail: React.FC = () => {
     navigate(-1);
   };
   
-  // Create a wrapper for toggleFavorite that returns void
   const handleToggleFavorite = async (wodId: string) => {
     await toggleFavorite(wodId);
   };
