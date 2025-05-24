@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useBluetoothWearable } from '../hooks/useBluetoothWearable';
 import { WearableDevice, FitnessData } from '../services/wearables/types';
@@ -8,7 +9,7 @@ import {
   CardContent,
   Typography,
   List,
-  ListItem,
+  ListItemButton,
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
@@ -152,9 +153,8 @@ const BluetoothWearableManager: React.FC = () => {
   
   // Render device list item
   const renderDeviceItem = (device: WearableDevice) => (
-    <ListItem 
+    <ListItemButton 
       key={device.id}
-      button 
       selected={selectedDevice?.id === device.id}
       onClick={() => handleDeviceSelect(device)}
     >
@@ -179,7 +179,7 @@ const BluetoothWearableManager: React.FC = () => {
           {device.id === selectedDevice?.id ? <CheckCircleIcon color="primary" /> : null}
         </IconButton>
       </ListItemSecondaryAction>
-    </ListItem>
+    </ListItemButton>
   );
   
   // Render fitness metrics
@@ -199,7 +199,7 @@ const BluetoothWearableManager: React.FC = () => {
     return (
       <Grid container spacing={2} sx={{ p: 2 }}>
         {data.heartRate !== undefined && (
-          <Grid item xs={6} sm={4}>
+          <Grid xs={6} sm={4}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="primary">
                 {data.heartRate}
@@ -212,7 +212,7 @@ const BluetoothWearableManager: React.FC = () => {
         )}
         
         {data.steps !== undefined && (
-          <Grid item xs={6} sm={4}>
+          <Grid xs={6} sm={4}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4">
                 {data.steps.toLocaleString()}
@@ -225,7 +225,7 @@ const BluetoothWearableManager: React.FC = () => {
         )}
         
         {data.caloriesBurned !== undefined && (
-          <Grid item xs={6} sm={4}>
+          <Grid xs={6} sm={4}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4">
                 {data.caloriesBurned}
@@ -238,7 +238,7 @@ const BluetoothWearableManager: React.FC = () => {
         )}
         
         {data.distance !== undefined && (
-          <Grid item xs={6} sm={4}>
+          <Grid xs={6} sm={4}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6">
                 {(data.distance / 1000).toFixed(2)} km
@@ -251,7 +251,7 @@ const BluetoothWearableManager: React.FC = () => {
         )}
         
         {data.bloodOxygen !== undefined && (
-          <Grid item xs={6} sm={4}>
+          <Grid xs={6} sm={4}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6">
                 {data.bloodOxygen}%
@@ -264,7 +264,7 @@ const BluetoothWearableManager: React.FC = () => {
         )}
         
         {data.weight !== undefined && (
-          <Grid item xs={6} sm={4}>
+          <Grid xs={6} sm={4}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6">
                 {data.weight} kg
@@ -353,7 +353,7 @@ const BluetoothWearableManager: React.FC = () => {
               </Box>
               
               <Grid container spacing={3}>
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                   <Card variant="outlined">
                     <Box sx={{ 
                       p: 2, 
@@ -365,12 +365,12 @@ const BluetoothWearableManager: React.FC = () => {
                     </Box>
                     <List dense disablePadding>
                       {devices.length === 0 ? (
-                        <ListItem>
+                        <ListItemButton>
                           <ListItemText 
                             primary="No devices found" 
                             secondary="Pair a device to get started"
                           />
-                        </ListItem>
+                        </ListItemButton>
                       ) : (
                         devices.map(renderDeviceItem)
                       )}
@@ -378,7 +378,7 @@ const BluetoothWearableManager: React.FC = () => {
                   </Card>
                 </Grid>
                 
-                <Grid item xs={12} md={8}>
+                <Grid xs={12} md={8}>
                   <Card variant="outlined">
                     <Box sx={{ 
                       p: 2, 
@@ -406,7 +406,7 @@ const BluetoothWearableManager: React.FC = () => {
                         <>
                           <Box sx={{ p: 2 }}>
                             <Grid container spacing={2}>
-                              <Grid item xs={6}>
+                              <Grid xs={6}>
                                 <Typography variant="body2" color="text.secondary">
                                   Type
                                 </Typography>
@@ -415,7 +415,7 @@ const BluetoothWearableManager: React.FC = () => {
                                 </Typography>
                               </Grid>
                               
-                              <Grid item xs={6}>
+                              <Grid xs={6}>
                                 <Typography variant="body2" color="text.secondary">
                                   Status
                                 </Typography>
@@ -428,7 +428,7 @@ const BluetoothWearableManager: React.FC = () => {
                               </Grid>
                               
                               {selectedDevice.batteryLevel !== undefined && (
-                                <Grid item xs={12}>
+                                <Grid xs={12}>
                                   <Typography variant="body2" color="text.secondary">
                                     Battery Level
                                   </Typography>
