@@ -42,7 +42,7 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
   const hasVideo = !!wod.video_url;
   
   // Use default image for saved workouts or when no thumbnail is available
-  const defaultThumbnail = '/fitapp icon 48x48.jpg';
+  const defaultThumbnail = '/fitapp%20icon%2048x48.jpg';
 
   const getDifficultyColor = (difficulty: string | undefined) => {
     switch (difficulty?.toLowerCase()) {

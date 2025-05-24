@@ -127,8 +127,7 @@ export const useWodBrowser = () => {
     console.log("Supabase URL:", SUPABASE_URL);
     console.log("Supabase client initialized:", !!supabase);
     
-    // Clear any previous errors
-    // No need to dismiss, we'll just show the new error if any
+    // No need to dismiss previous toasts, they'll auto-dismiss
     
     try {
       let userId: string | null = null;
