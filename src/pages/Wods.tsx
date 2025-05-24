@@ -13,6 +13,7 @@ const Wods: React.FC = () => {
     isLoading,
     filters,
     setFilters,
+    resetFilters,
     fetchWods,
     toggleFavorite,
     getFavoriteWods,
@@ -55,7 +56,7 @@ const Wods: React.FC = () => {
     } else {
       getFavoriteWods();
     }
-  }, [activeTab, fetchWods, filters, getFavoriteWods]);
+  }, [activeTab, fetchWods, getFavoriteWods]);
 
   return (
     <AppLayout>
@@ -67,7 +68,10 @@ const Wods: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters sidebar */}
           <div className="lg:col-span-1">
-            <WodFilters filters={filters} onChange={handleFiltersChange} />
+            <WodFilters 
+              filters={filters} 
+              onChange={handleFiltersChange} 
+            />
           </div>
           
           {/* Main content */}

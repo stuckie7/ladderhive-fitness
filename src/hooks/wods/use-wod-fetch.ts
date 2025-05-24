@@ -57,7 +57,6 @@ export const useWodFetch = () => {
         // Ensure video URLs are properly extracted
         // Use video_demo for compatibility with existing data
         const videoUrl = wod.video_demo || null;
-        console.log(`WOD ${wod.id} video URL:`, videoUrl);
         
         return {
           ...wod,
@@ -115,7 +114,6 @@ export const useWodFetch = () => {
       // Ensure video URLs are properly extracted
       // Use video_demo for compatibility with existing data
       const videoUrl = data.video_demo || null;
-      console.log("WOD video URL:", videoUrl);
       
       const wodWithTypedComponents: Wod = {
         ...data,
@@ -183,7 +181,7 @@ export const useWodFetch = () => {
             part_8: wodData.part_8 || null,
             part_9: wodData.part_9 || null,
             part_10: wodData.part_10 || null
-          };
+          } as Wod;
         });
       
       return favoriteWods;

@@ -45,6 +45,8 @@ export const useWorkoutBrowser = () => {
 
   // Build query based on filters
   const buildQuery = (query: any) => {
+    console.log("Building query with filters:", filters);
+    
     // Apply search filter
     if (filters.search) {
       query = query.textSearch('title', filters.search, {
@@ -76,16 +78,45 @@ export const useWorkoutBrowser = () => {
       }).filter(Boolean);
       
       if (durationRanges.length > 0) {
-        // Apply each duration range as an OR condition
-        const durationConditions = durationRanges.map(range => 
-          `duration_minutes.gte.${range!.min}.and.duration_minutes.lte.${range!.max}`
-        );
+        // Create conditions for each duration range
+        const orConditions = [];
         
-        query = query.or(durationConditions.join(','));
+        for (const range of durationRanges) {
+          if (!range) continue;
+          
+          // Add a condition for this duration range
+          orConditions.push(
+            `duration_minutes.gte.${range.min},duration_minutes.lte.${range.max}`
+          );
+        }
+        
+        // If we have any conditions, apply them with OR logic
+        if (orConditions.length > 0) {
+          query = query.or(orConditions.join(','));
+        }
+      }
+    }
+
+    // Apply equipment filters
+    if (filters.equipment.length > 0) {
+      // For equipment, we need to check if the equipment_needed field contains any of the selected equipment
+      // Since this depends on how equipment data is stored, we'll use a simple LIKE query for each equipment
+      const orConditions = [];
+      
+      for (const equipment of filters.equipment) {
+        orConditions.push(`equipment_needed.ilike.%${equipment}%`);
+      }
+      
+      if (orConditions.length > 0) {
+        query = query.or(orConditions.join(','));
       }
     }
 
     // Special filters
+    if (filters.special.includes('With Videos')) {
+      query = query.not('video_url', 'is', null);
+    }
+    
     if (filters.special.includes('New This Week')) {
       // Filter for workouts created in the last 7 days
       const lastWeek = new Date();
@@ -93,10 +124,10 @@ export const useWorkoutBrowser = () => {
       query = query.gte('created_at', lastWeek.toISOString());
     }
 
-    // Apply pagination
-    query = query
-      .range(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage - 1)
-      .order('created_at', { ascending: false });
+    if (filters.special.includes('Saved')) {
+      // This is handled separately in the fetchWorkouts function
+      // as it requires a join with user_workouts table
+    }
 
     return query;
   };
@@ -104,11 +135,36 @@ export const useWorkoutBrowser = () => {
   // Fetch workouts based on current filters and pagination
   const fetchWorkouts = async () => {
     setIsLoading(true);
+    console.log("Fetching workouts with filters:", filters);
     
     try {
+      let baseTable = 'prepared_workouts';
+      let savedFilter = filters.special.includes('Saved');
+      
       // Count total workouts with current filters (without pagination)
-      let countQuery = supabase.from('prepared_workouts').select('id', { count: 'exact' });
-      countQuery = buildQuery(countQuery);
+      let countQuery;
+      
+      if (savedFilter) {
+        countQuery = supabase
+          .from('user_workouts')
+          .select('id', { count: 'exact' })
+          .eq('status', 'saved');
+          
+        // Apply user filter if authenticated
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          countQuery = countQuery.eq('user_id', user.id);
+        } else {
+          // If no user, return empty result
+          setWorkouts([]);
+          setTotalWorkouts(0);
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        countQuery = supabase.from(baseTable).select('id', { count: 'exact' });
+        countQuery = buildQuery(countQuery);
+      }
       
       const { count, error: countError } = await countQuery;
       
@@ -116,36 +172,90 @@ export const useWorkoutBrowser = () => {
       setTotalWorkouts(count || 0);
       
       // Fetch workouts with pagination
-      let query = supabase.from('prepared_workouts').select(`
-        id, title, description, duration_minutes, difficulty, category, 
-        created_at, thumbnail_url, video_url, short_description
-      `);
+      let query;
       
-      query = buildQuery(query);
+      if (savedFilter) {
+        query = supabase
+          .from('user_workouts')
+          .select(`
+            id, workout_id, 
+            prepared_workouts!inner(
+              id, title, description, duration_minutes, difficulty, category, 
+              created_at, thumbnail_url, video_url, equipment_needed
+            )
+          `)
+          .eq('status', 'saved');
+          
+        // Apply user filter
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          query = query.eq('user_id', user.id);
+        }
+        
+        // Apply pagination
+        query = query
+          .range(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage - 1)
+          .order('created_at', { ascending: false });
+      } else {
+        query = supabase.from(baseTable).select(`
+          id, title, description, duration_minutes, difficulty, category, 
+          created_at, thumbnail_url, video_url, equipment_needed
+        `);
+        
+        query = buildQuery(query);
+        
+        // Apply pagination
+        query = query
+          .range(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage - 1)
+          .order('created_at', { ascending: false });
+      }
       
       const { data, error } = await query;
       
       if (error) throw error;
       
       // Process the results to match expected format
-      const processedWorkouts = data?.map(workout => {
-        // Calculate exercise_count separately - remove the subquery that was causing errors
-        return {
-          id: workout.id,
-          title: workout.title,
-          description: workout.description || workout.short_description || '',
-          duration: workout.duration_minutes || 30,
-          exercises: 5, // Default value since we can't get the count in the same query
-          difficulty: workout.difficulty || 'Beginner',
-          category: workout.category,
-          thumbnail_url: workout.thumbnail_url,
-          video_url: workout.video_url,
-          created_at: workout.created_at,
-          // Add flags for badges - in a real app these might come from the database
-          is_new: new Date(workout.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 // 7 days
-        };
-      });
+      let processedWorkouts;
       
+      if (savedFilter && data) {
+        processedWorkouts = data.map(item => {
+          const workout = item.prepared_workouts;
+          return {
+            id: workout.id,
+            title: workout.title,
+            description: workout.description || '',
+            duration: workout.duration_minutes || 30,
+            exercises: 5, // Default value
+            difficulty: workout.difficulty || 'Beginner',
+            category: workout.category,
+            thumbnail_url: workout.thumbnail_url,
+            video_url: workout.video_url,
+            created_at: workout.created_at,
+            equipment_needed: workout.equipment_needed,
+            isSaved: true,
+            is_new: new Date(workout.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 // 7 days
+          };
+        });
+      } else {
+        processedWorkouts = data?.map(workout => {
+          return {
+            id: workout.id,
+            title: workout.title,
+            description: workout.description || '',
+            duration: workout.duration_minutes || 30,
+            exercises: 5, // Default value
+            difficulty: workout.difficulty || 'Beginner',
+            category: workout.category,
+            thumbnail_url: workout.thumbnail_url,
+            video_url: workout.video_url,
+            created_at: workout.created_at,
+            equipment_needed: workout.equipment_needed,
+            is_new: new Date(workout.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 // 7 days
+          };
+        });
+      }
+      
+      console.log("Processed workouts:", processedWorkouts);
       setWorkouts(processedWorkouts || []);
     } catch (error) {
       console.error('Error fetching workouts:', error);
@@ -190,6 +300,7 @@ export const useWorkoutBrowser = () => {
 
   // Apply filters
   const handleFilterChange = (newFilters: WorkoutFilters) => {
+    console.log("Filter change:", newFilters);
     setFilters(newFilters);
   };
 
@@ -198,29 +309,6 @@ export const useWorkoutBrowser = () => {
     setCurrentPage(page);
     window.scrollTo(0, 0); // Scroll back to top
   };
-
-  // Prefetch next page for smoother pagination
-  useEffect(() => {
-    if (currentPage < Math.ceil(totalWorkouts / itemsPerPage) - 1) {
-      // Build query for next page
-      let query = supabase.from('prepared_workouts').select('id, thumbnail_url');
-      query = buildQuery(query);
-      query = query.range((currentPage + 1) * itemsPerPage, (currentPage + 2) * itemsPerPage - 1);
-      
-      // Fetch but don't wait or update state
-      query.then(({ data }) => {
-        if (data && Array.isArray(data)) {
-          // Preload thumbnails
-          data.forEach(workout => {
-            if (workout.thumbnail_url) {
-              const img = new Image();
-              img.src = workout.thumbnail_url;
-            }
-          });
-        }
-      });
-    }
-  }, [workouts, currentPage]);
 
   return {
     workouts,

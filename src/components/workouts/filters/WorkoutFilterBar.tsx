@@ -30,6 +30,7 @@ interface WorkoutFilterBarProps {
   isSticky?: boolean;
 }
 
+// These arrays define the available filter options
 const focusAreas = ["Strength", "Cardio", "Yoga", "HIIT", "Core", "Full Body", "Upper Body", "Lower Body"];
 const difficulties = ["Beginner", "Intermediate", "Advanced", "Elite"];
 const durations = ["<15min", "15-30min", "30-45min", "45+min"];

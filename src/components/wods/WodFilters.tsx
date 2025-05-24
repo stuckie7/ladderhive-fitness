@@ -32,6 +32,8 @@ const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
     onChange({});
   };
 
+  const hasFilters = filters.category || filters.difficulty || filters.duration;
+
   return (
     <Card className="sticky top-24">
       <CardHeader className="pb-3">
@@ -41,6 +43,7 @@ const WodFilters: React.FC<WodFiltersProps> = ({ filters, onChange }) => {
             variant="ghost" 
             size="sm"
             onClick={handleReset}
+            disabled={!hasFilters}
           >
             <RefreshCcw className="h-4 w-4 mr-2" />
             Reset
