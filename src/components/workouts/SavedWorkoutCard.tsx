@@ -38,7 +38,7 @@ const SavedWorkoutCard: React.FC<SavedWorkoutCardProps> = ({
           
           <div className="w-full h-full flex items-center justify-center bg-muted overflow-hidden">
             <img 
-              src={workout.thumbnail_url || '/fitapp%20icon%2048x48.jpg'} 
+              src={workout.thumbnail_url || '/fitapp%20icon1%2048x48.jpg'} 
               alt={workout.thumbnail_url ? workout.title : 'Default workout thumbnail'} 
               className="w-full h-full object-contain p-4"
               style={{
@@ -50,8 +50,8 @@ const SavedWorkoutCard: React.FC<SavedWorkoutCardProps> = ({
               onError={(e) => {
                 // Fallback to default image on error
                 const img = e.target as HTMLImageElement;
-                if (img.src !== '/fitapp%20icon%2048x48.jpg') {
-                  img.src = '/fitapp%20icon%2048x48.jpg';
+                if (img.src !== '/fitapp%20icon1%2048x48.jpg') {
+                  img.src = '/fitapp%20icon1%2048x48.jpg';
                   img.onerror = null; // Prevent infinite loop if default image fails
                 }
               }}

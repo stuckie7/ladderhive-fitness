@@ -61,7 +61,7 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
   const hasVideo = !!videoUrl;
   
   // Default thumbnail for when no video thumbnail is available
-  const defaultThumbnail = '/fitapp%20icon%2048x48.jpg';
+  const defaultThumbnail = '/fitapp%20icon1%2048x48.jpg';
   const displayThumbnail = thumbnailError || !thumbnailUrl ? defaultThumbnail : thumbnailUrl;
 
   const getDifficultyColor = (difficulty: string | undefined) => {
