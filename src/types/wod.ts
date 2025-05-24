@@ -29,7 +29,10 @@ export interface Wod {
 }
 
 export interface WodFilters {
-  difficulty?: string;
-  category?: string;
-  duration?: number;
+  search?: string;
+  difficulty: string[];
+  category: string[];
+  duration: string[];
+  equipment: string[];
+  special: string[];
 }

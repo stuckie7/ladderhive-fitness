@@ -1,8 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
+import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 
 export interface WorkoutFilters {
   search: string;
@@ -44,22 +45,25 @@ export const useWorkoutBrowser = () => {
   }, [filters]);
 
   // Build query based on filters
-  const buildQuery = (query: any) => {
+  const buildQuery = (query: PostgrestFilterBuilder<any, any, any[]>) => {
+    let q = query;
+    
     // Apply search filter
     if (filters.search) {
-      query = query.textSearch('title', filters.search, {
-        config: 'english'
+      q = q.textSearch('title', filters.search, {
+        config: 'english',
+        type: 'websearch'
       });
     }
 
     // Apply difficulty filters
     if (filters.difficulty.length > 0) {
-      query = query.in('difficulty', filters.difficulty);
+      q = q.in('difficulty', filters.difficulty);
     }
 
     // Apply focus area/category filters
     if (filters.focusArea.length > 0) {
-      query = query.in('category', filters.focusArea);
+      q = q.in('category', filters.focusArea);
     }
 
     // Apply duration filters
@@ -73,59 +77,149 @@ export const useWorkoutBrowser = () => {
           case '45+min': return { min: 45, max: 999 };
           default: return null;
         }
-      }).filter(Boolean);
+      }).filter(Boolean) as Array<{min: number, max: number}>;
       
       if (durationRanges.length > 0) {
         // Apply each duration range as an OR condition
         const durationConditions = durationRanges.map(range => 
-          `duration_minutes.gte.${range!.min}.and.duration_minutes.lte.${range!.max}`
+          `duration_minutes.gte.${range.min}.and.duration_minutes.lte.${range.max}`
         );
         
-        query = query.or(durationConditions.join(','));
+        q = q.or(durationConditions.join(','));
       }
     }
 
+    // Apply equipment filters
+    if (filters.equipment.length > 0) {
+      // For each equipment, add a condition that checks if equipment_needed contains the equipment
+      const equipmentConditions = filters.equipment.map(equip => 
+        `equipment_needed.ilike.%${equip}%`
+      );
+      
+      // If multiple equipment are selected, we want to match ANY of them
+      q = q.or(equipmentConditions.join(','));
+    }
+
     // Special filters
+    if (filters.special.includes('With Videos')) {
+      q = q.not('video_url', 'is', null);
+    }
+    
     if (filters.special.includes('New This Week')) {
       // Filter for workouts created in the last 7 days
       const lastWeek = new Date();
       lastWeek.setDate(lastWeek.getDate() - 7);
-      query = query.gte('created_at', lastWeek.toISOString());
+      q = q.gte('created_at', lastWeek.toISOString());
+    }
+    
+    // Handle Saved filter separately in the fetchWorkouts function
+    // as it requires async operation
+    if (filters.special.includes('Saved')) {
+      // We'll handle this in the fetchWorkouts function
+      // by checking the user_saved_workouts table
     }
 
     // Apply pagination
-    query = query
+    q = q
       .range(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage - 1)
       .order('created_at', { ascending: false });
 
-    return query;
+    return q;
   };
+
+  // Enhanced logging for debugging
+  const logQueryDetails = useCallback((query: any, type: 'count' | 'data') => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[${type.toUpperCase()}] Current query:`, {
+        filters,
+        currentPage,
+        query: query.toPostgrestFilter()
+      });
+    }
+  }, [filters, currentPage]);
 
   // Fetch workouts based on current filters and pagination
   const fetchWorkouts = async () => {
     setIsLoading(true);
     
     try {
-      // Count total workouts with current filters (without pagination)
-      let countQuery = supabase.from('prepared_workouts').select('id', { count: 'exact' });
+      // First, check if we need to handle the Saved filter
+      let userId: string | null = null;
+      if (filters.special.includes('Saved')) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          // If user is not logged in but Saved filter is selected, return empty results
+          setWorkouts([]);
+          setTotalWorkouts(0);
+          setIsLoading(false);
+          return;
+        }
+        userId = user.id;
+      }
+      
+      // Build base query for counting
+      let countQuery = supabase
+        .from('prepared_workouts')
+        .select('id', { count: 'exact', head: true });
+      
+      // Apply filters to count query
       countQuery = buildQuery(countQuery);
+      
+      // Apply Saved filter to count query if needed
+      if (userId) {
+        countQuery = countQuery.eq('user_saved_workouts.user_id', userId);
+      }
+      
+      logQueryDetails(countQuery, 'count');
       
       const { count, error: countError } = await countQuery;
       
-      if (countError) throw countError;
+      if (countError) {
+        console.error('Error in count query:', countError);
+        throw countError;
+      }
+      
       setTotalWorkouts(count || 0);
       
-      // Fetch workouts with pagination
-      let query = supabase.from('prepared_workouts').select(`
-        id, title, description, duration_minutes, difficulty, category, 
-        created_at, thumbnail_url, video_url, short_description
-      `);
+      // Build main query for fetching data
+      let query = supabase
+        .from('prepared_workouts')
+        .select(`
+          id, 
+          title, 
+          description, 
+          duration_minutes, 
+          difficulty, 
+          category, 
+          created_at, 
+          thumbnail_url, 
+          video_url, 
+          short_description,
+          equipment_needed,
+          user_saved_workouts!left(user_id)
+        `);
       
+      // Apply filters to main query
       query = buildQuery(query);
+      
+      // Apply Saved filter to main query if needed
+      if (userId) {
+        query = query.eq('user_saved_workouts.user_id', userId);
+      }
+      
+      // Apply pagination
+      query = query
+        .range(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage - 1)
+        .order('created_at', { ascending: false });
+      
+      logQueryDetails(query, 'data');
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error in data query:', error);
+        throw error;
+      }
       
       // Process the results to match expected format
       const processedWorkouts = data?.map(workout => {
@@ -188,10 +282,16 @@ export const useWorkoutBrowser = () => {
     }
   }, [location]);
 
-  // Apply filters
-  const handleFilterChange = (newFilters: WorkoutFilters) => {
-    setFilters(newFilters);
-  };
+  // Apply filters with debounce to prevent excessive queries
+  const handleFilterChange = useCallback((newFilters: WorkoutFilters) => {
+    setFilters(prevFilters => {
+      // Only update if there are actual changes to prevent unnecessary re-renders
+      if (JSON.stringify(prevFilters) !== JSON.stringify(newFilters)) {
+        return newFilters;
+      }
+      return prevFilters;
+    });
+  }, []);
 
   // Change page
   const handlePageChange = (page: number) => {

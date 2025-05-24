@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Home, Dumbbell, LineChart, User, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -55,6 +55,16 @@ export function BottomNavigation() {
             )} 
           />
           <span className="text-xs font-medium">Progress</span>
+        </Link>
+        
+        <Link to="/bluetooth-devices" className="flex flex-col items-center py-1 px-3 space-y-1">
+          <Bluetooth 
+            size={20} 
+            className={cn(
+              isActive('/bluetooth-devices') ? 'text-primary' : 'text-muted-foreground'
+            )} 
+          />
+          <span className="text-xs font-medium">Devices</span>
         </Link>
         
         <Link to="/profile" className="flex flex-col items-center py-1 px-3 space-y-1">

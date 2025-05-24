@@ -1,20 +1,77 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { WodFilters } from '@/types/wod';
 
 export const useWodFilters = () => {
-  const [filters, setFilters] = useState<WodFilters>({});
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Initialize filters from URL or use defaults
+  const getInitialFilters = (): WodFilters => {
+    const params = Object.fromEntries(searchParams.entries());
+    
+    return {
+      search: params.search || '',
+      difficulty: params.difficulty ? params.difficulty.split(',') : [],
+      category: params.category ? params.category.split(',') : [],
+      duration: params.duration ? params.duration.split(',') : [],
+      equipment: params.equipment ? params.equipment.split(',') : [],
+      special: params.special ? params.special.split(',') : []
+    };
+  };
 
-  const applyFilters = useCallback((newFilters: WodFilters) => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      ...newFilters
-    }));
+  const [filters, setFilters] = useState<WodFilters>(getInitialFilters());
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (Array.isArray(value) && value.length > 0) {
+        params.set(key, value.join(','));
+      } else if (value && typeof value === 'string' && value.length > 0) {
+        params.set(key, value);
+      }
+    });
+    
+    setSearchParams(params, { replace: true });
+  }, [filters, setSearchParams]);
+
+  const applyFilters = useCallback((newFilters: Partial<WodFilters>) => {
+    setFilters(prevFilters => {
+      const updatedFilters = { ...prevFilters, ...newFilters };
+      
+      // Only update if there are actual changes
+      if (JSON.stringify(updatedFilters) !== JSON.stringify(prevFilters)) {
+        return updatedFilters;
+      }
+      return prevFilters;
+    });
   }, []);
+
+  const resetFilters = useCallback(() => {
+    setFilters({
+      search: '',
+      difficulty: [],
+      category: [],
+      duration: [],
+      equipment: [],
+      special: []
+    });
+  }, []);
+
+  // Calculate active filter count for the badge
+  const activeFilterCount = Object.entries(filters).reduce((count, [key, value]) => {
+    if (key === 'search' && value) return count + 1;
+    if (Array.isArray(value)) return count + value.length;
+    return count;
+  }, 0);
 
   return {
     filters,
     setFilters,
-    applyFilters
+    applyFilters,
+    resetFilters,
+    activeFilterCount
   };
 };

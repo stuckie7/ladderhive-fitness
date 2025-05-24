@@ -58,7 +58,8 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
     navigate(`/wods/${wod.id}`);
   };
 
-  const handleStartWorkout = () => {
+  const handleStartWorkout = (e: React.MouseEvent) => {
+    e.stopPropagation();
     navigate(`/workout-builder?wod=${wod.id}`);
   };
 
@@ -107,13 +108,16 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
             variant="ghost"
             size="icon"
             onClick={handleToggleFavorite}
-            className={wod.is_favorite ? "text-amber-500" : thumbnailUrl ? "text-white" : ""}
+            className={wod.is_favorite ? "text-amber-500 hover:bg-transparent hover:text-amber-600" : thumbnailUrl ? "text-white hover:bg-white/10" : ""}
           >
             {wod.is_favorite ? (
               <BookmarkCheck className="h-5 w-5" />
             ) : (
               <Bookmark className="h-5 w-5" />
             )}
+            <span className="sr-only">
+              {wod.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+            </span>
           </Button>
         </div>
         <div className="flex flex-wrap gap-2 mt-1">
@@ -152,21 +156,33 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite }) => {
         </div>
       </CardContent>
       
-      <CardFooter className="pt-4 relative z-10">
-        <div className="flex gap-2 w-full">
+      <CardFooter className="relative z-10 pt-4">
+        <div className="w-full flex gap-2">
           <Button 
-            variant={thumbnailUrl ? "secondary" : "outline"}
-            onClick={(e) => { e.stopPropagation(); handleViewDetails(); }}
+            variant="secondary" 
             className="flex-1"
+            onClick={handleViewDetails}
+            aria-label="View workout details"
           >
             View Details
           </Button>
           <Button 
-            className="flex-1 bg-fitness-primary hover:bg-fitness-primary/90"
-            onClick={(e) => { e.stopPropagation(); handleStartWorkout(); }}
+            variant={hasVideo ? "default" : "outline"}
+            className="flex-1 gap-2"
+            onClick={handleStartWorkout}
+            aria-label={hasVideo ? "Start workout with video" : "View workout details"}
           >
-            <Play className="mr-2 h-4 w-4" /> 
-            Start
+            {hasVideo ? (
+              <>
+                <Play className="h-4 w-4" />
+                Start Workout
+              </>
+            ) : (
+              <>
+                <Dumbbell className="h-4 w-4" />
+                View Workout
+              </>
+            )}
           </Button>
         </div>
       </CardFooter>

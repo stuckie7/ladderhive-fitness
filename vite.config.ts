@@ -36,7 +36,10 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    plugins,
+    plugins: [
+      react(),
+      mode === 'production' && visualizer(),
+    ].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
@@ -44,6 +47,9 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       'process.env': {},
+      global: 'globalThis',
+      'process.platform': JSON.stringify('browser'),
+      'process.env.NODE_ENV': JSON.stringify(mode),
     },
     esbuild: {
       target: 'esnext',

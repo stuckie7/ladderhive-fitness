@@ -7,6 +7,29 @@ import { useAuth } from '@/context/AuthContext';
 export const useWodFavorites = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Check if a WOD is in user's favorites
+  const isFavorite = useCallback(async (wodId: string): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_favorite_wods')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('wod_id', wodId)
+        .single();
+        
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      return !!data;
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+      return false;
+    }
+  }, [user]);
 
   const toggleFavorite = useCallback(async (wodId: string) => {
     if (!user) {
@@ -73,6 +96,7 @@ export const useWodFavorites = () => {
   }, [user, toast]);
 
   return {
-    toggleFavorite
+    toggleFavorite,
+    isFavorite: (wodId: string) => isFavorite(wodId),
   };
 };

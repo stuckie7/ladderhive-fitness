@@ -1,45 +1,93 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WodList from '@/components/wods/WodList';
-import WodFilters from '@/components/wods/WodFilters';
-import { useWods } from '@/hooks/wods';
-import { WodFilters as FiltersType } from '@/types/wod';
+import { WodFilterBar } from '@/components/wods/WodFilterBar';
+import { useWodBrowser } from '@/hooks/wods/use-wod-browser';
+import { Wod } from '@/types/wod';
+import { useToast } from '@/components/ui/use-toast';
+import { useWodFavorites } from '@/hooks/wods/use-wod-favorites';
 
 const Wods: React.FC = () => {
+  // State for favorites
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState('all');
+  const { toast } = useToast();
+  
   const {
     wods,
+    totalWods,
     isLoading,
+    currentPage,
+    itemsPerPage,
     filters,
-    setFilters,
-    fetchWods,
-    toggleFavorite,
-    getFavoriteWods,
-  } = useWods();
+    handleFilterChange,
+    handlePageChange,
+    activeFilterCount,
+    resetFilters
+  } = useWodBrowser();
   
-  const [activeTab, setActiveTab] = useState('all');
+  const { toggleFavorite, isFavorite } = useWodFavorites();
   
+  // Handle tab change
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    // Reset filters when switching to favorites tab
     if (value === 'favorites') {
-      getFavoriteWods();
-    } else {
-      fetchWods();
-    }
-  };
-
-  const handleFiltersChange = (newFilters: FiltersType) => {
-    setFilters(newFilters);
-    if (activeTab === 'all') {
-      fetchWods();
+      resetFilters();
     }
   };
   
-  // Create a wrapper for toggleFavorite that returns void
+  // Handle favorite toggle
   const handleToggleFavorite = async (wodId: string) => {
-    await toggleFavorite(wodId);
+    try {
+      const wasFavorite = favorites[wodId] || false;
+      await toggleFavorite(wodId);
+      
+      // Optimistically update the UI
+      setFavorites(prev => ({
+        ...prev,
+        [wodId]: !wasFavorite
+      }));
+      
+      toast({
+        title: wasFavorite ? 'Removed from favorites' : 'Added to favorites',
+        variant: 'default',
+      });
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update favorites. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
+  
+  // Update favorites when WODs change
+  useEffect(() => {
+    const updateFavorites = async () => {
+      const favs: Record<string, boolean> = {};
+      for (const wod of wods) {
+        favs[wod.id] = await isFavorite(wod.id);
+      }
+      setFavorites(favs);
+    };
+    
+    updateFavorites();
+  }, [wods, isFavorite]);
+  
+  // Enhance WODs with favorite status
+  const enhancedWods = wods.map(wod => ({
+    ...wod,
+    is_favorite: favorites[wod.id] || false
+  }));
+  
+  // Filter WODs based on active tab
+  const filteredWods = activeTab === 'favorites' 
+    ? enhancedWods.filter(wod => wod.is_favorite)
+    : enhancedWods;
 
   return (
     <AppLayout>
@@ -48,38 +96,53 @@ const Wods: React.FC = () => {
           Workouts of the Day
         </h1>
         
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Filters sidebar */}
-          <div className="lg:col-span-1">
-            <WodFilters filters={filters} onChange={handleFiltersChange} />
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <div className="flex justify-between items-center">
+            <TabsList>
+              <TabsTrigger value="all">All WODs</TabsTrigger>
+              <TabsTrigger value="favorites">My Favorites</TabsTrigger>
+            </TabsList>
+            
+            <div className="text-sm text-muted-foreground">
+              {totalWods} {totalWods === 1 ? 'WOD' : 'WODs'} found
+            </div>
           </div>
           
+          {/* Filter bar */}
+          <WodFilterBar 
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            activeFilterCount={activeFilterCount}
+            isSticky={true}
+          />
+          
           {/* Main content */}
-          <div className="lg:col-span-3 space-y-6">
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <TabsList className="w-full max-w-md mx-auto">
-                <TabsTrigger value="all" className="flex-1">All WODs</TabsTrigger>
-                <TabsTrigger value="favorites" className="flex-1">Favorites</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="all" className="mt-6">
-                <WodList
-                  wods={wods}
-                  isLoading={isLoading}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              </TabsContent>
-              
-              <TabsContent value="favorites" className="mt-6">
-                <WodList
-                  wods={wods}
-                  isLoading={isLoading}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              </TabsContent>
-            </Tabs>
+          <div className="space-y-6">
+            <TabsContent value="all" className="mt-0">
+              <WodList
+                wods={filteredWods}
+                isLoading={isLoading}
+                onToggleFavorite={handleToggleFavorite}
+                currentPage={currentPage}
+                totalItems={totalWods}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+              />
+            </TabsContent>
+            
+            <TabsContent value="favorites" className="mt-0">
+              <WodList
+                wods={filteredWods}
+                isLoading={isLoading}
+                onToggleFavorite={handleToggleFavorite}
+                currentPage={currentPage}
+                totalItems={filteredWods.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+              />
+            </TabsContent>
           </div>
-        </div>
+        </Tabs>
       </div>
     </AppLayout>
   );

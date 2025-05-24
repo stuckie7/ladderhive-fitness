@@ -29,6 +29,7 @@ import MindfulMovementPage from "./pages/MindfulMovementPage";
 import YogaPage from "./pages/YogaPage";
 import YogaRoutineDetailPage from "./pages/YogaRoutineDetailPage";
 import Onboarding from "./pages/Onboarding";
+import BluetoothWearableManager from "./components/BluetoothWearableManager";
 
 // Create a router with all routes
 const router = createBrowserRouter([
@@ -149,6 +150,10 @@ const router = createBrowserRouter([
   {
     path: "/yoga/:id",
     element: <YogaRoutineDetailPage />
+  },
+  {
+    path: "/bluetooth-devices",
+    element: <ProtectedRoute><BluetoothWearableManager /></ProtectedRoute>
   }
 ]);
 
