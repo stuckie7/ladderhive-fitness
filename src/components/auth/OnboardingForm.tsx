@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +16,9 @@ type WorkoutDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | '
 
 const OnboardingForm = () => {
   const [activeTab, setActiveTab] = useState("basics");
-  const [height, setHeight] = useState<number>(175); // in cm
-  const [weight, setWeight] = useState<number>(70); // in kg
+  const [heightFeet, setHeightFeet] = useState<number>(5); 
+  const [heightInches, setHeightInches] = useState<number>(10);
+  const [weight, setWeight] = useState<number>(155); // in lbs
   const [age, setAge] = useState<number>(30);
   const [gender, setGender] = useState<string>("");
   const [fitnessLevel, setFitnessLevel] = useState<string>("");
@@ -44,8 +46,16 @@ const OnboardingForm = () => {
     );
   };
 
+  const convertHeightToCm = (): number => {
+    return Math.round((heightFeet * 30.48) + (heightInches * 2.54));
+  };
+
+  const convertWeightToKg = (): number => {
+    return Math.round(weight * 0.453592);
+  };
+
   const handleContinue = () => {
-    if (activeTab === "basics" && (!height || !weight || !age || !gender)) {
+    if (activeTab === "basics" && (!heightFeet || !heightInches || !weight || !age || !gender)) {
       toast({
         title: "Missing information",
         description: "Please fill in all the required fields.",
@@ -96,8 +106,8 @@ const OnboardingForm = () => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          height,
-          weight,
+          height: convertHeightToCm(),
+          weight: convertWeightToKg(),
           age,
           gender,
           fitness_level: fitnessLevel,
@@ -153,25 +163,41 @@ const OnboardingForm = () => {
             {/* Basics Tab */}
             <TabsContent value="basics" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="height">Height (cm)</Label>
-                <Input
-                  id="height"
-                  type="number"
-                  value={height}
-                  onChange={(e) => setHeight(Number(e.target.value))}
-                  min={100}
-                  max={250}
-                />
+                <Label>Height</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="heightFeet" className="text-xs text-muted-foreground">Feet</Label>
+                    <Input
+                      id="heightFeet"
+                      type="number"
+                      value={heightFeet}
+                      onChange={(e) => setHeightFeet(Number(e.target.value))}
+                      min={1}
+                      max={8}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="heightInches" className="text-xs text-muted-foreground">Inches</Label>
+                    <Input
+                      id="heightInches"
+                      type="number"
+                      value={heightInches}
+                      onChange={(e) => setHeightInches(Number(e.target.value))}
+                      min={0}
+                      max={11}
+                    />
+                  </div>
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
+                <Label htmlFor="weight">Weight (lbs)</Label>
                 <Input
                   id="weight"
                   type="number"
                   value={weight}
                   onChange={(e) => setWeight(Number(e.target.value))}
-                  min={30}
-                  max={250}
+                  min={50}
+                  max={500}
                 />
               </div>
               <div className="space-y-2">

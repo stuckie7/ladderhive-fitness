@@ -8,7 +8,7 @@ import { Wod } from '@/types/wod';
 export const useWods = () => {
   const [wods, setWods] = useState<Wod[]>([]);
   const [selectedWod, setSelectedWod] = useState<Wod | null>(null);
-  const { filters, setFilters, applyFilters } = useWodFilters();
+  const { filters, setFilters, applyFilters, resetFilters } = useWodFilters();
   const { isLoading, fetchWods, fetchWodById, getFavoriteWods } = useWodFetch();
   const { toggleFavorite } = useWodFavorites();
 
@@ -64,6 +64,7 @@ export const useWods = () => {
     selectedWod,
     filters,
     setFilters,
+    resetFilters,
     fetchWods: fetchAndSetWods,
     fetchWodById: fetchAndSetWodById,
     toggleFavorite: toggleAndUpdateFavorite,

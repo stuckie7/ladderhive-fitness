@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardTitle } from "@/components/ui/card";
-import { Dumbbell, Settings } from "lucide-react";
+import { Dumbbell, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ProfileHeaderProps {
@@ -45,10 +45,11 @@ const ProfileHeader = ({ name, email, fitnessLevel, photoUrl }: ProfileHeaderPro
           </Button>
           <Button 
             variant="ghost" 
-            size="icon"
             onClick={() => navigate('/settings')}
+            className="flex items-center gap-2"
           >
-            <Settings className="h-5 w-5" />
+            <Upload className="h-5 w-5" />
+            <span>Upload Profile Pic</span>
           </Button>
         </div>
       </div>

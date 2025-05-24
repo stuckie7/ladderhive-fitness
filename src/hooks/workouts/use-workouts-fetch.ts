@@ -49,7 +49,7 @@ export const useWorkoutsFetch = (
       if (error) throw error;
       
       return (data || []).map(item => ({
-        workout: item.workouts as Workout,
+        workout: item.workouts as unknown as Workout,
         id: item.id
       }));
     } catch (error: any) {
