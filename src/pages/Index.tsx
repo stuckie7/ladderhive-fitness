@@ -17,15 +17,17 @@ const Index = () => {
   }, [user, navigate]);
   
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-black text-white">
       {/* Header */}
       <header className="border-b border-border/40">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-fitness-primary rounded-md flex items-center justify-center">
-              <span className="text-white font-bold">LH</span>
-            </div>
-            <span className="font-bold text-lg">LadderHive</span>
+            <img 
+              src="/fitapp%20icon1%2048x48.jpg" 
+              alt="FitTrack Pro Logo" 
+              className="h-8 w-8 rounded-md"
+            />
+            <span className="font-bold text-lg">FitTrack Pro</span>
           </div>
           <div className="flex items-center gap-4">
             <Button 
@@ -35,7 +37,7 @@ const Index = () => {
               Log in
             </Button>
             <Button 
-              className="bg-fitness-primary hover:bg-fitness-primary/90"
+              className="bg-green-600 hover:bg-green-700 text-black"
               onClick={() => navigate("/signup")}
             >
               Sign up
@@ -51,7 +53,7 @@ const Index = () => {
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-2">
                 <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                  Your <span className="text-fitness-primary">Personalized</span> Fitness Journey
+                  Your <span className="text-green-500">Personalized</span> Fitness Journey
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl">
                   Transform your body and mind with AI-powered workouts, expert guidance, and real-time progress tracking.
@@ -102,8 +104,8 @@ const Index = () => {
           <div className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             <Card className="border-border/40 bg-card/50 backdrop-blur-sm transition-all hover:shadow-lg">
               <CardHeader className="pb-2">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-fitness-primary/10">
-                  <Dumbbell className="h-6 w-6 text-fitness-primary" />
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-600/20">
+                  <Dumbbell className="h-6 w-6 text-green-500" />
                 </div>
                 <CardTitle className="mt-4">Smart Workouts</CardTitle>
               </CardHeader>
@@ -116,8 +118,8 @@ const Index = () => {
             
             <Card className="border-border/40 bg-card/50 backdrop-blur-sm transition-all hover:shadow-lg">
               <CardHeader className="pb-2">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-fitness-primary/10">
-                  <Target className="h-6 w-6 text-fitness-primary" />
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-600/20">
+                  <Target className="h-6 w-6 text-green-500" />
                 </div>
                 <CardTitle className="mt-4">Goal Tracking</CardTitle>
               </CardHeader>
@@ -130,8 +132,8 @@ const Index = () => {
             
             <Card className="border-border/40 bg-card/50 backdrop-blur-sm transition-all hover:shadow-lg">
               <CardHeader className="pb-2">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-fitness-primary/10">
-                  <HeartPulse className="h-6 w-6 text-fitness-primary" />
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-600/20">
+                  <HeartPulse className="h-6 w-6 text-green-500" />
                 </div>
                 <CardTitle className="mt-4">Health Insights</CardTitle>
               </CardHeader>
@@ -236,17 +238,17 @@ const Index = () => {
       </section>
       
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-fitness-primary/10 to-fitness-secondary/10">
+      <section className="py-16 bg-gradient-to-r from-green-600/10 to-green-800/10">
         <div className="container px-4 md:px-6 text-center">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-6">
             Ready to transform your fitness journey?
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Join LadderHive today and take the first step towards a healthier, stronger you.
+              Join FitTrack Pro today and take the first step towards a healthier, stronger you.
           </p>
           <Button 
             size="lg" 
-            className="bg-fitness-primary hover:bg-fitness-primary/90 h-14 px-12 text-lg"
+            className="bg-green-600 hover:bg-green-700 h-14 px-12 text-lg text-black"
             onClick={() => navigate("/signup")}
           >
             Get Started for Free
@@ -259,13 +261,15 @@ const Index = () => {
         <div className="container px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-fitness-primary rounded-md flex items-center justify-center">
-                <span className="text-white font-bold">LH</span>
-              </div>
-              <span className="font-bold">LadderHive</span>
+              <img 
+                src="/fitapp%20icon1%2048x48.jpg" 
+                alt="FitTrack Pro Logo" 
+                className="h-8 w-8 rounded-md"
+              />
+              <span className="font-bold">FitTrack Pro</span>
             </div>
             <p className="text-sm text-muted-foreground mt-4 md:mt-0">
-              © {new Date().getFullYear()} LadderHive. All rights reserved.
+              © {new Date().getFullYear()} FitTrack Pro. All rights reserved.
             </p>
           </div>
         </div>
