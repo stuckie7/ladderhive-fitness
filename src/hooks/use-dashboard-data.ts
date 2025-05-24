@@ -8,7 +8,7 @@ import { Wod } from "@/types/wod";
 import { PreparedWorkout } from "@/types/workout";
 import { addDays, isBefore, parseISO } from "date-fns";
 
-// Define extended types with scheduledDate property but make problematic required properties optional
+// Define ScheduledWod interface without extending Wod to avoid property constraints
 interface ScheduledWod {
   id: string;
   scheduledDate: string;
@@ -17,7 +17,7 @@ interface ScheduledWod {
   name?: string;
   description: string;
   difficulty: string;
-  duration_minutes?: number;  // Made optional to match Wod type
+  duration_minutes?: number;  
   avg_duration_minutes?: number;
   category: string;
   created_at: string;

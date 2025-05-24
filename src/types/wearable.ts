@@ -55,6 +55,12 @@ export interface WearableDevice {
   firmwareVersion?: string;
   hardwareVersion?: string;
   serialNumber?: string;
+  
+  // Additional properties needed for Bluetooth operations
+  heartRate?: number;
+  cadence?: number;
+  speed?: number;
+  distance?: number;
 }
 
 export interface FitnessData {

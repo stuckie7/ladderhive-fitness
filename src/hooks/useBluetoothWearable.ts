@@ -1,8 +1,6 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { bluetoothWearableService } from '../services/wearables/BluetoothWearableService';
+import { BluetoothWearableService, bluetoothWearableService } from '../services/wearables/BluetoothWearableService';
 import { WearableDevice, FitnessData, UserProfile, FitnessGoals } from '../types/wearable';
-import type { BluetoothWearableService } from '../services/wearables/BluetoothWearableService';
 
 type BluetoothStatus = 'idle' | 'searching' | 'connecting' | 'connected' | 'error' | 'disconnected';
 

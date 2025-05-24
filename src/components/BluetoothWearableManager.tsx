@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useBluetoothWearable } from '../hooks/useBluetoothWearable';
-import { WearableDevice, FitnessData } from '../services/wearables/types';
+import { WearableDevice, FitnessData } from '../types/wearable';
 import {
   Box,
   Button,

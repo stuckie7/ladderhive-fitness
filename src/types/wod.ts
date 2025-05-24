@@ -1,4 +1,5 @@
 
+
 export interface WodFilters {
   search: string;
   difficulty: string[];
@@ -57,3 +58,4 @@ export interface Wod {
   part_9?: string;
   part_10?: string;
 }
+

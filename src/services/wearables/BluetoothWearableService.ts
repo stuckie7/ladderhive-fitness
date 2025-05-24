@@ -1,4 +1,3 @@
-
 import { 
   WearableDevice, 
   WearableDeviceType, 
@@ -110,7 +109,7 @@ export class BluetoothWearableService {
         }
         
         // Add to connected devices
-        const deviceRecord = {
+        const deviceRecord: WearableDevice = {
           id: device.id,
           connected: true,
           name: device.name || 'Unknown Device',
@@ -127,7 +126,7 @@ export class BluetoothWearableService {
           speed: this.deviceRecords.find(d => d.id === device.id)?.speed,
           distance: this.deviceRecords.find(d => d.id === device.id)?.distance,
           maxHeartRate: this.deviceRecords.find(d => d.id === device.id)?.maxHeartRate
-        } as WearableDevice;
+        };
         
         this.deviceRecords.push(deviceRecord);
         
@@ -207,7 +206,11 @@ export class BluetoothWearableService {
           maxHeartRate: record.maxHeartRate,
           features: record.features,
           serviceUuids: record.serviceUuids,
-          rssi: record.rssi
+          rssi: record.rssi,
+          heartRate: record.heartRate,
+          cadence: record.cadence,
+          speed: record.speed,
+          distance: record.distance
         } as WearableDevice;
       });
   }

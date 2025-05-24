@@ -9,7 +9,8 @@ export type WearableDeviceType =
   | 'smart_scale' 
   | 'cycling_sensor' 
   | 'running_pod' 
-  | 'strength_trainer';
+  | 'strength_trainer'
+  | 'bluetooth';
 
 export interface WearableDevice {
   // Device identification
@@ -27,6 +28,7 @@ export interface WearableDevice {
   firmwareVersion?: string;
   hardwareVersion?: string;
   softwareVersion?: string;
+  serialNumber?: string;
   
   // Signal and power
   rssi?: number;
@@ -38,6 +40,12 @@ export interface WearableDevice {
   // Additional features
   features?: string[];
   maxHeartRate?: number;
+  
+  // Measurement data
+  heartRate?: number;
+  cadence?: number;
+  speed?: number;
+  distance?: number;
 }
 
 export interface FitnessData {
