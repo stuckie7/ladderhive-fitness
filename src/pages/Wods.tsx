@@ -1,17 +1,12 @@
-
-<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
-=======
-import React, { useState, useEffect } from 'react';
->>>>>>> c57dc56863e7fe2b8ce70ae08fe202abf8951f15
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WodList from '@/components/wods/WodList';
 import { WodFilterBar } from '@/components/wods/WodFilterBar';
 import { useWodBrowser } from '@/hooks/wods/use-wod-browser';
-import { Wod } from '@/types/wod';
-import { useToast } from '@/components/ui/use-toast';
 import { useWodFavorites } from '@/hooks/wods/use-wod-favorites';
+import { useToast } from '@/components/ui/use-toast';
+import { Wod } from '@/types/wod';
 
 const Wods: React.FC = () => {
   // State for favorites
@@ -26,20 +21,11 @@ const Wods: React.FC = () => {
     currentPage,
     itemsPerPage,
     filters,
-<<<<<<< HEAD
     handleFilterChange,
     handlePageChange,
     activeFilterCount,
     resetFilters
   } = useWodBrowser();
-=======
-    setFilters,
-    resetFilters,
-    fetchWods,
-    toggleFavorite,
-    getFavoriteWods,
-  } = useWods();
->>>>>>> c57dc56863e7fe2b8ce70ae08fe202abf8951f15
   
   const { toggleFavorite, isFavorite } = useWodFavorites();
   
@@ -54,7 +40,6 @@ const Wods: React.FC = () => {
   
   // Handle favorite toggle
   const handleToggleFavorite = async (wodId: string) => {
-<<<<<<< HEAD
     try {
       const wasFavorite = favorites[wodId] || false;
       await toggleFavorite(wodId);
@@ -76,15 +61,6 @@ const Wods: React.FC = () => {
         description: 'Failed to update favorites. Please try again.',
         variant: 'destructive',
       });
-=======
-    await toggleFavorite(wodId);
-    
-    // Refresh the appropriate list after toggling favorite
-    if (activeTab === 'favorites') {
-      getFavoriteWods();
-    } else {
-      fetchWods();
->>>>>>> c57dc56863e7fe2b8ce70ae08fe202abf8951f15
     }
   };
   
@@ -114,12 +90,9 @@ const Wods: React.FC = () => {
 
   // Initial fetch of wods
   useEffect(() => {
-    if (activeTab === 'all') {
-      fetchWods();
-    } else {
-      getFavoriteWods();
-    }
-  }, [activeTab, fetchWods, getFavoriteWods]);
+    // The useWodBrowser hook already handles fetching WODs
+    // No need for separate fetchWods or getFavoriteWods functions
+  }, [activeTab]);
 
   return (
     <AppLayout>
@@ -128,7 +101,6 @@ const Wods: React.FC = () => {
           Workouts of the Day
         </h1>
         
-<<<<<<< HEAD
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <div className="flex justify-between items-center">
             <TabsList>
@@ -139,15 +111,6 @@ const Wods: React.FC = () => {
             <div className="text-sm text-muted-foreground">
               {totalWods} {totalWods === 1 ? 'WOD' : 'WODs'} found
             </div>
-=======
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Filters sidebar */}
-          <div className="lg:col-span-1">
-            <WodFilters 
-              filters={filters} 
-              onChange={handleFiltersChange} 
-            />
->>>>>>> c57dc56863e7fe2b8ce70ae08fe202abf8951f15
           </div>
           
           {/* Filter bar */}
