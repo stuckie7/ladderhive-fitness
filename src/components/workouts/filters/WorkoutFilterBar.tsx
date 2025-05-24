@@ -58,6 +58,11 @@ export const WorkoutFilterBar = ({
     return () => clearTimeout(timer);
   }, [searchValue, filters, onFilterChange]);
 
+  // Update local search value when filters change externally
+  useEffect(() => {
+    setSearchValue(filters.search);
+  }, [filters.search]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
   };
@@ -82,6 +87,7 @@ export const WorkoutFilterBar = ({
   };
 
   const resetFilters = () => {
+    setSearchValue("");
     onFilterChange({
       search: "",
       focusArea: [],
@@ -90,7 +96,6 @@ export const WorkoutFilterBar = ({
       equipment: [],
       special: [],
     });
-    setSearchValue("");
   };
 
   return (

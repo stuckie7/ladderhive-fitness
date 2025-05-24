@@ -12,9 +12,14 @@ export const useWodFilters = () => {
     }));
   }, []);
 
+  const resetFilters = useCallback(() => {
+    setFilters({});
+  }, []);
+
   return {
     filters,
     setFilters,
-    applyFilters
+    applyFilters,
+    resetFilters
   };
 };

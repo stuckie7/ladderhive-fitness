@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WodList from '@/components/wods/WodList';
@@ -25,21 +25,37 @@ const Wods: React.FC = () => {
     if (value === 'favorites') {
       getFavoriteWods();
     } else {
-      fetchWods();
+      fetchWods(filters);
     }
   };
 
   const handleFiltersChange = (newFilters: FiltersType) => {
     setFilters(newFilters);
     if (activeTab === 'all') {
-      fetchWods();
+      fetchWods(newFilters);
     }
   };
   
   // Create a wrapper for toggleFavorite that returns void
   const handleToggleFavorite = async (wodId: string) => {
     await toggleFavorite(wodId);
+    
+    // Refresh the appropriate list after toggling favorite
+    if (activeTab === 'favorites') {
+      getFavoriteWods();
+    } else {
+      fetchWods(filters);
+    }
   };
+
+  // Initial fetch of wods
+  useEffect(() => {
+    if (activeTab === 'all') {
+      fetchWods(filters);
+    } else {
+      getFavoriteWods();
+    }
+  }, [activeTab, fetchWods, filters, getFavoriteWods]);
 
   return (
     <AppLayout>
