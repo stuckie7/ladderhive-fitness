@@ -154,27 +154,35 @@ export const useWodFetch = () => {
       
       // Convert data structure and ensure proper component types
       const favoriteWods: Wod[] = data
-        .filter(item => item.wods)
+        .filter(item => item.wods) // Filter out any potentially null items
         .map(item => {
+          const wodData = item.wods as any; // Cast to any first for safer access
+          
           // Safely parse components based on type
-          const components = item.wods.components ? parseWodComponents(item.wods.components) : [];
+          const components = wodData.components ? parseWodComponents(wodData.components) : [];
           
           return {
-            ...item.wods,
+            id: wodData.id,
+            name: wodData.name,
+            description: wodData.description,
             components,
             is_favorite: true,
-            video_url: item.wods.video_demo || null,
-            // Make sure all part_1 through part_10 are passed along
-            part_1: item.wods.part_1 || null,
-            part_2: item.wods.part_2 || null,
-            part_3: item.wods.part_3 || null,
-            part_4: item.wods.part_4 || null,
-            part_5: item.wods.part_5 || null,
-            part_6: item.wods.part_6 || null,
-            part_7: item.wods.part_7 || null,
-            part_8: item.wods.part_8 || null,
-            part_9: item.wods.part_9 || null,
-            part_10: item.wods.part_10 || null
+            video_url: wodData.video_demo || null,
+            video_demo: wodData.video_demo || null,
+            category: wodData.category || null,
+            difficulty: wodData.difficulty || null,
+            avg_duration_minutes: wodData.avg_duration_minutes || null,
+            created_at: wodData.created_at || null,
+            part_1: wodData.part_1 || null,
+            part_2: wodData.part_2 || null,
+            part_3: wodData.part_3 || null,
+            part_4: wodData.part_4 || null,
+            part_5: wodData.part_5 || null,
+            part_6: wodData.part_6 || null,
+            part_7: wodData.part_7 || null,
+            part_8: wodData.part_8 || null,
+            part_9: wodData.part_9 || null,
+            part_10: wodData.part_10 || null
           };
         });
       
