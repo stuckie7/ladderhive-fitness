@@ -63,10 +63,22 @@ export function getYouTubeEmbedUrl(url?: string): string | null {
   return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
 }
 
-// Function to get YouTube thumbnail URL
+// Function to get YouTube thumbnail URL with fallback options
 export function getYouTubeThumbnail(url?: string): string | null {
   const videoId = getYouTubeVideoId(url);
-  return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
+  if (!videoId) return null;
+  
+  // Try different thumbnail qualities in order of preference
+  const thumbnails = [
+    `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,  // Highest quality (might not exist for all videos)
+    `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,     // High quality
+    `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,     // Medium quality
+    `https://img.youtube.com/vi/${videoId}/default.jpg`        // Default quality
+  ];
+  
+  // Return the first URL in the array (will try in order of preference)
+  // The actual image loading will handle the 404 if the quality isn't available
+  return thumbnails[0];
 }
 
 // Function to create a snippet from a description

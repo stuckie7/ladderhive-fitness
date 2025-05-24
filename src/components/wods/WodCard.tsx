@@ -33,16 +33,28 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
     }
   };
   const navigate = useNavigate();
-  // Add logging to debug video URL and thumbnail generation
-  console.log(`WOD ${wod.id} video URL:`, wod.video_url);
-  const thumbnailUrl = getYouTubeThumbnail(wod.video_url);
-  console.log(`WOD ${wod.id} thumbnail URL:`, thumbnailUrl);
+  // Get YouTube thumbnail URL if video URL is available
+  const [thumbnailUrl, setThumbnailUrl] = React.useState<string | null>(null);
+  const [thumbnailError, setThumbnailError] = React.useState(false);
+  
+  // Handle thumbnail loading and errors
+  React.useEffect(() => {
+    if (wod.video_url) {
+      const url = getYouTubeThumbnail(wod.video_url);
+      setThumbnailUrl(url);
+      setThumbnailError(false);
+    } else {
+      setThumbnailUrl(null);
+    }
+  }, [wod.video_url]);
+
   // Generate an engaging description or use the existing one
   const descriptionText = wod.description ? createDescriptionSnippet(wod.description, 120) : generateEngagingDescription(wod);
   const hasVideo = !!wod.video_url;
   
-  // Use default image for saved workouts or when no thumbnail is available
+  // Default thumbnail for when no video thumbnail is available
   const defaultThumbnail = '/fitapp%20icon%2048x48.jpg';
+  const displayThumbnail = thumbnailError || !thumbnailUrl ? defaultThumbnail : thumbnailUrl;
 
   const getDifficultyColor = (difficulty: string | undefined) => {
     switch (difficulty?.toLowerCase()) {
@@ -108,34 +120,34 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
           className="relative w-full h-full cursor-pointer"
           onClick={handleVideoClick}
         >
-          {thumbnailUrl ? (
-            <>
-              <img 
-                src={thumbnailUrl} 
-                alt={`${wod.name} thumbnail`}
-                className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-200"
-                onError={(e) => {
-                  // Fallback to default image on error
-                  const img = e.target as HTMLImageElement;
-                  img.src = defaultThumbnail;
-                  img.onerror = null; // Prevent infinite loop if default image fails
-                }}
-              />
-              {wod.video_url && (
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <div className="bg-black/50 rounded-full p-4">
-                    <Play className="h-12 w-12 text-white" fill="white" />
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center">
-              <img 
-                src={defaultThumbnail} 
-                alt="Default workout thumbnail"
-                className="w-full h-full object-cover opacity-70"
-              />
+          <img 
+            src={displayThumbnail} 
+            alt={`${wod.name} thumbnail`}
+            className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-200"
+            onError={(e) => {
+              // Fallback to default image on error
+              const img = e.target as HTMLImageElement;
+              if (img.src !== defaultThumbnail) {
+                img.src = defaultThumbnail;
+                setThumbnailError(true);
+              } else {
+                // If default thumbnail also fails, show a placeholder
+                img.style.display = 'none';
+              }
+              img.onerror = null; // Prevent infinite loop
+            }}
+            loading="lazy"
+          />
+          {hasVideo && (
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="bg-black/50 rounded-full p-3">
+                <Play className="h-8 w-8 text-white" />
+              </div>
+            </div>
+          )}
+          {!hasVideo && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
+              <Dumbbell className="h-12 w-12 text-gray-400" />
             </div>
           )}
         </div>
