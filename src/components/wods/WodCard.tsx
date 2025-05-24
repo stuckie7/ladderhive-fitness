@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Bookmark, BookmarkCheck, Video, Play, Dumbbell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Wod } from '@/types/wod';
-import { getYouTubeThumbnail, createDescriptionSnippet, generateEngagingDescription } from '@/utils/wodHelpers';
+import { getYouTubeThumbnail, getYouTubeVideoId, createDescriptionSnippet, generateEngagingDescription } from '@/utils/wodHelpers';
 
 interface WodCardProps {
   wod: Wod;
@@ -40,13 +40,18 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
   // Handle thumbnail loading and errors
   React.useEffect(() => {
     if (wod.video_url) {
+      // First try to get the highest quality thumbnail
       const url = getYouTubeThumbnail(wod.video_url);
       setThumbnailUrl(url);
+      setThumbnailError(false);
+    } else if (wod.image_url) {
+      // Fall back to image_url if video_url is not available
+      setThumbnailUrl(wod.image_url);
       setThumbnailError(false);
     } else {
       setThumbnailUrl(null);
     }
-  }, [wod.video_url]);
+  }, [wod.video_url, wod.image_url]);
 
   // Generate an engaging description or use the existing one
   const descriptionText = wod.description ? createDescriptionSnippet(wod.description, 120) : generateEngagingDescription(wod);
@@ -125,14 +130,35 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
             alt={`${wod.name} thumbnail`}
             className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-200"
             onError={(e) => {
-              // Fallback to default image on error
+              // Fallback to YouTube thumbnail on error
               const img = e.target as HTMLImageElement;
-              if (img.src !== defaultThumbnail) {
+              if (wod.video_url) {
+                // Try different YouTube thumbnail qualities
+                const videoId = getYouTubeVideoId(wod.video_url);
+                if (videoId) {
+                  // Try lower quality thumbnails
+                  const qualities = ['hqdefault.jpg', 'mqdefault.jpg', 'default.jpg'];
+                  const currentSrc = img.src.split('/').pop();
+                  const currentQualityIndex = qualities.findIndex(q => currentSrc?.includes(q));
+                  
+                  if (currentQualityIndex < qualities.length - 1) {
+                    // Try next lower quality
+                    img.src = `https://img.youtube.com/vi/${videoId}/${qualities[currentQualityIndex + 1]}`;
+                  } else if (wod.image_url) {
+                    // Fall back to image_url if available
+                    img.src = wod.image_url;
+                  } else {
+                    // Final fallback to default thumbnail
+                    img.src = defaultThumbnail;
+                    setThumbnailError(true);
+                  }
+                } else {
+                  img.src = defaultThumbnail;
+                  setThumbnailError(true);
+                }
+              } else {
                 img.src = defaultThumbnail;
                 setThumbnailError(true);
-              } else {
-                // If default thumbnail also fails, show a placeholder
-                img.style.display = 'none';
               }
               img.onerror = null; // Prevent infinite loop
             }}
