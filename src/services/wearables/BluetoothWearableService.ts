@@ -205,4 +205,7 @@ class BluetoothWearableService implements WearableService {
   }
 }
 
+// Create and export a singleton instance
+export const bluetoothWearableService = new BluetoothWearableService();
+
 export default BluetoothWearableService;

@@ -826,6 +826,13 @@ export type Database = {
             referencedRelation: "wods"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_favorite_wods_wod_id_fkey"
+            columns: ["wod_id"]
+            isOneToOne: false
+            referencedRelation: "workout_statistics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_workout_exercises: {
@@ -1224,19 +1231,67 @@ export type Database = {
     Views: {
       workout_statistics: {
         Row: {
-          avg_calories: number | null
-          avg_duration: number | null
-          completion_rate: number | null
-          current_streak: number | null
-          monthly_workouts: number | null
-          quarterly_workouts: number | null
-          top_exercises: Json | null
-          total_calories: number | null
-          total_minutes: number | null
-          total_workouts: number | null
-          user_id: string | null
-          weekly_workouts: number | null
-          yearly_workouts: number | null
+          avg_duration_minutes: number | null
+          category: string | null
+          components: Json | null
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          id: string | null
+          name: string | null
+          part_1: string | null
+          part_10: string | null
+          part_2: string | null
+          part_3: string | null
+          part_4: string | null
+          part_5: string | null
+          part_6: string | null
+          part_7: string | null
+          part_8: string | null
+          part_9: string | null
+          video_demo: string | null
+        }
+        Insert: {
+          avg_duration_minutes?: number | null
+          category?: string | null
+          components?: Json | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          id?: string | null
+          name?: string | null
+          part_1?: string | null
+          part_10?: string | null
+          part_2?: string | null
+          part_3?: string | null
+          part_4?: string | null
+          part_5?: string | null
+          part_6?: string | null
+          part_7?: string | null
+          part_8?: string | null
+          part_9?: string | null
+          video_demo?: string | null
+        }
+        Update: {
+          avg_duration_minutes?: number | null
+          category?: string | null
+          components?: Json | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          id?: string | null
+          name?: string | null
+          part_1?: string | null
+          part_10?: string | null
+          part_2?: string | null
+          part_3?: string | null
+          part_4?: string | null
+          part_5?: string | null
+          part_6?: string | null
+          part_7?: string | null
+          part_8?: string | null
+          part_9?: string | null
+          video_demo?: string | null
         }
         Relationships: []
       }

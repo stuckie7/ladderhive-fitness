@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from '@/lib/supabase';
-import { Workout, ScheduledWod, ScheduledWorkout } from '@/types';
+import { Workout, ScheduledWod, ScheduledWorkout } from '@/types/workout';
 import { format, addDays } from 'date-fns';
 
 interface UseDashboardDataReturn {
