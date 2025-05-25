@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -19,25 +20,26 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="border-b border-border/40">
+      <header className="border-b border-green-500/20 bg-black">
         <div className="container flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <img 
               src="/fitapp%20icon1%2048x48.jpg" 
               alt="FitTrack Pro Logo" 
-              className="h-8 w-8 rounded-md"
+              className="h-10 w-10 rounded-lg shadow-lg shadow-green-500/20"
             />
-            <span className="font-bold text-lg">FitTrack Pro</span>
+            <div className="text-2xl font-bold text-green-400">FitTrack Pro</div>
           </div>
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost"
+              className="text-gray-300 hover:text-white hover:bg-green-500/10"
               onClick={() => navigate("/login")}
             >
               Log in
             </Button>
             <Button 
-              className="bg-green-600 hover:bg-green-700 text-black"
+              className="bg-green-500 hover:bg-green-600 text-black font-semibold shadow-lg shadow-green-500/25"
               onClick={() => navigate("/signup")}
             >
               Sign up
@@ -47,22 +49,22 @@ const Index = () => {
       </header>
       
       {/* Hero Section */}
-      <section className="py-16 md:py-24 lg:py-32">
+      <section className="py-16 md:py-24 lg:py-32 bg-gradient-to-b from-black to-gray-900">
         <div className="container px-4 md:px-6">
           <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-2">
-                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                  Your <span className="text-green-500">Personalized</span> Fitness Journey
+                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none text-white">
+                  Your <span className="text-green-400">Personalized</span> Fitness Journey
                 </h1>
-                <p className="max-w-[600px] text-muted-foreground md:text-xl">
+                <p className="max-w-[600px] text-gray-300 md:text-xl">
                   Transform your body and mind with AI-powered workouts, expert guidance, and real-time progress tracking.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
                 <Button 
                   size="lg" 
-                  className="bg-fitness-primary hover:bg-fitness-primary/90 h-12 px-8 text-lg"
+                  className="bg-green-500 hover:bg-green-600 text-black h-12 px-8 text-lg font-semibold shadow-lg shadow-green-500/25"
                   onClick={() => navigate("/signup")}
                 >
                   Get Started
@@ -71,7 +73,7 @@ const Index = () => {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="h-12 px-8 text-lg"
+                  className="h-12 px-8 text-lg border-green-500 text-green-400 hover:bg-green-500/10"
                   onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   Learn More
@@ -79,10 +81,10 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center justify-center">
-              <div className="relative h-[400px] w-full max-w-[500px] overflow-hidden rounded-xl border bg-card shadow-lg">
-                <div className="absolute inset-0 bg-gradient-to-tr from-fitness-primary/20 to-fitness-secondary/20" />
+              <div className="relative h-[400px] w-full max-w-[500px] overflow-hidden rounded-xl border border-green-500/30 bg-gray-900 shadow-lg shadow-green-500/10">
+                <div className="absolute inset-0 bg-gradient-to-tr from-green-500/20 to-green-400/10" />
                 <div className="relative flex h-full items-center justify-center p-8">
-                  <Dumbbell className="h-32 w-32 text-fitness-primary/30" />
+                  <Dumbbell className="h-32 w-32 text-green-500/60" />
                 </div>
               </div>
             </div>
@@ -91,54 +93,54 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-16 bg-muted/50">
+      <section id="features" className="py-16 bg-gray-900">
         <div className="container px-4 md:px-6">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
-              Why Choose LadderHive?
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl text-white">
+              Why Choose <span className="text-green-400">FitTrack Pro</span>?
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-4 text-gray-300">
               Everything you need to achieve your fitness goals in one powerful platform.
             </p>
           </div>
           <div className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-border/40 bg-card/50 backdrop-blur-sm transition-all hover:shadow-lg">
+            <Card className="border-green-500/20 bg-black/80 backdrop-blur-sm transition-all hover:shadow-lg hover:shadow-green-500/10 hover:border-green-500/40">
               <CardHeader className="pb-2">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-600/20">
-                  <Dumbbell className="h-6 w-6 text-green-500" />
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/20 shadow-lg">
+                  <Dumbbell className="h-6 w-6 text-green-400" />
                 </div>
-                <CardTitle className="mt-4">Smart Workouts</CardTitle>
+                <CardTitle className="mt-4 text-white">Smart Workouts</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
+                <CardDescription className="text-gray-300">
                   AI-powered workout plans that adapt to your progress, goals, and available equipment.
                 </CardDescription>
               </CardContent>
             </Card>
             
-            <Card className="border-border/40 bg-card/50 backdrop-blur-sm transition-all hover:shadow-lg">
+            <Card className="border-green-500/20 bg-black/80 backdrop-blur-sm transition-all hover:shadow-lg hover:shadow-green-500/10 hover:border-green-500/40">
               <CardHeader className="pb-2">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-600/20">
-                  <Target className="h-6 w-6 text-green-500" />
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/20 shadow-lg">
+                  <Target className="h-6 w-6 text-green-400" />
                 </div>
-                <CardTitle className="mt-4">Goal Tracking</CardTitle>
+                <CardTitle className="mt-4 text-white">Goal Tracking</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
+                <CardDescription className="text-gray-300">
                   Set, track, and achieve your fitness goals with our intuitive progress dashboard.
                 </CardDescription>
               </CardContent>
             </Card>
             
-            <Card className="border-border/40 bg-card/50 backdrop-blur-sm transition-all hover:shadow-lg">
+            <Card className="border-green-500/20 bg-black/80 backdrop-blur-sm transition-all hover:shadow-lg hover:shadow-green-500/10 hover:border-green-500/40">
               <CardHeader className="pb-2">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-600/20">
-                  <HeartPulse className="h-6 w-6 text-green-500" />
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/20 shadow-lg">
+                  <HeartPulse className="h-6 w-6 text-green-400" />
                 </div>
-                <CardTitle className="mt-4">Health Insights</CardTitle>
+                <CardTitle className="mt-4 text-white">Health Insights</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
+                <CardDescription className="text-gray-300">
                   Get detailed analytics and insights about your health and fitness journey.
                 </CardDescription>
               </CardContent>
@@ -148,86 +150,86 @@ const Index = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16">
+      <section className="py-16 bg-black">
         <div className="container px-4 md:px-6">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl text-white">
               Trusted by Fitness Enthusiasts
             </h2>
-            <p className="mt-4 text-muted-foreground">
-              Join thousands of users who transformed their fitness journey with LadderHive.
+            <p className="mt-4 text-gray-300">
+              Join thousands of users who transformed their fitness journey with FitTrack Pro.
             </p>
           </div>
           <div className="mx-auto mt-16 grid max-w-5xl gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
+            <Card className="border-green-500/20 bg-gray-900/80 backdrop-blur-sm hover:border-green-500/40 transition-all">
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="h-5 w-5 fill-green-400 text-green-400" />
                     ))}
                   </div>
-                  <p className="text-muted-foreground">
-                    "LadderHive completely transformed my fitness routine. The personalized workouts and progress tracking keep me motivated every day."
+                  <p className="text-gray-300">
+                    "FitTrack Pro completely transformed my fitness routine. The personalized workouts and progress tracking keep me motivated every day."
                   </p>
                   <div className="flex items-center gap-3 pt-4">
                     <Avatar>
                       <AvatarImage src="/avatars/01.png" alt="Sarah K." />
-                      <AvatarFallback>SK</AvatarFallback>
+                      <AvatarFallback className="bg-green-500/20 text-green-400">SK</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">Sarah K.</p>
-                      <p className="text-sm text-muted-foreground">Lost 15 lbs in 2 months</p>
+                      <p className="font-medium text-white">Sarah K.</p>
+                      <p className="text-sm text-gray-400">Lost 15 lbs in 2 months</p>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
+            <Card className="border-green-500/20 bg-gray-900/80 backdrop-blur-sm hover:border-green-500/40 transition-all">
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="h-5 w-5 fill-green-400 text-green-400" />
                     ))}
                   </div>
-                  <p className="text-muted-foreground">
-                    "As a busy professional, I need efficient workouts. LadderHive gives me exactly what I need in the time I have."
+                  <p className="text-gray-300">
+                    "As a busy professional, I need efficient workouts. FitTrack Pro gives me exactly what I need in the time I have."
                   </p>
                   <div className="flex items-center gap-3 pt-4">
                     <Avatar>
                       <AvatarImage src="/avatars/02.png" alt="Michael T." />
-                      <AvatarFallback>MT</AvatarFallback>
+                      <AvatarFallback className="bg-green-500/20 text-green-400">MT</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">Michael T.</p>
-                      <p className="text-sm text-muted-foreground">Gained 10 lbs of muscle</p>
+                      <p className="font-medium text-white">Michael T.</p>
+                      <p className="text-sm text-gray-400">Gained 10 lbs of muscle</p>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
+            <Card className="border-green-500/20 bg-gray-900/80 backdrop-blur-sm hover:border-green-500/40 transition-all">
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="h-5 w-5 fill-green-400 text-green-400" />
                     ))}
                   </div>
-                  <p className="text-muted-foreground">
-                    "The community and support in LadderHive is unmatched. I've never been able to stick with a program this long before!"
+                  <p className="text-gray-300">
+                    "The community and support in FitTrack Pro is unmatched. I've never been able to stick with a program this long before!"
                   </p>
                   <div className="flex items-center gap-3 pt-4">
                     <Avatar>
                       <AvatarImage src="/avatars/03.png" alt="Jessica L." />
-                      <AvatarFallback>JL</AvatarFallback>
+                      <AvatarFallback className="bg-green-500/20 text-green-400">JL</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">Jessica L.</p>
-                      <p className="text-sm text-muted-foreground">Consistently active for 6+ months</p>
+                      <p className="font-medium text-white">Jessica L.</p>
+                      <p className="text-sm text-gray-400">Consistently active for 6+ months</p>
                     </div>
                   </div>
                 </div>
@@ -238,17 +240,17 @@ const Index = () => {
       </section>
       
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-green-600/10 to-green-800/10">
+      <section className="py-16 bg-gradient-to-r from-green-500/10 to-green-600/5">
         <div className="container px-4 md:px-6 text-center">
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-6">
+          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-6 text-white">
             Ready to transform your fitness journey?
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
               Join FitTrack Pro today and take the first step towards a healthier, stronger you.
           </p>
           <Button 
             size="lg" 
-            className="bg-green-600 hover:bg-green-700 h-14 px-12 text-lg text-black"
+            className="bg-green-500 hover:bg-green-600 text-black h-14 px-12 text-lg font-semibold shadow-lg shadow-green-500/25"
             onClick={() => navigate("/signup")}
           >
             Get Started for Free
@@ -257,18 +259,18 @@ const Index = () => {
       </section>
       
       {/* Footer */}
-      <footer className="py-8 bg-background border-t border-border/40">
+      <footer className="py-8 bg-black border-t border-green-500/20">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <img 
                 src="/fitapp%20icon1%2048x48.jpg" 
                 alt="FitTrack Pro Logo" 
-                className="h-8 w-8 rounded-md"
+                className="h-8 w-8 rounded-md shadow-md shadow-green-500/20"
               />
-              <span className="font-bold">FitTrack Pro</span>
+              <span className="font-bold text-green-400">FitTrack Pro</span>
             </div>
-            <p className="text-sm text-muted-foreground mt-4 md:mt-0">
+            <p className="text-sm text-gray-400 mt-4 md:mt-0">
               © {new Date().getFullYear()} FitTrack Pro. All rights reserved.
             </p>
           </div>
