@@ -23,7 +23,7 @@ const Index = () => {
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <img 
-              src="/fitapp%20icon1%2048x48.jpg" 
+              src="/fittrackpro-logo.jpg" 
               alt="FitTrack Pro Logo" 
               className="h-8 w-8 rounded-md"
             />
@@ -262,7 +262,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2">
               <img 
-                src="/fitapp%20icon1%2048x48.jpg" 
+                src="/fittrackpro-logo.jpg" 
                 alt="FitTrack Pro Logo" 
                 className="h-8 w-8 rounded-md"
               />
