@@ -1,196 +1,40 @@
 
-export type WearableDeviceType = 
-  | 'heart_rate_monitor' 
-  | 'fitness_band' 
-  | 'smartwatch' 
-  | 'smart_scale' 
-  | 'cycling_sensor' 
-  | 'running_pod' 
-  | 'strength_trainer'
-  | 'bluetooth';  // Added 'bluetooth' as a valid type
-
-export type WearableConnectionState = 
-  | 'connected'
-  | 'disconnected'
-  | 'connecting'
-  | 'disconnecting'
-  | 'error';
-
-export type WearableDataType =
-  | 'heart_rate'
-  | 'steps'
-  | 'distance'
-  | 'calories'
-  | 'battery'
-  | 'speed'
-  | 'cadence';
-
-export interface WearableMeasurement {
-  timestamp: Date;
-  type: WearableDataType;
-  value: number;
-  unit?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface BluetoothDeviceFilter {
-  services?: string[];
-  name?: string;
-  namePrefix?: string;
-}
+export type WearableDeviceType = 'fitness_tracker' | 'smartwatch' | 'heart_rate_monitor';
 
 export interface WearableDevice {
   id: string;
   name: string;
-  type: WearableDeviceType;
   connected: boolean;
+  type: WearableDeviceType;
   batteryLevel?: number;
-  lastSync?: Date;
-  manufacturer?: string;
-  model?: string;
-  rssi?: number;
-  serviceUuids?: string[];
-  maxHeartRate?: number;
-  features?: string[];
-  firmwareVersion?: string;
-  hardwareVersion?: string;
-  serialNumber?: string;
-  softwareVersion?: string;
-  
-  // Measurement data
-  heartRate?: number;
-  cadence?: number;
-  speed?: number;
-  distance?: number;
+  lastSync: Date;
 }
 
 export interface FitnessData {
-  timestamp: Date;
-  deviceId: string;
-  
-  // Activity metrics
+  timestamp: string;
+  heartRate?: number;
   steps?: number;
-  distance?: number; // meters
-  caloriesBurned?: number;
-  activeMinutes?: number;
-  
-  // Health metrics
-  heartRate?: number; // bpm
-  heartRateVariability?: number; // ms
-  bloodOxygen?: number; // SpO2 %
-  bloodPressure?: {
-    systolic: number;
-    diastolic: number;
-    meanArterialPressure?: number;
-  };
-  
-  // Body composition
-  weight?: number; // kg
-  bodyFatPercentage?: number;
-  muscleMass?: number; // kg
-  hydration?: number; // %
-  
-  // Workout specific
-  workoutType?: string;
-  workoutDuration?: number; // seconds
-  workoutIntensity?: number; // 1-10
-  
-  // Sleep metrics
-  sleepScore?: number; // 0-100
-  sleepStages?: {
-    awake: number; // minutes
-    light: number;
-    deep: number;
-    rem: number;
-  };
-  
-  // Environmental
-  temperature?: number; // °C
-  elevation?: number; // meters
-  
-  // Additional metrics
-  stressLevel?: number; // 0-100
-  vo2Max?: number; // ml/kg/min
-  respiratoryRate?: number; // breaths/min
-  
-  // Raw data
-  rawData?: any;
-}
-
-export interface DeviceConnectionOptions {
-  autoReconnect?: boolean;
-  reconnectAttempts?: number;
-  connectionTimeout?: number;
-  requestEcho?: boolean;
+  calories?: number;
+  distance?: number;
 }
 
 export interface UserProfile {
   age: number;
+  weight: number;
+  height: number;
   gender: 'male' | 'female' | 'other';
-  height: number; // cm
-  weight: number; // kg
   activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-  maxHeartRate?: number;
-  restingHeartRate?: number;
-  fitnessLevel?: 'beginner' | 'intermediate' | 'advanced';
 }
 
 export interface FitnessGoals {
-  dailySteps?: number;
-  weeklyWorkouts?: number;
+  dailySteps: number;
+  weeklyWorkouts: number;
   targetWeight?: number;
-  targetBodyFat?: number;
-  targetWorkoutMinutes?: number;
-  targetCaloriesBurned?: number;
-  targetSleepHours?: number;
+  targetHeartRate?: number;
 }
 
-export interface WearableService {
-  // Device management
-  requestDevice(filters?: Partial<WearableDevice>): Promise<WearableDevice | null>;
-  connect(deviceId: string, options?: DeviceConnectionOptions): Promise<boolean>;
-  disconnect(deviceId: string): Promise<void>;
-  getDeviceList(): Promise<WearableDevice[]>;
-  
-  // Data operations
-  getFitnessData(
-    deviceId: string, 
-    options?: { 
-      startDate?: Date; 
-      endDate?: Date; 
-      metrics?: string[] 
-    }
-  ): Promise<FitnessData[]>;
-  
-  // Real-time updates
-  subscribeToUpdates(
-    deviceId: string, 
-    callback: (data: FitnessData) => void
-  ): Promise<() => void>;
-  
-  // Device info
-  getDeviceInfo(deviceId: string): Promise<Partial<WearableDevice>>;
-  getBatteryLevel(deviceId: string): Promise<number | null>;
-  
-  // Configuration
-  setUserProfile(profile: UserProfile): Promise<void>;
-  setGoals(goals: FitnessGoals): Promise<void>;
-}
-
-export interface DeviceStorage {
-  // Device management
-  saveDevice(device: WearableDevice): Promise<void>;
-  getDevice(deviceId: string): Promise<WearableDevice | null>;
-  getDevices(): Promise<WearableDevice[]>;
-  deleteDevice(deviceId: string): Promise<void>;
-  
-  // Data operations
-  saveFitnessData(deviceId: string, data: FitnessData): Promise<void>;
-  getFitnessData(
-    deviceId: string, 
-    options?: { startDate?: Date; endDate?: Date }
-  ): Promise<FitnessData[]>;
-  
-  // Clear all data
-  clear(): Promise<void>;
+export interface DeviceConnectionOptions {
+  autoConnect?: boolean;
+  syncInterval?: number;
+  enableNotifications?: boolean;
 }

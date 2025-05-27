@@ -2,13 +2,15 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from '@/lib/supabase';
-import { Workout, ScheduledWod, ScheduledWorkout } from '@/types/workout';
+import { Workout, ScheduledWod } from '@/types/workout';
+import { AdminScheduledWorkout, UserSuggestedWorkout } from '@/types/admin';
 import { format, addDays } from 'date-fns';
 
 interface UseDashboardDataReturn {
   workouts: Workout[];
-  scheduledWorkouts: ScheduledWorkout[];
+  scheduledWorkouts: AdminScheduledWorkout[];
   scheduledWods: ScheduledWod[];
+  suggestedWorkouts: UserSuggestedWorkout[];
   isLoading: boolean;
   error: string | null;
   refreshData: () => void;
@@ -17,8 +19,9 @@ interface UseDashboardDataReturn {
 const useDashboardData = (): UseDashboardDataReturn => {
   const { user } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [scheduledWorkouts, setScheduledWorkouts] = useState<ScheduledWorkout[]>([]);
-    const [scheduledWods, setScheduledWods] = useState<ScheduledWod[]>([]);
+  const [scheduledWorkouts, setScheduledWorkouts] = useState<AdminScheduledWorkout[]>([]);
+  const [scheduledWods, setScheduledWods] = useState<ScheduledWod[]>([]);
+  const [suggestedWorkouts, setSuggestedWorkouts] = useState<UserSuggestedWorkout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +34,7 @@ const useDashboardData = (): UseDashboardDataReturn => {
         return;
       }
 
+      // Fetch user created workouts
       const { data: workoutsData, error: workoutsError } = await supabase
         .from('workouts')
         .select('*')
@@ -42,19 +46,41 @@ const useDashboardData = (): UseDashboardDataReturn => {
 
       setWorkouts(workoutsData as Workout[] || []);
 
-      // Fetch scheduled workouts
+      // Fetch admin scheduled workouts
       const { data: scheduledWorkoutsData, error: scheduledWorkoutsError } = await supabase
         .from('scheduled_workouts')
-        .select('*')
-        .eq('user_id', user.id);
+        .select(`
+          *,
+          workout:prepared_workouts(*)
+        `)
+        .eq('user_id', user.id)
+        .gte('scheduled_date', new Date().toISOString().split('T')[0]);
 
       if (scheduledWorkoutsError) {
         throw new Error(scheduledWorkoutsError.message);
       }
 
-      setScheduledWorkouts(scheduledWorkoutsData as ScheduledWorkout[] || []);
+      setScheduledWorkouts(scheduledWorkoutsData as AdminScheduledWorkout[] || []);
 
-            const { data: wodsData, error: wodsError } = await supabase
+      // Fetch suggested workouts
+      const { data: suggestedWorkoutsData, error: suggestedWorkoutsError } = await supabase
+        .from('user_suggested_workouts')
+        .select(`
+          *,
+          workout:prepared_workouts(*)
+        `)
+        .eq('user_id', user.id)
+        .eq('is_read', false)
+        .or('expires_at.is.null,expires_at.gte.' + new Date().toISOString());
+
+      if (suggestedWorkoutsError) {
+        throw new Error(suggestedWorkoutsError.message);
+      }
+
+      setSuggestedWorkouts(suggestedWorkoutsData as UserSuggestedWorkout[] || []);
+
+      // Fetch WODs data
+      const { data: wodsData, error: wodsError } = await supabase
         .from('wods')
         .select('*');
 
@@ -62,19 +88,19 @@ const useDashboardData = (): UseDashboardDataReturn => {
         throw new Error(wodsError.message);
       }
 
-            setScheduledWods(
+      setScheduledWods(
         wodsData?.map((wod: any) => ({
           id: wod.id,
           scheduledDate: format(addDays(new Date(), Math.floor(Math.random() * 7)), 'yyyy-MM-dd'),
-          duration_minutes: wod.duration_minutes,
+          duration_minutes: wod.avg_duration_minutes,
           type: 'wod',
           name: wod.name,
           description: wod.description,
           difficulty: wod.difficulty,
           avg_duration_minutes: wod.avg_duration_minutes,
           category: wod.category,
-          title: wod.name, // Add missing title property
-          created_at: new Date().toISOString(), // Add missing created_at property
+          title: wod.name,
+          created_at: new Date().toISOString(),
         })) as ScheduledWod[] || []
       );
     } catch (err: any) {
@@ -96,6 +122,7 @@ const useDashboardData = (): UseDashboardDataReturn => {
     workouts,
     scheduledWorkouts,
     scheduledWods,
+    suggestedWorkouts,
     isLoading,
     error,
     refreshData,

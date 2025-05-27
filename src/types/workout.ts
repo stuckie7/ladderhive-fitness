@@ -1,4 +1,3 @@
-
 // Define types for workout data
 export interface Workout {
   id: string;
@@ -34,7 +33,9 @@ export interface ScheduledWorkout {
   user_id: string;
   workout_id: string;
   scheduled_date: string;
+  scheduled_by_admin?: string;
   status: string;
+  admin_message?: string;
   workout?: Workout;
   created_at: string;
 }

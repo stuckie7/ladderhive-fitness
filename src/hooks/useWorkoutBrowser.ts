@@ -1,8 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 
 export interface WorkoutFilters {
   search: string;
@@ -44,7 +44,7 @@ export const useWorkoutBrowser = () => {
   }, [filters]);
 
   // Build query based on filters
-  const buildQuery = (query: PostgrestFilterBuilder<any, any, any[]>) => {
+  const buildQuery = (query: any) => {
     let q = query;
     console.log("Building query with filters:", filters);
     
@@ -126,7 +126,7 @@ export const useWorkoutBrowser = () => {
       console.log(`[${type.toUpperCase()}] Current query:`, {
         filters,
         currentPage,
-        query: query.toPostgrestFilter()
+        query: query.toString ? query.toString() : query
       });
     }
   }, [filters, currentPage]);

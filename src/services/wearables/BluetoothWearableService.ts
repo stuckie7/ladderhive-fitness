@@ -1,3 +1,4 @@
+
 import { WearableDevice, FitnessData, UserProfile, FitnessGoals } from './types';
 
 class BluetoothWearableService {
@@ -22,7 +23,7 @@ class BluetoothWearableService {
         connected: device.gatt?.connected || false,
         type: 'fitness_tracker' as const,
         batteryLevel: undefined,
-        lastSync: new Date().toISOString()
+        lastSync: new Date()
       }));
     } catch (error) {
       console.error('Error getting devices:', error);
@@ -50,7 +51,7 @@ class BluetoothWearableService {
         connected: false,
         type: 'fitness_tracker' as const,
         batteryLevel: undefined,
-        lastSync: new Date().toISOString()
+        lastSync: new Date()
       };
     } catch (error) {
       console.error('Error requesting device:', error);
