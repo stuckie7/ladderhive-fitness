@@ -8,11 +8,14 @@ interface WodFilters {
   difficulty: string[];
   category: string[];
   duration: string[];
+  equipment: string[];
+  special: string[];
 }
 
 export interface Wod {
   id: string;
   name: string;
+  title: string; // Adding title property for compatibility
   description: string;
   difficulty: string;
   category: string;
@@ -32,6 +35,8 @@ interface UseWodBrowserReturn {
   handleFilterChange: (newFilters: WodFilters) => void;
   handlePageChange: (page: number) => void;
   refreshWods: () => void;
+  activeFilterCount: number;
+  resetFilters: () => void;
 }
 
 export const useWodBrowser = (): UseWodBrowserReturn => {
@@ -43,7 +48,9 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
     search: '',
     difficulty: [],
     category: [],
-    duration: []
+    duration: [],
+    equipment: [],
+    special: []
   });
   
   const itemsPerPage = 12;
@@ -102,7 +109,13 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
 
       if (error) throw error;
 
-      setWods(data || []);
+      // Map the data to include title property for compatibility
+      const mappedWods = data?.map(wod => ({
+        ...wod,
+        title: wod.name // Use name as title for compatibility
+      })) || [];
+
+      setWods(mappedWods);
       setTotalWods(count || 0);
     } catch (error) {
       console.error('Error fetching WODs:', error);
@@ -134,6 +147,25 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
     fetchWods();
   }, [fetchWods]);
 
+  const resetFilters = useCallback(() => {
+    setFilters({
+      search: '',
+      difficulty: [],
+      category: [],
+      duration: [],
+      equipment: [],
+      special: []
+    });
+    setCurrentPage(0);
+  }, []);
+
+  // Calculate active filter count
+  const activeFilterCount = Object.entries(filters).reduce((count, [key, value]) => {
+    if (key === 'search' && value) return count + 1;
+    if (Array.isArray(value)) return count + value.length;
+    return count;
+  }, 0);
+
   return {
     wods,
     totalWods,
@@ -143,7 +175,9 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
     filters,
     handleFilterChange,
     handlePageChange,
-    refreshWods
+    refreshWods,
+    activeFilterCount,
+    resetFilters
   };
 };
 

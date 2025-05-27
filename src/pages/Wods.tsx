@@ -9,7 +9,6 @@ import { useWodBrowser } from '@/hooks/wods/use-wod-browser';
 import { useFavoritesOptimized } from '@/hooks/wods/use-favorites-optimized';
 import { useToast } from '@/components/ui/use-toast';
 import { useSearchParams } from 'react-router-dom';
-import { Wod } from '@/types/wod';
 
 // Constants for tab values and URL params
 const TAB_PARAM = 'tab';
@@ -31,7 +30,7 @@ const Wods: React.FC = () => {
     filters,
     handleFilterChange,
     handlePageChange,
-    activeFilterCount = 0,
+    activeFilterCount,
     resetFilters
   } = useWodBrowser();
   
