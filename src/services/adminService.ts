@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { AdminAuditLog, AdminUser, AdminWorkout, AdminWorkoutSchedule, AdminStats, UserWorkoutStats } from '@/types/admin';
 
@@ -11,7 +12,7 @@ export const adminService = {
   // Get all users (admin only)
   getUsers: async (): Promise<AdminUser[]> => {
     const { data, error } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*');
 
     if (error) throw error;
@@ -21,7 +22,7 @@ export const adminService = {
   // Get user by ID (admin only)
   getUser: async (userId: string): Promise<AdminUser | null> => {
     const { data, error } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
@@ -33,7 +34,7 @@ export const adminService = {
   // Get all workouts with user info (admin only)
   getWorkouts: async (): Promise<AdminWorkout[]> => {
     const { data, error } = await supabase
-      .from('workouts')
+      .from('prepared_workouts')
       .select(`
         *,
         user:user_id (id, email, full_name)
@@ -47,7 +48,7 @@ export const adminService = {
   // Get all workout schedules with user and workout info (admin only)
   getWorkoutSchedules: async (): Promise<AdminWorkoutSchedule[]> => {
     const { data, error } = await supabase
-      .from('workout_schedules')
+      .from('scheduled_workouts')
       .select(`
         *,
         user:user_id (id, email, full_name),
@@ -62,7 +63,7 @@ export const adminService = {
   // Create a workout for a specific user (admin only)
   createUserWorkout: async (userId: string, workoutData: any): Promise<AdminWorkout> => {
     const { data, error } = await supabase
-      .from('workouts')
+      .from('prepared_workouts')
       .insert([
         {
           ...workoutData,
@@ -89,7 +90,7 @@ export const adminService = {
   // Update a user's workout (admin only)
   updateUserWorkout: async (workoutId: string, updates: any): Promise<AdminWorkout> => {
     const { data, error } = await supabase
-      .from('workouts')
+      .from('prepared_workouts')
       .update(updates)
       .eq('id', workoutId)
       .select()
@@ -111,7 +112,7 @@ export const adminService = {
   deleteUserWorkout: async (workoutId: string): Promise<void> => {
     // First get the workout to log the user ID
     const { data: workout } = await supabase
-      .from('workouts')
+      .from('prepared_workouts')
       .select('user_id')
       .eq('id', workoutId)
       .single();
@@ -119,7 +120,7 @@ export const adminService = {
     if (!workout) throw new Error('Workout not found');
 
     const { error } = await supabase
-      .from('workouts')
+      .from('prepared_workouts')
       .delete()
       .eq('id', workoutId);
 
@@ -136,7 +137,7 @@ export const adminService = {
   // Schedule a workout for a user (admin only)
   scheduleUserWorkout: async (userId: string, scheduleData: any): Promise<AdminWorkoutSchedule> => {
     const { data, error } = await supabase
-      .from('workout_schedules')
+      .from('scheduled_workouts')
       .insert([
         {
           ...scheduleData,
@@ -168,7 +169,7 @@ export const adminService = {
   getDashboardStats: async (): Promise<AdminStats> => {
     // Get total users
     const { count: totalUsers } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*', { count: 'exact', head: true });
 
     // Get active users (last 30 days)
@@ -176,24 +177,24 @@ export const adminService = {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
     const { count: activeUsers } = await supabase
-      .from('users')
-      .gt('last_sign_in_at', thirtyDaysAgo.toISOString())
-      .select('*', { count: 'exact', head: true });
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .gte('last_sign_in_at', thirtyDaysAgo.toISOString());
 
     // Get total workouts
     const { count: totalWorkouts } = await supabase
-      .from('workouts')
+      .from('prepared_workouts')
       .select('*', { count: 'exact', head: true });
 
     // Get admin-created workouts
     const { count: adminWorkouts } = await supabase
-      .from('workouts')
-      .eq('is_admin_suggested', true)
-      .select('*', { count: 'exact', head: true });
+      .from('prepared_workouts')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_admin_suggested', true);
 
     // Get total schedules
     const { count: totalSchedules } = await supabase
-      .from('workout_schedules')
+      .from('scheduled_workouts')
       .select('*', { count: 'exact', head: true });
 
     // Get recent audit logs
@@ -216,27 +217,27 @@ export const adminService = {
   // Get user workout statistics
   getUserWorkoutStats: async (): Promise<UserWorkoutStats[]> => {
     const { data: users } = await supabase
-      .from('users')
-      .select('id, email, full_name, last_sign_in_at');
+      .from('profiles')
+      .select('id, email, first_name, last_name, last_sign_in_at');
 
     if (!users) return [];
 
     const stats = await Promise.all(
       users.map(async (user) => {
         const { count: workoutCount } = await supabase
-          .from('workouts')
+          .from('prepared_workouts')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
         const { count: scheduleCount } = await supabase
-          .from('workout_schedules')
+          .from('scheduled_workouts')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
         return {
           userId: user.id,
           email: user.email || '',
-          fullName: user.full_name,
+          fullName: user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : null,
           workoutCount: workoutCount || 0,
           scheduleCount: scheduleCount || 0,
           lastActive: user.last_sign_in_at

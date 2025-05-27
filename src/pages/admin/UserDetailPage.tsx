@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -9,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, User, Dumbbell, Calendar, Save, Trash2, Edit, X } from 'lucide-react';
+import { ArrowLeft, User, Dumbbell, Calendar, Save, Trash2, Edit, X, Plus } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
 import { format } from 'date-fns';
 
