@@ -946,7 +946,7 @@ export type Database = {
           id: string
           saved_by_admin: string | null
           user_id: string
-          workout_id: string
+          workout_id: string | null
         }
         Insert: {
           admin_message?: string | null
@@ -954,7 +954,7 @@ export type Database = {
           id?: string
           saved_by_admin?: string | null
           user_id: string
-          workout_id: string
+          workout_id?: string | null
         }
         Update: {
           admin_message?: string | null
@@ -962,7 +962,7 @@ export type Database = {
           id?: string
           saved_by_admin?: string | null
           user_id?: string
-          workout_id?: string
+          workout_id?: string | null
         }
         Relationships: [
           {

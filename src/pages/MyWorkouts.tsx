@@ -1,13 +1,14 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
-import { CalendarDays, Clock, CheckCircle, XCircle, Loader2, Dumbbell, RefreshCw } from 'lucide-react';
+import { CalendarDays, Clock, CheckCircle, XCircle, Loader2, Dumbbell, RefreshCw, Download } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Link } from 'react-router-dom'; // If you have a workout details page
+import { useNavigate } from 'react-router-dom';
 
 interface ScheduledWorkout {
   id: string;
@@ -29,7 +30,9 @@ export default function MyWorkoutsPage() {
   const [workouts, setWorkouts] = useState<ScheduledWorkout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchWorkouts = useCallback(async () => {
     setLoading(true);
@@ -60,7 +63,6 @@ export default function MyWorkoutsPage() {
           )
         `)
         .eq('user_id', user.id)
-        // .gte('scheduled_date', new Date().toISOString().split('T')[0]) // Show today and future, or all?
         .order('scheduled_date', { ascending: true });
 
       if (dbError) throw dbError;
@@ -86,7 +88,7 @@ export default function MyWorkoutsPage() {
   const handleUpdateWorkoutStatus = async (workoutScheduleId: string, newStatus: 'completed' | 'skipped') => {
     try {
       const { error } = await supabase
-        .from('workout_schedules')
+        .from('scheduled_workouts')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', workoutScheduleId);
 
@@ -96,7 +98,7 @@ export default function MyWorkoutsPage() {
         title: 'Workout Updated!',
         description: `Workout marked as ${newStatus}.`,
       });
-      fetchWorkouts(); // Refresh the list
+      fetchWorkouts();
     } catch (err) {
       console.error(`Error updating workout to ${newStatus}:`, err);
       toast({
@@ -104,6 +106,105 @@ export default function MyWorkoutsPage() {
         description: (err as Error).message || `Could not mark workout as ${newStatus}.`,
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleWorkoutClick = (workoutId: string) => {
+    navigate(`/workouts/${workoutId}`);
+  };
+
+  const exportToCSV = async () => {
+    setIsExporting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to export data.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Fetch all scheduled workouts for CSV export
+      const { data: allWorkouts, error } = await supabase
+        .from('scheduled_workouts')
+        .select(`
+          id,
+          user_id,
+          scheduled_date,
+          status,
+          created_at,
+          suggested_workouts (
+            id,
+            name,
+            description,
+            difficulty,
+            duration,
+            category
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('scheduled_date', { ascending: true });
+
+      if (error) throw error;
+
+      // Create CSV content
+      const csvHeaders = [
+        'User ID',
+        'Workout Schedule ID',
+        'Workout ID',
+        'Workout Name',
+        'Category',
+        'Difficulty',
+        'Duration (min)',
+        'Scheduled Date',
+        'Status',
+        'Created At'
+      ];
+
+      const csvRows = allWorkouts?.map(workout => [
+        workout.user_id,
+        workout.id,
+        workout.suggested_workouts?.[0]?.id || '',
+        workout.suggested_workouts?.[0]?.name || '',
+        workout.suggested_workouts?.[0]?.category || '',
+        workout.suggested_workouts?.[0]?.difficulty || '',
+        workout.suggested_workouts?.[0]?.duration || '',
+        format(new Date(workout.scheduled_date), 'yyyy-MM-dd'),
+        workout.status,
+        format(new Date(workout.created_at), 'yyyy-MM-dd HH:mm:ss')
+      ]) || [];
+
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `my-workouts-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: 'Export Successful',
+        description: 'Your workout data has been exported to CSV.',
+      });
+    } catch (err) {
+      console.error('Error exporting to CSV:', err);
+      toast({
+        title: 'Export Failed',
+        description: 'Could not export workout data.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -134,9 +235,19 @@ export default function MyWorkoutsPage() {
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8 flex flex-col sm:flex-row justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2 sm:mb-0">My Scheduled Workouts</h1>
-        <Button onClick={fetchWorkouts} variant="outline" size="sm">
-          <RefreshCw className="mr-2 h-4 w-4" /> Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={exportToCSV} variant="outline" size="sm" disabled={isExporting}>
+            {isExporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            Export CSV
+          </Button>
+          <Button onClick={fetchWorkouts} variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+          </Button>
+        </div>
       </header>
 
       {workouts.length === 0 ? (
@@ -146,9 +257,9 @@ export default function MyWorkoutsPage() {
           <p className="text-gray-500 dark:text-gray-400 mb-6">
             It looks like you don't have any workouts scheduled right now.
           </p>
-          <Link to="/suggested-workouts"> {/* Or wherever users can find workouts */}
-            <Button>Explore Workouts</Button>
-          </Link>
+          <Button onClick={() => navigate('/suggested-workouts')}>
+            Explore Workouts
+          </Button>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -157,7 +268,17 @@ export default function MyWorkoutsPage() {
             if (!workout) return null;
 
             return (
-              <Card key={schedule.id} className={`flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300 ${schedule.status === 'completed' ? 'bg-green-50 dark:bg-green-900/30' : schedule.status === 'skipped' ? 'bg-red-50 dark:bg-red-900/30' : 'bg-white dark:bg-gray-800'}`}>
+              <Card 
+                key={schedule.id} 
+                className={`flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer ${
+                  schedule.status === 'completed' 
+                    ? 'bg-green-50 dark:bg-green-900/30' 
+                    : schedule.status === 'skipped' 
+                    ? 'bg-red-50 dark:bg-red-900/30' 
+                    : 'bg-white dark:bg-gray-800'
+                }`}
+                onClick={() => handleWorkoutClick(workout.id)}
+              >
                 {workout.image_url && (
                   <img
                     src={workout.image_url}
@@ -167,8 +288,19 @@ export default function MyWorkoutsPage() {
                 )}
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start mb-1">
-                    <CardTitle className="text-xl font-semibold leading-tight text-gray-800 dark:text-white">{workout.name}</CardTitle>
-                    <Badge variant={schedule.status === 'completed' ? 'success' : schedule.status === 'skipped' ? 'destructive' : 'outline'} className="capitalize">
+                    <CardTitle className="text-xl font-semibold leading-tight text-gray-800 dark:text-white">
+                      {workout.name}
+                    </CardTitle>
+                    <Badge 
+                      variant={
+                        schedule.status === 'completed' 
+                          ? 'default' 
+                          : schedule.status === 'skipped' 
+                          ? 'destructive' 
+                          : 'outline'
+                      } 
+                      className="capitalize"
+                    >
                       {schedule.status}
                     </Badge>
                   </div>
@@ -207,7 +339,7 @@ export default function MyWorkoutsPage() {
                 </CardContent>
                 <CardFooter className="pt-0 border-t dark:border-gray-700 pt-4">
                   {schedule.status === 'scheduled' && (
-                    <div className="flex w-full gap-3">
+                    <div className="flex w-full gap-3" onClick={(e) => e.stopPropagation()}>
                       <Button
                         onClick={() => handleUpdateWorkoutStatus(schedule.id, 'completed')}
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white"

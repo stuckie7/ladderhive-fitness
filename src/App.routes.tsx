@@ -1,3 +1,4 @@
+
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -31,6 +32,7 @@ import Onboarding from "./pages/Onboarding";
 import BluetoothWearableManager from "./components/BluetoothWearableManager";
 import AssignWorkoutPage from "./pages/admin/AssignWorkout";
 import MyWorkoutsPage from "./pages/MyWorkouts";
+import SuggestedWorkoutsPage from "./pages/SuggestedWorkoutsPage";
 import { DashboardPage } from "./pages/admin/DashboardPage";
 import { UsersPage } from "./pages/admin/UsersPage";
 import { UserDetailPage } from "./pages/admin/UserDetailPage";
@@ -154,6 +156,10 @@ const router = createBrowserRouter([
   {
     path: "/my-workouts",
     element: <ProtectedRoute><MyWorkoutsPage /></ProtectedRoute>
+  },
+  {
+    path: "/suggested-workouts",
+    element: <ProtectedRoute><SuggestedWorkoutsPage /></ProtectedRoute>
   },
   {
     path: "/settings",
