@@ -43,7 +43,7 @@ export default function MyWorkoutsPage() {
       }
 
       const { data, error: dbError } = await supabase
-        .from('workout_schedules')
+        .from('scheduled_workouts')
         .select(`
           id,
           scheduled_date,
