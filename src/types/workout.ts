@@ -1,4 +1,3 @@
-
 // Define types for workout data
 export interface Workout {
   id: string;
@@ -26,6 +25,34 @@ export interface UserWorkout {
   planned_for: string | null;
   workout: Workout;
   date?: string;
+}
+
+// Add missing ScheduledWorkout interface
+export interface ScheduledWorkout {
+  id: string;
+  user_id: string;
+  workout_id: string;
+  scheduled_date: string;
+  scheduled_by_admin?: string;
+  status: string;
+  admin_message?: string;
+  workout?: Workout;
+  created_at: string;
+}
+
+// Add missing ScheduledWod interface
+export interface ScheduledWod {
+  id: string;
+  scheduledDate: string;
+  duration_minutes: number;
+  type: 'wod';
+  name: string;
+  description: string;
+  difficulty: string;
+  avg_duration_minutes: number;
+  category: string;
+  title: string;
+  created_at: string;
 }
 
 // Types for prepared workouts

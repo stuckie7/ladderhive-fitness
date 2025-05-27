@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       daily_progress: {
         Row: {
           active_minutes: number
@@ -598,6 +631,9 @@ export type Database = {
       }
       prepared_workouts: {
         Row: {
+          admin_featured: boolean | null
+          admin_priority: number | null
+          admin_suggested: boolean | null
           benefits: string | null
           category: string
           created_at: string | null
@@ -619,6 +655,9 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          admin_featured?: boolean | null
+          admin_priority?: number | null
+          admin_suggested?: boolean | null
           benefits?: string | null
           category: string
           created_at?: string | null
@@ -640,6 +679,9 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          admin_featured?: boolean | null
+          admin_priority?: number | null
+          admin_suggested?: boolean | null
           benefits?: string | null
           category?: string
           created_at?: string | null
@@ -709,6 +751,47 @@ export type Database = {
           workout_days?: string[] | null
         }
         Relationships: []
+      }
+      scheduled_workouts: {
+        Row: {
+          admin_message: string | null
+          created_at: string | null
+          id: string
+          scheduled_by_admin: string | null
+          scheduled_date: string
+          status: string | null
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          admin_message?: string | null
+          created_at?: string | null
+          id?: string
+          scheduled_by_admin?: string | null
+          scheduled_date: string
+          status?: string | null
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          admin_message?: string | null
+          created_at?: string | null
+          id?: string
+          scheduled_by_admin?: string | null
+          scheduled_date?: string
+          status?: string | null
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_workouts_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "prepared_workouts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_created_workout_exercises: {
         Row: {
@@ -831,6 +914,103 @@ export type Database = {
             columns: ["wod_id"]
             isOneToOne: false
             referencedRelation: "workout_statistics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_saved_workouts: {
+        Row: {
+          admin_message: string | null
+          created_at: string | null
+          id: string
+          saved_by_admin: string | null
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          admin_message?: string | null
+          created_at?: string | null
+          id?: string
+          saved_by_admin?: string | null
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          admin_message?: string | null
+          created_at?: string | null
+          id?: string
+          saved_by_admin?: string | null
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_saved_workouts_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "prepared_workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_suggested_workouts: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string | null
+          suggested_by_admin: string
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          suggested_by_admin: string
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          suggested_by_admin?: string
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_suggested_workouts_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "prepared_workouts"
             referencedColumns: ["id"]
           },
         ]
@@ -1345,6 +1525,13 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       search_exercises: {
         Args: {
           p_search_term?: string
@@ -1404,7 +1591,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1519,6 +1706,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
