@@ -1,5 +1,5 @@
 
-import { WearableDevice, FitnessData, UserProfile, FitnessGoals } from './types';
+import { WearableDevice, FitnessData, UserProfile, FitnessGoals } from '../../types/wearable';
 
 class BluetoothWearableService {
   private connectedDevices: Map<string, BluetoothDevice> = new Map();
@@ -21,7 +21,7 @@ class BluetoothWearableService {
         id: device.id,
         name: device.name || 'Unknown Device',
         connected: device.gatt?.connected || false,
-        type: 'fitness_tracker' as const,
+        type: 'bluetooth' as const,
         batteryLevel: undefined,
         lastSync: new Date()
       }));
@@ -49,7 +49,7 @@ class BluetoothWearableService {
         id: device.id,
         name: device.name || 'Unknown Device',
         connected: false,
-        type: 'fitness_tracker' as const,
+        type: 'bluetooth' as const,
         batteryLevel: undefined,
         lastSync: new Date()
       };
@@ -97,9 +97,10 @@ class BluetoothWearableService {
     const interval = setInterval(() => {
       callback({
         timestamp: new Date().toISOString(),
+        deviceId: deviceId,
         heartRate: Math.floor(Math.random() * 40) + 60,
         steps: Math.floor(Math.random() * 1000),
-        calories: Math.floor(Math.random() * 100),
+        caloriesBurned: Math.floor(Math.random() * 100),
         distance: Math.random() * 5
       });
     }, 5000);

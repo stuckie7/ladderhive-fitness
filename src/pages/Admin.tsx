@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Users, Calendar, BookMark, Activity } from 'lucide-react';
+import { Shield, Users, Calendar, Bookmark, Activity } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 
 const Admin = () => {
