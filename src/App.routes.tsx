@@ -1,5 +1,5 @@
 
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -30,6 +30,48 @@ import YogaPage from "./pages/YogaPage";
 import YogaRoutineDetailPage from "./pages/YogaRoutineDetailPage";
 import Onboarding from "./pages/Onboarding";
 import BluetoothWearableManager from "./components/BluetoothWearableManager";
+import { DashboardPage } from "./pages/admin/DashboardPage";
+import { UsersPage } from "./pages/admin/UsersPage";
+import { UserDetailPage } from "./pages/admin/UserDetailPage";
+import { AdminLayout } from "./components/admin/AdminLayout";
+import { useAdmin } from "./context/AdminContext";
+import { useEffect, useState } from "react";
+
+// Admin Route Wrapper Component
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin: checkAdmin } = useAdmin();
+
+  useEffect(() => {
+    const verifyAdmin = async () => {
+      try {
+        const adminStatus = await checkAdmin();
+        setIsAdmin(adminStatus);
+      } catch (error) {
+        console.error('Error verifying admin status:', error);
+        setIsAdmin(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    verifyAdmin();
+  }, [checkAdmin]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 // Create a router with all routes
 const router = createBrowserRouter([
@@ -45,6 +87,37 @@ const router = createBrowserRouter([
   {
     path: "/signup",
     element: <Signup />
+  },
+  // Admin routes - Protected by both authentication and admin role
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <DashboardPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/users",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <UsersPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/users/:userId",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <UserDetailPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
   },
   // Protected routes - AuthProvider validation happens in the ProtectedRoute component
   {

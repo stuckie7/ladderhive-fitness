@@ -3,6 +3,7 @@ import React from "react";
 import { RouterProvider } from "react-router-dom";
 import router from "./App.routes"; 
 import { AuthProvider } from "@/context/AuthContext";
+import { AdminProvider } from "@/context/AdminContext";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -21,8 +22,10 @@ function App() {
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RouterProvider router={router} />
-          <Toaster />
+          <AdminProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </AdminProvider>
         </AuthProvider>
       </QueryClientProvider>
     </React.StrictMode>

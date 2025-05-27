@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useExerciseLibraryNavigation } from '@/hooks/use-exercise-library-navigation';
+import { AdminNavLink } from './AdminNavLink';
 
 export function BottomNavigation() {
   const location = useLocation();
@@ -76,6 +77,8 @@ export function BottomNavigation() {
           />
           <span className="text-xs font-medium">Profile</span>
         </Link>
+        
+        <AdminNavLink />
         
         <Sheet>
           <SheetTrigger asChild>
