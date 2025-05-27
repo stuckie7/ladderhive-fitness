@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, LineChart, User, Menu, Bluetooth } from 'lucide-react';
+import { Home, Dumbbell, LineChart, User, Menu, Bluetooth, Sparkles, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -58,6 +57,16 @@ export function BottomNavigation() {
           <span className="text-xs font-medium">Progress</span>
         </Link>
         
+        <Link to="/my-workouts" className="flex flex-col items-center py-1 px-3 space-y-1">
+          <Sparkles 
+            size={20} 
+            className={cn(
+              isActive('/my-workouts') ? 'text-primary' : 'text-muted-foreground'
+            )} 
+          />
+          <span className="text-xs font-medium">For You</span>
+        </Link>
+        
         <Link to="/bluetooth-devices" className="flex flex-col items-center py-1 px-3 space-y-1">
           <Bluetooth 
             size={20} 
@@ -90,29 +99,33 @@ export function BottomNavigation() {
               <span className="text-xs font-medium">More</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl">
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <Link to="/workouts" className="flex flex-col items-center p-4 border rounded-lg">
+          <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl overflow-y-auto">
+            <div className="grid grid-cols-2 gap-4 mt-4 p-4">
+              <Link to="/workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Dumbbell size={24} />
                 <span className="mt-2 text-sm font-medium">Workouts</span>
               </Link>
-              <Link to="/saved-workouts" className="flex flex-col items-center p-4 border rounded-lg">
+              <Link to="/my-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                <ClipboardList size={24} />
+                <span className="mt-2 text-sm font-medium">My Workouts</span>
+              </Link>
+              <Link to="/saved-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Dumbbell size={24} />
                 <span className="mt-2 text-sm font-medium">Saved</span>
               </Link>
-              <Link to="/schedule" className="flex flex-col items-center p-4 border rounded-lg">
+              <Link to="/schedule" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Home size={24} />
                 <span className="mt-2 text-sm font-medium">Schedule</span>
               </Link>
-              <Link to="/mindful-movement" className="flex flex-col items-center p-4 border rounded-lg">
+              <Link to="/mindful-movement" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Home size={24} />
                 <span className="mt-2 text-sm font-medium">Mindful</span>
               </Link>
-              <Link to="/wods" className="flex flex-col items-center p-4 border rounded-lg">
+              <Link to="/wods" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Home size={24} />
                 <span className="mt-2 text-sm font-medium">WODs</span>
               </Link>
-              <Link to="/settings" className="flex flex-col items-center p-4 border rounded-lg">
+              <Link to="/settings" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Home size={24} />
                 <span className="mt-2 text-sm font-medium">Settings</span>
               </Link>

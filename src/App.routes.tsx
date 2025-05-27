@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -30,6 +29,8 @@ import YogaPage from "./pages/YogaPage";
 import YogaRoutineDetailPage from "./pages/YogaRoutineDetailPage";
 import Onboarding from "./pages/Onboarding";
 import BluetoothWearableManager from "./components/BluetoothWearableManager";
+import AssignWorkoutPage from "./pages/admin/AssignWorkout";
+import MyWorkoutsPage from "./pages/MyWorkouts";
 import { DashboardPage } from "./pages/admin/DashboardPage";
 import { UsersPage } from "./pages/admin/UsersPage";
 import { UserDetailPage } from "./pages/admin/UserDetailPage";
@@ -119,6 +120,16 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
+  {
+    path: "/admin/assign-workout",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <AssignWorkoutPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
+  },
   // Protected routes - AuthProvider validation happens in the ProtectedRoute component
   {
     path: "/onboarding",
@@ -139,6 +150,10 @@ const router = createBrowserRouter([
   {
     path: "/schedule",
     element: <ProtectedRoute><Schedule /></ProtectedRoute>
+  },
+  {
+    path: "/my-workouts",
+    element: <ProtectedRoute><MyWorkoutsPage /></ProtectedRoute>
   },
   {
     path: "/settings",
