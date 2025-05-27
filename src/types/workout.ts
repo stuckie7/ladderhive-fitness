@@ -28,6 +28,32 @@ export interface UserWorkout {
   date?: string;
 }
 
+// Add missing ScheduledWorkout interface
+export interface ScheduledWorkout {
+  id: string;
+  user_id: string;
+  workout_id: string;
+  scheduled_date: string;
+  status: string;
+  workout?: Workout;
+  created_at: string;
+}
+
+// Add missing ScheduledWod interface
+export interface ScheduledWod {
+  id: string;
+  scheduledDate: string;
+  duration_minutes: number;
+  type: 'wod';
+  name: string;
+  description: string;
+  difficulty: string;
+  avg_duration_minutes: number;
+  category: string;
+  title: string;
+  created_at: string;
+}
+
 // Types for prepared workouts
 export interface PreparedWorkout {
   id: string;

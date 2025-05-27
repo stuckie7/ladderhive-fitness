@@ -1,5 +1,5 @@
 
-import { WearableDevice, FitnessData, UserProfile, FitnessGoals, DeviceConnectionOptions } from './types';
+import type { WearableDevice, FitnessData, UserProfile, FitnessGoals, DeviceConnectionOptions } from './types';
 
 export interface WearableService {
   // Device management
@@ -14,4 +14,4 @@ export interface WearableService {
   getConnectedDevices(): Promise<WearableDevice[]>;
 }
 
-export { WearableDevice, FitnessData, UserProfile, FitnessGoals, DeviceConnectionOptions };
+export type { WearableDevice, FitnessData, UserProfile, FitnessGoals, DeviceConnectionOptions };

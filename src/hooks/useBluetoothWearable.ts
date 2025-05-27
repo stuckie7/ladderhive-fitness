@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import BluetoothWearableService, { bluetoothWearableService } from '../services/wearables/BluetoothWearableService';
+import { bluetoothWearableService } from '../services/wearables/BluetoothWearableService';
 import { WearableDevice, FitnessData, UserProfile, FitnessGoals } from '../types/wearable';
 
 type BluetoothStatus = 'idle' | 'searching' | 'connecting' | 'connected' | 'error' | 'disconnected';
@@ -105,7 +105,7 @@ export function useBluetoothWearable(): UseBluetoothWearableReturn {
         }
       });
     };
-  }, [isSupported, updateDevices, devices]);
+  }, [isSupported, updateDevices]);
   
   // Request a new device
   const requestDevice = useCallback(async (): Promise<WearableDevice> => {
