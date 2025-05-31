@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 
 interface ScheduledWorkout {
   id: string;
@@ -62,10 +63,10 @@ export const useScheduledWorkouts = (selectedDate?: Date) => {
         const dateStr = selectedDate.toISOString().split('T')[0];
         query = query.eq('scheduled_date', dateStr);
       } else {
-        // Fetch current month's workouts for calendar view
+        // Fetch a 3-month range (previous month, current month, and next month) for calendar view
         const now = new Date();
-        const monthStart = startOfMonth(now);
-        const monthEnd = endOfMonth(now);
+        const monthStart = startOfMonth(subMonths(now, 1));
+        const monthEnd = endOfMonth(addMonths(now, 1));
         
         const startStr = format(monthStart, 'yyyy-MM-dd');
         const endStr = format(monthEnd, 'yyyy-MM-dd');

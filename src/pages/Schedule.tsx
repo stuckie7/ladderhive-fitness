@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,6 +23,7 @@ import { CalendarGrid } from "@/components/schedule/CalendarGrid";
 import { DayExpansionPanel } from "@/components/schedule/DayExpansionPanel";
 import { CalendarNavigation } from "@/components/schedule/CalendarNavigation";
 import { useToast } from "@/hooks/use-toast";
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 interface ScheduledWorkout {
   id: string;
@@ -51,6 +52,47 @@ const Schedule = () => {
   const [expandedWorkouts, setExpandedWorkouts] = useState<ScheduledWorkout[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Get scheduled workouts for the current calendar month
+  const { data: calendarWorkouts, isLoading: isLoadingCalendar, refetch: refetchCalendar } = useQuery({
+    queryKey: ['calendar-scheduled-workouts', calendarDate.getFullYear(), calendarDate.getMonth()],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const monthStart = startOfMonth(calendarDate);
+      const monthEnd = endOfMonth(calendarDate);
+      
+      const startStr = format(monthStart, 'yyyy-MM-dd');
+      const endStr = format(monthEnd, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('scheduled_workouts')
+        .select(`
+          *,
+          prepared_workouts (
+            id,
+            title,
+            difficulty,
+            duration_minutes,
+            description,
+            thumbnail_url,
+            video_url
+          )
+        `)
+        .eq('user_id', user.id)
+        .gte('scheduled_date', startStr)
+        .lte('scheduled_date', endStr)
+        .order('scheduled_date', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching calendar workouts:', error);
+        return [];
+      }
+      
+      return data as ScheduledWorkout[];
+    },
+    enabled: !!user,
+  });
   
   // Get planned workouts for the selected date (existing functionality)
   const { data: plannedWorkouts, isLoading: isLoadingPlanned } = useQuery({
@@ -82,8 +124,41 @@ const Schedule = () => {
     enabled: !!user && !!date,
   });
 
-  // Get scheduled workouts for the calendar month
-  const { scheduledWorkouts, isLoading: isLoadingScheduled, refetch: refetchScheduled } = useScheduledWorkouts();
+  // Get scheduled workouts for the selected date
+  const { data: selectedDateWorkouts, isLoading: isLoadingScheduled, refetch: refetchScheduled } = useQuery({
+    queryKey: ['scheduled-workouts-date', date?.toISOString()],
+    queryFn: async () => {
+      if (!user || !date) return [];
+      
+      const dateStr = format(date, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('scheduled_workouts')
+        .select(`
+          *,
+          prepared_workouts (
+            id,
+            title,
+            difficulty,
+            duration_minutes,
+            description,
+            thumbnail_url,
+            video_url
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('scheduled_date', dateStr)
+        .order('scheduled_date', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching scheduled workouts:', error);
+        return [];
+      }
+      
+      return data as ScheduledWorkout[];
+    },
+    enabled: !!user && !!date,
+  });
   
   const formattedDate = date ? format(date, 'PPP') : 'Select a date';
   
@@ -112,6 +187,7 @@ const Schedule = () => {
       });
 
       refetchScheduled();
+      refetchCalendar();
       
       // Update expanded workouts if needed
       if (expandedWorkouts.length > 0) {
@@ -138,6 +214,11 @@ const Schedule = () => {
       description: `Starting ${workout.prepared_workouts?.title}`,
     });
   };
+
+  // Refetch calendar workouts when calendar date changes
+  useEffect(() => {
+    refetchCalendar();
+  }, [calendarDate, refetchCalendar]);
   
   return (
     <AppLayout>
@@ -179,7 +260,7 @@ const Schedule = () => {
                 />
               </CardHeader>
               <CardContent>
-                {isLoadingScheduled ? (
+                {isLoadingCalendar ? (
                   <div className="flex items-center justify-center py-8">
                     <p>Loading calendar...</p>
                   </div>
@@ -187,7 +268,7 @@ const Schedule = () => {
                   <>
                     <CalendarGrid
                       selectedDate={calendarDate}
-                      scheduledWorkouts={scheduledWorkouts || []}
+                      scheduledWorkouts={calendarWorkouts || []}
                       onDateSelect={setDate}
                       onDayExpand={handleDayExpand}
                     />
@@ -215,21 +296,18 @@ const Schedule = () => {
               <CardContent>
                 {isLoadingScheduled ? (
                   <p>Loading scheduled workouts...</p>
-                ) : scheduledWorkouts && scheduledWorkouts.length > 0 ? (
+                ) : selectedDateWorkouts && selectedDateWorkouts.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {scheduledWorkouts
-                      .filter(workout => {
-                        if (!date) return false;
-                        const selectedDateStr = format(date, 'yyyy-MM-dd');
-                        return workout.scheduled_date === selectedDateStr;
-                      })
-                      .map((scheduledWorkout) => (
-                        <ScheduledWorkoutCard 
-                          key={scheduledWorkout.id} 
-                          scheduledWorkout={scheduledWorkout}
-                          onStatusUpdate={refetchScheduled}
-                        />
-                      ))}
+                    {selectedDateWorkouts.map((scheduledWorkout) => (
+                      <ScheduledWorkoutCard 
+                        key={scheduledWorkout.id} 
+                        scheduledWorkout={scheduledWorkout}
+                        onStatusUpdate={() => {
+                          refetchScheduled();
+                          refetchCalendar();
+                        }}
+                      />
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
