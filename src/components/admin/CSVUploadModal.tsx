@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -117,11 +116,11 @@ user@example.com,550e8400-e29b-41d4-a716-446655440001,2024-06-03,Recovery day wo
           if (!currentUser) throw new Error('Not authenticated');
 
           // Look up user by email using auth.admin.listUsers()
-          const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
+          const { data: usersResponse, error: usersError } = await supabase.auth.admin.listUsers();
           
           if (usersError) throw usersError;
           
-          const user = users.users.find(u => u.email === row.user_email);
+          const user = usersResponse.users.find((u: any) => u.email === row.user_email);
           if (!user) {
             throw new Error(`User with email ${row.user_email} not found`);
           }
