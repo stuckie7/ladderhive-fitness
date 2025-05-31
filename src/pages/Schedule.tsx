@@ -16,15 +16,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
-import { useToast } from "@/components/ui/use-toast";
+import { ScheduledWorkoutCard } from "@/components/schedule/ScheduledWorkoutCard";
+import { useScheduledWorkouts } from "@/hooks/use-scheduled-workouts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Schedule = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const { user } = useAuth();
-  const { toast } = useToast();
   
-  // Get planned workouts for the selected date
-  const { data: plannedWorkouts, isLoading } = useQuery({
+  // Get planned workouts for the selected date (existing functionality)
+  const { data: plannedWorkouts, isLoading: isLoadingPlanned } = useQuery({
     queryKey: ['planned-workouts', date?.toISOString()],
     queryFn: async () => {
       if (!user || !date) return [];
@@ -45,11 +46,6 @@ const Schedule = () => {
       
       if (error) {
         console.error('Error fetching planned workouts:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load your planned workouts.',
-          variant: 'destructive',
-        });
         return [];
       }
       
@@ -57,6 +53,9 @@ const Schedule = () => {
     },
     enabled: !!user && !!date,
   });
+
+  // Get scheduled workouts for the selected date (new functionality)
+  const { scheduledWorkouts, isLoading: isLoadingScheduled, refetch: refetchScheduled } = useScheduledWorkouts(date);
   
   const formattedDate = date ? format(date, 'PPP') : 'Select a date';
   
@@ -84,40 +83,78 @@ const Schedule = () => {
           </Popover>
         </div>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Workouts for {formattedDate}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p>Loading workouts...</p>
-            ) : plannedWorkouts && plannedWorkouts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {plannedWorkouts.map((item) => (
-                  <WorkoutCard 
-                    key={item.id} 
-                    workout={{
-                      ...item.workout,
-                      date: format(new Date(item.planned_for), 'MMM dd, yyyy'),
-                    }}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  No workouts scheduled for this day.
-                </p>
-                <Button 
-                  className="mt-4"
-                  onClick={() => window.location.href = '/workouts'}
-                >
-                  Add Workout
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="scheduled" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="scheduled">Admin Scheduled</TabsTrigger>
+            <TabsTrigger value="planned">Self Planned</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="scheduled" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Scheduled Workouts for {formattedDate}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingScheduled ? (
+                  <p>Loading scheduled workouts...</p>
+                ) : scheduledWorkouts && scheduledWorkouts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {scheduledWorkouts.map((scheduledWorkout) => (
+                      <ScheduledWorkoutCard 
+                        key={scheduledWorkout.id} 
+                        scheduledWorkout={scheduledWorkout}
+                        onStatusUpdate={refetchScheduled}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      No admin-scheduled workouts for this day.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="planned" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Self-Planned Workouts for {formattedDate}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingPlanned ? (
+                  <p>Loading workouts...</p>
+                ) : plannedWorkouts && plannedWorkouts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {plannedWorkouts.map((item) => (
+                      <WorkoutCard 
+                        key={item.id} 
+                        workout={{
+                          ...item.workout,
+                          date: format(new Date(item.planned_for), 'MMM dd, yyyy'),
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      No self-planned workouts for this day.
+                    </p>
+                    <Button 
+                      className="mt-4"
+                      onClick={() => window.location.href = '/workouts'}
+                    >
+                      Add Workout
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
