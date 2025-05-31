@@ -447,6 +447,33 @@ export type Database = {
         }
         Relationships: []
       }
+      mindful_movements: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          duration_minutes: number | null
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          duration_minutes?: number | null
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          duration_minutes?: number | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       muscle_groups: {
         Row: {
           body_region: string

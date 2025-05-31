@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -118,6 +117,16 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <AdminRoute>
           <UserDetailPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/schedules",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <WorkoutScheduleManager />
         </AdminRoute>
       </ProtectedRoute>
     ),
