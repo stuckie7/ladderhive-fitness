@@ -112,42 +112,33 @@ user@example.com,550e8400-e29b-41d4-a716-446655440001,2024-06-03,Recovery day wo
         const row = result.success[i];
         
         try {
-          // Get user ID from email
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', '(SELECT id FROM auth.users WHERE email = $1)')
-            .single();
+          // Get current admin user
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (!currentUser) throw new Error('Not authenticated');
 
-          if (profileError) {
-            // Try a different approach - look up user by email in auth metadata
-            const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
-            
-            if (usersError) throw usersError;
-            
-            const user = users.users.find(u => u.email === row.user_email);
-            if (!user) {
-              throw new Error(`User with email ${row.user_email} not found`);
-            }
-
-            // Get current admin user
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            if (!currentUser) throw new Error('Not authenticated');
-
-            // Insert scheduled workout
-            const { error: insertError } = await supabase
-              .from('scheduled_workouts')
-              .insert({
-                user_id: user.id,
-                workout_id: row.workout_id,
-                scheduled_date: row.scheduled_date,
-                scheduled_by_admin: currentUser.id,
-                admin_message: row.admin_message || null,
-                status: 'scheduled'
-              });
-
-            if (insertError) throw insertError;
+          // Look up user by email using auth.admin.listUsers()
+          const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
+          
+          if (usersError) throw usersError;
+          
+          const user = users.users.find(u => u.email === row.user_email);
+          if (!user) {
+            throw new Error(`User with email ${row.user_email} not found`);
           }
+
+          // Insert scheduled workout
+          const { error: insertError } = await supabase
+            .from('scheduled_workouts')
+            .insert({
+              user_id: user.id,
+              workout_id: row.workout_id,
+              scheduled_date: row.scheduled_date,
+              scheduled_by_admin: currentUser.id,
+              admin_message: row.admin_message || null,
+              status: 'scheduled'
+            });
+
+          if (insertError) throw insertError;
         } catch (error: any) {
           const errorIndex = result.success.findIndex(r => r === row);
           result.errors.push({

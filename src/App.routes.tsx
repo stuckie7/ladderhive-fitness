@@ -1,3 +1,4 @@
+
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -36,6 +37,7 @@ import { DashboardPage } from "./pages/admin/DashboardPage";
 import { UsersPage } from "./pages/admin/UsersPage";
 import { UserDetailPage } from "./pages/admin/UserDetailPage";
 import { AdminLayout } from "./components/admin/AdminLayout";
+import WorkoutScheduleManager from "./pages/admin/WorkoutScheduleManager";
 import { useAdmin } from "./context/AdminContext";
 import { useEffect, useState } from "react";
 
