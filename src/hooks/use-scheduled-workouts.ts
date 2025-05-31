@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 interface ScheduledWorkout {
   id: string;
@@ -20,6 +20,7 @@ interface ScheduledWorkout {
     duration_minutes: number;
     description?: string;
     thumbnail_url?: string;
+    video_url?: string;
   } | null;
 }
 
@@ -48,16 +49,28 @@ export const useScheduledWorkouts = (selectedDate?: Date) => {
             difficulty,
             duration_minutes,
             description,
-            thumbnail_url
+            thumbnail_url,
+            video_url
           )
         `)
         .eq('user_id', user.id)
         .order('scheduled_date', { ascending: true });
 
       // If a specific date is selected, filter by that date
+      // Otherwise, fetch the current month's workouts for calendar view
       if (selectedDate) {
         const dateStr = selectedDate.toISOString().split('T')[0];
         query = query.eq('scheduled_date', dateStr);
+      } else {
+        // Fetch current month's workouts for calendar view
+        const now = new Date();
+        const monthStart = startOfMonth(now);
+        const monthEnd = endOfMonth(now);
+        
+        const startStr = format(monthStart, 'yyyy-MM-dd');
+        const endStr = format(monthEnd, 'yyyy-MM-dd');
+        
+        query = query.gte('scheduled_date', startStr).lte('scheduled_date', endStr);
       }
 
       const { data, error } = await query;
