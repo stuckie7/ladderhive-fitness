@@ -58,7 +58,7 @@ const Index = () => {
                   Your <span className="text-green-400">Personalized</span> Fitness Journey
                 </h1>
                 <p className="max-w-[600px] text-gray-300 md:text-xl">
-                  Transform your body and mind with AI-powered workouts, expert guidance, and real-time progress tracking.
+                  Transform your body and mind with Admin-Designed smart workouts, expert guidance, and real-time progress tracking.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
