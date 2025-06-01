@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -16,15 +16,86 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
-import { useToast } from "@/components/ui/use-toast";
+import { ScheduledWorkoutCard } from "@/components/schedule/ScheduledWorkoutCard";
+import { useScheduledWorkouts } from "@/hooks/use-scheduled-workouts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarGrid } from "@/components/schedule/CalendarGrid";
+import { DayExpansionPanel } from "@/components/schedule/DayExpansionPanel";
+import { CalendarNavigation } from "@/components/schedule/CalendarNavigation";
+import { useToast } from "@/hooks/use-toast";
+import { startOfMonth, endOfMonth } from 'date-fns';
+
+interface ScheduledWorkout {
+  id: string;
+  user_id: string;
+  workout_id: string;
+  scheduled_date: string;
+  status: string;
+  admin_message: string | null;
+  created_at: string;
+  scheduled_by_admin: string | null;
+  prepared_workouts: {
+    id: string;
+    title: string;
+    difficulty: string;
+    duration_minutes: number;
+    description?: string;
+    thumbnail_url?: string;
+    video_url?: string;
+  } | null;
+}
 
 const Schedule = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+  const [expandedDate, setExpandedDate] = useState<Date | null>(null);
+  const [expandedWorkouts, setExpandedWorkouts] = useState<ScheduledWorkout[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Get scheduled workouts for the current calendar month
+  const { data: calendarWorkouts, isLoading: isLoadingCalendar, refetch: refetchCalendar } = useQuery({
+    queryKey: ['calendar-scheduled-workouts', calendarDate.getFullYear(), calendarDate.getMonth()],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const monthStart = startOfMonth(calendarDate);
+      const monthEnd = endOfMonth(calendarDate);
+      
+      const startStr = format(monthStart, 'yyyy-MM-dd');
+      const endStr = format(monthEnd, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('scheduled_workouts')
+        .select(`
+          *,
+          prepared_workouts (
+            id,
+            title,
+            difficulty,
+            duration_minutes,
+            description,
+            thumbnail_url,
+            video_url
+          )
+        `)
+        .eq('user_id', user.id)
+        .gte('scheduled_date', startStr)
+        .lte('scheduled_date', endStr)
+        .order('scheduled_date', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching calendar workouts:', error);
+        return [];
+      }
+      
+      return data as ScheduledWorkout[];
+    },
+    enabled: !!user,
+  });
   
-  // Get planned workouts for the selected date
-  const { data: plannedWorkouts, isLoading } = useQuery({
+  // Get planned workouts for the selected date (existing functionality)
+  const { data: plannedWorkouts, isLoading: isLoadingPlanned } = useQuery({
     queryKey: ['planned-workouts', date?.toISOString()],
     queryFn: async () => {
       if (!user || !date) return [];
@@ -45,11 +116,6 @@ const Schedule = () => {
       
       if (error) {
         console.error('Error fetching planned workouts:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load your planned workouts.',
-          variant: 'destructive',
-        });
         return [];
       }
       
@@ -57,8 +123,102 @@ const Schedule = () => {
     },
     enabled: !!user && !!date,
   });
+
+  // Get scheduled workouts for the selected date
+  const { data: selectedDateWorkouts, isLoading: isLoadingScheduled, refetch: refetchScheduled } = useQuery({
+    queryKey: ['scheduled-workouts-date', date?.toISOString()],
+    queryFn: async () => {
+      if (!user || !date) return [];
+      
+      const dateStr = format(date, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('scheduled_workouts')
+        .select(`
+          *,
+          prepared_workouts (
+            id,
+            title,
+            difficulty,
+            duration_minutes,
+            description,
+            thumbnail_url,
+            video_url
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('scheduled_date', dateStr)
+        .order('scheduled_date', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching scheduled workouts:', error);
+        return [];
+      }
+      
+      return data as ScheduledWorkout[];
+    },
+    enabled: !!user && !!date,
+  });
   
   const formattedDate = date ? format(date, 'PPP') : 'Select a date';
+  
+  const handleDayExpand = (date: Date, workouts: ScheduledWorkout[]) => {
+    setExpandedDate(date);
+    setExpandedWorkouts(workouts);
+  };
+  
+  const handleCloseDayExpansion = () => {
+    setExpandedDate(null);
+    setExpandedWorkouts([]);
+  };
+  
+  const handleStatusUpdate = async (workoutId: string, status: 'completed' | 'skipped') => {
+    try {
+      const { error } = await supabase
+        .from('scheduled_workouts')
+        .update({ status })
+        .eq('id', workoutId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Status Updated',
+        description: `Workout marked as ${status}`,
+      });
+
+      refetchScheduled();
+      refetchCalendar();
+      
+      // Update expanded workouts if needed
+      if (expandedWorkouts.length > 0) {
+        const updatedWorkouts = expandedWorkouts.map(w => 
+          w.id === workoutId ? { ...w, status } : w
+        );
+        setExpandedWorkouts(updatedWorkouts);
+      }
+    } catch (error: any) {
+      console.error('Error updating status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update workout status',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleStartWorkout = (workout: ScheduledWorkout) => {
+    // TODO: Implement workout start functionality
+    console.log('Starting workout:', workout);
+    toast({
+      title: 'Starting Workout',
+      description: `Starting ${workout.prepared_workouts?.title}`,
+    });
+  };
+
+  // Refetch calendar workouts when calendar date changes
+  useEffect(() => {
+    refetchCalendar();
+  }, [calendarDate, refetchCalendar]);
   
   return (
     <AppLayout>
@@ -84,40 +244,119 @@ const Schedule = () => {
           </Popover>
         </div>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Workouts for {formattedDate}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p>Loading workouts...</p>
-            ) : plannedWorkouts && plannedWorkouts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {plannedWorkouts.map((item) => (
-                  <WorkoutCard 
-                    key={item.id} 
-                    workout={{
-                      ...item.workout,
-                      date: format(new Date(item.planned_for), 'MMM dd, yyyy'),
-                    }}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  No workouts scheduled for this day.
-                </p>
-                <Button 
-                  className="mt-4"
-                  onClick={() => window.location.href = '/workouts'}
-                >
-                  Add Workout
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="calendar" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+            <TabsTrigger value="scheduled">Admin Scheduled</TabsTrigger>
+            <TabsTrigger value="planned">Self Planned</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="calendar" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CalendarNavigation 
+                  currentDate={calendarDate}
+                  onDateChange={setCalendarDate}
+                />
+              </CardHeader>
+              <CardContent>
+                {isLoadingCalendar ? (
+                  <div className="flex items-center justify-center py-8">
+                    <p>Loading calendar...</p>
+                  </div>
+                ) : (
+                  <>
+                    <CalendarGrid
+                      selectedDate={calendarDate}
+                      scheduledWorkouts={calendarWorkouts || []}
+                      onDateSelect={setDate}
+                      onDayExpand={handleDayExpand}
+                    />
+                    
+                    {expandedDate && expandedWorkouts.length > 0 && (
+                      <DayExpansionPanel
+                        date={expandedDate}
+                        workouts={expandedWorkouts}
+                        onClose={handleCloseDayExpansion}
+                        onStatusUpdate={handleStatusUpdate}
+                        onStartWorkout={handleStartWorkout}
+                      />
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="scheduled" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Scheduled Workouts for {formattedDate}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingScheduled ? (
+                  <p>Loading scheduled workouts...</p>
+                ) : selectedDateWorkouts && selectedDateWorkouts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {selectedDateWorkouts.map((scheduledWorkout) => (
+                      <ScheduledWorkoutCard 
+                        key={scheduledWorkout.id} 
+                        scheduledWorkout={scheduledWorkout}
+                        onStatusUpdate={() => {
+                          refetchScheduled();
+                          refetchCalendar();
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      No admin-scheduled workouts for this day.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="planned" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Self-Planned Workouts for {formattedDate}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingPlanned ? (
+                  <p>Loading workouts...</p>
+                ) : plannedWorkouts && plannedWorkouts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {plannedWorkouts.map((item) => (
+                      <WorkoutCard 
+                        key={item.id} 
+                        workout={{
+                          ...item.workout,
+                          date: format(new Date(item.planned_for), 'MMM dd, yyyy'),
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      No self-planned workouts for this day.
+                    </p>
+                    <Button 
+                      className="mt-4"
+                      onClick={() => window.location.href = '/workouts'}
+                    >
+                      Add Workout
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

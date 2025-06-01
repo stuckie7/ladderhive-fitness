@@ -37,6 +37,7 @@ import { DashboardPage } from "./pages/admin/DashboardPage";
 import { UsersPage } from "./pages/admin/UsersPage";
 import { UserDetailPage } from "./pages/admin/UserDetailPage";
 import { AdminLayout } from "./components/admin/AdminLayout";
+import WorkoutScheduleManager from "./pages/admin/WorkoutScheduleManager";
 import { useAdmin } from "./context/AdminContext";
 import { useEffect, useState } from "react";
 
@@ -118,6 +119,16 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <AdminRoute>
           <UserDetailPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/schedules",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <WorkoutScheduleManager />
         </AdminRoute>
       </ProtectedRoute>
     ),
