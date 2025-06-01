@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --config vite.config.ts",
+    "build": "vite build --mode production --config vite.config.ts",
     "build:dev": "vite build --mode development",
     "clean": "rm -rf dist node_modules/.vite",
     "lint": "eslint .",
