@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
-import { YogaWorkout } from "@/hooks/use-yoga-workouts";
 
 export interface MindfulYogaWorkout {
   id: string;
@@ -21,17 +20,7 @@ export const useYogaMindfulMovements = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [timeFilter, setTimeFilter] = useState<string | null>(null);
-  const [intensityFilter, setIntensityFilter] = useState<string | null>(null);
-  const [stressTypeFilter, setStressTypeFilter] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  // Options for the mood quiz
-  const moodOptions = {
-    time: ["quick", "medium", "extended"],
-    intensity: ["gentle", "moderate", "vigorous"],
-    stressType: ["anxiety", "focus", "energy", "sleep", "relaxation"]
-  };
   
   // Fetch data from yoga_workouts table
   useEffect(() => {
@@ -81,7 +70,7 @@ export const useYogaMindfulMovements = () => {
           };
         }) || [];
         
-        // Apply filters
+        // Apply search filter
         let filtered = [...mappedWorkouts];
         
         if (searchQuery) {
@@ -89,24 +78,6 @@ export const useYogaMindfulMovements = () => {
           filtered = filtered.filter(workout => 
             workout.title.toLowerCase().includes(query) || 
             workout.description.toLowerCase().includes(query)
-          );
-        }
-        
-        if (timeFilter) {
-          filtered = filtered.filter(workout => 
-            workout.timeNeeded.toLowerCase() === timeFilter.toLowerCase()
-          );
-        }
-        
-        if (intensityFilter) {
-          filtered = filtered.filter(workout => 
-            workout.intensity.toLowerCase() === intensityFilter.toLowerCase()
-          );
-        }
-        
-        if (stressTypeFilter) {
-          filtered = filtered.filter(workout => 
-            workout.stressType.toLowerCase() === stressTypeFilter.toLowerCase()
           );
         }
         
@@ -125,7 +96,7 @@ export const useYogaMindfulMovements = () => {
     };
     
     fetchYogaMindfulMovements();
-  }, [searchQuery, timeFilter, intensityFilter, stressTypeFilter, toast]);
+  }, [searchQuery, toast]);
   
   return {
     workouts,
@@ -133,12 +104,5 @@ export const useYogaMindfulMovements = () => {
     error,
     searchQuery,
     setSearchQuery,
-    timeFilter,
-    setTimeFilter,
-    intensityFilter,
-    setIntensityFilter,
-    stressTypeFilter,
-    setStressTypeFilter,
-    moodOptions
   };
 };
