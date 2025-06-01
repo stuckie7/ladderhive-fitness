@@ -71,13 +71,20 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       query = query.in('difficulty', filters.difficulty);
     }
 
-    // Apply category filter
-    if (filters.category.length > 0) {
-      query = query.in('category', filters.category);
+    // Apply category filter - handle both array and string values
+    if (filters.category && filters.category.length > 0) {
+      // If it's a string (from tab selection), convert to array
+      const categories = Array.isArray(filters.category) 
+        ? filters.category 
+        : [filters.category];
+      
+      if (categories.length > 0) {
+        query = query.in('category', categories);
+      }
     }
 
     // Apply duration filter
-    if (filters.duration.length > 0) {
+    if (filters.duration && filters.duration.length > 0) {
       const durationConditions = filters.duration.map(duration => {
         switch (duration) {
           case '<15min': return 'avg_duration_minutes.lt.15';
@@ -91,6 +98,42 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       if (durationConditions.length > 0) {
         query = query.or(durationConditions.join(','));
       }
+    }
+
+    // Apply equipment filter
+    if (filters.equipment && filters.equipment.length > 0) {
+      // Handle 'None' equipment case
+      if (filters.equipment.includes('None')) {
+        query = query.is('equipment_required', null);
+      } else {
+        // For other equipment, use contains operator to check if the equipment array contains any of the selected values
+        const equipmentConditions = filters.equipment.map(equip => 
+          `equipment_required.cs.{"${equip}"}`
+        );
+        
+        if (equipmentConditions.length > 0) {
+          query = query.or(equipmentConditions.join(','));
+        }
+      }
+    }
+
+    // Apply special filters
+    if (filters.special && filters.special.length > 0) {
+      filters.special.forEach(special => {
+        switch (special) {
+          case 'With Videos':
+            query = query.not('video_demo', 'is', null);
+            break;
+          case 'New This Week':
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            query = query.gte('created_at', oneWeekAgo.toISOString());
+            break;
+          // 'Saved' filter is handled client-side in the Wods component
+          default:
+            break;
+        }
+      });
     }
 
     // Apply pagination and ordering
