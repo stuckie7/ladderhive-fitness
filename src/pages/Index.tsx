@@ -113,7 +113,7 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-gray-300">
-                  AI-powered workout plans that adapt to your progress, goals, and available equipment.
+                  Admin-Designed smart workout plans that adapt to your progress, goals, and available equipment.
                 </CardDescription>
               </CardContent>
             </Card>
