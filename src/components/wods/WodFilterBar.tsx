@@ -23,6 +23,7 @@ interface WodFilterBarProps {
   isSticky?: boolean;
 }
 
+// Updated categories to match database values and common WOD types
 const categories = [
   "Girl WODs",
   "Hero WODs", 
@@ -51,6 +52,7 @@ export const WodFilterBar = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchValue !== filters.search) {
+        console.log('Updating search filter:', searchValue);
         onFilterChange({
           ...filters,
           search: searchValue
@@ -85,6 +87,8 @@ export const WodFilterBar = ({
       newValues = [...currentValues, value];
     }
     
+    console.log(`Updating ${category} filter:`, { value, isActive, newValues });
+    
     onFilterChange({
       ...filters,
       [category]: newValues,
@@ -92,6 +96,7 @@ export const WodFilterBar = ({
   };
 
   const resetFilters = () => {
+    console.log('Resetting all filters');
     onFilterChange({
       search: "",
       difficulty: [],
@@ -246,6 +251,7 @@ interface FilterSelectProps {
 const FilterSelect = ({ label, options, selected, onChange }: FilterSelectProps) => {
   const handleValueChange = (value: string) => {
     const isActive = selected.includes(value);
+    console.log(`${label} filter selection:`, { value, isActive, selected });
     onChange(value, isActive);
   };
 
