@@ -1,5 +1,5 @@
 
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/context/AdminContext';
 import { Button } from '@/components/ui/button';
@@ -33,27 +33,33 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r">
-        <div className="p-4 border-b">
-          <h1 className="text-xl font-bold">Admin Panel</h1>
+      <div className="w-64 bg-gray-800 text-white border-r border-gray-700">
+        <div className="p-4 border-b border-gray-700">
+          <h1 className="text-xl font-bold text-white">Admin Panel</h1>
         </div>
-        <nav className="p-2">
+        <nav className="p-2 space-y-1">
           {menuItems.map((item) => (
             <Button
               key={item.path}
               variant="ghost"
-              className={`w-full justify-start mb-1 ${window.location.pathname === item.path ? 'bg-accent' : ''}`}
+              className={`w-full justify-start mb-1 text-gray-200 hover:bg-gray-700 hover:text-white transition-colors ${
+                window.location.pathname === item.path 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:text-white'
+              }`}
               onClick={() => navigate(item.path)}
             >
-              {item.icon}
+              <span className="text-gray-400 group-hover:text-white">
+                {React.cloneElement(item.icon, { className: 'h-5 w-5' })}
+              </span>
               <span className="ml-2">{item.label}</span>
             </Button>
           ))}
           <Button
             variant="ghost"
-            className="w-full justify-start mt-4 text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="w-full justify-start mt-6 text-red-400 hover:bg-red-900/50 hover:text-red-200 transition-colors"
             onClick={() => {
               // Handle sign out
               navigate('/');

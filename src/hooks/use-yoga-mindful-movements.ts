@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
-import { YogaWorkout } from "@/hooks/use-yoga-workouts";
 
 export interface MindfulYogaWorkout {
   id: string;
@@ -16,22 +15,20 @@ export interface MindfulYogaWorkout {
   videoUrl?: string;
 }
 
-export const useYogaMindfulMovements = () => {
+interface UseYogaMindfulMovementsReturn {
+  workouts: MindfulYogaWorkout[];
+  isLoading: boolean;
+  error: Error | null;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+}
+
+export const useYogaMindfulMovements = (): UseYogaMindfulMovementsReturn => {
   const [workouts, setWorkouts] = useState<MindfulYogaWorkout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [timeFilter, setTimeFilter] = useState<string | null>(null);
-  const [intensityFilter, setIntensityFilter] = useState<string | null>(null);
-  const [stressTypeFilter, setStressTypeFilter] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  // Options for the mood quiz
-  const moodOptions = {
-    time: ["quick", "medium", "extended"],
-    intensity: ["gentle", "moderate", "vigorous"],
-    stressType: ["anxiety", "focus", "energy", "sleep", "relaxation"]
-  };
   
   // Fetch data from yoga_workouts table
   useEffect(() => {
@@ -81,42 +78,25 @@ export const useYogaMindfulMovements = () => {
           };
         }) || [];
         
-        // Apply filters
-        let filtered = [...mappedWorkouts];
+        // Apply search filter if there's a query
+        let filteredWorkouts = [...mappedWorkouts];
         
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
-          filtered = filtered.filter(workout => 
+          filteredWorkouts = filteredWorkouts.filter(workout => 
             workout.title.toLowerCase().includes(query) || 
             workout.description.toLowerCase().includes(query)
           );
         }
         
-        if (timeFilter) {
-          filtered = filtered.filter(workout => 
-            workout.timeNeeded.toLowerCase() === timeFilter.toLowerCase()
-          );
-        }
-        
-        if (intensityFilter) {
-          filtered = filtered.filter(workout => 
-            workout.intensity.toLowerCase() === intensityFilter.toLowerCase()
-          );
-        }
-        
-        if (stressTypeFilter) {
-          filtered = filtered.filter(workout => 
-            workout.stressType.toLowerCase() === stressTypeFilter.toLowerCase()
-          );
-        }
-        
-        setWorkouts(filtered);
-      } catch (err: any) {
+        setWorkouts(filteredWorkouts);
+        setError(null);
+      } catch (err) {
         console.error("Error fetching yoga mindful movements:", err);
-        setError(err);
+        setError(err instanceof Error ? err : new Error("An error occurred"));
         toast({
           title: "Error",
-          description: "Failed to load mindful movement practices",
+          description: "Failed to load mindful movements. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -125,7 +105,7 @@ export const useYogaMindfulMovements = () => {
     };
     
     fetchYogaMindfulMovements();
-  }, [searchQuery, timeFilter, intensityFilter, stressTypeFilter, toast]);
+  }, [searchQuery, toast]);
   
   return {
     workouts,
@@ -133,12 +113,5 @@ export const useYogaMindfulMovements = () => {
     error,
     searchQuery,
     setSearchQuery,
-    timeFilter,
-    setTimeFilter,
-    intensityFilter,
-    setIntensityFilter,
-    stressTypeFilter,
-    setStressTypeFilter,
-    moodOptions
   };
 };

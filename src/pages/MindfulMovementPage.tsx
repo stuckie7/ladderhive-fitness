@@ -4,27 +4,19 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
-import { Search, Leaf } from "lucide-react";
-import { FilterBar } from "@/components/mindfulness/FilterBar";
+import { Search, Leaf, Heart, Clock } from "lucide-react";
 import { MoodQuiz } from "@/components/mindfulness/MoodQuiz";
 import { BreathingAnimation } from "@/components/mindfulness/BreathingAnimation";
-import { YogaWithBreathing } from "@/components/mindfulness/YogaWithBreathing";
 import { useYogaMindfulMovements } from "@/hooks/use-yoga-mindful-movements";
+import { YogaWithBreathing } from "@/components/mindfulness/YogaWithBreathing";
 
 const MindfulMovementPage = () => {
   const {
     workouts,
     isLoading,
     error,
-    timeFilter,
-    setTimeFilter,
-    intensityFilter,
-    setIntensityFilter,
-    stressTypeFilter,
-    setStressTypeFilter,
     searchQuery,
-    setSearchQuery,
-    moodOptions
+    setSearchQuery
   } = useYogaMindfulMovements();
   
   const [showMoodQuiz, setShowMoodQuiz] = useState(false);
@@ -38,15 +30,12 @@ const MindfulMovementPage = () => {
       setDaysOfPractice(parseInt(savedDays, 10));
     }
   }, []);
-  
+
   // Handle mood quiz completion
-  const handleMoodQuizComplete = ({ time, intensity, stressType }) => {
-    setTimeFilter(time);
-    setIntensityFilter(intensity);
-    setStressTypeFilter(stressType);
+  const handleMoodQuizComplete = () => {
     setShowMoodQuiz(false);
   };
-  
+
   // Record a day of practice
   const recordPracticeDay = () => {
     const newDays = daysOfPractice + 1;
@@ -70,19 +59,23 @@ const MindfulMovementPage = () => {
                 
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Button 
+                    variant="outline" 
+                    className="w-full sm:w-auto"
                     onClick={() => setShowMoodQuiz(true)}
-                    className="bg-white text-blue-700 hover:bg-blue-50"
                   >
-                    How are you feeling today?
+                    <Heart className="w-4 h-4 mr-2" />
+                    Take Mood Quiz
                   </Button>
-                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full sm:w-auto"
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    View History
+                  </Button>
                   <Button 
                     variant="outline" 
                     className="border-white text-white hover:bg-blue-600"
-                    onClick={() => {
-                      setTimeFilter("quick");
-                      setIntensityFilter("gentle");
-                    }}
                   >
                     Quick Relief Session
                   </Button>
@@ -119,67 +112,54 @@ const MindfulMovementPage = () => {
         </header>
         
         {showMoodQuiz && (
-          <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <MoodQuiz 
-              moodOptions={moodOptions}
               onComplete={handleMoodQuizComplete}
               onDismiss={() => setShowMoodQuiz(false)}
             />
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
-            <div className="sticky top-4">
-              <div className="mb-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search poses, benefits..."
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <FilterBar
-                timeFilter={timeFilter}
-                setTimeFilter={setTimeFilter}
-                intensityFilter={intensityFilter}
-                setIntensityFilter={setIntensityFilter}
-                stressTypeFilter={stressTypeFilter}
-                setStressTypeFilter={setStressTypeFilter}
-              />
-              
-              <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <h3 className="font-medium text-blue-800 dark:text-blue-300 mb-2">Your Progress</h3>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 flex-1 bg-blue-200 dark:bg-blue-800 rounded-full">
-                    <div 
-                      className="h-2 bg-blue-600 dark:bg-blue-400 rounded-full"
-                      style={{ width: `${Math.min((daysOfPractice / 30) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-sm font-medium">{daysOfPractice}/30</span>
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Days of Peaceful Practice
+        <div className="grid grid-cols-1 gap-6">
+          <div className="relative max-w-xl mb-6">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search poses, benefits..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-medium text-blue-800 dark:text-blue-300 mb-1">Your Progress</h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {daysOfPractice} days of peaceful practice
                 </p>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full mt-3 border-blue-300 dark:border-blue-700"
-                  onClick={recordPracticeDay}
-                >
-                  Record Today's Practice
-                </Button>
               </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-blue-300 dark:border-blue-700"
+                onClick={recordPracticeDay}
+              >
+                Record Today's Practice
+              </Button>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <div className="h-2 flex-1 bg-blue-200 dark:bg-blue-800 rounded-full">
+                <div 
+                  className="h-2 bg-blue-600 dark:bg-blue-400 rounded-full"
+                  style={{ width: `${Math.min((daysOfPractice / 30) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <span className="text-xs font-medium">{daysOfPractice}/30</span>
             </div>
           </div>
           
-          <div className="lg:col-span-3">
+          <div>
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
                 <Spinner className="h-8 w-8" />
@@ -198,14 +178,9 @@ const MindfulMovementPage = () => {
                 </p>
                 <Button 
                   className="mt-4" 
-                  onClick={() => {
-                    setTimeFilter(null);
-                    setIntensityFilter(null);
-                    setStressTypeFilter(null);
-                    setSearchQuery("");
-                  }}
+                  onClick={() => setSearchQuery("")}
                 >
-                  Clear All Filters
+                  Clear Search
                 </Button>
               </Card>
             ) : (
