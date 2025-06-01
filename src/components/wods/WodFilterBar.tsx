@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,7 @@ interface WodFilterBarProps {
 
 const categories = [
   "Girl WODs",
-  "Hero WODs",
+  "Hero WODs", 
   "Benchmark",
   "AMRAP",
   "EMOM",
@@ -60,6 +61,11 @@ export const WodFilterBar = ({
 
     return () => clearTimeout(timer);
   }, [searchValue, filters, onFilterChange]);
+
+  // Update local search value when filters change externally
+  useEffect(() => {
+    setSearchValue(filters.search || '');
+  }, [filters.search]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
@@ -141,7 +147,7 @@ export const WodFilterBar = ({
             </div>
           </div>
           
-          {/* Filter dropdowns */}
+          {/* Filter dropdowns - responsive grid */}
           <div className={cn(
             "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden transition-all duration-300",
             showFilters ? "max-h-[500px]" : "max-h-0 sm:max-h-[500px]"

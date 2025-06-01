@@ -52,12 +52,6 @@ const Wods: React.FC = () => {
     // Reset filters when switching to favorites tab
     if (value === FAVORITES_TAB) {
       resetFilters();
-    } else {
-      // Update filters based on tab
-      handleFilterChange({
-        ...filters,
-        category: value === ALL_TAB ? [] : [value]
-      });
     }
   };
 
@@ -79,13 +73,6 @@ const Wods: React.FC = () => {
   const { currentWods, totalItems, isCurrentLoading } = useMemo(() => {
     let filteredWods = [...wods];
     
-    // Apply difficulty filter if active
-    if (filters.difficulty.length > 0) {
-      filteredWods = filteredWods.filter(wod => 
-        wod.difficulty && filters.difficulty.includes(wod.difficulty.toLowerCase())
-      );
-    }
-    
     // Apply favorites filter if active tab is favorites
     if (activeTab === FAVORITES_TAB) {
       filteredWods = filterFavorites(filteredWods);
@@ -93,10 +80,10 @@ const Wods: React.FC = () => {
     
     return {
       currentWods: filteredWods,
-      totalItems: filteredWods.length,
+      totalItems: activeTab === FAVORITES_TAB ? filteredWods.length : totalWods,
       isCurrentLoading: isLoading || (activeTab === FAVORITES_TAB && isLoadingFavorites)
     };
-  }, [activeTab, wods, filters.difficulty, isLoading, isLoadingFavorites, filterFavorites]);
+  }, [activeTab, wods, totalWods, isLoading, isLoadingFavorites, filterFavorites]);
 
   // Show skeleton loader when data is loading
   if (isCurrentLoading && currentWods.length === 0) {
@@ -137,8 +124,15 @@ const Wods: React.FC = () => {
               </TabsTrigger>
             </TabsList>
             
-            <div className="text-sm text-muted-foreground whitespace-nowrap">
-              {totalItems} {totalItems === 1 ? 'WOD' : 'WODs'} found
+            <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
+              {activeFilterCount > 0 && (
+                <span className="bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs">
+                  {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} applied
+                </span>
+              )}
+              <span>
+                {totalItems} {totalItems === 1 ? 'WOD' : 'WODs'} found
+              </span>
             </div>
           </div>
           

@@ -56,7 +56,7 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
   const itemsPerPage = 12;
   const { toast } = useToast();
 
-  const buildQuery = () => {
+  const buildQuery = useCallback(() => {
     let query = supabase
       .from('wods')
       .select('*', { count: 'exact' });
@@ -71,52 +71,40 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       query = query.in('difficulty', filters.difficulty);
     }
 
-    // Apply category filter - handle both array and string values
+    // Apply category filter
     if (filters.category && filters.category.length > 0) {
-      // If it's a string (from tab selection), convert to array
-      const categories = Array.isArray(filters.category) 
-        ? filters.category 
-        : [filters.category];
-      
-      if (categories.length > 0) {
-        query = query.in('category', categories);
-      }
+      query = query.in('category', filters.category);
     }
 
-    // Apply duration filter
+    // Apply duration filter - fixed logic
     if (filters.duration && filters.duration.length > 0) {
-      const durationConditions = filters.duration.map(duration => {
-        switch (duration) {
-          case '<15min': return 'avg_duration_minutes.lt.15';
-          case '15-30min': return 'avg_duration_minutes.gte.15,avg_duration_minutes.lte.30';
-          case '30-45min': return 'avg_duration_minutes.gte.30,avg_duration_minutes.lte.45';
-          case '45+min': return 'avg_duration_minutes.gte.45';
-          default: return '';
-        }
-      }).filter(Boolean);
+      const durationQueries: string[] = [];
       
-      if (durationConditions.length > 0) {
-        query = query.or(durationConditions.join(','));
-      }
-    }
-
-    // Apply equipment filter
-    if (filters.equipment && filters.equipment.length > 0) {
-      // Handle 'None' equipment case
-      if (filters.equipment.includes('None')) {
-        query = query.is('equipment_required', null);
-      } else {
-        // For other equipment, use contains operator to check if the equipment array contains any of the selected values
-        const equipmentConditions = filters.equipment.map(equip => 
-          `equipment_required.cs.{"${equip}"}`
-        );
-        
-        if (equipmentConditions.length > 0) {
-          query = query.or(equipmentConditions.join(','));
+      filters.duration.forEach(duration => {
+        switch (duration) {
+          case '<15min':
+            durationQueries.push('avg_duration_minutes.lt.15');
+            break;
+          case '15-30min':
+            durationQueries.push('and(avg_duration_minutes.gte.15,avg_duration_minutes.lte.30)');
+            break;
+          case '30-45min':
+            durationQueries.push('and(avg_duration_minutes.gte.30,avg_duration_minutes.lte.45)');
+            break;
+          case '45+min':
+            durationQueries.push('avg_duration_minutes.gte.45');
+            break;
         }
+      });
+      
+      if (durationQueries.length > 0) {
+        query = query.or(durationQueries.join(','));
       }
     }
 
+    // Apply equipment filter - simplified for now since the wods table doesn't have equipment_required field
+    // This would need to be added to the database schema if equipment filtering is needed
+    
     // Apply special filters
     if (filters.special && filters.special.length > 0) {
       filters.special.forEach(special => {
@@ -142,7 +130,7 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       .order('created_at', { ascending: false });
 
     return query;
-  };
+  }, [filters, currentPage, itemsPerPage]);
 
   const fetchWods = useCallback(async () => {
     setIsLoading(true);
@@ -150,7 +138,10 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       const query = buildQuery();
       const { data, error, count } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       // Map the data to include title property for compatibility
       const mappedWods = data?.map(wod => ({
@@ -158,6 +149,7 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
         title: wod.name // Use name as title for compatibility
       })) || [];
 
+      console.log('Fetched WODs:', mappedWods);
       setWods(mappedWods);
       setTotalWods(count || 0);
     } catch (error) {
@@ -167,16 +159,19 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
         description: 'Failed to load WODs. Please try again.',
         variant: 'destructive',
       });
+      setWods([]);
+      setTotalWods(0);
     } finally {
       setIsLoading(false);
     }
-  }, [filters, currentPage, toast]);
+  }, [buildQuery, toast]);
 
   useEffect(() => {
     fetchWods();
   }, [fetchWods]);
 
   const handleFilterChange = useCallback((newFilters: WodFilters) => {
+    console.log('Filter change:', newFilters);
     setFilters(newFilters);
     setCurrentPage(0);
   }, []);
