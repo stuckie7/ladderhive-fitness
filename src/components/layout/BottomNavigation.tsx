@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, LineChart, User, Menu, Bluetooth, Sparkles, ClipboardList } from 'lucide-react';
+import { Home, Dumbbell, User, Menu, Bluetooth, Sparkles, Flame, HeartPulse } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -47,24 +47,24 @@ export function BottomNavigation() {
           <span className="text-xs font-medium">Exercises</span>
         </a>
         
-        <Link to="/progress" className="flex flex-col items-center py-1 px-3 space-y-1">
-          <LineChart 
+        <Link to="/wods" className="flex flex-col items-center py-1 px-3 space-y-1">
+          <Flame 
             size={20} 
             className={cn(
-              isActive('/progress') ? 'text-primary' : 'text-muted-foreground'
+              isActive('/wods') ? 'text-primary' : 'text-muted-foreground'
             )} 
           />
-          <span className="text-xs font-medium">Progress</span>
+          <span className="text-xs font-medium">WOD</span>
         </Link>
         
-        <Link to="/my-workouts" className="flex flex-col items-center py-1 px-3 space-y-1">
-          <Sparkles 
+        <Link to="/mindful" className="flex flex-col items-center py-1 px-3 space-y-1">
+          <HeartPulse 
             size={20} 
             className={cn(
-              isActive('/my-workouts') ? 'text-primary' : 'text-muted-foreground'
+              isActive('/mindful') ? 'text-primary' : 'text-muted-foreground'
             )} 
           />
-          <span className="text-xs font-medium">For You</span>
+          <span className="text-xs font-medium">Mindful</span>
         </Link>
         
         <Link to="/bluetooth-devices" className="flex flex-col items-center py-1 px-3 space-y-1">
@@ -77,17 +77,7 @@ export function BottomNavigation() {
           <span className="text-xs font-medium">Devices</span>
         </Link>
         
-        <Link to="/profile" className="flex flex-col items-center py-1 px-3 space-y-1">
-          <User 
-            size={20} 
-            className={cn(
-              isActive('/profile') ? 'text-primary' : 'text-muted-foreground'
-            )} 
-          />
-          <span className="text-xs font-medium">Profile</span>
-        </Link>
-        
-        <AdminNavLink />
+
         
         <Sheet>
           <SheetTrigger asChild>
@@ -101,13 +91,20 @@ export function BottomNavigation() {
           </SheetTrigger>
           <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl overflow-y-auto">
             <div className="grid grid-cols-2 gap-4 mt-4 p-4">
+              <Link to="/my-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                <Sparkles size={24} />
+                <span className="mt-2 text-sm font-medium">For You</span>
+              </Link>
+              <Link to="/profile" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                <User size={24} />
+                <span className="mt-2 text-sm font-medium">Profile</span>
+              </Link>
+              <div className="col-span-2">
+                <AdminNavLink />
+              </div>
               <Link to="/workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Dumbbell size={24} />
                 <span className="mt-2 text-sm font-medium">Workouts</span>
-              </Link>
-              <Link to="/my-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <ClipboardList size={24} />
-                <span className="mt-2 text-sm font-medium">My Workouts</span>
               </Link>
               <Link to="/saved-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Dumbbell size={24} />
@@ -116,14 +113,6 @@ export function BottomNavigation() {
               <Link to="/schedule" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Home size={24} />
                 <span className="mt-2 text-sm font-medium">Schedule</span>
-              </Link>
-              <Link to="/mindful-movement" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Home size={24} />
-                <span className="mt-2 text-sm font-medium">Mindful</span>
-              </Link>
-              <Link to="/wods" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Home size={24} />
-                <span className="mt-2 text-sm font-medium">WODs</span>
               </Link>
               <Link to="/settings" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Home size={24} />
