@@ -66,9 +66,28 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       query = query.ilike('name', `%${filters.search}%`);
     }
 
-    // Apply difficulty filter
+    // Apply difficulty filter - Fixed to match database values
     if (filters.difficulty.length > 0) {
-      query = query.in('difficulty', filters.difficulty);
+      // Map display names to database values
+      const dbDifficultyValues = filters.difficulty.map(difficulty => {
+        switch (difficulty) {
+          case 'Beginner':
+            return 'Beginner';
+          case 'Intermediate':
+            return 'Intermediate';
+          case 'Advanced':
+            return 'Advanced';
+          case 'Elite':
+            return 'Elite';
+          default:
+            return difficulty.toLowerCase(); // fallback to lowercase for any other values
+        }
+      });
+      
+      console.log('Difficulty filter - Display values:', filters.difficulty);
+      console.log('Difficulty filter - DB values:', dbDifficultyValues);
+      
+      query = query.in('difficulty', dbDifficultyValues);
     }
 
     // Apply category filter - Fixed to match database values
@@ -103,35 +122,40 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       query = query.in('category', dbCategoryValues);
     }
 
-    // Apply duration filter - fixed logic
+    // Apply duration filter - Fixed to properly handle duration ranges
     if (filters.duration && filters.duration.length > 0) {
-      const durationQueries: string[] = [];
+      const durationConditions: string[] = [];
       
       filters.duration.forEach(duration => {
         switch (duration) {
           case '<15min':
-            durationQueries.push('avg_duration_minutes.lt.15');
+            durationConditions.push('avg_duration_minutes.lt.15');
             break;
           case '15-30min':
-            durationQueries.push('and(avg_duration_minutes.gte.15,avg_duration_minutes.lte.30)');
+            durationConditions.push('and(avg_duration_minutes.gte.15,avg_duration_minutes.lte.30)');
             break;
           case '30-45min':
-            durationQueries.push('and(avg_duration_minutes.gte.30,avg_duration_minutes.lte.45)');
+            durationConditions.push('and(avg_duration_minutes.gte.30,avg_duration_minutes.lte.45)');
             break;
           case '45+min':
-            durationQueries.push('avg_duration_minutes.gte.45');
+            durationConditions.push('avg_duration_minutes.gte.45');
             break;
         }
       });
       
-      if (durationQueries.length > 0) {
-        query = query.or(durationQueries.join(','));
+      console.log('Duration filter - Display values:', filters.duration);
+      console.log('Duration filter - Query conditions:', durationConditions);
+      
+      if (durationConditions.length > 0) {
+        query = query.or(durationConditions.join(','));
       }
     }
 
-    // Apply special filters
+    // Apply special filters - Fixed to properly handle special cases
     if (filters.special && filters.special.length > 0) {
       filters.special.forEach(special => {
+        console.log('Processing special filter:', special);
+        
         switch (special) {
           case 'With Videos':
             query = query.not('video_demo', 'is', null);
@@ -146,6 +170,8 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
             break;
         }
       });
+      
+      console.log('Special filters applied:', filters.special);
     }
 
     // Apply pagination and ordering
