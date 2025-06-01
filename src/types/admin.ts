@@ -46,6 +46,7 @@ export interface AdminUser extends User {
 }
 
 export interface AdminWorkout extends Workout {
+  duration_minutes?: number;
   user?: {
     id: string;
     email: string;

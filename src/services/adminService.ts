@@ -2,11 +2,103 @@
 import { supabase } from '@/lib/supabase';
 import { AdminAuditLog, AdminUser, AdminWorkout, AdminWorkoutSchedule, AdminStats, UserWorkoutStats } from '@/types/admin';
 
+type CreateUserData = {
+  email: string;
+  password: string;
+  full_name: string;
+  role: string;
+  email_verified?: boolean;
+};
+
+type CreateWorkoutData = {
+  name: string;
+  description: string;
+  duration: number;
+  difficulty: string;
+  category: string;
+  instructions: string;
+  is_public: boolean;
+  created_by: string;
+};
+
+type ScheduleWorkoutData = {
+  userId: string;
+  workoutId: string;
+  scheduledDate: string;
+  notes?: string;
+};
+
 export const adminService = {
+  // Get current user
+  getCurrentUser: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+    return user;
+  },
+
   // Check if current user is admin
   isAdmin: async (): Promise<boolean> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.user_metadata?.role === 'admin';
+    try {
+      const user = await adminService.getCurrentUser();
+      return user.user_metadata?.role === 'admin';
+    } catch (error) {
+      return false;
+    }
+  },
+
+  // Create a new user
+  createUser: async (userData: CreateUserData) => {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      password: userData.password,
+      email_confirm: userData.email_verified,
+      user_metadata: {
+        full_name: userData.full_name,
+        role: userData.role,
+      },
+    });
+
+    if (error) throw error;
+    return data.user;
+  },
+
+  // Create a new workout template
+  createWorkoutTemplate: async (workoutData: CreateWorkoutData) => {
+    const { data, error } = await supabase
+      .from('workout_templates')
+      .insert([{
+        name: workoutData.name,
+        description: workoutData.description,
+        duration: workoutData.duration,
+        difficulty: workoutData.difficulty,
+        category: workoutData.category,
+        instructions: workoutData.instructions,
+        is_public: workoutData.is_public,
+        created_by: workoutData.created_by,
+      }])
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // Schedule a workout for a user
+  scheduleWorkout: async (scheduleData: ScheduleWorkoutData) => {
+    const { data, error } = await supabase
+      .from('scheduled_workouts')
+      .insert([{
+        user_id: scheduleData.userId,
+        workout_id: scheduleData.workoutId,
+        scheduled_date: scheduleData.scheduledDate,
+        notes: scheduleData.notes || '',
+        status: 'scheduled',
+      }])
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
   // Get all users (admin only)
