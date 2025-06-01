@@ -23,6 +23,7 @@ export function BottomNavigation() {
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm z-40 shadow-lg">
       <nav className="flex justify-between items-center p-2">
+        {/* Home */}
         <Link to="/dashboard" className="flex flex-col items-center py-1 px-3 space-y-1">
           <Home 
             size={20} 
@@ -33,6 +34,7 @@ export function BottomNavigation() {
           <span className="text-xs font-medium">Home</span>
         </Link>
         
+        {/* Exercises */}
         <a 
           href="/exercises/enhanced" 
           onClick={handleExerciseClick}
@@ -47,6 +49,7 @@ export function BottomNavigation() {
           <span className="text-xs font-medium">Exercises</span>
         </a>
         
+        {/* WOD */}
         <Link to="/wods" className="flex flex-col items-center py-1 px-3 space-y-1">
           <Flame 
             size={20} 
@@ -57,16 +60,7 @@ export function BottomNavigation() {
           <span className="text-xs font-medium">WOD</span>
         </Link>
         
-        <Link to="/mindful" className="flex flex-col items-center py-1 px-3 space-y-1">
-          <HeartPulse 
-            size={20} 
-            className={cn(
-              isActive('/mindful') ? 'text-primary' : 'text-muted-foreground'
-            )} 
-          />
-          <span className="text-xs font-medium">Mindful</span>
-        </Link>
-        
+        {/* Devices */}
         <Link to="/bluetooth-devices" className="flex flex-col items-center py-1 px-3 space-y-1">
           <Bluetooth 
             size={20} 
@@ -77,8 +71,29 @@ export function BottomNavigation() {
           <span className="text-xs font-medium">Devices</span>
         </Link>
         
-
+        {/* Workouts */}
+        <Link to="/workouts" className="flex flex-col items-center py-1 px-3 space-y-1">
+          <Dumbbell 
+            size={20} 
+            className={cn(
+              isActive('/workouts') ? 'text-primary' : 'text-muted-foreground'
+            )} 
+          />
+          <span className="text-xs font-medium">Workouts</span>
+        </Link>
         
+        {/* Mindful */}
+        <Link to="/mindful" className="flex flex-col items-center py-1 px-3 space-y-1">
+          <HeartPulse 
+            size={20} 
+            className={cn(
+              isActive('/mindful') ? 'text-primary' : 'text-muted-foreground'
+            )} 
+          />
+          <span className="text-xs font-medium">Mindful</span>
+        </Link>
+        
+        {/* More Menu */}
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" className="flex flex-col items-center py-1 px-3 space-y-1 h-auto">
@@ -102,6 +117,10 @@ export function BottomNavigation() {
               <div className="col-span-2">
                 <AdminNavLink />
               </div>
+              <Link to="/workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                <Dumbbell size={24} />
+                <span className="mt-2 text-sm font-medium">Workouts</span>
+              </Link>
               <Link to="/saved-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Dumbbell size={24} />
                 <span className="mt-2 text-sm font-medium">Saved</span>
