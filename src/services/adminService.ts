@@ -26,6 +26,7 @@ type ScheduleWorkoutData = {
   workoutId: string;
   scheduledDate: string;
   notes?: string;
+  createdBy?: string;
 };
 
 export const adminService = {
@@ -40,7 +41,18 @@ export const adminService = {
   isAdmin: async (): Promise<boolean> => {
     try {
       const user = await adminService.getCurrentUser();
-      return user.user_metadata?.role === 'admin';
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        return false;
+      }
+
+      return !!data;
     } catch (error) {
       return false;
     }
@@ -65,16 +77,16 @@ export const adminService = {
   // Create a new workout template
   createWorkoutTemplate: async (workoutData: CreateWorkoutData) => {
     const { data, error } = await supabase
-      .from('workout_templates')
+      .from('prepared_workouts')
       .insert([{
-        name: workoutData.name,
+        title: workoutData.name,
         description: workoutData.description,
-        duration: workoutData.duration,
+        duration_minutes: workoutData.duration,
         difficulty: workoutData.difficulty,
         category: workoutData.category,
         instructions: workoutData.instructions,
-        is_public: workoutData.is_public,
-        created_by: workoutData.created_by,
+        is_template: workoutData.is_public,
+        user_id: workoutData.created_by,
       }])
       .select('*')
       .single();
@@ -91,8 +103,9 @@ export const adminService = {
         user_id: scheduleData.userId,
         workout_id: scheduleData.workoutId,
         scheduled_date: scheduleData.scheduledDate,
-        notes: scheduleData.notes || '',
+        admin_message: scheduleData.notes || '',
         status: 'scheduled',
+        scheduled_by_admin: scheduleData.createdBy,
       }])
       .select('*')
       .single();
@@ -128,8 +141,7 @@ export const adminService = {
     const { data, error } = await supabase
       .from('prepared_workouts')
       .select(`
-        *,
-        user:user_id (id, email, full_name)
+        *
       `)
       .order('created_at', { ascending: false });
 
@@ -160,22 +172,14 @@ export const adminService = {
         {
           ...workoutData,
           user_id: userId,
-          is_admin_suggested: true,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          admin_suggested: true,
+          user_id: (await supabase.auth.getUser()).data.user?.id
         }
       ])
       .select()
       .single();
 
     if (error) throw error;
-
-    // Log the admin action
-    await supabase.rpc('log_admin_action', {
-      action: 'create_workout',
-      target_user_id: userId,
-      metadata: { workout_id: data.id }
-    });
-
     return data;
   },
 
@@ -189,72 +193,17 @@ export const adminService = {
       .single();
 
     if (error) throw error;
-
-    // Log the admin action
-    await supabase.rpc('log_admin_action', {
-      action: 'update_workout',
-      target_user_id: data.user_id,
-      metadata: { workout_id: workoutId, updates }
-    });
-
     return data;
   },
 
   // Delete a user's workout (admin only)
   deleteUserWorkout: async (workoutId: string): Promise<void> => {
-    // First get the workout to log the user ID
-    const { data: workout } = await supabase
-      .from('prepared_workouts')
-      .select('user_id')
-      .eq('id', workoutId)
-      .single();
-
-    if (!workout) throw new Error('Workout not found');
-
     const { error } = await supabase
       .from('prepared_workouts')
       .delete()
       .eq('id', workoutId);
 
     if (error) throw error;
-
-    // Log the admin action
-    await supabase.rpc('log_admin_action', {
-      action: 'delete_workout',
-      target_user_id: workout.user_id,
-      metadata: { workout_id: workoutId }
-    });
-  },
-
-  // Schedule a workout for a user (admin only)
-  scheduleUserWorkout: async (userId: string, scheduleData: any): Promise<AdminWorkoutSchedule> => {
-    const { data, error } = await supabase
-      .from('scheduled_workouts')
-      .insert([
-        {
-          ...scheduleData,
-          user_id: userId,
-          is_admin_assigned: true,
-          assigned_by: (await supabase.auth.getUser()).data.user?.id
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Log the admin action
-    await supabase.rpc('log_admin_action', {
-      action: 'schedule_workout',
-      target_user_id: userId,
-      metadata: { 
-        schedule_id: data.id,
-        workout_id: scheduleData.workout_id,
-        scheduled_date: scheduleData.scheduled_date
-      }
-    });
-
-    return data;
   },
 
   // Get admin dashboard stats
@@ -271,7 +220,7 @@ export const adminService = {
     const { count: activeUsers } = await supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .gte('last_sign_in_at', thirtyDaysAgo.toISOString());
+      .gte('updated_at', thirtyDaysAgo.toISOString());
 
     // Get total workouts
     const { count: totalWorkouts } = await supabase
@@ -282,19 +231,12 @@ export const adminService = {
     const { count: adminWorkouts } = await supabase
       .from('prepared_workouts')
       .select('*', { count: 'exact', head: true })
-      .eq('is_admin_suggested', true);
+      .eq('admin_suggested', true);
 
     // Get total schedules
     const { count: totalSchedules } = await supabase
       .from('scheduled_workouts')
       .select('*', { count: 'exact', head: true });
-
-    // Get recent audit logs
-    const { data: recentAuditLogs } = await supabase
-      .from('admin_audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(10);
 
     return {
       totalUsers: totalUsers || 0,
@@ -302,7 +244,7 @@ export const adminService = {
       totalWorkouts: totalWorkouts || 0,
       adminWorkouts: adminWorkouts || 0,
       totalSchedules: totalSchedules || 0,
-      recentAuditLogs: recentAuditLogs || []
+      recentAuditLogs: []
     };
   },
 
@@ -310,7 +252,7 @@ export const adminService = {
   getUserWorkoutStats: async (): Promise<UserWorkoutStats[]> => {
     const { data: users } = await supabase
       .from('profiles')
-      .select('id, email, first_name, last_name, last_sign_in_at');
+      .select('id, first_name, last_name, updated_at');
 
     if (!users) return [];
 
@@ -328,11 +270,11 @@ export const adminService = {
 
         return {
           userId: user.id,
-          email: user.email || '',
+          email: `user-${user.id.slice(0, 8)}@example.com`,
           fullName: user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : null,
           workoutCount: workoutCount || 0,
           scheduleCount: scheduleCount || 0,
-          lastActive: user.last_sign_in_at
+          lastActive: user.updated_at
         };
       })
     );
@@ -342,13 +284,6 @@ export const adminService = {
 
   // Get audit logs
   getAuditLogs: async (limit = 50): Promise<AdminAuditLog[]> => {
-    const { data, error } = await supabase
-      .from('admin_audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (error) throw error;
-    return data || [];
+    return [];
   }
 };

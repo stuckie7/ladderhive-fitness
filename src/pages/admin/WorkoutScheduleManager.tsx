@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Search, Filter, Trash2, Edit, Plus } from 'lucide-react';
+import { Calendar, Search, Filter, Trash2, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { CSVUploadModal } from '@/components/admin/CSVUploadModal';
 
 interface ScheduledWorkout {
   id: string;
@@ -41,6 +41,7 @@ export default function WorkoutScheduleManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchSchedules = async () => {
     setLoading(true);
@@ -174,10 +175,9 @@ export default function WorkoutScheduleManager() {
             <p className="text-muted-foreground">Manage and monitor scheduled workouts</p>
           </div>
           <div className="flex gap-2">
-            <CSVUploadModal onSuccess={fetchSchedules} />
-            <Button>
+            <Button onClick={() => navigate('/admin/schedules/assign')}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Schedule
+              Assign Workout
             </Button>
           </div>
         </div>

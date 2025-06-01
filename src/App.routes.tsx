@@ -30,12 +30,14 @@ import YogaPage from "./pages/YogaPage";
 import YogaRoutineDetailPage from "./pages/YogaRoutineDetailPage";
 import Onboarding from "./pages/Onboarding";
 import BluetoothWearableManager from "./components/BluetoothWearableManager";
-import AssignWorkoutPage from "./pages/admin/AssignWorkout";
+import { AssignWorkoutPage } from "./pages/admin/schedules/AssignWorkoutPage";
 import MyWorkoutsPage from "./pages/MyWorkouts";
 import SuggestedWorkoutsPage from "./pages/SuggestedWorkoutsPage";
 import { DashboardPage } from "./pages/admin/DashboardPage";
 import { UsersPage } from "./pages/admin/UsersPage";
 import { UserDetailPage } from "./pages/admin/UserDetailPage";
+import { NewUserPage } from "./pages/admin/users/NewUserPage";
+import { NewWorkoutPage } from "./pages/admin/workouts/NewWorkoutPage";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import WorkoutScheduleManager from "./pages/admin/WorkoutScheduleManager";
 import { useAdmin } from "./context/AdminContext";
@@ -114,11 +116,54 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/admin/users/new",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <NewUserPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/admin/users/:userId",
     element: (
       <ProtectedRoute>
         <AdminRoute>
           <UserDetailPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/workouts",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold">Workout Templates</h1>
+                <button
+                  onClick={() => window.location.href = '/admin/workouts/new'}
+                  className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
+                >
+                  Create New Template
+                </button>
+              </div>
+              <p className="text-muted-foreground">Manage workout templates that can be assigned to users</p>
+            </div>
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/workouts/new",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <NewWorkoutPage />
         </AdminRoute>
       </ProtectedRoute>
     ),
@@ -134,11 +179,26 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/admin/assign-workout",
+    path: "/admin/schedules/assign",
     element: (
       <ProtectedRoute>
         <AdminRoute>
           <AssignWorkoutPage />
+        </AdminRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/analytics",
+    element: (
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <div className="p-6">
+              <h1 className="text-3xl font-bold mb-6">Analytics</h1>
+              <p>Analytics dashboard coming soon...</p>
+            </div>
+          </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>
     ),

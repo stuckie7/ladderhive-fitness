@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/context/AdminContext';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Dumbbell, Calendar, Activity, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Dumbbell, Calendar, Activity, LogOut, Plus } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -57,11 +57,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <span className="ml-2">{item.label}</span>
             </Button>
           ))}
+          
+          {/* Quick Actions */}
+          <div className="pt-4 border-t border-gray-700 mt-4">
+            <p className="text-xs text-gray-400 uppercase tracking-wider px-3 pb-2">Quick Actions</p>
+            <Button
+              variant="ghost"
+              className="w-full justify-start mb-1 text-gray-200 hover:bg-blue-700 hover:text-white transition-colors"
+              onClick={() => navigate('/admin/schedules/assign')}
+            >
+              <Plus className="h-5 w-5" />
+              <span className="ml-2">Assign Workout</span>
+            </Button>
+          </div>
+          
           <Button
             variant="ghost"
             className="w-full justify-start mt-6 text-red-400 hover:bg-red-900/50 hover:text-red-200 transition-colors"
             onClick={() => {
-              // Handle sign out
               navigate('/');
             }}
           >
