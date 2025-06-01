@@ -84,12 +84,12 @@ export function BottomNavigation() {
           <span className="text-[10px] sm:text-xs font-medium">Workouts</span>
         </Link>
         
-        {/* Mindful */}
+        {/* Mindful Movement */}
         <Link 
-          to="/mindful" 
+          to="/mindful-movement" 
           className={cn(
             "flex flex-col items-center p-2 rounded-lg transition-colors",
-            isActive('/mindful') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+            isActive('/mindful-movement') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
           )}
         >
           <HeartPulse size={22} className="mb-0.5" />
