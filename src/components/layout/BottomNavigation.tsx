@@ -22,86 +22,92 @@ export function BottomNavigation() {
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm z-40 shadow-lg">
-      <nav className="flex justify-between items-center p-2">
+      <nav className="flex justify-between items-center px-1 py-1.5 sm:px-2">
         {/* Home */}
-        <Link to="/dashboard" className="flex flex-col items-center py-1 px-3 space-y-1">
-          <Home 
-            size={20} 
-            className={cn(
-              isActive('/dashboard') ? 'text-primary' : 'text-muted-foreground'
-            )} 
-          />
-          <span className="text-xs font-medium">Home</span>
+        <Link 
+          to="/dashboard" 
+          className={cn(
+            "flex flex-col items-center p-2 rounded-lg transition-colors",
+            isActive('/dashboard') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+          )}
+        >
+          <Home size={22} className="mb-0.5" />
+          <span className="text-[10px] sm:text-xs font-medium">Home</span>
         </Link>
         
         {/* Exercises */}
         <a 
           href="/exercises/enhanced" 
           onClick={handleExerciseClick}
-          className="flex flex-col items-center py-1 px-3 space-y-1"
+          className={cn(
+            "flex flex-col items-center p-2 rounded-lg transition-colors",
+            isActive('/exercises') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+          )}
         >
-          <Dumbbell 
-            size={20} 
-            className={cn(
-              isActive('/exercises') ? 'text-primary' : 'text-muted-foreground'
-            )} 
-          />
-          <span className="text-xs font-medium">Exercises</span>
+          <Dumbbell size={22} className="mb-0.5" />
+          <span className="text-[10px] sm:text-xs font-medium">Exercises</span>
         </a>
         
         {/* WOD */}
-        <Link to="/wods" className="flex flex-col items-center py-1 px-3 space-y-1">
-          <Flame 
-            size={20} 
-            className={cn(
-              isActive('/wods') ? 'text-primary' : 'text-muted-foreground'
-            )} 
-          />
-          <span className="text-xs font-medium">WOD</span>
+        <Link 
+          to="/wods" 
+          className={cn(
+            "flex flex-col items-center p-2 rounded-lg transition-colors",
+            isActive('/wods') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+          )}
+        >
+          <Flame size={22} className="mb-0.5" />
+          <span className="text-[10px] sm:text-xs font-medium">WOD</span>
         </Link>
         
         {/* Devices */}
-        <Link to="/bluetooth-devices" className="flex flex-col items-center py-1 px-3 space-y-1">
-          <Bluetooth 
-            size={20} 
-            className={cn(
-              isActive('/bluetooth-devices') ? 'text-primary' : 'text-muted-foreground'
-            )} 
-          />
-          <span className="text-xs font-medium">Devices</span>
+        <Link 
+          to="/bluetooth-devices" 
+          className={cn(
+            "flex flex-col items-center p-2 rounded-lg transition-colors",
+            isActive('/bluetooth-devices') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+          )}
+        >
+          <Bluetooth size={22} className="mb-0.5" />
+          <span className="text-[10px] sm:text-xs font-medium">Devices</span>
         </Link>
         
         {/* Workouts */}
-        <Link to="/workouts" className="flex flex-col items-center py-1 px-3 space-y-1">
-          <Dumbbell 
-            size={20} 
-            className={cn(
-              isActive('/workouts') ? 'text-primary' : 'text-muted-foreground'
-            )} 
-          />
-          <span className="text-xs font-medium">Workouts</span>
+        <Link 
+          to="/workouts" 
+          className={cn(
+            "flex flex-col items-center p-2 rounded-lg transition-colors",
+            isActive('/workouts') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+          )}
+        >
+          <Dumbbell size={22} className="mb-0.5" />
+          <span className="text-[10px] sm:text-xs font-medium">Workouts</span>
         </Link>
         
         {/* Mindful */}
-        <Link to="/mindful" className="flex flex-col items-center py-1 px-3 space-y-1">
-          <HeartPulse 
-            size={20} 
-            className={cn(
-              isActive('/mindful') ? 'text-primary' : 'text-muted-foreground'
-            )} 
-          />
-          <span className="text-xs font-medium">Mindful</span>
+        <Link 
+          to="/mindful" 
+          className={cn(
+            "flex flex-col items-center p-2 rounded-lg transition-colors",
+            isActive('/mindful') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+          )}
+        >
+          <HeartPulse size={22} className="mb-0.5" />
+          <span className="text-[10px] sm:text-xs font-medium">Mindful</span>
         </Link>
         
         {/* More Menu */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" className="flex flex-col items-center py-1 px-3 space-y-1 h-auto">
-              <Menu 
-                size={20}
-                className="text-muted-foreground" 
-              />
-              <span className="text-xs font-medium">More</span>
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "flex flex-col items-center p-2 h-auto rounded-lg transition-colors",
+                isActive('/more') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+              )}
+            >
+              <Menu size={22} className="mb-0.5" />
+              <span className="text-[10px] sm:text-xs font-medium">More</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl overflow-y-auto">
