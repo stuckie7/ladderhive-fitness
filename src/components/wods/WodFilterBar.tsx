@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, X, Filter } from "lucide-react";
+import { Search, X, Filter, ChevronDown, ChevronUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { WodFilters } from "@/types/wod";
 
 interface WodFilterBarProps {
@@ -44,6 +45,7 @@ export const WodFilterBar = ({
   isSticky = false 
 }: WodFilterBarProps) => {
   const [searchValue, setSearchValue] = useState(filters.search || '');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Update search when user stops typing
   useEffect(() => {
@@ -98,33 +100,52 @@ export const WodFilterBar = ({
 
   return (
     <div className={`bg-background/95 backdrop-blur-sm w-full py-4 z-10 border-b ${isSticky ? "sticky top-0" : ""}`}>
-      <div className="container mx-auto">
+      <div className="container mx-auto px-2 sm:px-4">
         <div className="flex flex-col space-y-4">
           {/* Search and reset controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search WODs..."
-                className="pl-10"
+                className="pl-10 w-full"
                 value={searchValue}
                 onChange={handleSearchChange}
               />
             </div>
             
-            <Button 
-              variant="outline" 
-              onClick={resetFilters}
-              disabled={activeFilterCount === 0}
-              className="whitespace-nowrap"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Reset {activeFilterCount > 0 && `(${activeFilterCount})`}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="sm:hidden flex-1"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="mr-2 h-4 w-4" />
+                Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+                {showFilters ? (
+                  <ChevronUp className="ml-2 h-4 w-4" />
+                ) : (
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                )}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={resetFilters}
+                disabled={activeFilterCount === 0}
+                className="whitespace-nowrap flex-1 sm:flex-initial"
+              >
+                <X className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Reset</span> {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </Button>
+            </div>
           </div>
           
           {/* Filter dropdowns */}
-          <div className="flex flex-wrap gap-2">
+          <div className={cn(
+            "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden transition-all duration-300",
+            showFilters ? "max-h-[500px]" : "max-h-0 sm:max-h-[500px]"
+          )}>
             <FilterSelect 
               label="Category"
               options={categories}
@@ -226,39 +247,52 @@ interface FilterSelectProps {
 }
 
 const FilterSelect = ({ label, options, selected, onChange }: FilterSelectProps) => {
+  const handleValueChange = (value: string) => {
+    const isActive = selected.includes(value);
+    onChange(value, isActive);
+  };
+
   return (
-    <Select
-      onValueChange={(value) => {
-        const isActive = selected.includes(value);
-        onChange(value, isActive);
-      }}
-    >
-      <SelectTrigger className="w-[180px] h-9">
-        <div className="flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-          <span>{label}</span>
-          {selected.length > 0 && (
-            <Badge variant="secondary" className="h-4 w-4 p-0 flex items-center justify-center">
-              {selected.length}
-            </Badge>
-          )}
-        </div>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          <SelectLabel>{label}</SelectLabel>
-          {options.map((option) => (
-            <SelectItem 
-              key={option} 
-              value={option}
-              className={selected.includes(option) ? "bg-muted" : ""}
-            >
-              {option}
-            </SelectItem>
-          ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
+    <div className="w-full">
+      <Select onValueChange={handleValueChange}>
+        <SelectTrigger className="w-full border-dashed">
+          <span className="flex items-center gap-1">
+            <Filter className="h-3.5 w-3.5" />
+            {label} {selected.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1">
+                {selected.length}
+              </Badge>
+            )}
+          </span>
+        </SelectTrigger>
+        <SelectContent className="w-[calc(100vw-2rem)] sm:w-auto">
+          <SelectGroup>
+            <SelectLabel>{label}</SelectLabel>
+            {options.map((option) => {
+              const isActive = selected.includes(option);
+              return (
+                <SelectItem 
+                  key={option} 
+                  value={option}
+                  className={isActive ? "bg-accent text-accent-foreground" : ""}
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-4 h-4 rounded-sm border ${
+                        isActive ? "bg-primary border-primary" : "border-border"
+                      } flex items-center justify-center`}
+                    >
+                      {isActive && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    {option}
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
 
