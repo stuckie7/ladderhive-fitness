@@ -38,20 +38,21 @@ const SavedWorkoutCard: React.FC<SavedWorkoutCardProps> = ({
           
           <div className="w-full h-full flex items-center justify-center bg-muted overflow-hidden">
             <img 
-              src={workout.thumbnail_url || '/fitapp%20icon1%2048x48.jpg'} 
+              src={workout.thumbnail_url || '/fittrackpro-logo.jpg'} 
               alt={workout.thumbnail_url ? workout.title : 'Default workout thumbnail'} 
               className="w-full h-full object-contain p-4"
               style={{
                 maxWidth: '100%',
                 maxHeight: '100%',
                 width: 'auto',
-                height: 'auto'
+                height: 'auto',
+                objectFit: 'cover'
               }}
               onError={(e) => {
                 // Fallback to default image on error
                 const img = e.target as HTMLImageElement;
-                if (img.src !== '/fitapp%20icon1%2048x48.jpg') {
-                  img.src = '/fitapp%20icon1%2048x48.jpg';
+                if (!img.src.endsWith('fittrackpro-logo.jpg')) {
+                  img.src = '/fittrackpro-logo.jpg';
                   img.onerror = null; // Prevent infinite loop if default image fails
                 }
               }}

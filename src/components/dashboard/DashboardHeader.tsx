@@ -20,7 +20,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center shadow-md">
-            <img src="/fitapp%20icon1%2048x48.jpg" alt="FitTrack Logo" className="h-8 w-8" />
+            <img src="/fittrackpro-logo.jpg" alt="FitTrack Pro Logo" className="h-10 w-10 rounded-lg object-cover" />
           </div>
           <AppTitle />
         </div>
