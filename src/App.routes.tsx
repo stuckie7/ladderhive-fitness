@@ -43,6 +43,14 @@ import WorkoutScheduleManager from "./pages/admin/WorkoutScheduleManager";
 import { useAdmin } from "./context/AdminContext";
 import { useEffect, useState } from "react";
 
+// Forum pages
+import Forums from "./pages/Forums";
+import ForumCategory from "./pages/ForumCategory";
+import ForumThread from "./pages/ForumThread";
+import NewPost from "./pages/NewPost";
+import NewThread from "./pages/NewThread";
+import EditPost from "./pages/EditPost";
+
 // Admin Route Wrapper Component
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -319,6 +327,35 @@ const router = createBrowserRouter([
   {
     path: "/bluetooth-devices",
     element: <ProtectedRoute><BluetoothWearableManager /></ProtectedRoute>
+  },
+  // Forum routes
+  {
+    path: "/forums",
+    element: <Forums />
+  },
+  {
+    path: "/forums/category/:categorySlug",
+    element: <ForumCategory />
+  },
+  {
+    path: "/forums/thread/:threadSlug",
+    element: <ForumThread />
+  },
+  {
+    path: "/forums/thread/:threadSlug/new",
+    element: <ProtectedRoute><NewPost /></ProtectedRoute>
+  },
+  {
+    path: "/forums/thread/:threadSlug/reply",
+    element: <ProtectedRoute><NewPost /></ProtectedRoute>
+  },
+  {
+    path: "/forums/thread/:threadSlug/edit/:postId",
+    element: <ProtectedRoute><EditPost /></ProtectedRoute>
+  },
+  {
+    path: "/forums/new-thread/:categoryId?",
+    element: <ProtectedRoute><NewThread /></ProtectedRoute>
   }
 ]);
 

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Dumbbell, Calendar, BarChart2, BookOpen, Heart, Clock, Settings } from 'lucide-react';
+import { Dumbbell, Calendar, BarChart2, BookOpen, Heart, Clock, Settings, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Sidebar = () => {
@@ -15,6 +15,7 @@ const Sidebar = () => {
     { icon: Dumbbell, label: 'Exercises', path: '/exercises/enhanced' },
     { icon: Calendar, label: 'Workouts', path: '/workouts' },
     { icon: Heart, label: 'Saved Workouts', path: '/saved-workouts' },
+    { icon: MessageSquare, label: 'Forums', path: '/forums' },
     { icon: Clock, label: 'Mindful Movement', path: '/mindful-movement' },
     { icon: BarChart2, label: 'Progress', path: '/progress' },
     { icon: Calendar, label: 'Schedule', path: '/schedule' },
