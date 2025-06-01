@@ -44,12 +44,12 @@ import { useAdmin } from "./context/AdminContext";
 import { useEffect, useState } from "react";
 
 // Forum pages
-import Forums from "./pages/Forums";
-import ForumCategory from "./pages/ForumCategory";
-import ForumThread from "./pages/ForumThread";
-import NewPost from "./pages/NewPost";
-import NewThread from "./pages/NewThread";
-import EditPost from "./pages/EditPost";
+import Forums from "@/pages/Forums";
+import ForumCategory from "@/pages/ForumCategory";
+import ForumThread from "@/pages/ForumThread";
+import NewPost from "@/pages/NewPost";
+import NewThread from "@/pages/NewThread";
+import EditPost from "@/pages/EditPost";
 
 // Admin Route Wrapper Component
 function AdminRoute({ children }: { children: React.ReactNode }) {
