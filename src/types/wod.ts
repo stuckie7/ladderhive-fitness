@@ -5,7 +5,7 @@ export interface WodFilters {
   difficulty: string[];
   category: string[];
   duration: string[];
-  equipment: string[];
+  equipment?: string[];  // Made optional
   special: string[];
 }
 

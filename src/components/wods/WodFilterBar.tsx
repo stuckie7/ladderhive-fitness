@@ -36,7 +36,6 @@ const categories = [
 
 const difficulties = ["Beginner", "Intermediate", "Advanced", "Elite"];
 const durations = ["<15min", "15-30min", "30-45min", "45+min"];
-const equipmentOptions = ["None", "Barbell", "Dumbbells", "Kettlebell", "Rings", "Rower", "Bike", "Ski Erg"];
 const specialFilters = ["With Videos", "New This Week", "Saved"];
 
 export const WodFilterBar = ({ 
@@ -98,7 +97,6 @@ export const WodFilterBar = ({
       difficulty: [],
       category: [],
       duration: [],
-      equipment: [],
       special: []
     });
     setSearchValue("");
@@ -149,7 +147,7 @@ export const WodFilterBar = ({
           
           {/* Filter dropdowns - responsive grid */}
           <div className={cn(
-            "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden transition-all duration-300",
+            "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-hidden transition-all duration-300",
             showFilters ? "max-h-[500px]" : "max-h-0 sm:max-h-[500px]"
           )}>
             <FilterSelect 
@@ -171,13 +169,6 @@ export const WodFilterBar = ({
               options={durations}
               selected={filters.duration || []}
               onChange={(value, isActive) => handleFilterChange("duration", value, isActive)}
-            />
-            
-            <FilterSelect 
-              label="Equipment"
-              options={equipmentOptions}
-              selected={filters.equipment || []}
-              onChange={(value, isActive) => handleFilterChange("equipment", value, isActive)}
             />
             
             <FilterSelect 

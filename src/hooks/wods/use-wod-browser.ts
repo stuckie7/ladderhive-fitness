@@ -8,7 +8,7 @@ interface WodFilters {
   difficulty: string[];
   category: string[];
   duration: string[];
-  equipment: string[];
+  equipment?: string[];  // Made optional
   special: string[];
 }
 
@@ -102,9 +102,6 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       }
     }
 
-    // Apply equipment filter - simplified for now since the wods table doesn't have equipment_required field
-    // This would need to be added to the database schema if equipment filtering is needed
-    
     // Apply special filters
     if (filters.special && filters.special.length > 0) {
       filters.special.forEach(special => {
