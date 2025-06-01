@@ -102,10 +102,6 @@ export function BottomNavigation() {
               <div className="col-span-2">
                 <AdminNavLink />
               </div>
-              <Link to="/workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Dumbbell size={24} />
-                <span className="mt-2 text-sm font-medium">Workouts</span>
-              </Link>
               <Link to="/saved-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
                 <Dumbbell size={24} />
                 <span className="mt-2 text-sm font-medium">Saved</span>
