@@ -63,7 +63,7 @@ const SignupForm = () => {
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-        <CardDescription>Join LadderHive to start your fitness journey</CardDescription>
+        <CardDescription>Join FitTrack Pro to start your fitness journey</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
