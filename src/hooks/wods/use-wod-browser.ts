@@ -71,9 +71,36 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       query = query.in('difficulty', filters.difficulty);
     }
 
-    // Apply category filter
+    // Apply category filter - Fixed to match database values
     if (filters.category && filters.category.length > 0) {
-      query = query.in('category', filters.category);
+      // Map display names to database values
+      const dbCategoryValues = filters.category.map(category => {
+        switch (category) {
+          case 'Girl WODs':
+            return 'Girl';
+          case 'Hero WODs':
+            return 'Hero';
+          case 'Benchmark':
+            return 'Benchmark';
+          case 'AMRAP':
+            return 'AMRAP';
+          case 'EMOM':
+            return 'EMOM';
+          case 'For Time':
+            return 'For Time';
+          case 'Chipper':
+            return 'Chipper';
+          case 'Ladder':
+            return 'Ladder';
+          default:
+            return category;
+        }
+      });
+      
+      console.log('Category filter - Display values:', filters.category);
+      console.log('Category filter - DB values:', dbCategoryValues);
+      
+      query = query.in('category', dbCategoryValues);
     }
 
     // Apply duration filter - fixed logic
@@ -133,6 +160,8 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
     setIsLoading(true);
     try {
       const query = buildQuery();
+      console.log('Executing WODs query with filters:', filters);
+      
       const { data, error, count } = await query;
 
       if (error) {
@@ -147,6 +176,7 @@ export const useWodBrowser = (): UseWodBrowserReturn => {
       })) || [];
 
       console.log('Fetched WODs:', mappedWods);
+      console.log('Total count:', count);
       setWods(mappedWods);
       setTotalWods(count || 0);
     } catch (error) {
