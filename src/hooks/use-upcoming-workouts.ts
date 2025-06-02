@@ -3,6 +3,20 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 
+interface WorkoutSchedule {
+  id: string;
+  workout_id: string;
+  scheduled_date: string;
+  status: string;
+}
+
+interface SuggestedWorkout {
+  id: string;
+  name: string;
+  duration: number;
+  difficulty: string;
+}
+
 interface UpcomingWorkout {
   id: string;
   title: string;
@@ -27,45 +41,50 @@ export const useUpcomingWorkouts = () => {
       try {
         setIsLoading(true);
 
-        // Query for upcoming workouts using the correct table names and relationships
-        const { data, error } = await supabase
+        // First get the scheduled workouts
+        const { data: schedules, error: schedulesError } = await supabase
           .from('workout_schedules')
-          .select(`
-            id,
-            scheduled_date,
-            status,
-            suggested_workouts!workout_id (
-              id,
-              name,
-              duration,
-              difficulty
-            )
-          `)
+          .select('id, workout_id, scheduled_date, status')
           .eq('user_id', user.id)
           .gt('scheduled_date', new Date().toISOString())
           .eq('status', 'scheduled')
           .order('scheduled_date', { ascending: true })
           .limit(3);
-
-        if (error) {
-          throw new Error(error.message);
+        
+        if (schedulesError) {
+          throw new Error(schedulesError.message);
         }
-
-        // Format the data safely with type checking and fallbacks
-        const formattedWorkouts: UpcomingWorkout[] = (data || [])
-          .filter(workout => workout.suggested_workouts) // Filter out entries without workout data
-          .map(workout => {
-            const workoutInfo = workout.suggested_workouts as Record<string, any> || {};
-            
-            return {
-              id: workout.id,
-              title: workoutInfo.name || 'Scheduled Workout',
-              scheduled_date: workout.scheduled_date,
-              duration_minutes: workoutInfo.duration || 30,
-              difficulty: workoutInfo.difficulty || 'intermediate'
-            };
-          });
-
+        
+        if (!schedules || schedules.length === 0) {
+          setWorkouts([]);
+          return;
+        }
+        
+        // Get the workout details for the scheduled workouts
+        const workoutIds = schedules.map(s => s.workout_id);
+        const { data: workouts, error: workoutsError } = await supabase
+          .from('suggested_workouts')
+          .select('id, name, duration, difficulty')
+          .in('id', workoutIds);
+          
+        if (workoutsError) {
+          throw new Error(workoutsError.message);
+        }
+        
+        // Join the data
+        const workoutMap = new Map(workouts?.map(workout => [workout.id, workout]) || []);
+        
+        const formattedWorkouts: UpcomingWorkout[] = schedules.map(schedule => {
+          const workout = workoutMap.get(schedule.workout_id) || {} as Partial<SuggestedWorkout>;
+          return {
+            id: schedule.id,
+            title: workout.name || 'Scheduled Workout',
+            scheduled_date: schedule.scheduled_date,
+            duration_minutes: workout.duration || 30,
+            difficulty: workout.difficulty || 'intermediate'
+          };
+        });
+        
         setWorkouts(formattedWorkouts);
       } catch (err) {
         console.error('Error fetching upcoming workouts:', err);
