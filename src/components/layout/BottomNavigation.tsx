@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, User, Menu, Bluetooth, Sparkles, Flame, HeartPulse } from 'lucide-react';
+import { Home, Dumbbell, User, Menu, Bluetooth, Sparkles, Flame, HeartPulse, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -120,7 +121,11 @@ export function BottomNavigation() {
                 <User size={24} />
                 <span className="mt-2 text-sm font-medium">Profile</span>
               </Link>
-              <div className="col-span-2">
+              <Link to="/forums" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                <MessageSquare size={24} />
+                <span className="mt-2 text-sm font-medium">Forums</span>
+              </Link>
+              <div className="col-span-1">
                 <AdminNavLink />
               </div>
               <Link to="/workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">

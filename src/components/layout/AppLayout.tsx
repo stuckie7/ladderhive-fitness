@@ -1,3 +1,4 @@
+
 // src/components/layout/AppLayout.tsx
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -15,7 +16,8 @@ import {
   BookOpen,
   Bookmark,
   Zap,
-  LogOut
+  LogOut,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useExerciseLibraryNavigation } from '@/hooks/use-exercise-library-navigation';
@@ -145,6 +147,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { label: 'Exercises', href: '/exercises/enhanced', icon: <Dumbbell size={18} /> },
     { label: 'Workouts', href: '/workouts', icon: <PanelLeft size={18} /> },
     { label: 'Saved Workouts', href: '/saved-workouts', icon: <Bookmark size={18} /> },
+    { label: 'Forums', href: '/forums', icon: <MessageSquare size={18} /> },
     { label: 'Mindful Movement', href: '/mindful-movement', icon: <Zap size={18} /> },
     { label: 'Progress', href: '/progress', icon: <LineChart size={18} /> },
     { label: 'Schedule', href: '/schedule', icon: <CalendarDays size={18} /> },
