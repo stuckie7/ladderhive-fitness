@@ -2,8 +2,7 @@
 console.log('Starting MoodQuiz tests...');
 
 import React from 'react';
-import { render } from '@testing-library/react';
-import { screen, waitFor } from '@testing-library/dom';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MoodQuiz } from '../MoodQuiz';
 import '@testing-library/jest-dom';
