@@ -64,7 +64,7 @@ export class ForumService {
 
       if (error) {
         console.error('ForumService: Database error:', error);
-        throw error;
+        throw new Error(`Database error: ${error.message}`);
       }
       
       console.log('ForumService: Categories fetched successfully:', data);
@@ -76,117 +76,164 @@ export class ForumService {
   }
 
   static async getCategoryBySlug(slug: string) {
-    const { data, error } = await supabase
-      .from('forum_categories')
-      .select('*')
-      .eq('slug', slug)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('forum_categories')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle();
 
-    if (error) throw error;
-    return data as ForumCategory;
+      if (error) {
+        console.error('ForumService: Error fetching category by slug:', error);
+        throw new Error(`Failed to fetch category: ${error.message}`);
+      }
+      
+      return data as ForumCategory | null;
+    } catch (error) {
+      console.error('ForumService: Error in getCategoryBySlug:', error);
+      throw error;
+    }
   }
 
   // Threads
   static async getThreadsByCategory(categoryId: number) {
-    const { data, error } = await supabase
-      .from('forum_threads')
-      .select(`
-        *,
-        profiles (
-          username,
-          avatar_url
-        )
-      `)
-      .eq('category_id', categoryId)
-      .order('is_pinned', { ascending: false })
-      .order('last_activity_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('forum_threads')
+        .select(`
+          *,
+          profiles (
+            username,
+            avatar_url
+          )
+        `)
+        .eq('category_id', categoryId)
+        .order('is_pinned', { ascending: false })
+        .order('last_activity_at', { ascending: false });
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        console.error('ForumService: Error fetching threads:', error);
+        throw new Error(`Failed to fetch threads: ${error.message}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('ForumService: Error in getThreadsByCategory:', error);
+      throw error;
+    }
   }
 
   static async getThreadBySlug(slug: string) {
-    const { data, error } = await supabase
-      .from('forum_threads')
-      .select(`
-        *,
-        profiles (
-          username,
-          avatar_url
-        ),
-        forum_categories (
-          id,
-          name,
-          slug
-        )
-      `)
-      .eq('slug', slug)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('forum_threads')
+        .select(`
+          *,
+          profiles (
+            username,
+            avatar_url
+          ),
+          forum_categories (
+            id,
+            name,
+            slug
+          )
+        `)
+        .eq('slug', slug)
+        .maybeSingle();
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        console.error('ForumService: Error fetching thread by slug:', error);
+        throw new Error(`Failed to fetch thread: ${error.message}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('ForumService: Error in getThreadBySlug:', error);
+      throw error;
+    }
   }
 
   static async getThreadById(id: number) {
-    const { data, error } = await supabase
-      .from('forum_threads')
-      .select(`
-        *,
-        profiles (
-          username,
-          avatar_url
-        ),
-        forum_categories (
-          id,
-          name,
-          slug
-        )
-      `)
-      .eq('id', id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('forum_threads')
+        .select(`
+          *,
+          profiles (
+            username,
+            avatar_url
+          ),
+          forum_categories (
+            id,
+            name,
+            slug
+          )
+        `)
+        .eq('id', id)
+        .maybeSingle();
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        console.error('ForumService: Error fetching thread by id:', error);
+        throw new Error(`Failed to fetch thread: ${error.message}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('ForumService: Error in getThreadById:', error);
+      throw error;
+    }
   }
 
   static async createThread(threadData: CreateThreadData) {
-    // Generate slug if not provided
-    if (!threadData.slug) {
-      threadData.slug = threadData.title
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .substring(0, 100)
-        .replace(/-+$/, '') +
-        '-' + Math.random().toString(36).substring(2, 8);
+    try {
+      // Generate slug if not provided
+      if (!threadData.slug) {
+        threadData.slug = threadData.title
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .substring(0, 100)
+          .replace(/-+$/, '') +
+          '-' + Math.random().toString(36).substring(2, 8);
+      }
+
+      const { data: thread, error: threadError } = await supabase
+        .from('forum_threads')
+        .insert([{
+          title: threadData.title,
+          slug: threadData.slug,
+          category_id: threadData.category_id,
+          user_id: threadData.user_id
+        }])
+        .select()
+        .single();
+
+      if (threadError) {
+        console.error('ForumService: Error creating thread:', threadError);
+        throw new Error(`Failed to create thread: ${threadError.message}`);
+      }
+
+      // Create the first post
+      const { error: postError } = await supabase
+        .from('forum_posts')
+        .insert([{
+          thread_id: thread.id,
+          user_id: threadData.user_id,
+          content: threadData.content
+        }]);
+
+      if (postError) {
+        console.error('ForumService: Error creating post:', postError);
+        throw new Error(`Failed to create post: ${postError.message}`);
+      }
+
+      return thread;
+    } catch (error) {
+      console.error('ForumService: Error in createThread:', error);
+      throw error;
     }
-
-    const { data: thread, error: threadError } = await supabase
-      .from('forum_threads')
-      .insert([{
-        title: threadData.title,
-        slug: threadData.slug,
-        category_id: threadData.category_id,
-        user_id: threadData.user_id
-      }])
-      .select()
-      .single();
-
-    if (threadError) throw threadError;
-
-    // Create the first post
-    const { error: postError } = await supabase
-      .from('forum_posts')
-      .insert([{
-        thread_id: thread.id,
-        user_id: threadData.user_id,
-        content: threadData.content
-      }]);
-
-    if (postError) throw postError;
-
-    return thread;
   }
 
   static async updateThread(id: number, updates: Partial<ForumThread>) {
