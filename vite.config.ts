@@ -47,10 +47,7 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    plugins: [
-      react(),
-      mode === 'production' && visualizer(),
-    ].filter(Boolean),
+    plugins,
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

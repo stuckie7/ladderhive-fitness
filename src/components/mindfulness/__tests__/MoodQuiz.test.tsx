@@ -1,3 +1,4 @@
+
 console.log('Starting MoodQuiz tests...');
 
 import React from 'react';

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { AdminAuditLog, AdminUser, AdminWorkout, AdminWorkoutSchedule, AdminStats, UserWorkoutStats } from '@/types/admin';
 
@@ -166,6 +165,7 @@ export const adminService = {
 
   // Create a workout for a specific user (admin only)
   createUserWorkout: async (userId: string, workoutData: any): Promise<AdminWorkout> => {
+    const currentUser = await adminService.getCurrentUser();
     const { data, error } = await supabase
       .from('prepared_workouts')
       .insert([
@@ -173,7 +173,7 @@ export const adminService = {
           ...workoutData,
           user_id: userId,
           admin_suggested: true,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          created_by_admin: currentUser.id
         }
       ])
       .select()

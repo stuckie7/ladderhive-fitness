@@ -447,6 +447,148 @@ export type Database = {
         }
         Relationships: []
       }
+      forum_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: number
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      forum_posts: {
+        Row: {
+          attachments: Json | null
+          content: string
+          created_at: string
+          id: number
+          is_solution: boolean
+          parent_post_id: number | null
+          thread_id: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          created_at?: string
+          id?: number
+          is_solution?: boolean
+          parent_post_id?: number | null
+          thread_id: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          created_at?: string
+          id?: number
+          is_solution?: boolean
+          parent_post_id?: number | null
+          thread_id?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_posts_parent_post_id_fkey"
+            columns: ["parent_post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_posts_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "forum_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_threads: {
+        Row: {
+          category_id: number
+          created_at: string
+          id: number
+          is_locked: boolean
+          is_pinned: boolean
+          last_activity_at: string
+          slug: string
+          title: string
+          updated_at: string
+          user_id: string | null
+          view_count: number
+        }
+        Insert: {
+          category_id: number
+          created_at?: string
+          id?: number
+          is_locked?: boolean
+          is_pinned?: boolean
+          last_activity_at?: string
+          slug: string
+          title: string
+          updated_at?: string
+          user_id?: string | null
+          view_count?: number
+        }
+        Update: {
+          category_id?: number
+          created_at?: string
+          id?: number
+          is_locked?: boolean
+          is_pinned?: boolean
+          last_activity_at?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_threads_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "forum_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_threads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mindful_movements: {
         Row: {
           created_at: string | null
@@ -491,6 +633,71 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      notifications: {
+        Row: {
+          actor_user_id: string | null
+          content_summary: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          recipient_user_id: string
+          reference_post_id: number | null
+          reference_thread_id: number | null
+          type: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          content_summary?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_user_id: string
+          reference_post_id?: number | null
+          reference_thread_id?: number | null
+          type: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          content_summary?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_user_id?: string
+          reference_post_id?: number | null
+          reference_thread_id?: number | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_reference_post_id_fkey"
+            columns: ["reference_post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_reference_thread_id_fkey"
+            columns: ["reference_thread_id"]
+            isOneToOne: false
+            referencedRelation: "forum_threads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       predesigned_workout_exercises: {
         Row: {
@@ -734,6 +941,7 @@ export type Database = {
       profiles: {
         Row: {
           age: number | null
+          bio: string | null
           created_at: string
           first_name: string | null
           fitness_goals: string[] | null
@@ -744,11 +952,13 @@ export type Database = {
           last_name: string | null
           profile_photo_url: string | null
           updated_at: string
+          username: string | null
           weight: number | null
           workout_days: string[] | null
         }
         Insert: {
           age?: number | null
+          bio?: string | null
           created_at?: string
           first_name?: string | null
           fitness_goals?: string[] | null
@@ -759,11 +969,13 @@ export type Database = {
           last_name?: string | null
           profile_photo_url?: string | null
           updated_at?: string
+          username?: string | null
           weight?: number | null
           workout_days?: string[] | null
         }
         Update: {
           age?: number | null
+          bio?: string | null
           created_at?: string
           first_name?: string | null
           fitness_goals?: string[] | null
@@ -774,6 +986,7 @@ export type Database = {
           last_name?: string | null
           profile_photo_url?: string | null
           updated_at?: string
+          username?: string | null
           weight?: number | null
           workout_days?: string[] | null
         }
@@ -816,6 +1029,39 @@ export type Database = {
             columns: ["workout_id"]
             isOneToOne: false
             referencedRelation: "prepared_workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thread_subscriptions: {
+        Row: {
+          created_at: string
+          thread_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          thread_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          thread_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_subscriptions_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "forum_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
