@@ -10,7 +10,7 @@ interface Category {
 }
 
 const NewThread: React.FC = () => {
-  const { slug: categorySlug } = useParams<{ slug: string }>();
+  const { categoryId } = useParams<{ categoryId?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -25,26 +25,35 @@ const NewThread: React.FC = () => {
 
   useEffect(() => {
     const fetchCategory = async () => {
-      if (!categorySlug) {
+      if (!categoryId) {
         setIsLoading(false);
         return;
       }
 
       try {
+        console.log('Fetching category with ID:', categoryId);
+        
+        // First try to fetch by ID
         const { data, error: fetchError } = await supabase
           .from('forum_categories')
           .select('id, name, slug')
-          .eq('slug', categorySlug)
+          .or(`id.eq.${categoryId},slug.eq.${categoryId}`)
           .single();
 
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.error('Supabase fetch error:', fetchError);
+          throw fetchError;
+        }
+        
         if (!data) {
+          console.log('No category found with ID/slug:', categoryId);
           throw new Error('Category not found');
         }
 
+        console.log('Found category:', data);
         setCategory(data);
       } catch (err) {
-        console.error('Error fetching category:', err);
+        console.error('Error in fetchCategory:', err);
         setError('Failed to load category. It may have been deleted or you may not have permission to view it.');
       } finally {
         setIsLoading(false);
@@ -52,7 +61,7 @@ const NewThread: React.FC = () => {
     };
 
     fetchCategory();
-  }, [categorySlug]);
+  }, [categoryId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -123,67 +132,99 @@ const NewThread: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!title.trim() || !content.trim()) {
+      setError('Please fill in all fields');
+      return;
+    }
+
     if (!user) {
       setError('You must be logged in to create a thread');
       return;
     }
-    
-    if (!title.trim() || !content.trim()) {
-      setError('Title and content are required');
-      return;
-    }
-    
-    if (!category) {
-      setError('Category not found');
-      return;
-    }
-    
+
+    setIsSubmitting(true);
+    setError(null);
+
     try {
-      setIsSubmitting(true);
-      setError(null);
+      console.log('Creating new thread with title:', title);
+      console.log('Category ID:', category?.id);
       
-      // 1. Create the thread
+      // Generate a URL-friendly slug
+      const slug = title.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      
+      console.log('Generated slug:', slug);
+
+      // Create the thread
       const { data: thread, error: threadError } = await supabase
         .from('forum_threads')
-        .insert([{
-          title,
-          category_id: category.id,
-          user_id: user.id,
-          slug: title
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, '') // Remove special chars
-            .replace(/\s+/g, '-') // Replace spaces with -
-            .replace(/-+/g, '-') // Replace multiple - with single -
-            .substring(0, 100) // Limit length
-            .replace(/-+$/, '') + // Remove trailing -
-            '-' + Math.random().toString(36).substring(2, 8) // Add random string for uniqueness
-        }])
+        .insert([
+          {
+            title,
+            slug,
+            category_id: category?.id || null,
+            user_id: user.id,
+            last_activity_at: new Date().toISOString()
+          }
+        ])
         .select()
         .single();
+
+      if (threadError) {
+        console.error('Thread creation error:', threadError);
+        throw threadError;
+      }
       
-      if (threadError) throw threadError;
-      
-      // 2. Upload attachments if any
-      const uploadedAttachments = await uploadAttachments(thread.id, user.id);
-      
-      // 3. Create the first post in the thread
+      if (!thread) {
+        console.error('No thread data returned after creation');
+        throw new Error('Failed to create thread: No data returned');
+      }
+
+      console.log('Thread created:', thread);
+
+      // Create the first post in the thread
       const { error: postError } = await supabase
         .from('forum_posts')
-        .insert([{
-          thread_id: thread.id,
-          user_id: user.id,
-          content,
-          attachments: uploadedAttachments.length > 0 ? uploadedAttachments : null
-        }]);
-      
-      if (postError) throw postError;
-      
-      // 4. Redirect to the new thread
-      navigate(`/forums/thread/${thread.slug || thread.id}`);
-      
+        .insert([
+          {
+            content,
+            thread_id: thread.id,
+            user_id: user.id
+          }
+        ]);
+
+      if (postError) {
+        console.error('Post creation error:', postError);
+        throw postError;
+      }
+
+      console.log('Initial post created');
+
+      // Upload attachments if any
+      if (attachments.length > 0) {
+        console.log('Uploading attachments:', attachments.length);
+        try {
+          await uploadAttachments(thread.id, user.id);
+          console.log('Attachments uploaded successfully');
+        } catch (uploadError) {
+          console.error('Error uploading attachments:', uploadError);
+          // Don't fail the whole operation if attachments fail
+          setError('Thread created, but there was an error uploading some attachments');
+        }
+      }
+
+      // Redirect to the new thread
+      const redirectPath = `/forums/thread/${thread.slug || thread.id}`;
+      console.log('Redirecting to:', redirectPath);
+      navigate(redirectPath);
     } catch (err) {
-      console.error('Error creating thread:', err);
-      setError('Failed to create thread. Please try again.');
+      console.error('Error in handleSubmit:', err);
+      setError(
+        err instanceof Error 
+          ? `Failed to create thread: ${err.message}`
+          : 'An unknown error occurred while creating the thread'
+      );
     } finally {
       setIsSubmitting(false);
     }
