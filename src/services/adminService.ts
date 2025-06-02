@@ -36,23 +36,17 @@ export const adminService = {
     return user;
   },
 
-  // Check if current user is admin
+  // Check if current user is admin by checking user metadata
   isAdmin: async (): Promise<boolean> => {
     try {
       const user = await adminService.getCurrentUser();
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        return false;
-      }
-
-      return !!data;
+      // Check both user_metadata and app_metadata for admin role
+      const isAdmin = user?.user_metadata?.role === 'admin' || 
+                     user?.app_metadata?.role === 'admin' ||
+                     user?.user_metadata?.is_admin === true;
+      return !!isAdmin;
     } catch (error) {
+      console.error('Error checking admin status:', error);
       return false;
     }
   },

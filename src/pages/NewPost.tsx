@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '@/lib/supabase'; // Using the same import as the rest of the codebase
 import { useAuth } from '../context/AuthContext';
 
 interface Thread {
@@ -14,7 +14,7 @@ interface Thread {
 }
 
 const NewPost: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { threadSlug } = useParams<{ threadSlug: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -33,15 +33,30 @@ const NewPost: React.FC = () => {
     setIsReply(replyParam === 'true');
   }, [searchParams]);
 
-  // Fetch thread details
+  // Check authentication and fetch thread details
   useEffect(() => {
     const fetchThread = async () => {
-      if (!slug) return;
+      if (!threadSlug) return;
+      
+      // Check if user is authenticated
+      if (!user) {
+        setError('You must be logged in to view this page');
+        setIsLoading(false);
+        // Optionally redirect to login
+        // navigate('/login', { state: { from: location.pathname } });
+        return;
+      }
       
       try {
         setIsLoading(true);
         setError(null);
         
+        // First, check if user has permission to post
+        // We'll assume all authenticated users can post by default
+        // and let the RLS policies handle any restrictions
+        console.log('User authenticated, checking permissions...');
+        
+        // Fetch thread details
         const { data, error: threadError } = await supabase
           .from('forum_threads')
           .select(`
@@ -51,7 +66,7 @@ const NewPost: React.FC = () => {
               slug
             )
           `)
-          .or(`id.eq.${slug},slug.eq.${slug}`)
+          .or(`id.eq.${threadSlug},slug.eq.${threadSlug}`)
           .single();
         
         if (threadError) throw threadError;
@@ -67,7 +82,7 @@ const NewPost: React.FC = () => {
     };
     
     fetchThread();
-  }, [slug]);
+  }, [threadSlug]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -83,16 +98,43 @@ const NewPost: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !thread) return;
-    
+    // Basic validation
     if (!content.trim()) {
-      setError('Please enter some content for your post');
+      setError('Content is required');
       return;
     }
+
+    // Authentication check
+    if (!user) {
+      setError('You must be logged in to post');
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+
+    // Thread validation
+    if (!thread) {
+      setError('Thread information is not available');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
     
     try {
-      setIsSubmitting(true);
-      setError(null);
+      // Check if user has permission to post
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('id', user.id);
+        
+      if (rolesError) {
+        console.error('Error checking user roles:', rolesError);
+        // Continue even if we can't check roles, let the server handle permissions
+      } else if (userRoles && userRoles.length === 0) {
+        setError('You do not have permission to post in this forum');
+        setIsSubmitting(false);
+        return;
+      }
       
       // Create the post
       const { data: post, error: postError } = await supabase
@@ -117,9 +159,28 @@ const NewPost: React.FC = () => {
       // Redirect to the new post
       navigate(`/forums/thread/${thread.slug || thread.id}#post-${post.id}`, { replace: true });
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating post:', err);
-      setError('Failed to create post. Please try again.');
+      
+      // Handle specific error cases
+      if (err.code === '42501') {
+        setError('You do not have permission to perform this action');
+      } else if (err.code === '23503') {
+        // Foreign key violation
+        if (err.message.includes('user_id')) {
+          setError('User not found. Please log in again.');
+        } else if (err.message.includes('thread_id')) {
+          setError('Invalid thread. Please refresh the page and try again.');
+        } else {
+          setError('An error occurred. Please check your input and try again.');
+        }
+      } else if (err.message?.includes('JWT')) {
+        setError('Your session has expired. Please log in again.');
+        // Redirect to login
+        navigate('/login', { state: { from: window.location.pathname } });
+      } else {
+        setError('Failed to create post. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

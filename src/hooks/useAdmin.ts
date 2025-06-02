@@ -23,18 +23,17 @@ export const useAdmin = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      setIsAdmin(!!data);
+      // Use auth.users table to check for admin role in raw_user_meta_data
+      const { data: { user: userData }, error } = await supabase.auth.getUser();
+      
+      if (error) throw error;
+      
+      // Check if user has admin role in their metadata
+      const isAdmin = userData?.user_metadata?.role === 'admin' || 
+                     userData?.app_metadata?.role === 'admin' ||
+                     userData?.user_metadata?.is_admin === true;
+      
+      setIsAdmin(!!isAdmin);
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);

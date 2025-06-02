@@ -36,7 +36,7 @@ interface Category {
 }
 
 const ForumCategory: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { categorySlug } = useParams<{ categorySlug: string }>();
   const navigate = useNavigate();
   const [category, setCategory] = useState<Category | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -46,64 +46,142 @@ const ForumCategory: React.FC = () => {
 
   useEffect(() => {
     const fetchCategoryData = async () => {
-      if (!slug) return;
+      if (!categorySlug) {
+        console.log('No category slug provided in URL');
+        return;
+      }
       
       try {
         setIsLoading(true);
         setError(null);
+        console.log('Fetching category with slug:', categorySlug);
 
         // Fetch category details
         const { data: categoryData, error: categoryError } = await supabase
           .from('forum_categories')
           .select('*')
-          .eq('slug', slug)
+          .eq('slug', categorySlug)
           .single();
 
-        if (categoryError) throw categoryError;
+        console.log('Category fetch result:', { categoryData, categoryError });
+
+        if (categoryError) {
+          console.error('Category fetch error:', categoryError);
+          throw categoryError;
+        }
+        
         if (!categoryData) {
+          console.log('No category found with slug:', categorySlug);
           navigate('/forums', { replace: true });
           return;
         }
 
+        console.log('Setting category data:', categoryData);
         setCategory(categoryData);
 
+        console.log('Fetching threads for category ID:', categoryData.id);
+        
         // Fetch threads for this category with additional data
-        const { data: threadsData, error: threadsError } = await supabase
+        // First, get the thread IDs for this category
+        const { data: threadIds, error: threadIdsError } = await supabase
+          .from('forum_threads')
+          .select('id')
+          .eq('category_id', categoryData.id);
+
+        if (threadIdsError) {
+          console.error('Error fetching thread IDs:', threadIdsError);
+          throw threadIdsError;
+        }
+
+        // If no threads, set empty array and return
+        if (!threadIds || threadIds.length === 0) {
+          setThreads([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Get thread data with author info
+        const { data: threadsData, error: threadsError, count } = await supabase
           .from('forum_threads')
           .select(`
             *,
-            profiles (
+            author:profiles!user_id (
               username,
               avatar_url
-            ),
-            forum_posts!inner(
-              id,
-              created_at,
-              user_id,
-              profiles (
-                username,
-                avatar_url
-              )
             )
-          `)
-          .eq('category_id', categoryData.id)
+          `, { count: 'exact' })
+          .in('id', threadIds.map(t => t.id))
           .order('is_pinned', { ascending: false })
           .order('last_activity_at', { ascending: false });
 
-        if (threadsError) throw threadsError;
+        // Get last post for each thread
+        const { data: lastPostsData, error: lastPostsError } = await supabase
+          .from('forum_posts')
+          .select(`
+            id,
+            thread_id,
+            created_at,
+            author:profiles!user_id (
+              username,
+              avatar_url
+            )
+          `)
+          .in('thread_id', threadIds.map(t => t.id))
+          .order('created_at', { ascending: false });
+
+        if (lastPostsError) {
+          console.error('Error fetching last posts:', lastPostsError);
+          throw lastPostsError;
+        }
+
+        console.log('Threads fetch result:', { 
+          count,
+          threadsData: threadsData?.length,
+          threadsError 
+        });
+
+        if (threadsError) {
+          console.error('Threads fetch error:', threadsError);
+          throw threadsError;
+        }
+
+        // Create a map of thread_id to last post
+        const lastPostMap = new Map();
+        (lastPostsData || []).forEach(post => {
+          if (!lastPostMap.has(post.thread_id)) {
+            lastPostMap.set(post.thread_id, post);
+          }
+        });
 
         // Transform the data to include reply_count and last_post
         const transformedThreads = (threadsData || []).map(thread => {
-          const threadPosts = thread.forum_posts || [];
-          const lastPost = threadPosts[0];
+          const lastPost = lastPostMap.get(thread.id);
+          const replyCount = (lastPostsData || []).filter(p => p.thread_id === thread.id).length - 1; // Subtract 1 for the original post
           
+          console.log('Processing thread:', {
+            threadId: thread.id,
+            threadTitle: thread.title,
+            lastPost,
+            replyCount,
+            author: thread.author?.username || 'Unknown',
+            authorAvatar: thread.author?.avatar_url || null
+          });
+
           return {
             ...thread,
-            reply_count: Math.max(0, threadPosts.length - 1), // Subtract 1 to exclude the original post
+            reply_count: Math.max(0, replyCount), // Ensure non-negative
             last_post: lastPost ? {
               created_at: lastPost.created_at,
               user_id: lastPost.user_id,
-              profiles: lastPost.profiles
+              profiles: {
+                username: lastPost.author?.username || 'Unknown',
+                avatar_url: lastPost.author?.avatar_url || null
+              }
+            } : null,
+            // Ensure profiles is always an object to match the Thread interface
+            profiles: thread.author ? {
+              username: thread.author.username || 'Unknown',
+              avatar_url: thread.author.avatar_url || null
             } : null
           };
         });
@@ -118,7 +196,7 @@ const ForumCategory: React.FC = () => {
     };
 
     fetchCategoryData();
-  }, [slug, navigate]);
+  }, [categorySlug, navigate]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -188,7 +266,7 @@ const ForumCategory: React.FC = () => {
           </div>
           {user && (
             <Link
-              to={`/forums/category/${slug}/new-thread`}
+              to={`/forums/new-thread/${category?.id}`}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
             >
               New Thread

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 
 export default function DebugForum() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -96,6 +96,17 @@ export default function DebugForum() {
             )}
           </tbody>
         </table>
+      </div>
+      
+      <div className="mt-8 p-4 bg-blue-50 rounded-md">
+        <h3 className="text-lg font-medium text-blue-800 mb-2">Troubleshooting</h3>
+        <ul className="list-disc pl-5 space-y-1 text-sm text-blue-700">
+          <li>Make sure you're connected to the internet</li>
+          <li>Check if Supabase is up at <a href="https://status.supabase.com/" target="_blank" rel="noopener noreferrer" className="underline">status.supabase.com</a></li>
+          <li>Verify your Supabase URL and anon key in <code className="bg-blue-100 px-1">src/lib/supabase.ts</code></li>
+          <li>Ensure the <code className="bg-blue-100 px-1">forum_categories</code> table exists in your Supabase database</li>
+          <li>Check the browser's developer console (F12) for any error messages</li>
+        </ul>
       </div>
     </div>
   );

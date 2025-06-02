@@ -27,24 +27,24 @@ export const useUpcomingWorkouts = () => {
       try {
         setIsLoading(true);
 
-        // Corrected query to properly join and select fields from the proper tables
+        // Query for upcoming workouts using the correct table names and relationships
         const { data, error } = await supabase
-          .from('user_workouts')
+          .from('workout_schedules')
           .select(`
             id,
-            planned_for,
-            workout_id,
-            prepared_workouts (
+            scheduled_date,
+            status,
+            suggested_workouts (
               id,
-              title,
-              duration_minutes,
+              name,
+              duration,
               difficulty
             )
           `)
           .eq('user_id', user.id)
-          .gt('planned_for', new Date().toISOString())
-          .is('completed_at', null)
-          .order('planned_for', { ascending: true })
+          .gt('scheduled_date', new Date().toISOString())
+          .eq('status', 'scheduled')
+          .order('scheduled_date', { ascending: true })
           .limit(3);
 
         if (error) {
@@ -53,17 +53,16 @@ export const useUpcomingWorkouts = () => {
 
         // Format the data safely with type checking and fallbacks
         const formattedWorkouts: UpcomingWorkout[] = (data || [])
-          .filter(workout => workout.prepared_workouts) // Filter out entries without workout data
+          .filter(workout => workout.suggested_workouts) // Filter out entries without workout data
           .map(workout => {
-            // Type the workoutInfo properly to avoid "Property does not exist on type '{}'" errors
-            const workoutInfo = workout.prepared_workouts as Record<string, any> || {};
+            const workoutInfo = workout.suggested_workouts as Record<string, any> || {};
             
             return {
               id: workout.id,
-              title: workoutInfo.title || 'Scheduled Workout',
-              scheduled_date: workout.planned_for,
-              duration_minutes: workoutInfo.duration_minutes || 30,
-              difficulty: workoutInfo.difficulty || 'Intermediate'
+              title: workoutInfo.name || 'Scheduled Workout',
+              scheduled_date: workout.scheduled_date,
+              duration_minutes: workoutInfo.duration || 30,
+              difficulty: workoutInfo.difficulty || 'intermediate'
             };
           });
 

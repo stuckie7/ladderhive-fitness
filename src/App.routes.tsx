@@ -51,6 +51,7 @@ import NewPost from "@/pages/NewPost";
 import NewThread from "@/pages/NewThread";
 import EditPost from "@/pages/EditPost";
 import DebugForum from "@/pages/DebugForum";
+import ForumDebugPage from "@/pages/ForumDebugPage";
 
 // Admin Route Wrapper Component
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -358,10 +359,14 @@ const router = createBrowserRouter([
     path: "/forums/new-thread/:categoryId?",
     element: <ProtectedRoute><NewThread /></ProtectedRoute>
   },
-  // Debug route - remove in production
+  // Debug routes - remove in production
   {
     path: "/debug/forum",
     element: <DebugForum />
+  },
+  {
+    path: "/forum-debug",
+    element: <ForumDebugPage />
   }
 ]);
 

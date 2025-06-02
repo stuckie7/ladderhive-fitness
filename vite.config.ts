@@ -27,11 +27,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      host: "::",
+      host: "localhost",
       port: 8080,
       hmr: {
-        host: "::",
+        host: "localhost",
         port: 8080,
+        protocol: 'ws',
       },
     },
     build: {
