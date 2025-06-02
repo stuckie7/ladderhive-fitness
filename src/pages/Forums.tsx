@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ForumService } from '@/services/forumService';
+import { ensureForumCategoriesExist } from '@/utils/forumSetup';
 import { useAuth } from '@/context/AuthContext';
 import { MessageSquare, MessageSquarePlus, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,26 +33,28 @@ const Forums: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        console.log('Fetching forum categories...');
+        console.log('Forums: Starting to fetch categories...');
         
-        // Use the ForumService to get categories
+        // Ensure at least one category exists
+        await ensureForumCategoriesExist();
+        
         const data = await ForumService.getCategories();
-        console.log('Categories fetched:', data);
+        console.log('Forums: Categories fetched successfully:', data);
         
-        // For now, just use the basic category data without complex aggregations
         const transformedData = data.map(category => ({
           id: category.id,
           name: category.name,
           description: category.description,
           slug: category.slug,
-          thread_count: 0, // We'll add this functionality later
-          last_post: null // We'll add this functionality later
+          thread_count: 0,
+          last_post: null
         }));
 
         setCategories(transformedData);
       } catch (err) {
-        console.error('Error fetching categories:', err);
-        setError('Failed to load forum categories. Please try again later.');
+        console.error('Forums: Error fetching categories:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        setError(`Failed to load forum categories: ${errorMessage}`);
       } finally {
         setIsLoading(false);
       }
