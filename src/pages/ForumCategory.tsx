@@ -16,14 +16,12 @@ interface Thread {
   user_id: string;
   profiles: {
     username: string;
-    avatar_url: string | null;
   } | null;
   last_post?: {
     created_at: string;
     user_id: string;
     profiles: {
       username: string;
-      avatar_url: string | null;
     } | null;
   } | null;
 }
@@ -106,8 +104,7 @@ const ForumCategory: React.FC = () => {
           .select(`
             *,
             author:profiles!user_id (
-              username,
-              avatar_url
+              username
             )
           `, { count: 'exact' })
           .in('id', threadIds.map(t => t.id))
@@ -122,8 +119,7 @@ const ForumCategory: React.FC = () => {
             thread_id,
             created_at,
             author:profiles!user_id (
-              username,
-              avatar_url
+              username
             )
           `)
           .in('thread_id', threadIds.map(t => t.id))
@@ -163,8 +159,7 @@ const ForumCategory: React.FC = () => {
             threadTitle: thread.title,
             lastPost,
             replyCount,
-            author: thread.author?.username || 'Unknown',
-            authorAvatar: thread.author?.avatar_url || null
+            author: thread.author?.username || 'Unknown'
           });
 
           return {
@@ -174,14 +169,12 @@ const ForumCategory: React.FC = () => {
               created_at: lastPost.created_at,
               user_id: lastPost.user_id,
               profiles: {
-                username: lastPost.author?.username || 'Unknown',
-                avatar_url: lastPost.author?.avatar_url || null
+                username: lastPost.author?.username || 'Unknown'
               }
             } : null,
             // Ensure profiles is always an object to match the Thread interface
             profiles: thread.author ? {
-              username: thread.author.username || 'Unknown',
-              avatar_url: thread.author.avatar_url || null
+              username: thread.author.username || 'Unknown'
             } : null
           };
         });
@@ -293,17 +286,9 @@ const ForumCategory: React.FC = () => {
                 <Link to={`/forums/thread/${thread.slug || thread.id}`} className="block p-4">
                   <div className="flex items-start">
                     <div className="flex-shrink-0 mr-4">
-                      {thread.profiles?.avatar_url ? (
-                        <img
-                          className="h-10 w-10 rounded-full"
-                          src={thread.profiles.avatar_url}
-                          alt={thread.profiles.username}
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                          {thread.profiles?.username?.charAt(0) || '?'}
-                        </div>
-                      )}
+                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                        {thread.profiles?.username?.charAt(0) || '?'}
+                      </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center">
