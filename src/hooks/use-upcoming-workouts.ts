@@ -34,7 +34,7 @@ export const useUpcomingWorkouts = () => {
             id,
             scheduled_date,
             status,
-            suggested_workouts (
+            suggested_workouts!workout_id (
               id,
               name,
               duration,
