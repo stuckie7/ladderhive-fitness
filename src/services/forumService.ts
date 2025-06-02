@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface ForumCategory {
@@ -55,20 +54,25 @@ export interface CreatePostData {
 export class ForumService {
   // Categories
   static async getCategories() {
-    const { data, error } = await supabase
-      .from('forum_categories')
-      .select(`
-        id,
-        name,
-        description,
-        slug,
-        sort_order,
-        created_at
-      `)
-      .order('sort_order', { ascending: true });
+    console.log('ForumService: Fetching categories from database...');
+    
+    try {
+      const { data, error } = await supabase
+        .from('forum_categories')
+        .select('id, name, description, slug, sort_order, created_at')
+        .order('sort_order', { ascending: true });
 
-    if (error) throw error;
-    return data as ForumCategory[];
+      if (error) {
+        console.error('ForumService: Database error:', error);
+        throw error;
+      }
+      
+      console.log('ForumService: Categories fetched successfully:', data);
+      return data as ForumCategory[];
+    } catch (error) {
+      console.error('ForumService: Error in getCategories:', error);
+      throw error;
+    }
   }
 
   static async getCategoryBySlug(slug: string) {
