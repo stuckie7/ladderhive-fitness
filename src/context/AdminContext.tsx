@@ -31,7 +31,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       setAdminStatus(isUserAdmin);
       return isUserAdmin;
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      // Only log unexpected errors, not unauthenticated errors
+      if (!(error instanceof Error && error.message === 'Not authenticated')) {
+        console.error('Error checking admin status:', error);
+      }
       setAdminStatus(false);
       return false;
     } finally {

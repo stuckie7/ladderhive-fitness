@@ -28,10 +28,10 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: "localhost",
-      port: 8080,
+      port: 3000,
       hmr: {
         host: "localhost",
-        port: 8080,
+        port: 3000,
         protocol: 'ws',
       },
     },

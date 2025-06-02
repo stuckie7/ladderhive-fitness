@@ -40,11 +40,15 @@ export const adminService = {
   isAdmin: async (): Promise<boolean> => {
     try {
       const user = await adminService.getCurrentUser();
+      
+      // If no user is authenticated, return false without logging an error
+      if (!user) return false;
+      
       // Check both user_metadata and app_metadata for admin role
-      const isAdmin = user?.user_metadata?.role === 'admin' || 
-                     user?.app_metadata?.role === 'admin' ||
-                     user?.user_metadata?.is_admin === true;
-      return !!isAdmin;
+      const isAdmin = user.user_metadata?.role === 'admin' || 
+                     user.app_metadata?.role === 'admin' ||
+                     user.user_metadata?.is_admin === true;
+      return isAdmin;
     } catch (error) {
       console.error('Error checking admin status:', error);
       return false;
