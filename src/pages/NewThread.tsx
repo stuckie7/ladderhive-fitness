@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { ForumService } from '@/services/forumService';
 
 interface Category {
   id: number;
@@ -132,8 +133,17 @@ const NewThread: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !content.trim()) {
-      setError('Please fill in all fields');
+    // Reset error state
+    setError(null);
+    
+    // Validate form
+    if (!title.trim()) {
+      setError('Please enter a title for your thread');
+      return;
+    }
+    
+    if (!content.trim()) {
+      setError('Please enter some content for your thread');
       return;
     }
 
@@ -143,60 +153,58 @@ const NewThread: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    setError(null);
-
+    
     try {
-      console.log('Creating new thread with title:', title);
+      console.log('Starting thread creation process...');
+      console.log('User ID:', user.id);
       console.log('Category ID:', category?.id);
-      
-      // Generate a URL-friendly slug
-      const slug = title.toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-      
-      console.log('Generated slug:', slug);
+      console.log('Title:', title);
+      console.log('Content length:', content.length);
+      console.log('Attachment count:', attachments.length);
 
-      // Create the thread
-      const { data: thread, error: threadError } = await supabase
-        .from('forum_threads')
-        .insert([
-          {
-            title,
-            slug,
-            category_id: category?.id || null,
-            user_id: user.id,
-            last_activity_at: new Date().toISOString()
+      // Create thread data object
+      const threadData = {
+        title: title.trim(),
+        content: content.trim(),
+        category_id: category?.id,
+        user_id: user.id
+      };
+
+      console.log('Thread data prepared:', {
+        ...threadData,
+        content: threadData.content.substring(0, 50) + (threadData.content.length > 50 ? '...' : '')
+      });
+
+      // Call the forum service to create the thread
+      const thread = await ForumService.createThread(threadData);
+      console.log('Thread created successfully:', thread);
+
+      // Upload attachments if any
+      if (attachments.length > 0) {
+        console.log('Uploading attachments...');
+        try {
+          const uploadedAttachments = await uploadAttachments(thread.id, user.id);
+          console.log('Attachments uploaded:', uploadedAttachments);
+          
+          // Update the first post with attachment references
+          if (uploadedAttachments.length > 0) {
+            console.log('Updating post with attachment references...');
+            const { error: updateError } = await supabase
+              .from('forum_posts')
+              .update({ attachments: uploadedAttachments })
+              .eq('thread_id', thread.id)
+              .order('created_at', { ascending: true })
+              .limit(1);
+              
+            if (updateError) {
+              console.error('Failed to update post with attachments:', updateError);
+              // Don't fail the whole operation for attachment updates
+            }
           }
-        ])
-        .select()
-        .single();
-
-      if (threadError) {
-        console.error('Thread creation error:', threadError);
-        throw threadError;
-      }
-      
-      if (!thread) {
-        console.error('No thread data returned after creation');
-        throw new Error('Failed to create thread: No data returned');
-      }
-
-      console.log('Thread created:', thread);
-
-      // Create the first post in the thread
-      const { error: postError } = await supabase
-        .from('forum_posts')
-        .insert([
-          {
-            content,
-            thread_id: thread.id,
-            user_id: user.id
-          }
-        ]);
-
-      if (postError) {
-        console.error('Post creation error:', postError);
-        throw postError;
+        } catch (uploadError) {
+          console.error('Error uploading attachments:', uploadError);
+          // Continue even if attachments fail
+        }
       }
 
       console.log('Initial post created');
@@ -218,13 +226,33 @@ const NewThread: React.FC = () => {
       const redirectPath = `/forums/thread/${thread.slug || thread.id}`;
       console.log('Redirecting to:', redirectPath);
       navigate(redirectPath);
-    } catch (err) {
-      console.error('Error in handleSubmit:', err);
-      setError(
-        err instanceof Error 
-          ? `Failed to create thread: ${err.message}`
-          : 'An unknown error occurred while creating the thread'
-      );
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+      
+      // Handle specific error cases
+      if (error instanceof Error) {
+        if (error.message.includes('permission denied')) {
+          setError('You do not have permission to create threads. Please make sure you are logged in and your account has the necessary permissions.');
+        } else if (error.message.includes('duplicate key value violates unique constraint')) {
+          setError('A thread with this title already exists. Please choose a different title.');
+        } else if (error.message.includes('violates foreign key constraint')) {
+          setError('The selected category no longer exists. Please select a different category.');
+        } else if (error.message.includes('network')) {
+          setError('Network error. Please check your internet connection and try again.');
+        } else {
+          setError(`Error: ${error.message}`);
+        }
+      } else {
+        setError('An unknown error occurred while creating the thread. Please try again later.');
+      }
+      
+      // Log the full error for debugging
+      console.error('Full error details:', {
+        error,
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack
+      });
     } finally {
       setIsSubmitting(false);
     }

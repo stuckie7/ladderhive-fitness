@@ -186,7 +186,23 @@ export class ForumService {
   }
 
   static async createThread(threadData: CreateThreadData) {
+    console.log('[ForumService] Starting thread creation with data:', {
+      ...threadData,
+      content: threadData.content ? `${threadData.content.substring(0, 50)}...` : 'empty'
+    });
+
     try {
+      // Validate required fields
+      if (!threadData.title?.trim()) {
+        throw new Error('Thread title is required');
+      }
+      if (!threadData.content?.trim()) {
+        throw new Error('Thread content is required');
+      }
+      if (!threadData.user_id) {
+        throw new Error('User ID is required');
+      }
+
       // Generate slug if not provided
       if (!threadData.slug) {
         threadData.slug = threadData.title
@@ -199,36 +215,92 @@ export class ForumService {
           '-' + Math.random().toString(36).substring(2, 8);
       }
 
+      console.log('[ForumService] Generated slug:', threadData.slug);
+
+      // Check if category exists
+      if (threadData.category_id) {
+        console.log('[ForumService] Verifying category exists:', threadData.category_id);
+        const { data: category, error: categoryError } = await supabase
+          .from('forum_categories')
+          .select('id')
+          .eq('id', threadData.category_id)
+          .single();
+
+        if (categoryError || !category) {
+          const errorMsg = `Category with ID ${threadData.category_id} not found`;
+          console.error('[ForumService] Category error:', categoryError || errorMsg);
+          throw new Error(errorMsg);
+        }
+      }
+
+      // Create thread
+      console.log('[ForumService] Creating thread in database...');
+      const threadInsertData = {
+        title: threadData.title,
+        slug: threadData.slug,
+        category_id: threadData.category_id || null,
+        user_id: threadData.user_id,
+        last_activity_at: new Date().toISOString()
+      };
+      console.log('[ForumService] Thread insert data:', threadInsertData);
+
       const { data: thread, error: threadError } = await supabase
         .from('forum_threads')
-        .insert([{
-          title: threadData.title,
-          slug: threadData.slug,
-          category_id: threadData.category_id,
-          user_id: threadData.user_id
-        }])
+        .insert([threadInsertData])
         .select()
         .single();
 
       if (threadError) {
-        console.error('ForumService: Error creating thread:', threadError);
+        console.error('[ForumService] Thread creation error:', threadError);
+        console.error('Error details:', {
+          code: threadError.code,
+          details: threadError.details,
+          hint: threadError.hint,
+          message: threadError.message
+        });
         throw new Error(`Failed to create thread: ${threadError.message}`);
       }
 
-      // Create the first post
+      console.log('[ForumService] Thread created successfully:', thread);
+
+      // Create initial post
+      console.log('[ForumService] Creating initial post...');
+      const postInsertData = {
+        thread_id: thread.id,
+        user_id: threadData.user_id,
+        content: threadData.content,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      console.log('[ForumService] Post insert data:', {
+        ...postInsertData,
+        content: postInsertData.content ? `${postInsertData.content.substring(0, 50)}...` : 'empty'
+      });
+
       const { error: postError } = await supabase
         .from('forum_posts')
-        .insert([{
-          thread_id: thread.id,
-          user_id: threadData.user_id,
-          content: threadData.content
-        }]);
+        .insert([postInsertData]);
 
       if (postError) {
-        console.error('ForumService: Error creating post:', postError);
+        console.error('[ForumService] Post creation error:', postError);
+        console.error('Error details:', {
+          code: postError.code,
+          details: postError.details,
+          hint: postError.hint,
+          message: postError.message
+        });
+        
+        // Attempt to clean up the thread if post creation fails
+        console.log('[ForumService] Attempting to clean up thread due to post creation failure...');
+        await supabase
+          .from('forum_threads')
+          .delete()
+          .eq('id', thread.id);
+          
         throw new Error(`Failed to create post: ${postError.message}`);
       }
 
+      console.log('[ForumService] Thread and post created successfully');
       return thread;
     } catch (error) {
       console.error('ForumService: Error in createThread:', error);
