@@ -2,7 +2,9 @@
 console.log('Starting MoodQuiz tests...');
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { waitFor } from '@testing-library/react';
 import { MoodQuiz } from '../MoodQuiz';
 import '@testing-library/jest-dom';
 
@@ -38,12 +40,13 @@ describe('MoodQuiz', () => {
   });
 
   it('calls onComplete when a mood is selected', async () => {
+    const user = userEvent.setup({ delay: null });
     const onComplete = jest.fn();
     const onDismiss = jest.fn();
     
     render(<MoodQuiz onComplete={onComplete} onDismiss={onDismiss} />);
     
-    fireEvent.click(screen.getByText('Calm and relaxed'));
+    await user.click(screen.getByText('Calm and relaxed'));
     
     // Fast-forward time
     jest.advanceTimersByTime(600);
@@ -53,14 +56,15 @@ describe('MoodQuiz', () => {
     });
   });
 
-  it('calls onDismiss when the close button is clicked', () => {
+  it('calls onDismiss when the close button is clicked', async () => {
+    const user = userEvent.setup({ delay: null });
     const onComplete = jest.fn();
     const onDismiss = jest.fn();
     
     render(<MoodQuiz onComplete={onComplete} onDismiss={onDismiss} />);
     
     const closeButton = screen.getByRole('button', { name: /close/i });
-    fireEvent.click(closeButton);
+    await user.click(closeButton);
     
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
