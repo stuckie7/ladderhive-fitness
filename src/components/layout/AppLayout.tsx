@@ -107,29 +107,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Quick actions for the FAB - reduced set since Start Workout and Devices are now prominently featured
-  const quickActions = [
-    { 
-      icon: <Flame size={24} />, 
-      label: 'WODs', 
-      href: '/wods' 
-    },
-    { 
-      icon: <Calendar size={24} />, 
-      label: 'Schedule', 
-      href: '/schedule' 
-    },
-    { 
-      icon: <BookmarkIcon size={24} />, 
-      label: 'Saved', 
-      href: '/saved-workouts' 
-    },
-    { 
-      icon: <Clock size={24} />, 
-      label: 'Recovery', 
-      href: '/mindful-movement'
-    },
-  ];
+  // Empty quick actions array - only Start Workout and Devices are now prominently featured in the FAB
+  const quickActions: any[] = [];
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', href: '/dashboard', icon: <Home size={18} /> },
