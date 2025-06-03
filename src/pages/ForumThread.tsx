@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { CheckCircle, CheckCircle2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 interface Post {
   id: number;
@@ -32,6 +34,8 @@ interface Thread {
   view_count: number;
   is_pinned: boolean;
   is_locked: boolean;
+  is_solved: boolean;
+  solved_at: string | null;
   user_id: string;
   profiles: {
     username: string;
@@ -55,6 +59,51 @@ const ForumThread: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<any>(null);
+  const [isMarkingAsSolved, setIsMarkingAsSolved] = useState<number | null>(null);
+
+  const markAsSolved = async (postId: number, threadId: number) => {
+    if (!user) return;
+    
+    try {
+      setIsMarkingAsSolved(postId);
+      
+      // Mark the post as the solution
+      const { error: postError } = await supabase
+        .from('forum_posts')
+        .update({ is_solution: true })
+        .eq('id', postId);
+      
+      if (postError) throw postError;
+      
+      // Mark the thread as solved
+      const { error: threadError } = await supabase
+        .from('forum_threads')
+        .update({ 
+          is_solved: true,
+          solved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', threadId);
+      
+      if (threadError) throw threadError;
+      
+      // Update the local state
+      setThread(prev => prev ? { ...prev, is_solved: true, solved_at: new Date().toISOString() } : null);
+      setPosts(prevPosts => 
+        prevPosts.map(post => ({
+          ...post,
+          is_solution: post.id === postId ? true : post.is_solution
+        }))
+      );
+      
+      toast.success('Marked as solved!');
+    } catch (error) {
+      console.error('Error marking as solved:', error);
+      toast.error('Failed to mark as solved. Please try again.');
+    } finally {
+      setIsMarkingAsSolved(null);
+    }
+  };
 
   useEffect(() => {
     const fetchThreadData = async () => {
@@ -310,15 +359,31 @@ const ForumThread: React.FC = () => {
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">{thread.title}</h1>
-            <div className="flex items-center text-sm text-gray-500">
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-2xl font-bold text-gray-900">{thread.title}</h1>
+              {thread.is_solved && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                  Solved
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
               <span>Started by {thread.profiles?.username || 'Unknown'}</span>
-              <span className="mx-2">·</span>
+              <span>·</span>
               <span>{formatDate(thread.created_at)}</span>
-              <span className="mx-2">·</span>
+              <span>·</span>
               <span>{posts.length} {posts.length === 1 ? 'reply' : 'replies'}</span>
-              <span className="mx-2">·</span>
+              <span>·</span>
               <span>{thread.view_count} {thread.view_count === 1 ? 'view' : 'views'}</span>
+              {thread.is_solved && thread.solved_at && (
+                <>
+                  <span>·</span>
+                  <span className="text-green-600 font-medium">
+                    Solved {formatDate(thread.solved_at)}
+                  </span>
+                </>
+              )}
             </div>
           </div>
           {user?.id === thread.user_id && (
@@ -459,12 +524,30 @@ const ForumThread: React.FC = () => {
                       </>
                     )}
                   </div>
-                  {user?.id !== post.user_id && (
+                  {!thread.is_solved && user?.id === thread.user_id && post.user_id !== user.id && (
                     <button
-                      onClick={() => {}}
-                      className="text-sm text-blue-600 hover:text-blue-800"
+                      onClick={() => markAsSolved(post.id, thread.id)}
+                      disabled={isMarkingAsSolved === post.id}
+                      className={`text-sm flex items-center gap-1 ${
+                        isMarkingAsSolved === post.id 
+                          ? 'text-gray-400' 
+                          : 'text-blue-600 hover:text-blue-800'
+                      }`}
                     >
-                      Mark as Solution
+                      {isMarkingAsSolved === post.id ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Marking...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Mark as Solution
+                        </>
+                      )}
                     </button>
                   )}
                 </div>

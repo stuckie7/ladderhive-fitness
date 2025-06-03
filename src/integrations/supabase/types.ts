@@ -539,8 +539,10 @@ export type Database = {
           id: number
           is_locked: boolean
           is_pinned: boolean
+          is_solved: boolean
           last_activity_at: string
           slug: string
+          solved_at: string | null
           title: string
           updated_at: string
           user_id: string | null
@@ -552,8 +554,10 @@ export type Database = {
           id?: number
           is_locked?: boolean
           is_pinned?: boolean
+          is_solved?: boolean
           last_activity_at?: string
           slug: string
+          solved_at?: string | null
           title: string
           updated_at?: string
           user_id?: string | null
@@ -565,8 +569,10 @@ export type Database = {
           id?: number
           is_locked?: boolean
           is_pinned?: boolean
+          is_solved?: boolean
           last_activity_at?: string
           slug?: string
+          solved_at?: string | null
           title?: string
           updated_at?: string
           user_id?: string | null

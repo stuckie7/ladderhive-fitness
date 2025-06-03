@@ -23,6 +23,52 @@ export interface ForumThread {
   category_id: number;
 }
 
+export interface ForumThreadWithRelations {
+  id: number;
+  title: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+  last_activity_at: string;
+  view_count: number;
+  is_pinned: boolean;
+  is_locked: boolean;
+  user_id: {
+    username: string;
+    avatar_url: string | null;
+  };
+  category: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+}
+
+export interface SearchPostResult {
+  id: number;
+  content: string;
+  created_at: string;
+  thread: {
+    id: number;
+    title: string;
+    slug: string;
+    category: {
+      id: number;
+      name: string;
+      slug: string;
+    };
+  };
+  user_id: {
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface SearchResults {
+  threads: ForumThreadWithRelations[];
+  posts: SearchPostResult[];
+}
+
 export interface ForumPost {
   id: number;
   thread_id: number;
@@ -52,6 +98,90 @@ export interface CreatePostData {
 }
 
 export class ForumService {
+  // Search
+  static async search(query: string): Promise<SearchResults> {
+    console.log('ForumService: Searching for:', query);
+    
+    try {
+      // Search in threads
+      const { data: threads, error: threadsError } = await supabase
+        .from('forum_threads')
+        .select(`
+          id,
+          title,
+          slug,
+          created_at,
+          updated_at,
+          last_activity_at,
+          view_count,
+          is_pinned,
+          is_locked,
+          user_id:profiles!forum_threads_user_id_fkey(
+            username,
+            avatar_url
+          ),
+          category:forum_categories!forum_threads_category_id_fkey(
+            id,
+            name,
+            slug
+          )
+        `)
+        .textSearch('search_vector', `'${query}':*`, {
+          type: 'websearch',
+          config: 'english'
+        })
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (threadsError) {
+        console.error('ForumService: Error searching threads:', threadsError);
+        throw new Error(`Failed to search threads: ${threadsError.message}`);
+      }
+
+      // Search in posts
+      const { data: posts, error: postsError } = await supabase
+        .from('forum_posts')
+        .select(`
+          id,
+          content,
+          created_at,
+          thread:forum_threads!forum_posts_thread_id_fkey(
+            id,
+            title,
+            slug,
+            category:forum_categories!forum_threads_category_id_fkey(
+              id,
+              name,
+              slug
+            )
+          ),
+          user_id:profiles!forum_posts_user_id_fkey(
+            username,
+            avatar_url
+          )
+        `)
+        .textSearch('content', `'${query}':*`, {
+          type: 'websearch',
+          config: 'english'
+        })
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (postsError) {
+        console.error('ForumService: Error searching posts:', postsError);
+        throw new Error(`Failed to search posts: ${postsError.message}`);
+      }
+
+      // Type assertion to handle the complex nested types
+      return {
+        threads: (threads || []) as unknown as ForumThreadWithRelations[],
+        posts: (posts || []) as unknown as SearchPostResult[]
+      };
+    } catch (error) {
+      console.error('ForumService: Error in search:', error);
+      throw error;
+    }
+  }
   // Categories
   static async getCategories() {
     console.log('ForumService: Fetching categories from database...');
@@ -520,5 +650,97 @@ export class ForumService {
       postCount: postCount || 0,
       lastPost: posts?.[0] || null
     };
+  }
+
+  /**
+   * Mark a thread as solved or unsolved
+   * @param threadId The ID of the thread to update
+   * @param isSolved Whether the thread is solved
+   * @param solvedByPostId Optional post ID that solved the thread
+   */
+  static async markThreadAsSolved(threadId: number, isSolved: boolean, solvedByPostId?: number) {
+    const updates: {
+      is_solved: boolean;
+      solved_at?: string;
+      solved_by_post_id?: number | null;
+      updated_at: string;
+    } = {
+      is_solved: isSolved,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (isSolved) {
+      updates.solved_at = new Date().toISOString();
+      if (solvedByPostId) {
+        updates.solved_by_post_id = solvedByPostId;
+      }
+    } else {
+      updates.solved_by_post_id = null;
+    }
+
+    const { data, error } = await supabase
+      .from('forum_threads')
+      .update(updates)
+      .eq('id', threadId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Get recently solved threads
+   * @param limit Maximum number of threads to return (default: 5)
+   */
+  static async getRecentlySolvedThreads(limit: number = 5): Promise<ForumThreadWithRelations[]> {
+    const { data, error } = await supabase
+      .from('forum_threads')
+      .select(`
+        *,
+        user:profiles!forum_threads_user_id_fkey(
+          username,
+          avatar_url
+        ),
+        category:forum_categories!forum_threads_category_id_fkey(
+          id,
+          name,
+          slug
+        )
+      `)
+      .eq('is_solved', true)
+      .order('solved_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return data?.map(thread => ({
+      ...thread,
+      user_id: thread.user,
+      category_id: thread.category.id,
+    })) || [];
+  }
+
+  /**
+   * Get the post that solved a thread (if any)
+   * @param threadId The ID of the thread
+   */
+  static async getThreadSolution(threadId: number) {
+    const { data, error } = await supabase
+      .from('forum_threads')
+      .select('solved_by_post_id')
+      .eq('id', threadId)
+      .single();
+
+    if (error || !data?.solved_by_post_id) return null;
+
+    const { data: post, error: postError } = await supabase
+      .from('forum_posts')
+      .select('*, user:profiles!forum_posts_user_id_fkey(username, avatar_url)')
+      .eq('id', data.solved_by_post_id)
+      .single();
+
+    if (postError) return null;
+    return post;
   }
 }
