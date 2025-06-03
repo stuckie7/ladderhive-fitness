@@ -539,7 +539,7 @@ export type Database = {
           id: number
           is_locked: boolean
           is_pinned: boolean
-          is_solved: boolean
+          is_solved: boolean | null
           last_activity_at: string
           slug: string
           solved_at: string | null
@@ -554,7 +554,7 @@ export type Database = {
           id?: number
           is_locked?: boolean
           is_pinned?: boolean
-          is_solved?: boolean
+          is_solved?: boolean | null
           last_activity_at?: string
           slug: string
           solved_at?: string | null
@@ -569,7 +569,7 @@ export type Database = {
           id?: number
           is_locked?: boolean
           is_pinned?: boolean
-          is_solved?: boolean
+          is_solved?: boolean | null
           last_activity_at?: string
           slug?: string
           solved_at?: string | null
@@ -947,6 +947,7 @@ export type Database = {
       profiles: {
         Row: {
           age: number | null
+          avatar_url: string | null
           bio: string | null
           created_at: string
           first_name: string | null
@@ -964,6 +965,7 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
           first_name?: string | null
@@ -981,6 +983,7 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
           first_name?: string | null

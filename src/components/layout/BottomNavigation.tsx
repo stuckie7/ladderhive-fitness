@@ -1,16 +1,19 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, User, Menu, Bluetooth, Sparkles, Flame, HeartPulse, MessageSquare } from 'lucide-react';
+import { House, Dumbbell, Flame, Clock, MessageSquare, Menu, List, Bookmark, Calendar, PlayCircle, Settings, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useExerciseLibraryNavigation } from '@/hooks/use-exercise-library-navigation';
+import { useAuth } from '@/context/AuthContext';
 import { AdminNavLink } from './AdminNavLink';
 
 export function BottomNavigation() {
   const location = useLocation();
   const exerciseNav = useExerciseLibraryNavigation();
+  const { user } = useAuth();
   
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -20,6 +23,14 @@ export function BottomNavigation() {
     e.preventDefault();
     exerciseNav.goToExerciseLibrary();
   }
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  };
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm z-40 shadow-lg">
@@ -32,45 +43,8 @@ export function BottomNavigation() {
             isActive('/dashboard') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
           )}
         >
-          <Home size={22} className="mb-0.5" />
+          <House size={22} className="mb-0.5" />
           <span className="text-[10px] sm:text-xs font-medium">Home</span>
-        </Link>
-        
-        {/* Exercises */}
-        <a 
-          href="/exercises/enhanced" 
-          onClick={handleExerciseClick}
-          className={cn(
-            "flex flex-col items-center p-2 rounded-lg transition-colors",
-            isActive('/exercises') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
-          )}
-        >
-          <Dumbbell size={22} className="mb-0.5" />
-          <span className="text-[10px] sm:text-xs font-medium">Exercises</span>
-        </a>
-        
-        {/* WOD */}
-        <Link 
-          to="/wods" 
-          className={cn(
-            "flex flex-col items-center p-2 rounded-lg transition-colors",
-            isActive('/wods') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
-          )}
-        >
-          <Flame size={22} className="mb-0.5" />
-          <span className="text-[10px] sm:text-xs font-medium">WOD</span>
-        </Link>
-        
-        {/* Devices */}
-        <Link 
-          to="/bluetooth-devices" 
-          className={cn(
-            "flex flex-col items-center p-2 rounded-lg transition-colors",
-            isActive('/bluetooth-devices') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
-          )}
-        >
-          <Bluetooth size={22} className="mb-0.5" />
-          <span className="text-[10px] sm:text-xs font-medium">Devices</span>
         </Link>
         
         {/* Workouts */}
@@ -85,7 +59,19 @@ export function BottomNavigation() {
           <span className="text-[10px] sm:text-xs font-medium">Workouts</span>
         </Link>
         
-        {/* Mindful Movement */}
+        {/* WOD */}
+        <Link 
+          to="/wods" 
+          className={cn(
+            "flex flex-col items-center p-2 rounded-lg transition-colors",
+            isActive('/wods') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+          )}
+        >
+          <Flame size={22} className="mb-0.5" />
+          <span className="text-[10px] sm:text-xs font-medium">WOD</span>
+        </Link>
+        
+        {/* Recovery */}
         <Link 
           to="/mindful-movement" 
           className={cn(
@@ -93,8 +79,20 @@ export function BottomNavigation() {
             isActive('/mindful-movement') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
           )}
         >
-          <HeartPulse size={22} className="mb-0.5" />
-          <span className="text-[10px] sm:text-xs font-medium">Mindful</span>
+          <Clock size={22} className="mb-0.5" />
+          <span className="text-[10px] sm:text-xs font-medium">Recovery</span>
+        </Link>
+        
+        {/* Forums */}
+        <Link 
+          to="/forums" 
+          className={cn(
+            "flex flex-col items-center p-2 rounded-lg transition-colors",
+            isActive('/forums') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
+          )}
+        >
+          <MessageSquare size={22} className="mb-0.5" />
+          <span className="text-[10px] sm:text-xs font-medium">Forums</span>
         </Link>
         
         {/* More Menu */}
@@ -112,38 +110,64 @@ export function BottomNavigation() {
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl overflow-y-auto">
-            <div className="grid grid-cols-2 gap-4 mt-4 p-4">
-              <Link to="/my-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Sparkles size={24} />
-                <span className="mt-2 text-sm font-medium">For You</span>
+            <SheetHeader className="mb-6">
+              {user && (
+                <div className="flex items-center gap-4 p-4 bg-accent/20 rounded-lg">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.user_metadata?.full_name || user.email} />
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {getInitials(user.user_metadata?.full_name || user.email?.split('@')[0] || 'U')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 text-left">
+                    <h3 className="font-semibold">{user.user_metadata?.full_name || user.email?.split('@')[0]}</h3>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+              )}
+            </SheetHeader>
+            
+            {/* Start Workout - Prominently placed */}
+            <div className="mb-6">
+              <Link to="/my-workouts" className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors">
+                <PlayCircle size={24} className="text-primary" />
+                <span className="text-lg font-semibold text-primary">Start Workout</span>
               </Link>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 p-4">
+              <a 
+                href="/exercises/enhanced" 
+                onClick={handleExerciseClick}
+                className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
+              >
+                <List size={24} />
+                <span className="mt-2 text-sm font-medium">Exercises</span>
+              </a>
+              
+              <Link to="/saved-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                <Bookmark size={24} />
+                <span className="mt-2 text-sm font-medium">Saved</span>
+              </Link>
+              
+              <Link to="/schedule" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                <Calendar size={24} />
+                <span className="mt-2 text-sm font-medium">Schedule</span>
+              </Link>
+              
               <Link to="/profile" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <User size={24} />
+                <Settings size={24} />
                 <span className="mt-2 text-sm font-medium">Profile</span>
               </Link>
-              <Link to="/forums" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <MessageSquare size={24} />
-                <span className="mt-2 text-sm font-medium">Forums</span>
+
+              <Link to="/settings" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
+                <Settings size={24} />
+                <span className="mt-2 text-sm font-medium">Settings</span>
               </Link>
+              
               <div className="col-span-1">
                 <AdminNavLink />
               </div>
-              <Link to="/workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Dumbbell size={24} />
-                <span className="mt-2 text-sm font-medium">Workouts</span>
-              </Link>
-              <Link to="/saved-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Dumbbell size={24} />
-                <span className="mt-2 text-sm font-medium">Saved</span>
-              </Link>
-              <Link to="/schedule" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Home size={24} />
-                <span className="mt-2 text-sm font-medium">Schedule</span>
-              </Link>
-              <Link to="/settings" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Home size={24} />
-                <span className="mt-2 text-sm font-medium">Settings</span>
-              </Link>
             </div>
           </SheetContent>
         </Sheet>
