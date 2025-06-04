@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import MessageIcon from '@mui/icons-material/MessageOutlined';
+import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 interface Thread {
   id: number;
@@ -212,7 +215,7 @@ const ForumCategory: React.FC = () => {
 
   if (error || !category) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
           <p>{error || 'Category not found'}</p>
         </div>
@@ -221,7 +224,7 @@ const ForumCategory: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
       {/* Breadcrumb */}
       <nav className="flex mb-6" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -230,18 +233,9 @@ const ForumCategory: React.FC = () => {
           </li>
           <li aria-current="page">
             <div className="flex items-center">
-              <svg
-                className="w-6 h-6 text-gray-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                  clipRule="evenodd"
-                ></path>
-              </svg>
+              <div className="flex items-center">
+                <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+              </div>
               <span className="text-gray-500 ml-1 md:ml-2 text-sm font-medium">{category.name}</span>
             </div>
           </li>
@@ -250,7 +244,7 @@ const ForumCategory: React.FC = () => {
 
       {/* Category Header */}
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{category.name}</h1>
             {category.description && (
@@ -260,7 +254,7 @@ const ForumCategory: React.FC = () => {
           {user && (
             <Link
               to={`/forums/new-thread/${category?.id}`}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              className="w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm hover:shadow-md"
             >
               New Thread
             </Link>
@@ -272,48 +266,50 @@ const ForumCategory: React.FC = () => {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-sm font-medium text-gray-700">Threads</h2>
-          <div className="text-sm text-gray-500">{threads.length} {threads.length === 1 ? 'thread' : 'threads'}</div>
+          <div className="text-sm text-gray-500">
+            {threads.length} {threads.length === 1 ? 'thread' : 'threads'}
+          </div>
         </div>
 
         {threads.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            No threads found in this category. Be the first to start a discussion!
+          <div className="p-6 text-center text-gray-600">
+            No threads found in this category.
           </div>
         ) : (
-          <ul className="divide-y divide-gray-200">
-            {threads.map((thread) => (
-              <li key={thread.id} className={`hover:bg-gray-50 transition-colors ${thread.is_pinned ? 'bg-blue-50' : ''}`}>
+          <ul>
+            {threads.map(thread => (
+              <li key={thread.id} className={`group hover:bg-gray-50 transition-colors duration-150 ${thread.is_pinned ? 'bg-blue-50' : 'bg-white'}`}>
                 <Link to={`/forums/thread/${thread.slug || thread.id}`} className="block p-4">
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 mr-4">
-                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                        {thread.profiles?.username?.charAt(0) || '?'}
+                    <div className="flex-shrink-0 mr-3 sm:mr-4">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-700 font-medium text-sm shadow-sm ring-2 ring-white group-hover:ring-blue-100 transition-all duration-200">
+                        {thread.profiles?.username?.charAt(0).toUpperCase() || '?'}
                       </div>
                     </div>
+                    <div className="ml-2 sm:ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronRightIcon className="h-5 w-5 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center">
-                        {thread.is_pinned && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                            Pinned
-                          </span>
-                        )}
-                        {thread.is_locked && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-2">
-                            Locked
-                          </span>
-                        )}
-                        <h3 className="text-base font-medium text-gray-900 truncate">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <h3 className="text-base font-medium text-gray-900 group-hover:text-blue-600 transition-colors truncate">
                           {thread.title}
                         </h3>
                       </div>
-                      <div className="mt-1 flex flex-wrap items-center text-sm text-gray-500">
-                        <span>Started by {thread.profiles?.username || 'Unknown'}</span>
-                        <span className="mx-1">·</span>
-                        <span>{formatDate(thread.created_at)}</span>
-                        <span className="mx-1">·</span>
-                        <span>{thread.reply_count} {thread.reply_count === 1 ? 'reply' : 'replies'}</span>
-                        <span className="mx-1">·</span>
-                        <span>{thread.view_count} {thread.view_count === 1 ? 'view' : 'views'}</span>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
+                        <span className="flex items-center">
+                          <span className="hidden sm:inline">Started by</span>
+                          <span className="font-medium text-gray-700 ml-0.5">{thread.profiles?.username || 'Unknown'}</span>
+                        </span>
+                        <span className="hidden sm:inline">·</span>
+                        <span className="whitespace-nowrap">{formatDate(thread.created_at)}</span>
+                        <span className="inline-flex items-center text-gray-500 text-sm">
+                          <MessageIcon className="mr-1" fontSize="small" />
+                          <span>{thread.reply_count}</span>
+                        </span>
+                        <span className="inline-flex items-center text-gray-500 text-sm">
+                          <VisibilityIcon className="mr-1" fontSize="small" />
+                          <span>{thread.view_count}</span>
+                        </span>
                       </div>
                     </div>
                     {thread.last_post && (
@@ -326,21 +322,6 @@ const ForumCategory: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    <div className="ml-4 flex-shrink-0">
-                      <svg
-                        className="h-5 w-5 text-gray-400"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
                   </div>
                 </Link>
               </li>
