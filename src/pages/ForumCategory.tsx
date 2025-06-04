@@ -19,12 +19,14 @@ interface Thread {
   user_id: string;
   profiles: {
     username: string;
+    avatar_url?: string;
   } | null;
   last_post?: {
     created_at: string;
     user_id: string;
     profiles: {
       username: string;
+      avatar_url?: string;
     } | null;
   } | null;
 }
@@ -106,13 +108,16 @@ const ForumCategory: React.FC = () => {
           .from('forum_threads')
           .select(`
             *,
-            author:profiles!user_id (
-              username
+            profiles!inner (
+              username,
+              avatar_url
             )
           `, { count: 'exact' })
           .in('id', threadIds.map(t => t.id))
           .order('is_pinned', { ascending: false })
           .order('last_activity_at', { ascending: false });
+
+        console.log('Threads data with profiles:', threadsData);
 
         // Get last post for each thread
         const { data: lastPostsData, error: lastPostsError } = await supabase
@@ -175,9 +180,10 @@ const ForumCategory: React.FC = () => {
                 username: lastPost.author?.username || 'Unknown'
               }
             } : null,
-            // Ensure profiles is always an object to match the Thread interface
-            profiles: thread.author ? {
-              username: thread.author.username || 'Unknown'
+            // Use the profiles data from the thread
+            profiles: thread.profiles ? {
+              username: thread.profiles.username || 'Unknown',
+              avatar_url: thread.profiles.avatar_url
             } : null
           };
         });
@@ -282,9 +288,22 @@ const ForumCategory: React.FC = () => {
                 <Link to={`/forums/thread/${thread.slug || thread.id}`} className="block p-4">
                   <div className="flex items-start">
                     <div className="flex-shrink-0 mr-3 sm:mr-4">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-700 font-medium text-sm shadow-sm ring-2 ring-white group-hover:ring-blue-100 transition-all duration-200">
-                        {thread.profiles?.username?.charAt(0).toUpperCase() || '?'}
-                      </div>
+                      {thread.profiles?.avatar_url ? (
+                        <img 
+                          src={thread.profiles.avatar_url} 
+                          alt={thread.profiles.username || 'User'} 
+                          className="h-10 w-10 rounded-full object-cover shadow-sm ring-2 ring-white group-hover:ring-blue-100 transition-all duration-200"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = `https://ui-avatars.com/api/?name=${thread.profiles?.username || 'U'}&background=random`;
+                          }}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-700 font-medium text-sm shadow-sm ring-2 ring-white group-hover:ring-blue-100 transition-all duration-200">
+                          {thread.profiles?.username?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      )}
                     </div>
                     <div className="ml-2 sm:ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                       <ChevronRightIcon className="h-5 w-5 text-gray-300 group-hover:text-blue-400 transition-colors" />
@@ -297,8 +316,10 @@ const ForumCategory: React.FC = () => {
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
                         <span className="flex items-center">
-                          <span className="hidden sm:inline">Started by</span>
-                          <span className="font-medium text-gray-700 ml-0.5">{thread.profiles?.username || 'Unknown'}</span>
+                          <span className="hidden sm:inline">Started by </span>
+                          <span className="font-medium text-gray-700 sm:ml-0.5">
+                            {thread.profiles?.username || 'Unknown'}
+                          </span>
                         </span>
                         <span className="hidden sm:inline">·</span>
                         <span className="whitespace-nowrap">{formatDate(thread.created_at)}</span>
