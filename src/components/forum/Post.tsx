@@ -16,6 +16,9 @@ interface PostProps {
   profiles: {
     username: string;
     avatar_url: string | null;
+    profile_photo_url?: string | null;
+    first_name?: string;
+    last_name?: string;
   } | null;
   attachments?: Array<{
     url: string;

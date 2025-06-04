@@ -22,6 +22,10 @@ interface Thread {
   profiles: {
     username: string;
     avatar_url?: string;
+    profile_photo_url?: string;
+    first_name?: string;
+    last_name?: string;
+    full_name?: string;
   } | null;
   last_post?: {
     created_at: string;
@@ -29,6 +33,7 @@ interface Thread {
     profiles: {
       username: string;
       avatar_url?: string;
+      profile_photo_url?: string;
     } | null;
   } | null;
 }
@@ -242,6 +247,7 @@ const ForumCategory: React.FC = () => {
             profiles: {
               username: authorData.username,
               avatar_url: authorData.avatar_url,
+              profile_photo_url: authorData.profile_photo_url,
               full_name: authorData.full_name
             }
           };
