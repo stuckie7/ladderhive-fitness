@@ -83,6 +83,18 @@ export interface PreparedWorkoutExercise {
   exercise?: any; // Will be populated with exercise data when fetched
 }
 
+// Workout Schedule interface
+export interface WorkoutSchedule {
+  id: string;
+  user_id: string;
+  workout_id: string;
+  scheduled_date: string;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+  workout?: Workout; // Optional workout details
+}
+
 // Add WorkoutExercise interface
 export interface WorkoutExercise {
   id: string;
