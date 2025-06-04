@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -17,6 +16,9 @@ interface Post {
   profiles: {
     username: string;
     avatar_url: string | null;
+    profile_photo_url?: string | null;
+    first_name?: string;
+    last_name?: string;
   } | null;
   attachments?: Array<{
     url: string;
@@ -42,6 +44,9 @@ interface Thread {
   profiles: {
     username: string;
     avatar_url: string | null;
+    profile_photo_url?: string | null;
+    first_name?: string;
+    last_name?: string;
   } | null;
   forum_categories: {
     id: number;
@@ -115,14 +120,17 @@ const ForumThread: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        // Fetch thread details with category info
+        // Fetch thread details with category info and profile
         const { data: threadData, error: threadError } = await supabase
           .from('forum_threads')
           .select(`
             *,
-            profiles (
+            profiles!forum_threads_user_id_fkey (
               username,
-              avatar_url
+              avatar_url,
+              profile_photo_url,
+              first_name,
+              last_name
             ),
             forum_categories (
               id,
@@ -142,14 +150,17 @@ const ForumThread: React.FC = () => {
         // Increment view count
         await supabase.rpc('increment_thread_views', { thread_id: threadData.id });
 
-        // Fetch posts for this thread
+        // Fetch posts for this thread with profiles
         const { data: postsData, error: postsError } = await supabase
           .from('forum_posts')
           .select(`
             *,
-            profiles (
+            profiles!forum_posts_user_id_fkey (
               username,
-              avatar_url
+              avatar_url,
+              profile_photo_url,
+              first_name,
+              last_name
             )
           `)
           .eq('thread_id', threadData.id)
@@ -176,7 +187,7 @@ const ForumThread: React.FC = () => {
               const fetchProfile = async () => {
                 const { data: profileData } = await supabase
                   .from('profiles')
-                  .select('username, avatar_url')
+                  .select('username, avatar_url, profile_photo_url, first_name, last_name')
                   .eq('id', newPost.user_id)
                   .single();
                 
@@ -244,7 +255,7 @@ const ForumThread: React.FC = () => {
       // Add the new post to the local state
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('username, avatar_url')
+        .select('username, avatar_url, profile_photo_url, first_name, last_name')
         .eq('id', user.id)
         .single();
 
@@ -287,10 +298,17 @@ const ForumThread: React.FC = () => {
   const getUserDisplayName = (profiles: any) => {
     if (!profiles) return 'Unknown User';
     
+    // First try first_name + last_name
     if (profiles.first_name && profiles.last_name) {
       return `${profiles.first_name} ${profiles.last_name}`;
     }
     
+    // Then try just first_name
+    if (profiles.first_name) {
+      return profiles.first_name;
+    }
+    
+    // Then try username
     if (profiles.username) {
       return profiles.username;
     }
@@ -303,6 +321,10 @@ const ForumThread: React.FC = () => {
     
     if (profiles.first_name && profiles.last_name) {
       return `${profiles.first_name.charAt(0)}${profiles.last_name.charAt(0)}`.toUpperCase();
+    }
+    
+    if (profiles.first_name) {
+      return profiles.first_name.charAt(0).toUpperCase();
     }
     
     if (profiles.username) {
@@ -447,7 +469,7 @@ const ForumThread: React.FC = () => {
               <div className="flex-shrink-0 mr-4">
                 <Avatar className="h-10 w-10">
                   <AvatarImage 
-                    src={post.profiles?.avatar_url || ''} 
+                    src={post.profiles?.avatar_url || post.profiles?.profile_photo_url || ''} 
                     alt={getUserDisplayName(post.profiles)} 
                   />
                   <AvatarFallback className="bg-gray-200 text-gray-500">

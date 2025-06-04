@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -91,57 +90,39 @@ const ForumCategory: React.FC = () => {
 
         console.log('Fetching threads for category ID:', categoryData.id);
         
-        // Fetch threads for this category with additional data
-        // First, get the thread IDs for this category
-        const { data: threadIds, error: threadIdsError } = await supabase
+        // Fetch threads with author profiles in a single query
+        const { data: threadsData, error: threadsError } = await supabase
           .from('forum_threads')
-          .select('id')
-          .eq('category_id', categoryData.id);
+          .select(`
+            *,
+            profiles!forum_threads_user_id_fkey (
+              username,
+              avatar_url,
+              profile_photo_url,
+              first_name,
+              last_name
+            )
+          `)
+          .eq('category_id', categoryData.id)
+          .order('is_pinned', { ascending: false })
+          .order('last_activity_at', { ascending: false });
 
-        if (threadIdsError) {
-          console.error('Error fetching thread IDs:', threadIdsError);
-          throw threadIdsError;
+        if (threadsError) {
+          console.error('Threads fetch error:', threadsError);
+          throw threadsError;
         }
 
         // If no threads, set empty array and return
-        if (!threadIds || threadIds.length === 0) {
+        if (!threadsData || threadsData.length === 0) {
           setThreads([]);
           setIsLoading(false);
           return;
         }
 
-        // First, get the thread data
-        const { data: threadsData, error: threadsError, count } = await supabase
-          .from('forum_threads')
-          .select('*', { count: 'exact' })
-          .in('id', threadIds.map(t => t.id))
-          .order('is_pinned', { ascending: false })
-          .order('last_activity_at', { ascending: false });
-          
-        console.log('Raw threads data:', threadsData);
-        
-        // If we have threads, fetch the author profiles
-        if (threadsData && threadsData.length > 0) {
-          const userIds = [...new Set(threadsData.map(thread => thread.user_id))];
-          const { data: userProfiles, error: profilesError } = await supabase
-            .from('profiles')
-            .select('*')
-            .in('id', userIds);
-            
-          console.log('User profiles:', userProfiles);
-          
-          // Map profiles to threads
-          const threadsWithProfiles = threadsData.map(thread => ({
-            ...thread,
-            author: userProfiles?.find(profile => profile.id === thread.user_id) || null
-          }));
-          
-          console.log('Threads with profiles:', threadsWithProfiles);
-          
-          // Use the mapped data
-          threadsData.length = 0;
-          threadsData.push(...threadsWithProfiles);
-        }
+        console.log('Raw threads data with profiles:', threadsData);
+
+        // Get thread IDs for last post lookup
+        const threadIds = threadsData.map(t => t.id);
 
         // Get last post for each thread
         const { data: lastPostsData, error: lastPostsError } = await supabase
@@ -151,58 +132,18 @@ const ForumCategory: React.FC = () => {
             thread_id,
             created_at,
             user_id,
-            author:profiles!forum_posts_user_id_fkey (
+            profiles!forum_posts_user_id_fkey (
               username,
-              avatar_url
+              avatar_url,
+              profile_photo_url
             )
           `)
-          .in('thread_id', threadIds.map(t => t.id))
+          .in('thread_id', threadIds)
           .order('created_at', { ascending: false });
 
         if (lastPostsError) {
           console.error('Error fetching last posts:', lastPostsError);
           throw lastPostsError;
-        }
-
-        console.log('Threads fetch result:', { 
-          count,
-          threadsData: threadsData?.length,
-          threadsError 
-        });
-        
-        // Debug: Log the first thread's data including author info
-        if (threadsData && threadsData.length > 0) {
-          const thread = threadsData[0];
-          console.log('=== DEBUG: Thread Data ===', {
-            threadId: thread.id,
-            title: thread.title,
-            userId: thread.user_id,
-            authorData: thread.author,
-            allThreadData: thread
-          });
-          
-          // Log the raw data from Supabase
-          console.log('=== DEBUG: Raw Thread Data from Supabase ===', thread);
-          
-          // Check if user_id exists in profiles
-          if (thread.user_id) {
-            const { data: userProfile, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', thread.user_id)
-              .single();
-              
-            console.log('=== DEBUG: User Profile Data ===', {
-              userId: thread.user_id,
-              userProfile,
-              profileError
-            });
-          }
-        }
-
-        if (threadsError) {
-          console.error('Threads fetch error:', threadsError);
-          throw threadsError;
         }
 
         // Create a map of thread_id to last post
@@ -214,12 +155,9 @@ const ForumCategory: React.FC = () => {
         });
 
         // Transform the data to include reply_count and last_post
-        const transformedThreads = (threadsData || []).map(thread => {
+        const transformedThreads = threadsData.map(thread => {
           const lastPost = lastPostMap.get(thread.id);
           const replyCount = (lastPostsData || []).filter(p => p.thread_id === thread.id).length - 1; // Subtract 1 for the original post
-          
-          // Get author data - either from the author field or create a default
-          const authorData = thread.author || { username: 'Unknown', avatar_url: null };
           
           console.log('Processing thread:', {
             threadId: thread.id,
@@ -227,29 +165,18 @@ const ForumCategory: React.FC = () => {
             lastPost,
             replyCount,
             userId: thread.user_id,
-            authorData,
-            author: authorData.username,
+            profilesData: thread.profiles,
             rawThreadData: thread
           });
 
           return {
             ...thread,
-            reply_count: Math.max(0, replyCount), // Ensure non-negative
+            reply_count: Math.max(0, replyCount),
             last_post: lastPost ? {
               created_at: lastPost.created_at,
               user_id: lastPost.user_id,
-              profiles: {
-                username: lastPost.author?.username || 'Unknown',
-                avatar_url: lastPost.author?.avatar_url
-              }
-            } : null,
-            // Use the author data
-            profiles: {
-              username: authorData.username,
-              avatar_url: authorData.avatar_url,
-              profile_photo_url: authorData.profile_photo_url,
-              full_name: authorData.full_name
-            }
+              profiles: lastPost.profiles
+            } : null
           };
         });
 
@@ -279,12 +206,24 @@ const ForumCategory: React.FC = () => {
   const getUserDisplayName = (profiles: any) => {
     if (!profiles) return 'Unknown User';
     
+    // First try first_name + last_name
     if (profiles.first_name && profiles.last_name) {
       return `${profiles.first_name} ${profiles.last_name}`;
     }
     
+    // Then try just first_name
+    if (profiles.first_name) {
+      return profiles.first_name;
+    }
+    
+    // Then try username
     if (profiles.username) {
       return profiles.username;
+    }
+    
+    // Finally try full_name
+    if (profiles.full_name) {
+      return profiles.full_name;
     }
     
     return 'Unknown User';
@@ -295,6 +234,10 @@ const ForumCategory: React.FC = () => {
     
     if (profiles.first_name && profiles.last_name) {
       return `${profiles.first_name.charAt(0)}${profiles.last_name.charAt(0)}`.toUpperCase();
+    }
+    
+    if (profiles.first_name) {
+      return profiles.first_name.charAt(0).toUpperCase();
     }
     
     if (profiles.username) {
