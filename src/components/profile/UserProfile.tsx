@@ -7,6 +7,7 @@ import FitnessStats from "./FitnessStats";
 import FitnessGoals from "./FitnessGoals";
 import WorkoutSchedule from "./WorkoutSchedule";
 import ProgressTracking from "./ProgressTracking";
+import BodyMeasurements from "./BodyMeasurements";
 
 interface UserData {
   name: string;
@@ -20,6 +21,10 @@ interface UserData {
     fitnessLevel: string;
     fitnessGoals: string[];
     workoutDays: string[];
+    neck?: number;
+    chest?: number;
+    waist?: number;
+    hips?: number;
   };
   stats?: {
     workoutsCompleted: number;
@@ -77,6 +82,22 @@ const UserProfile = ({ userData }: UserProfileProps) => {
             <FitnessGoals goals={userData.profile.fitnessGoals} />
             
             <WorkoutSchedule workoutDays={userData.profile.workoutDays} />
+          </CardContent>
+        </Card>
+      )}
+
+      {userData.profile && (userData.profile.neck || userData.profile.chest || userData.profile.waist || userData.profile.hips) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold">Body Measurements</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BodyMeasurements 
+              neck={userData.profile.neck}
+              chest={userData.profile.chest}
+              waist={userData.profile.waist}
+              hips={userData.profile.hips}
+            />
           </CardContent>
         </Card>
       )}

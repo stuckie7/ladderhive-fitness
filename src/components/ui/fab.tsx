@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, PlayCircle, Dumbbell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -28,7 +27,28 @@ export function Fab({ className, actions }: FabProps) {
           </Button>
         </DrawerTrigger>
         <DrawerContent className="p-4">
-          <div className="grid grid-cols-3 gap-4 mt-8">
+          <div className="grid grid-cols-2 gap-4 mt-8">
+            {/* Start Workout - Prominently placed */}
+            <div className="col-span-2 mb-4">
+              <Link 
+                to="/my-workouts"
+                className="flex items-center justify-center gap-2 p-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                <PlayCircle size={24} />
+                <span className="text-lg font-semibold">Start Workout</span>
+              </Link>
+            </div>
+            
+            {/* Devices */}
+            <Link 
+              to="/bluetooth-devices"
+              className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
+            >
+              <Dumbbell size={24} />
+              <span className="mt-2 text-sm font-medium text-center">Devices</span>
+            </Link>
+            
+            {/* Other actions */}
             {actions.map((action, index) => (
               <QuickAction 
                 key={index}
@@ -58,7 +78,7 @@ function QuickAction({ icon, label, href, onClick }: QuickActionProps) {
       <a 
         href={href}
         onClick={handleClick}
-        className="flex flex-col items-center p-4 border rounded-lg"
+        className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
       >
         {icon}
         <span className="mt-2 text-sm font-medium text-center">{label}</span>
@@ -69,7 +89,7 @@ function QuickAction({ icon, label, href, onClick }: QuickActionProps) {
   return (
     <Link 
       to={href} 
-      className="flex flex-col items-center p-4 border rounded-lg"
+      className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
     >
       {icon}
       <span className="mt-2 text-sm font-medium text-center">{label}</span>

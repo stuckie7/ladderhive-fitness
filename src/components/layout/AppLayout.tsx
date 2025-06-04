@@ -1,4 +1,3 @@
-
 // src/components/layout/AppLayout.tsx
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -17,7 +16,11 @@ import {
   Bookmark,
   Zap,
   LogOut,
-  MessageSquare
+  MessageSquare,
+  Flame,
+  Calendar,
+  Bookmark as BookmarkIcon,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useExerciseLibraryNavigation } from '@/hooks/use-exercise-library-navigation';
@@ -104,43 +107,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Quick actions for the FAB
-  const quickActions = [
-    { 
-      icon: <Zap size={24} />, 
-      label: 'Start Workout',
-      onClick: (e: React.MouseEvent) => {
-        e.preventDefault();
-        handleStartWorkout();
-      },
-      href: '#'
-    },
-    { 
-      icon: <Zap size={24} />, 
-      label: 'Mindful Movement', 
-      href: '/mindful-movement'
-    },
-    { 
-      icon: <CalendarDays size={24} />, 
-      label: 'Schedule', 
-      href: '/schedule' 
-    },
-    { 
-      icon: <LineChart size={24} />, 
-      label: 'Progress', 
-      href: '/progress' 
-    },
-    { 
-      icon: <BookOpen size={24} />, 
-      label: 'WODs', 
-      href: '/wods' 
-    },
-    { 
-      icon: <Bookmark size={24} />, 
-      label: 'Saved', 
-      href: '/saved-workouts' 
-    },
-  ];
+  // Empty quick actions array - only Start Workout and Devices are now prominently featured in the FAB
+  const quickActions: any[] = [];
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', href: '/dashboard', icon: <Home size={18} /> },
