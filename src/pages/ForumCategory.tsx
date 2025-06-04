@@ -103,21 +103,38 @@ const ForumCategory: React.FC = () => {
           return;
         }
 
-        // Get thread data with author info
+        // First, get the thread data
         const { data: threadsData, error: threadsError, count } = await supabase
           .from('forum_threads')
-          .select(`
-            *,
-            profiles!inner (
-              username,
-              avatar_url
-            )
-          `, { count: 'exact' })
+          .select('*', { count: 'exact' })
           .in('id', threadIds.map(t => t.id))
           .order('is_pinned', { ascending: false })
           .order('last_activity_at', { ascending: false });
-
-        console.log('Threads data with profiles:', threadsData);
+          
+        console.log('Raw threads data:', threadsData);
+        
+        // If we have threads, fetch the author profiles
+        if (threadsData && threadsData.length > 0) {
+          const userIds = [...new Set(threadsData.map(thread => thread.user_id))];
+          const { data: userProfiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('id', userIds);
+            
+          console.log('User profiles:', userProfiles);
+          
+          // Map profiles to threads
+          const threadsWithProfiles = threadsData.map(thread => ({
+            ...thread,
+            author: userProfiles?.find(profile => profile.id === thread.user_id) || null
+          }));
+          
+          console.log('Threads with profiles:', threadsWithProfiles);
+          
+          // Use the mapped data
+          threadsData.length = 0;
+          threadsData.push(...threadsWithProfiles);
+        }
 
         // Get last post for each thread
         const { data: lastPostsData, error: lastPostsError } = await supabase
@@ -126,8 +143,10 @@ const ForumCategory: React.FC = () => {
             id,
             thread_id,
             created_at,
-            author:profiles!user_id (
-              username
+            user_id,
+            author:profiles!forum_posts_user_id_fkey (
+              username,
+              avatar_url
             )
           `)
           .in('thread_id', threadIds.map(t => t.id))
@@ -143,6 +162,36 @@ const ForumCategory: React.FC = () => {
           threadsData: threadsData?.length,
           threadsError 
         });
+        
+        // Debug: Log the first thread's data including author info
+        if (threadsData && threadsData.length > 0) {
+          const thread = threadsData[0];
+          console.log('=== DEBUG: Thread Data ===', {
+            threadId: thread.id,
+            title: thread.title,
+            userId: thread.user_id,
+            authorData: thread.author,
+            allThreadData: thread
+          });
+          
+          // Log the raw data from Supabase
+          console.log('=== DEBUG: Raw Thread Data from Supabase ===', thread);
+          
+          // Check if user_id exists in profiles
+          if (thread.user_id) {
+            const { data: userProfile, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', thread.user_id)
+              .single();
+              
+            console.log('=== DEBUG: User Profile Data ===', {
+              userId: thread.user_id,
+              userProfile,
+              profileError
+            });
+          }
+        }
 
         if (threadsError) {
           console.error('Threads fetch error:', threadsError);
@@ -162,12 +211,18 @@ const ForumCategory: React.FC = () => {
           const lastPost = lastPostMap.get(thread.id);
           const replyCount = (lastPostsData || []).filter(p => p.thread_id === thread.id).length - 1; // Subtract 1 for the original post
           
+          // Get author data - either from the author field or create a default
+          const authorData = thread.author || { username: 'Unknown', avatar_url: null };
+          
           console.log('Processing thread:', {
             threadId: thread.id,
             threadTitle: thread.title,
             lastPost,
             replyCount,
-            author: thread.author?.username || 'Unknown'
+            userId: thread.user_id,
+            authorData,
+            author: authorData.username,
+            rawThreadData: thread
           });
 
           return {
@@ -177,14 +232,16 @@ const ForumCategory: React.FC = () => {
               created_at: lastPost.created_at,
               user_id: lastPost.user_id,
               profiles: {
-                username: lastPost.author?.username || 'Unknown'
+                username: lastPost.author?.username || 'Unknown',
+                avatar_url: lastPost.author?.avatar_url
               }
             } : null,
-            // Use the profiles data from the thread
-            profiles: thread.profiles ? {
-              username: thread.profiles.username || 'Unknown',
-              avatar_url: thread.profiles.avatar_url
-            } : null
+            // Use the author data
+            profiles: {
+              username: authorData.username,
+              avatar_url: authorData.avatar_url,
+              full_name: authorData.full_name
+            }
           };
         });
 
