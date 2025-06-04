@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -282,6 +284,34 @@ const ForumThread: React.FC = () => {
     });
   };
 
+  const getUserDisplayName = (profiles: any) => {
+    if (!profiles) return 'Unknown User';
+    
+    if (profiles.first_name && profiles.last_name) {
+      return `${profiles.first_name} ${profiles.last_name}`;
+    }
+    
+    if (profiles.username) {
+      return profiles.username;
+    }
+    
+    return 'Unknown User';
+  };
+
+  const getUserInitials = (profiles: any) => {
+    if (!profiles) return 'U';
+    
+    if (profiles.first_name && profiles.last_name) {
+      return `${profiles.first_name.charAt(0)}${profiles.last_name.charAt(0)}`.toUpperCase();
+    }
+    
+    if (profiles.username) {
+      return profiles.username.charAt(0).toUpperCase();
+    }
+    
+    return 'U';
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -369,7 +399,7 @@ const ForumThread: React.FC = () => {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
-              <span>Started by {thread.profiles?.username || 'Unknown'}</span>
+              <span>Started by {getUserDisplayName(thread.profiles)}</span>
               <span>·</span>
               <span>{formatDate(thread.created_at)}</span>
               <span>·</span>
@@ -415,19 +445,17 @@ const ForumThread: React.FC = () => {
           >
             <div className="flex items-start">
               <div className="flex-shrink-0 mr-4">
-                {post.profiles?.avatar_url ? (
-                  <img
-                    className="h-10 w-10 rounded-full"
-                    src={post.profiles.avatar_url}
-                    alt={post.profiles.username}
+                <Avatar className="h-10 w-10">
+                  <AvatarImage 
+                    src={post.profiles?.avatar_url || ''} 
+                    alt={getUserDisplayName(post.profiles)} 
                   />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                    {post.profiles?.username?.charAt(0) || '?'}
-                  </div>
-                )}
+                  <AvatarFallback className="bg-gray-200 text-gray-500">
+                    {getUserInitials(post.profiles)}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="mt-2 text-center text-xs font-medium text-gray-500">
-                  {post.profiles?.username || 'User'}
+                  {getUserDisplayName(post.profiles)}
                 </div>
               </div>
               <div className="flex-1 min-w-0">
@@ -500,7 +528,7 @@ const ForumThread: React.FC = () => {
                         const replyInput = document.getElementById('reply-content');
                         if (replyInput) {
                           replyInput.focus();
-                          setReplyContent(`@${post.profiles?.username || 'User'}, `);
+                          setReplyContent(`@${getUserDisplayName(post.profiles)}, `);
                         }
                       }}
                       className="text-sm text-gray-500 hover:text-gray-700"

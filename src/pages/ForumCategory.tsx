@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MessageIcon from '@mui/icons-material/MessageOutlined';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -268,6 +270,34 @@ const ForumCategory: React.FC = () => {
     });
   };
 
+  const getUserDisplayName = (profiles: any) => {
+    if (!profiles) return 'Unknown User';
+    
+    if (profiles.first_name && profiles.last_name) {
+      return `${profiles.first_name} ${profiles.last_name}`;
+    }
+    
+    if (profiles.username) {
+      return profiles.username;
+    }
+    
+    return 'Unknown User';
+  };
+
+  const getUserInitials = (profiles: any) => {
+    if (!profiles) return 'U';
+    
+    if (profiles.first_name && profiles.last_name) {
+      return `${profiles.first_name.charAt(0)}${profiles.last_name.charAt(0)}`.toUpperCase();
+    }
+    
+    if (profiles.username) {
+      return profiles.username.charAt(0).toUpperCase();
+    }
+    
+    return 'U';
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -345,22 +375,15 @@ const ForumCategory: React.FC = () => {
                 <Link to={`/forums/thread/${thread.slug || thread.id}`} className="block p-4">
                   <div className="flex items-start">
                     <div className="flex-shrink-0 mr-3 sm:mr-4">
-                      {thread.profiles?.avatar_url ? (
-                        <img 
-                          src={thread.profiles.avatar_url} 
-                          alt={thread.profiles.username || 'User'} 
-                          className="h-10 w-10 rounded-full object-cover shadow-sm ring-2 ring-white group-hover:ring-blue-100 transition-all duration-200"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.src = `https://ui-avatars.com/api/?name=${thread.profiles?.username || 'U'}&background=random`;
-                          }}
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage 
+                          src={thread.profiles?.avatar_url || thread.profiles?.profile_photo_url || ''} 
+                          alt={getUserDisplayName(thread.profiles)} 
                         />
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-700 font-medium text-sm shadow-sm ring-2 ring-white group-hover:ring-blue-100 transition-all duration-200">
-                          {thread.profiles?.username?.charAt(0).toUpperCase() || 'U'}
-                        </div>
-                      )}
+                        <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-medium text-sm">
+                          {getUserInitials(thread.profiles)}
+                        </AvatarFallback>
+                      </Avatar>
                     </div>
                     <div className="ml-2 sm:ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                       <ChevronRightIcon className="h-5 w-5 text-gray-300 group-hover:text-blue-400 transition-colors" />
@@ -375,7 +398,7 @@ const ForumCategory: React.FC = () => {
                         <span className="flex items-center">
                           <span className="hidden sm:inline">Started by </span>
                           <span className="font-medium text-gray-700 sm:ml-0.5">
-                            {thread.profiles?.username || 'Unknown'}
+                            {getUserDisplayName(thread.profiles)}
                           </span>
                         </span>
                         <span className="hidden sm:inline">·</span>
@@ -396,7 +419,7 @@ const ForumCategory: React.FC = () => {
                           {formatDate(thread.last_activity_at)}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {thread.last_post.profiles?.username || 'Someone'} replied
+                          {getUserDisplayName(thread.last_post.profiles)} replied
                         </div>
                       </div>
                     )}

@@ -3,6 +3,7 @@ import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart, MessageSquare, Edit, Trash2, CheckCircle } from 'lucide-react';
 
 interface PostProps {
@@ -53,6 +54,34 @@ export const Post: React.FC<PostProps> = ({
   const isOwner = currentUserId === user_id;
   const isEdited = updated_at !== created_at;
 
+  const getUserDisplayName = (profiles: any) => {
+    if (!profiles) return 'Unknown User';
+    
+    if (profiles.first_name && profiles.last_name) {
+      return `${profiles.first_name} ${profiles.last_name}`;
+    }
+    
+    if (profiles.username) {
+      return profiles.username;
+    }
+    
+    return 'Unknown User';
+  };
+
+  const getUserInitials = (profiles: any) => {
+    if (!profiles) return 'U';
+    
+    if (profiles.first_name && profiles.last_name) {
+      return `${profiles.first_name.charAt(0)}${profiles.last_name.charAt(0)}`.toUpperCase();
+    }
+    
+    if (profiles.username) {
+      return profiles.username.charAt(0).toUpperCase();
+    }
+    
+    return 'U';
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -66,19 +95,17 @@ export const Post: React.FC<PostProps> = ({
       <div className="flex items-start space-x-4">
         {/* Avatar */}
         <div className="flex-shrink-0">
-          {profiles?.avatar_url ? (
-            <img
-              className="h-10 w-10 rounded-full"
-              src={profiles.avatar_url}
-              alt={profiles.username}
+          <Avatar className="h-10 w-10">
+            <AvatarImage 
+              src={profiles?.avatar_url || profiles?.profile_photo_url || ''} 
+              alt={getUserDisplayName(profiles)} 
             />
-          ) : (
-            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-              {profiles?.username?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-          )}
+            <AvatarFallback className="bg-gray-200 text-gray-500">
+              {getUserInitials(profiles)}
+            </AvatarFallback>
+          </Avatar>
           <div className="mt-2 text-center text-xs font-medium text-gray-500">
-            {profiles?.username || 'User'}
+            {getUserDisplayName(profiles)}
           </div>
         </div>
 
