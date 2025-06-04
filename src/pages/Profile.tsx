@@ -49,10 +49,10 @@ const Profile = () => {
       if (!user) return;
       
       try {
-        // Fetch user profile data
+        // Fetch user profile data including new body measurement fields
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('*, neck, chest, waist, hips')
           .eq('id', user.id)
           .single();
         
@@ -86,6 +86,19 @@ const Profile = () => {
             profile_photo_url: profile.profile_photo_url,
             name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email || '',
             email: user.email || '',
+            profile: {
+              height: profile.height,
+              weight: profile.weight,
+              age: profile.age,
+              gender: profile.gender,
+              fitnessLevel: profile.fitness_level,
+              fitnessGoals: profile.fitness_goals || [],
+              workoutDays: profile.workout_days || [],
+              neck: profile.neck,
+              chest: profile.chest,
+              waist: profile.waist,
+              hips: profile.hips
+            },
             stats: {
               workoutsCompleted: completedWorkouts ? completedWorkouts.length : 0,
               totalMinutes,

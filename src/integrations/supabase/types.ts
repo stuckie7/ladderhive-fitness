@@ -949,17 +949,21 @@ export type Database = {
           age: number | null
           avatar_url: string | null
           bio: string | null
+          chest: number | null
           created_at: string
           first_name: string | null
           fitness_goals: string[] | null
           fitness_level: string | null
           gender: string | null
           height: number | null
+          hips: number | null
           id: string
           last_name: string | null
+          neck: number | null
           profile_photo_url: string | null
           updated_at: string
           username: string | null
+          waist: number | null
           weight: number | null
           workout_days: string[] | null
         }
@@ -967,17 +971,21 @@ export type Database = {
           age?: number | null
           avatar_url?: string | null
           bio?: string | null
+          chest?: number | null
           created_at?: string
           first_name?: string | null
           fitness_goals?: string[] | null
           fitness_level?: string | null
           gender?: string | null
           height?: number | null
+          hips?: number | null
           id: string
           last_name?: string | null
+          neck?: number | null
           profile_photo_url?: string | null
           updated_at?: string
           username?: string | null
+          waist?: number | null
           weight?: number | null
           workout_days?: string[] | null
         }
@@ -985,17 +993,21 @@ export type Database = {
           age?: number | null
           avatar_url?: string | null
           bio?: string | null
+          chest?: number | null
           created_at?: string
           first_name?: string | null
           fitness_goals?: string[] | null
           fitness_level?: string | null
           gender?: string | null
           height?: number | null
+          hips?: number | null
           id?: string
           last_name?: string | null
+          neck?: number | null
           profile_photo_url?: string | null
           updated_at?: string
           username?: string | null
+          waist?: number | null
           weight?: number | null
           workout_days?: string[] | null
         }
