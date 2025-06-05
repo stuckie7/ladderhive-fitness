@@ -8,7 +8,7 @@ export const workoutScheduleService = {
       .from('workout_schedules')
       .select(`
         *,
-        workout:workout_id (*)
+        prepared_workouts:workout_id (*)
       `)
       .order('scheduled_date', { ascending: true });
 
@@ -26,7 +26,7 @@ export const workoutScheduleService = {
       .from('workout_schedules')
       .select(`
         *,
-        workout:workout_id (*)
+        prepared_workouts:workout_id (*)
       `)
       .eq('id', id)
       .single();
@@ -96,7 +96,7 @@ export const workoutScheduleService = {
       .from('workout_schedules')
       .select(`
         *,
-        workout:workout_id (*)
+        prepared_workouts:workout_id (*)
       `)
       .eq('user_id', userId)
       .gte('scheduled_date', new Date().toISOString())

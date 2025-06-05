@@ -1,3 +1,4 @@
+
 // src/components/layout/AppLayout.tsx
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -56,7 +57,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   const handleStartWorkout = async () => {
     try {
-      // Get all available workout types
+      console.log('Starting workout from more menu...');
+      
+      // Get all available workout types from the correct tables
       const [
         { data: preparedWorkouts, error: preparedError },
         { data: wods, error: wodsError },
@@ -79,13 +82,17 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         ...(mindfulMovements || []).map((m: any) => ({ ...m, type: 'mindful' }))
       ].filter(Boolean);
       
+      console.log('Available workout options:', allOptions.length);
+      
       if (allOptions.length === 0) {
+        console.log('No workout options available, redirecting to new workout');
         navigate('/workouts/new');
         return;
       }
       
       // Select a random item
       const randomItem = allOptions[Math.floor(Math.random() * allOptions.length)];
+      console.log('Selected random workout:', randomItem);
       
       // Navigate based on the type
       switch (randomItem.type) {
@@ -102,7 +109,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           navigate('/workouts/new');
       }
     } catch (error) {
-      console.error('Error in handleStartWorkout:', error);
+      console.error('Error in handleStartWorkout (more menu):', error);
       navigate('/workouts/new');
     }
   };
