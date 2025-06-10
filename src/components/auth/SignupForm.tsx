@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,11 +114,21 @@ const SignupForm = () => {
               className="text-sm text-muted-foreground"
             >
               I agree to the{" "}
-              <a href="#" className="text-fitness-primary hover:underline">
+              <a 
+                href="/terms-of-service" 
+                className="text-fitness-primary hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Terms of Service
               </a>{" "}
               and{" "}
-              <a href="#" className="text-fitness-primary hover:underline">
+              <a 
+                href="/privacy-policy" 
+                className="text-fitness-primary hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Privacy Policy
               </a>
             </label>

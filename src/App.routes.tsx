@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -42,6 +41,8 @@ import { AdminLayout } from "./components/admin/AdminLayout";
 import WorkoutScheduleManager from "./pages/admin/WorkoutScheduleManager";
 import { useAdmin } from "./context/AdminContext";
 import { useEffect, useState } from "react";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 // Forum pages
 import Forums from "@/pages/Forums";
@@ -103,6 +104,14 @@ const router = createBrowserRouter([
   {
     path: "/signup",
     element: <Signup />
+  },
+  {
+    path: "/terms-of-service",
+    element: <TermsOfService />
+  },
+  {
+    path: "/privacy-policy",
+    element: <PrivacyPolicy />
   },
   // Admin routes - Protected by both authentication and admin role
   {

@@ -270,9 +270,23 @@ const Index = () => {
               />
               <span className="font-bold text-green-400">FitTrack Pro</span>
             </div>
-            <p className="text-sm text-gray-400 mt-4 md:mt-0">
-              © {new Date().getFullYear()} FitTrack Pro. All rights reserved.
-            </p>
+            <div className="flex items-center gap-6 mt-4 md:mt-0">
+              <a 
+                href="/terms-of-service" 
+                className="text-sm text-gray-400 hover:text-green-400 transition-colors"
+              >
+                Terms of Service
+              </a>
+              <a 
+                href="/privacy-policy" 
+                className="text-sm text-gray-400 hover:text-green-400 transition-colors"
+              >
+                Privacy Policy
+              </a>
+              <p className="text-sm text-gray-400">
+                © {new Date().getFullYear()} FitTrack Pro. All rights reserved.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
