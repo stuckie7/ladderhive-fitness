@@ -1,6 +1,5 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
 import ProfileHeader from "./ProfileHeader";
 import StatsGrid from "./StatsGrid";
 import FitnessStats from "./FitnessStats";
@@ -8,6 +7,9 @@ import FitnessGoals from "./FitnessGoals";
 import WorkoutSchedule from "./WorkoutSchedule";
 import ProgressTracking from "./ProgressTracking";
 import BodyMeasurements from "./BodyMeasurements";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 
 interface UserData {
   name: string;
@@ -39,12 +41,50 @@ interface UserProfileProps {
 }
 
 const UserProfile = ({ userData }: UserProfileProps) => {
-  const stats = userData.stats || {
+  const { user } = useAuth();
+  const [realStats, setRealStats] = useState(userData.stats || {
     workoutsCompleted: 0,
     totalMinutes: 0,
     streakDays: 0,
     caloriesBurned: 0
-  };
+  });
+
+  useEffect(() => {
+    const fetchRealStats = async () => {
+      if (!user) return;
+
+      try {
+        // Update user statistics first
+        const { error: updateError } = await supabase.rpc('update_user_workout_statistics', {
+          p_user_id: user.id
+        });
+
+        if (updateError) {
+          console.error('Error updating user statistics:', updateError);
+        }
+
+        // Fetch the updated statistics
+        const { data: stats, error } = await supabase
+          .from('user_workout_statistics')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!error && stats) {
+          setRealStats({
+            workoutsCompleted: stats.total_workouts || 0,
+            totalMinutes: stats.total_minutes || 0,
+            streakDays: stats.current_streak || 0,
+            caloriesBurned: stats.total_calories || 0
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching real stats:', error);
+      }
+    };
+
+    fetchRealStats();
+  }, [user]);
 
   return (
     <div className="space-y-6">
@@ -59,10 +99,10 @@ const UserProfile = ({ userData }: UserProfileProps) => {
         </CardHeader>
         <CardContent>
           <StatsGrid 
-            workoutsCompleted={stats.workoutsCompleted}
-            totalMinutes={stats.totalMinutes}
-            streakDays={stats.streakDays}
-            caloriesBurned={stats.caloriesBurned}
+            workoutsCompleted={realStats.workoutsCompleted}
+            totalMinutes={realStats.totalMinutes}
+            streakDays={realStats.streakDays}
+            caloriesBurned={realStats.caloriesBurned}
           />
         </CardContent>
       </Card>

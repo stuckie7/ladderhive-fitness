@@ -1,9 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
-import { format } from 'date-fns';
+import { useAuth } from '@/context/AuthContext';
 
 export interface DailyProgress {
   step_count: number;
@@ -15,99 +13,96 @@ export interface DailyProgress {
   date: string;
 }
 
-export const useDailyProgress = (date?: Date) => {
+export const useDailyProgress = () => {
   const [progress, setProgress] = useState<DailyProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { toast } = useToast();
-  
-  const fetchDailyProgress = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const formattedDate = date 
-        ? format(date, 'yyyy-MM-dd') 
-        : format(new Date(), 'yyyy-MM-dd');
-      
-      // If user is logged in, fetch from Supabase
-      if (user) {
+
+  useEffect(() => {
+    const fetchDailyProgress = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const today = new Date().toISOString().split('T')[0];
+
+        // Fetch today's progress
         const { data, error } = await supabase
           .from('daily_progress')
           .select('*')
           .eq('user_id', user.id)
-          .eq('date', formattedDate)
+          .eq('date', today)
           .single();
-        
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-          throw new Error(error.message);
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+          console.error('Error fetching daily progress:', error);
+          return;
         }
-        
-        if (data) {
-          setProgress(data as DailyProgress);
-        } else {
-          // Create a new progress entry for today if none exists
-          const newProgress = {
-            user_id: user.id,
-            date: formattedDate,
-            step_count: 0,
-            step_goal: 10000,
-            active_minutes: 0,
-            active_minutes_goal: 60,
-            workouts_completed: 0,
-            workouts_goal: 1
-          };
-          
-          const { data: insertedData, error: insertError } = await supabase
+
+        if (!data) {
+          // Create today's progress entry with defaults
+          const { data: newProgress, error: insertError } = await supabase
             .from('daily_progress')
-            .insert([newProgress])
+            .insert([{
+              user_id: user.id,
+              date: today,
+              step_count: 0,
+              step_goal: 10000,
+              active_minutes: 0,
+              active_minutes_goal: 60,
+              workouts_completed: 0,
+              workouts_goal: 1
+            }])
             .select()
             .single();
-          
-          if (insertError) throw new Error(insertError.message);
-          
-          setProgress(insertedData as DailyProgress);
+
+          if (insertError) {
+            console.error('Error creating daily progress:', insertError);
+            return;
+          }
+
+          setProgress(newProgress);
+        } else {
+          // Update workouts completed from workout history for today
+          const { data: todayWorkouts, error: workoutError } = await supabase
+            .from('workout_history')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('date', today);
+
+          if (!workoutError) {
+            const workoutsCompleted = todayWorkouts?.length || 0;
+            
+            // Update the daily progress with actual workout count
+            const { data: updatedProgress, error: updateError } = await supabase
+              .from('daily_progress')
+              .update({ workouts_completed: workoutsCompleted })
+              .eq('user_id', user.id)
+              .eq('date', today)
+              .select()
+              .single();
+
+            if (!updateError && updatedProgress) {
+              setProgress(updatedProgress);
+            } else {
+              setProgress({ ...data, workouts_completed: workoutsCompleted });
+            }
+          } else {
+            setProgress(data);
+          }
         }
-      } else {
-        // Demo data for not logged in users
-        setProgress({
-          step_count: Math.floor(Math.random() * 8000) + 2000,
-          step_goal: 10000,
-          active_minutes: Math.floor(Math.random() * 45) + 15,
-          active_minutes_goal: 60,
-          workouts_completed: Math.random() > 0.5 ? 1 : 0,
-          workouts_goal: 1,
-          date: formattedDate
-        });
+      } catch (error) {
+        console.error('Error in fetchDailyProgress:', error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error loading daily progress:', err);
-      setError('Failed to load daily progress data');
-      toast({
-        title: 'Error',
-        description: 'Failed to load your daily progress.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  useEffect(() => {
+    };
+
     fetchDailyProgress();
-    
-    // If this is today's progress, refresh periodically
-    if (!date || format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) {
-      const intervalId = setInterval(fetchDailyProgress, 300000); // 5 minutes
-      return () => clearInterval(intervalId);
-    }
-  }, [user, date]);
-  
-  return { 
-    progress, 
-    isLoading, 
-    error,
-    refreshProgress: fetchDailyProgress
-  };
+  }, [user]);
+
+  return { progress, isLoading };
 };

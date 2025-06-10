@@ -1087,6 +1087,36 @@ export type Database = {
           },
         ]
       }
+      user_achievements: {
+        Row: {
+          achievement_name: string
+          achievement_type: string
+          description: string | null
+          earned_at: string | null
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          achievement_name: string
+          achievement_type: string
+          description?: string | null
+          earned_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          achievement_name?: string
+          achievement_type?: string
+          description?: string | null
+          earned_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_created_workout_exercises: {
         Row: {
           created_at: string | null
@@ -1362,6 +1392,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_workout_statistics: {
+        Row: {
+          completion_rate: number | null
+          created_at: string | null
+          current_streak: number | null
+          id: string
+          last_workout_date: string | null
+          longest_streak: number | null
+          monthly_workouts: number | null
+          quarterly_workouts: number | null
+          total_calories: number | null
+          total_minutes: number | null
+          total_workouts: number | null
+          updated_at: string | null
+          user_id: string
+          weekly_workouts: number | null
+          yearly_workouts: number | null
+        }
+        Insert: {
+          completion_rate?: number | null
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          last_workout_date?: string | null
+          longest_streak?: number | null
+          monthly_workouts?: number | null
+          quarterly_workouts?: number | null
+          total_calories?: number | null
+          total_minutes?: number | null
+          total_workouts?: number | null
+          updated_at?: string | null
+          user_id: string
+          weekly_workouts?: number | null
+          yearly_workouts?: number | null
+        }
+        Update: {
+          completion_rate?: number | null
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          last_workout_date?: string | null
+          longest_streak?: number | null
+          monthly_workouts?: number | null
+          quarterly_workouts?: number | null
+          total_calories?: number | null
+          total_minutes?: number | null
+          total_workouts?: number | null
+          updated_at?: string | null
+          user_id?: string
+          weekly_workouts?: number | null
+          yearly_workouts?: number | null
+        }
+        Relationships: []
       }
       user_workouts: {
         Row: {
@@ -1882,6 +1966,10 @@ export type Database = {
       text_soundex: {
         Args: { "": string }
         Returns: string
+      }
+      update_user_workout_statistics: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {

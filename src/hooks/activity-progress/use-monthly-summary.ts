@@ -10,7 +10,10 @@ export const useMonthlySummary = () => {
   const { user } = useAuth();
 
   const calculateMonthlySummary = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -19,8 +22,8 @@ export const useMonthlySummary = () => {
       const startDate = firstDayOfMonth.toISOString().split('T')[0];
       const endDate = today.toISOString().split('T')[0];
 
-      // Fetch the month's data
-      const { data, error } = await supabase
+      // Fetch the month's daily progress data
+      const { data: dailyData, error: dailyError } = await supabase
         .from('daily_progress')
         .select('date, step_count, step_goal, active_minutes, active_minutes_goal, workouts_completed, workouts_goal')
         .eq('user_id', user.id)
@@ -28,43 +31,82 @@ export const useMonthlySummary = () => {
         .lte('date', endDate)
         .order('date', { ascending: true });
 
-      if (error) throw error;
+      // Fetch workout history for the month
+      const { data: workoutData, error: workoutError } = await supabase
+        .from('workout_history')
+        .select('date')
+        .eq('user_id', user.id)
+        .gte('date', startDate)
+        .lte('date', endDate);
 
-      if (!data.length) {
-        setIsLoading(false);
-        return; // No data for this month
+      if (dailyError) {
+        console.error('Error fetching daily data:', dailyError);
+      }
+      
+      if (workoutError) {
+        console.error('Error fetching workout data:', workoutError);
       }
 
-      // Calculate total steps, active minutes, and workouts
-      const totalSteps = data.reduce((sum, day) => sum + day.step_count, 0);
-      const totalActiveMinutes = data.reduce((sum, day) => sum + day.active_minutes, 0);
-      const totalWorkouts = data.reduce((sum, day) => sum + day.workouts_completed, 0);
+      // Use workout history for more accurate workout counts
+      const workoutCountsByDate: { [key: string]: number } = {};
+      if (workoutData) {
+        workoutData.forEach(workout => {
+          const date = workout.date;
+          workoutCountsByDate[date] = (workoutCountsByDate[date] || 0) + 1;
+        });
+      }
+
+      const totalWorkouts = Object.values(workoutCountsByDate).reduce((sum, count) => sum + count, 0);
       
-      // Calculate averages
-      const daysInMonth = data.length;
-      const avgStepsPerDay = Math.round(totalSteps / daysInMonth);
-      const avgActiveMinutesPerDay = Math.round(totalActiveMinutes / daysInMonth);
-      const weeksInMonth = Math.ceil(daysInMonth / 7);
-      const avgWorkoutsPerWeek = parseFloat((totalWorkouts / weeksInMonth).toFixed(1));
-      
-      // Calculate completion rate (completed goals vs total goals)
-      let totalCompletedGoals = 0;
-      let totalGoals = 0;
-      
-      data.forEach(day => {
-        if (day.step_count >= day.step_goal) totalCompletedGoals++;
-        if (day.active_minutes >= day.active_minutes_goal) totalCompletedGoals++;
-        if (day.workouts_completed >= day.workouts_goal) totalCompletedGoals++;
+      if (!dailyData || dailyData.length === 0) {
+        // If no daily data, create a basic summary using workout data
+        const daysInMonth = Math.ceil((today.getTime() - firstDayOfMonth.getTime()) / (1000 * 60 * 60 * 24));
+        const weeksInMonth = Math.ceil(daysInMonth / 7);
         
-        totalGoals += 3; // 3 goals per day
+        setMonthlySummary({
+          totalSteps: 0,
+          avgStepsPerDay: 0,
+          totalActiveMinutes: 0,
+          avgActiveMinutesPerDay: 0,
+          totalWorkouts,
+          avgWorkoutsPerWeek: parseFloat((totalWorkouts / weeksInMonth).toFixed(1)),
+          completionRate: 0,
+          mostActiveDay: {
+            name: 'N/A',
+            steps: 0
+          }
+        });
+        return;
+      }
+
+      // Calculate totals and averages from daily data
+      const totalSteps = dailyData.reduce((sum, day) => sum + (day.step_count || 0), 0);
+      const totalActiveMinutes = dailyData.reduce((sum, day) => sum + (day.active_minutes || 0), 0);
+      
+      const daysWithData = dailyData.length;
+      const avgStepsPerDay = daysWithData > 0 ? Math.round(totalSteps / daysWithData) : 0;
+      const avgActiveMinutesPerDay = daysWithData > 0 ? Math.round(totalActiveMinutes / daysWithData) : 0;
+      const weeksInMonth = Math.ceil(daysWithData / 7);
+      const avgWorkoutsPerWeek = weeksInMonth > 0 ? parseFloat((totalWorkouts / weeksInMonth).toFixed(1)) : 0;
+      
+      // Calculate completion rate based on daily goals achieved
+      let totalGoalsAchieved = 0;
+      let totalPossibleGoals = 0;
+      
+      dailyData.forEach(day => {
+        if (day.step_count >= (day.step_goal || 10000)) totalGoalsAchieved++;
+        if (day.active_minutes >= (day.active_minutes_goal || 60)) totalGoalsAchieved++;
+        const actualWorkouts = workoutCountsByDate[day.date] || 0;
+        if (actualWorkouts >= (day.workouts_goal || 1)) totalGoalsAchieved++;
+        totalPossibleGoals += 3; // 3 goals per day
       });
       
-      const completionRate = Math.round((totalCompletedGoals / totalGoals) * 100);
+      const completionRate = totalPossibleGoals > 0 ? Math.round((totalGoalsAchieved / totalPossibleGoals) * 100) : 0;
       
-      // Find most active day
-      const mostActiveDay = data.reduce((max, day) => 
-        day.step_count > (max ? max.step_count : 0) ? 
-          { date: day.date, step_count: day.step_count } : max, 
+      // Find most active day by steps
+      const mostActiveDay = dailyData.reduce((max, day) => 
+        (day.step_count || 0) > (max ? max.step_count : 0) ? 
+          { date: day.date, step_count: day.step_count || 0 } : max, 
         null as { date: string, step_count: number } | null
       );
       
@@ -88,6 +130,20 @@ export const useMonthlySummary = () => {
       });
     } catch (error: any) {
       console.error('Error calculating monthly summary:', error);
+      // Set a basic summary in case of error
+      setMonthlySummary({
+        totalSteps: 0,
+        avgStepsPerDay: 0,
+        totalActiveMinutes: 0,
+        avgActiveMinutesPerDay: 0,
+        totalWorkouts: 0,
+        avgWorkoutsPerWeek: 0,
+        completionRate: 0,
+        mostActiveDay: {
+          name: 'N/A',
+          steps: 0
+        }
+      });
     } finally {
       setIsLoading(false);
     }

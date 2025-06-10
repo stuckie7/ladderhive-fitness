@@ -4,8 +4,16 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { ActivityData } from '@/types/activity';
-import { getLastNDays, formatActivityData } from './utils';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
+
+const getLastNDays = (n: number): string[] => {
+  const dates: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const date = subDays(new Date(), i);
+    dates.push(format(date, 'yyyy-MM-dd'));
+  }
+  return dates;
+};
 
 export const useWeeklyData = () => {
   const [weeklyData, setWeeklyData] = useState<ActivityData[]>([]);
@@ -16,8 +24,8 @@ export const useWeeklyData = () => {
   const fetchWeeklyData = async () => {
     setIsLoading(true);
     try {
-      // For demo purposes, generate mock data if no user is logged in
       if (!user) {
+        // Generate mock data for demo purposes
         const dates = getLastNDays(7);
         const mockData = dates.map(date => ({
           date,
@@ -32,13 +40,11 @@ export const useWeeklyData = () => {
 
       // Get date range for last 7 days
       const dates = getLastNDays(7);
-      
-      // Format the date strings for the query
       const startDate = dates[0];
       const endDate = dates[dates.length - 1];
 
-      // Fetch the data from Supabase
-      const { data, error } = await supabase
+      // Fetch daily progress data for the last 7 days
+      const { data: dailyProgressData, error: progressError } = await supabase
         .from('daily_progress')
         .select('date, step_count, active_minutes, workouts_completed')
         .eq('user_id', user.id)
@@ -46,10 +52,45 @@ export const useWeeklyData = () => {
         .lte('date', endDate)
         .order('date', { ascending: true });
 
-      if (error) throw error;
+      // Also fetch workout history to get actual workout counts
+      const { data: workoutHistoryData, error: historyError } = await supabase
+        .from('workout_history')
+        .select('date')
+        .eq('user_id', user.id)
+        .gte('date', startDate)
+        .lte('date', endDate);
 
-      // Format the data with our utility function
-      const formattedData = formatActivityData(data, dates);
+      if (progressError) {
+        console.error('Error fetching daily progress:', progressError);
+      }
+      
+      if (historyError) {
+        console.error('Error fetching workout history:', historyError);
+      }
+
+      // Create a map of workout counts by date
+      const workoutCountsByDate: { [key: string]: number } = {};
+      if (workoutHistoryData) {
+        workoutHistoryData.forEach(workout => {
+          const date = workout.date;
+          workoutCountsByDate[date] = (workoutCountsByDate[date] || 0) + 1;
+        });
+      }
+
+      // Format the data for the chart
+      const formattedData: ActivityData[] = dates.map(date => {
+        const progressEntry = dailyProgressData?.find(entry => entry.date === date);
+        const workoutCount = workoutCountsByDate[date] || 0;
+        
+        return {
+          date,
+          day: format(new Date(date), 'E'),
+          steps: progressEntry?.step_count || 0,
+          active_minutes: progressEntry?.active_minutes || 0,
+          workouts: workoutCount
+        };
+      });
+
       setWeeklyData(formattedData);
     } catch (error: any) {
       console.error('Error fetching weekly progress:', error);
@@ -76,10 +117,6 @@ export const useWeeklyData = () => {
 
   useEffect(() => {
     fetchWeeklyData();
-    // Set up a refresh interval (e.g., every 5 minutes)
-    const intervalId = setInterval(fetchWeeklyData, 300000);
-    
-    return () => clearInterval(intervalId);
   }, [user]);
 
   return {
