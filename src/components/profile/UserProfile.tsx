@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ProfileHeader from "./ProfileHeader";
 import StatsGrid from "./StatsGrid";
@@ -10,6 +9,10 @@ import BodyMeasurements from "./BodyMeasurements";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { HeartPulse, X, Moon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import HealthIntegration from "@/components/Health/HealthIntegration";
 
 interface UserData {
   name: string;
@@ -42,6 +45,7 @@ interface UserProfileProps {
 
 const UserProfile = ({ userData }: UserProfileProps) => {
   const { user } = useAuth();
+  const [showHealthModal, setShowHealthModal] = useState(false);
   const [realStats, setRealStats] = useState(userData.stats || {
     workoutsCompleted: 0,
     totalMinutes: 0,
@@ -88,6 +92,52 @@ const UserProfile = ({ userData }: UserProfileProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Health Integration Card */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div className="flex items-center space-x-2">
+            <HeartPulse className="h-5 w-5 text-red-500" />
+            <CardTitle className="text-lg font-medium">Health Integration</CardTitle>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowHealthModal(true)}
+            className="flex items-center space-x-1"
+          >
+            <span>View Health Stats</span>
+            <HeartPulse className="h-4 w-4 ml-1" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Connect your Fitbit to track your fitness metrics and sync your workout data.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Health Integration Modal */}
+      <Dialog open={showHealthModal} onOpenChange={setShowHealthModal}>
+        <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Health & Fitness Integration</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowHealthModal(false)}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <HealthIntegration />
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardHeader className="pb-2">
           <ProfileHeader 

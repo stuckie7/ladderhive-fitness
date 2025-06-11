@@ -2,9 +2,12 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import * as path from "path";
 import { visualizer } from "rollup-plugin-visualizer";
 import { componentTagger } from "lovable-tagger";
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -16,6 +19,11 @@ export default defineConfig(({ mode }) => {
   ].filter(Boolean);
 
   return {
+    resolve: {
+      alias: [
+        { find: '@', replacement: path.resolve(__dirname, './src') },
+      ],
+    },
     test: {
       globals: true,
       environment: 'jsdom',
@@ -49,11 +57,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     plugins,
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-      },
-    },
     define: {
       'process.env': {},
       global: 'globalThis',
