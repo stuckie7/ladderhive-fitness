@@ -1,4 +1,4 @@
-﻿import { TestSupabase } from './components/TestSupabase'
+import TestSupabase from './components/TestSupabase'
 
 function App() {
   return (
