@@ -1,35 +1,20 @@
-
-import React from "react";
-import { RouterProvider } from "react-router-dom";
-import router from "./App.routes"; 
-import { AuthProvider } from "@/context/AuthContext";
-import { AdminProvider } from "@/context/AdminContext";
-import { Toaster } from "@/components/ui/toaster";
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+﻿import { TestSupabase } from './components/TestSupabase'
 
 function App() {
   return (
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <AdminProvider>
-            <RouterProvider router={router} />
-            <Toaster />
-          </AdminProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </React.StrictMode>
-  );
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold text-gray-900">LadderHive Fitness</h1>
+        </div>
+      </header>
+      <main>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <TestSupabase />
+        </div>
+      </main>
+    </div>
+  )
 }
 
-export default App;
+export default App
