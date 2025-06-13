@@ -88,53 +88,35 @@ const HealthIntegration = () => {
       console.log('Initiating Fitbit connection...');
       
       // Make the request to get the Fitbit authorization URL
-      console.log('Fetching Fitbit auth URL from:', `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fitbit-auth`);
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fitbit-auth`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fitbit-simple`;
+      console.log('Fetching Fitbit auth URL from:', functionUrl);
+      
+      const response = await fetch(functionUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Accept': 'application/json',
+        },
+      });
       
       console.log('Response status:', response.status);
-
-      console.log('Response status:', response.status);
-      
-      // Get the response text first to handle both JSON and HTML responses
-      const responseText = await response.text();
-      console.log('Raw response text:', responseText);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-      // Try to parse as JSON, but don't fail if it's not JSON
-      let data;
-      try {
-        data = responseText ? JSON.parse(responseText) : null;
-      } catch (e) {
-        console.error('Failed to parse response as JSON. Response starts with:', responseText.substring(0, 200));
-        throw new Error(`Received non-JSON response. Status: ${response.status}. Response: ${responseText.substring(0, 200)}...`);
-      }
-      
-      if (!data) {
-        console.error('Empty response data');
-        throw new Error('Received empty response from server');
-      }
       
       if (!response.ok) {
-        console.error('Error response from server:', data);
-        throw new Error(data.error || `Failed to connect to Fitbit (HTTP ${response.status})`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-
-      if (data?.url) {
-        console.log('Redirecting to Fitbit authorization URL');
-        window.location.href = data.url;
-      } else {
+      
+      const data = await response.json();
+      console.log('Response data:', data);
+      
+      if (!data.url) {
         console.error('No URL in response:', data);
-        throw new Error('No authorization URL received in response');
+        throw new Error('No authorization URL in response');
       }
+      
+      console.log('Redirecting to Fitbit authorization URL:', data.url);
+      window.location.href = data.url;
     } catch (err) {
       console.error('Error connecting to Fitbit:', err);
       setError(err instanceof Error ? err.message : 'Failed to connect to Fitbit');

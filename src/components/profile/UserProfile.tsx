@@ -6,11 +6,12 @@ import FitnessGoals from "./FitnessGoals";
 import WorkoutSchedule from "./WorkoutSchedule";
 import ProgressTracking from "./ProgressTracking";
 import BodyMeasurements from "./BodyMeasurements";
+import FitbitConnectionStatus from "./FitbitConnectionStatus";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { HeartPulse, X, Moon } from "lucide-react";
+import { HeartPulse, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import HealthIntegration from "@/components/Health/HealthIntegration";
 
@@ -147,13 +148,33 @@ const UserProfile = ({ userData }: UserProfileProps) => {
             photoUrl={userData.profile_photo_url}
           />
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <StatsGrid 
             workoutsCompleted={realStats.workoutsCompleted}
             totalMinutes={realStats.totalMinutes}
             streakDays={realStats.streakDays}
             caloriesBurned={realStats.caloriesBurned}
           />
+          
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Fitness Goals</h3>
+              <FitnessGoals goals={userData.profile?.fitnessGoals || []} />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Body Measurements</h3>
+              <BodyMeasurements 
+                neck={userData.profile?.neck}
+                chest={userData.profile?.chest}
+                waist={userData.profile?.waist}
+                hips={userData.profile?.hips}
+              />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Health Integrations</h3>
+              <FitbitConnectionStatus />
+            </div>
+          </div>
         </CardContent>
       </Card>
       

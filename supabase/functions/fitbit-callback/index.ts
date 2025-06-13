@@ -1,196 +1,125 @@
-import { createClient } from '@supabase/supabase-js';
-import { corsHeaders, withCors, createCorsResponse } from '../_shared/cors';
+/**
+ * @no-auth
+ * This function can be called without authentication
+ */
 
-// Environment variables - these will be provided by Supabase Edge Functions
-const env = {
-  SUPABASE_URL: process.env.SUPABASE_URL || '',
-  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
-  FITBIT_CLIENT_ID: process.env.FITBIT_CLIENT_ID || '',
-  FITBIT_CLIENT_SECRET: process.env.FITBIT_CLIENT_SECRET || '',
-  SITE_URL: process.env.SITE_URL || 'http://localhost:3000',
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+// @ts-ignore - Allow unauthenticated access
+// @no-auth
+// @no-cookie
+
+// Simple CORS headers with explicit permissions
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Credentials': 'true',
+  'Content-Type': 'application/json',
 };
 
-// In-memory store for OAuth state (in production, consider using Redis or similar)
-const oauthStateStore = new Map<string, { userId: string; expiresAt: number }>();
-
-// Extend the global Request and Response types
-interface FetchResponse extends Response {
-  ok: boolean;
-  status: number;
-  statusText: string;
-  headers: Headers;
-  json(): Promise<any>;
-  text(): Promise<string>;
-}
-
-declare const fetch: (input: string | URL | Request, init?: RequestInit) => Promise<FetchResponse>;
-declare const btoa: (str: string) => string;
-
-// Simple response helper
-const createResponse = (
-  body: unknown = null,
-  status: number = 200,
-  headers: Record<string, string> = {}
-): Response => {
-  const responseHeaders = new Headers({
-    'Content-Type': 'application/json',
-    ...corsHeaders,
-    ...headers
-  } as HeadersInit);
-
-  const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+// Main request handler
+export default async (req: Request): Promise<Response> => {
+  const url = new URL(req.url);
   
-  return new Response(bodyString, {
-    status,
-    headers: responseHeaders
-  });
-};
-
-// Helper function to create error responses
-const createErrorResponse = (
-  status: number,
-  message: string,
-  details?: string
-): Response => {
-  const errorResponse = { error: message };
-  if (details) (errorResponse as any).details = details;
+  // Log basic request info
+  console.log(`Request received: ${req.method} ${req.url}`);
   
-  return createResponse(errorResponse, status);
-};
-
-// Helper to parse URL parameters
-const parseUrlParams = (url: string): Record<string, string> => {
-  const params = new URL(url).searchParams;
-  const result: Record<string, string> = {};
-  params.forEach((value, key) => {
-    result[key] = value;
-  });
-  return result;
-};
-
-// Main request handler for Supabase Edge Functions
-export default async (req: any): Promise<Response> => {
   // Handle CORS preflight
-  const method = req.method || 'GET';
-  const url = req.url || '';
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
+  }
   
-  if (method === 'OPTIONS') {
-    return createResponse('', 204);
+  // Handle test endpoint
+  if (url.pathname.endsWith('/test')) {
+    return new Response(JSON.stringify({ 
+      status: 'ok', 
+      message: 'Test endpoint is working',
+      timestamp: new Date().toISOString()
+    }), {
+      status: 200,
+      headers: corsHeaders
+    });
+  }
+  
+  // Handle other endpoints
+  return new Response(JSON.stringify({ 
+    status: 'error', 
+    message: 'Not found',
+    path: url.pathname
+  }), {
+    status: 404,
+    headers: corsHeaders
+  });
+
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
   }
 
-  // Only allow GET requests for OAuth callback
-  if (method !== 'GET') {
-    return createErrorResponse(405, 'Method not allowed');
+  // Only allow GET requests
+  if (req.method !== 'GET') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: corsHeaders }
+    );
   }
 
   try {
-    // Parse the URL to get query parameters
-    const urlObj = new URL(url);
-    const code = urlObj.searchParams.get('code');
-    const state = urlObj.searchParams.get('state');
-    const error = urlObj.searchParams.get('error');
+    // Parse URL
+    const url = new URL(req.url);
+    console.log('Parsed URL:', {
+      pathname: url.pathname,
+      searchParams: Object.fromEntries(url.searchParams.entries())
+    });
 
-    // Check for OAuth errors
-    if (error) {
-      return createErrorResponse(400, 'OAuth error', error);
+    // Handle test endpoint
+    if (url.pathname.endsWith('/test')) {
+      return new Response(
+        JSON.stringify({ 
+          status: 'ok', 
+          message: 'Test endpoint is working',
+          timestamp: new Date().toISOString()
+        }),
+        { headers: corsHeaders }
+      );
     }
 
-    // Validate required parameters
+    // Handle OAuth callback
+    const code = url.searchParams.get('code');
+    const state = url.searchParams.get('state');
+    
     if (!code || !state) {
-      return createErrorResponse(400, 'Missing required parameters', 'Both code and state are required');
+      return new Response(
+        JSON.stringify({ error: 'Missing code or state parameter' }),
+        { status: 400, headers: corsHeaders }
+      );
     }
 
-    // Verify state to prevent CSRF attacks
-    const stateData = oauthStateStore.get(state);
-    if (!stateData) {
-      return createErrorResponse(400, 'Invalid or expired state parameter');
-    }
-    
-    // Clean up the used state
-    oauthStateStore.delete(state);
-    
-    // Check if state has expired
-    if (Date.now() > stateData.expiresAt) {
-      return createErrorResponse(400, 'State has expired');
-    }
-
-    // Exchange authorization code for access token
-    const tokenResponse = await fetch('https://api.fitbit.com/oauth2/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': 'Basic ' + btoa(`${env.FITBIT_CLIENT_ID}:${env.FITBIT_CLIENT_SECRET}`)
-      },
-      body: new URLSearchParams({
-        client_id: env.FITBIT_CLIENT_ID,
+    // If we get here, the basic flow is working
+    return new Response(
+      JSON.stringify({ 
+        status: 'success',
+        message: 'OAuth callback received',
         code,
-        grant_type: 'authorization_code',
-        redirect_uri: `${env.SITE_URL}/api/auth/callback`
-      })
-    });
-
-    if (!tokenResponse.ok) {
-      const error = await tokenResponse.text();
-      console.error('Error exchanging code for token:', error);
-      return createErrorResponse(500, 'Failed to exchange authorization code for token');
-    }
-
-    const tokenData = await tokenResponse.json();
-    
-    // Initialize Supabase admin client (bypasses RLS)
-    const supabase = createClient(
-      env.SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+        state
+      }),
+      { headers: corsHeaders }
     );
-    
-    // No authorization header check needed for OAuth callback
 
-    // Get the current timestamp and calculate expiration
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + (tokenData.expires_in * 1000));
-    
-    // Store the tokens in the database
-    const { data, error: dbError } = await supabase
-      .from('fitbit_tokens')
-      .upsert({
-        user_id: stateData.userId,
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        expires_at: expiresAt.toISOString(),
-        scope: tokenData.scope
-      }, {
-        onConflict: 'user_id'
-      })
-      .select()
-      .single();
-
-    if (dbError) {
-      console.error('Error storing tokens:', dbError);
-      return createErrorResponse(500, 'Failed to store tokens');
-    }
-
-    // Redirect back to the app with success message
-    const redirectUrl = new URL(env.SITE_URL);
-    redirectUrl.searchParams.set('fitbit_connected', 'true');
-    
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': redirectUrl.toString(),
-        ...corsHeaders
-      }
-    });
-
-  } catch (error) {
-    console.error('Error in Fitbit callback handler:', error);
+  } catch (error: unknown) {
+    console.error('Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return createErrorResponse(500, 'Internal server error', errorMessage);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: errorMessage 
+      }),
+      { status: 500, headers: corsHeaders }
+    );
   }
 };
