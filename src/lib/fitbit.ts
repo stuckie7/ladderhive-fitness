@@ -3,8 +3,8 @@ import type { Database } from '../types/supabase';
 import type { FitbitHealthData } from '../types/fitbit-api';
 
 // Create a type-safe Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase environment variables');
@@ -45,10 +45,11 @@ export interface UserConnection {
 }
 
 export async function connectFitbit(): Promise<ConnectFitbitResponse> {
-  const { data, error } = await supabase.functions.invoke<ConnectFitbitResponse>('fitbit-connect');
+  const { data, error } = await supabase.functions.invoke<ConnectFitbitResponse>('fitbit-auth');
   
   if (error) {
-    throw new Error(error.message);
+    console.error('Error from Supabase function:', error);
+    throw new Error(error.message || 'Failed to connect to Fitbit');
   }
   
   if (!data) {

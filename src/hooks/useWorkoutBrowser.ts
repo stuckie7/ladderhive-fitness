@@ -122,7 +122,7 @@ export const useWorkoutBrowser = () => {
 
   // Enhanced logging for debugging
   const logQueryDetails = useCallback((query: any, type: 'count' | 'data') => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.MODE === 'development') {
       console.log(`[${type.toUpperCase()}] Current query:`, {
         filters,
         currentPage,

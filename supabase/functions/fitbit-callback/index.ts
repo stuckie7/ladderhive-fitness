@@ -1,13 +1,31 @@
-// Import from deps.ts for better dependency management
-import { 
-  deno, 
-  createClient, 
-  corsHeaders, 
-  getEnvVars,
-  type SupabaseClient
-} from '../deps.js';
+import { createClient } from '@supabase/supabase-js';
+import { corsHeaders, withCors, createCorsResponse } from '../_shared/cors';
 
-const { serve } = deno;
+// Environment variables - these will be provided by Supabase Edge Functions
+const env = {
+  SUPABASE_URL: process.env.SUPABASE_URL || '',
+  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+  FITBIT_CLIENT_ID: process.env.FITBIT_CLIENT_ID || '',
+  FITBIT_CLIENT_SECRET: process.env.FITBIT_CLIENT_SECRET || '',
+  SITE_URL: process.env.SITE_URL || 'http://localhost:3000',
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+};
+
+// In-memory store for OAuth state (in production, consider using Redis or similar)
+const oauthStateStore = new Map<string, { userId: string; expiresAt: number }>();
+
+// Extend the global Request and Response types
+interface FetchResponse extends Response {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  headers: Headers;
+  json(): Promise<any>;
+  text(): Promise<string>;
+}
+
+declare const fetch: (input: string | URL | Request, init?: RequestInit) => Promise<FetchResponse>;
+declare const btoa: (str: string) => string;
 
 // Simple response helper
 const createResponse = (
@@ -19,7 +37,7 @@ const createResponse = (
     'Content-Type': 'application/json',
     ...corsHeaders,
     ...headers
-  });
+  } as HeadersInit);
 
   const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
   
@@ -41,30 +59,37 @@ const createErrorResponse = (
   return createResponse(errorResponse, status);
 };
 
-// In-memory store for OAuth state (in production, consider using Redis or similar)
-const oauthStateStore = new Map<string, { userId: string; expiresAt: number }>();
+// Helper to parse URL parameters
+const parseUrlParams = (url: string): Record<string, string> => {
+  const params = new URL(url).searchParams;
+  const result: Record<string, string> = {};
+  params.forEach((value, key) => {
+    result[key] = value;
+  });
+  return result;
+};
 
-// Main request handler
-serve(async (req: Request): Promise<Response> => {
+// Main request handler for Supabase Edge Functions
+export default async (req: any): Promise<Response> => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
+  const method = req.method || 'GET';
+  const url = req.url || '';
+  
+  if (method === 'OPTIONS') {
     return createResponse('', 204);
   }
 
-  try {
-    // Only allow GET requests
-    if (req.method !== 'GET') {
-      return createErrorResponse(405, 'Method not allowed');
-    }
+  // Only allow GET requests for OAuth callback
+  if (method !== 'GET') {
+    return createErrorResponse(405, 'Method not allowed');
+  }
 
-    // Get environment variables
-    const env = getEnvVars();
-    
+  try {
     // Parse the URL to get query parameters
-    const url = new URL(req.url);
-    const code = url.searchParams.get('code');
-    const state = url.searchParams.get('state');
-    const error = url.searchParams.get('error');
+    const urlObj = new URL(url);
+    const code = urlObj.searchParams.get('code');
+    const state = urlObj.searchParams.get('state');
+    const error = urlObj.searchParams.get('error');
 
     // Check for OAuth errors
     if (error) {
@@ -168,4 +193,4 @@ serve(async (req: Request): Promise<Response> => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return createErrorResponse(500, 'Internal server error', errorMessage);
   }
-});
+};

@@ -34,13 +34,13 @@ export class FitbitService {
       const params = new URLSearchParams();
       params.append('grant_type', 'refresh_token');
       params.append('refresh_token', refreshToken);
-      params.append('client_id', process.env.NEXT_PUBLIC_FITBIT_CLIENT_ID || '');
+      params.append('client_id', import.meta.env.VITE_FITBIT_CLIENT_ID || '');
 
       const response = await fetch('https://api.fitbit.com/oauth2/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${btoa(`${process.env.NEXT_PUBLIC_FITBIT_CLIENT_ID}:${process.env.FITBIT_CLIENT_SECRET}`)}`,
+          'Authorization': `Basic ${btoa(`${import.meta.env.VITE_FITBIT_CLIENT_ID}:${import.meta.env.VITE_FITBIT_CLIENT_SECRET}`)}`,
         },
         body: params,
       });

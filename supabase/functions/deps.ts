@@ -24,6 +24,15 @@ export const deno = {
   })
 };
 
+// Extend the global Request type
+declare global {
+  interface Request {
+    method: string;
+    headers: Headers;
+    url: string;
+  }
+}
+
 // Supabase client implementation
 export const createClient = (
   url: string, 

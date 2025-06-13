@@ -5,7 +5,7 @@ import {
   corsHeaders, 
   getEnvVars,
   type SupabaseClient
-} from '../deps.js';
+} from '../deps'; // Removed .js extension to let Deno handle the import
 
 const { serve } = deno;
 
@@ -100,8 +100,11 @@ serve(async (req: globalThis.Request): Promise<globalThis.Response> => {
 
     // Handle GET request to initiate OAuth flow
     if (req.method === 'GET') {
-      // Generate a random state parameter for CSRF protection
-      const state = generateRandomString(32);
+      // Set CORS headers
+      const responseHeaders = new Headers({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, content-type',
       
       // Store the state with the user ID for validation in the callback
       oauthStateStore.set(state, {
