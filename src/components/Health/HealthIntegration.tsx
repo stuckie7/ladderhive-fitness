@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import * as React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, HeartPulse, Zap, Loader2, AlertCircle, CheckCircle2, RefreshCw, Moon } from 'lucide-react';
+import { Activity, HeartPulse, Zap, Loader2, AlertCircle, RefreshCw, Moon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 
@@ -74,33 +75,64 @@ const HealthIntegration = () => {
   });
 
   const connectFitbit = useCallback(async () => {
-    if (!process.env.NEXT_PUBLIC_FITBIT_CLIENT_ID) {
-      setError('Fitbit client ID is not configured');
-      return;
-    }
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    const redirectUri = `${window.location.origin}/auth/callback/fitbit`;
-    const scope = 'activity profile heartrate sleep';
-    
-    const authUrl = `https://www.fitbit.com/oauth2/authorize?response_type=code&client_id=${process.env.NEXT_PUBLIC_FITBIT_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}`;
-    window.location.href = authUrl;
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      // Make the request to get the Fitbit authorization URL
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/fitbit-connect`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to connect to Fitbit');
+      }
+
+      const data = await response.json();
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No authorization URL received');
+      }
+    } catch (err) {
+      console.error('Error connecting to Fitbit:', err);
+      setError(err instanceof Error ? err.message : 'Failed to connect to Fitbit');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const checkConnection = useCallback(async () => {
     if (!user?.id) return false;
     
     try {
+      // Check the fitbit_tokens table instead of user_connections
       const { data, error } = await supabase
-        .from('user_connections')
+        .from('fitbit_tokens')
         .select('*')
         .eq('user_id', user.id)
-        .eq('provider', 'fitbit')
         .maybeSingle();
 
       if (error) throw error;
       
-      setIsConnected(!!data);
-      return !!data;
+      const isConnected = !!data;
+      setIsConnected(isConnected);
+      return isConnected;
     } catch (error) {
       console.error('Error checking Fitbit connection:', error);
       setError('Failed to check Fitbit connection');
@@ -157,6 +189,41 @@ const HealthIntegration = () => {
     await connectFitbit();
   }, [connectFitbit]);
 
+  const disconnectFitbit = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { error } = await supabase
+        .from('fitbit_tokens')
+        .delete()
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+      
+      setIsConnected(false);
+      setStats({
+        steps: 0,
+        calories: 0,
+        distance: 0,
+        activeMinutes: 0,
+        heartRate: null,
+        sleepDuration: null,
+        lastSynced: null,
+        goal: 10000,
+        progress: 0,
+        workouts: 0
+      });
+    } catch (err) {
+      console.error('Error disconnecting Fitbit:', err);
+      setError('Failed to disconnect Fitbit');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
   return (
     <div className="space-y-4">
       <Card className="w-full">
@@ -170,23 +237,46 @@ const HealthIntegration = () => {
                   : 'Not synced yet'}
               </CardDescription>
             </div>
-            <Button onClick={handleRefresh} disabled={isLoading}>
-              {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
+            <div className="flex gap-2">
+              <Button onClick={handleRefresh} disabled={isLoading} variant="outline" size="sm">
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                {isLoading ? 'Syncing...' : 'Refresh'}
+              </Button>
+              {isConnected && (
+                <Button 
+                  onClick={disconnectFitbit} 
+                  disabled={isLoading} 
+                  variant="destructive" 
+                  size="sm"
+                >
+                  Disconnect
+                </Button>
               )}
-              {isLoading ? 'Syncing...' : 'Refresh'}
-            </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           {!isConnected ? (
             <div className="space-y-4">
-              <p>Connect your Fitbit account to track your health metrics.</p>
-              <Button onClick={handleConnectFitbit} disabled={isLoading}>
-                <Activity className="mr-2 h-4 w-4" />
-                Connect Fitbit
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Activity className="h-4 w-4" />
+                <span>Connect your Fitbit account to track your health metrics automatically.</span>
+              </div>
+              <Button 
+                onClick={handleConnectFitbit} 
+                disabled={isLoading} 
+                className="w-full sm:w-auto"
+              >
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Activity className="mr-2 h-4 w-4" />
+                )}
+                {isLoading ? 'Connecting...' : 'Connect Fitbit'}
               </Button>
             </div>
           ) : (
