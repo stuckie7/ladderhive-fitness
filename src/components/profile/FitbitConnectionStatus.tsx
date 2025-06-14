@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -45,19 +46,31 @@ const FitbitConnectionStatus = () => {
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
-      const response = await fetch('/api/fitbit/connect');
       
-      if (!response.ok) {
-        throw new Error('Failed to initiate Fitbit connection');
+      console.log('Initiating Fitbit connection...');
+      
+      // Call the edge function to get authorization URL
+      const { data, error } = await supabase.functions.invoke('fitbit-oauth', {
+        method: 'GET'
+      });
+      
+      if (error) {
+        console.error('Error from edge function:', error);
+        throw new Error(error.message || 'Failed to get authorization URL');
       }
-
-      const { url } = await response.json();
-      window.location.href = url;
+      
+      if (!data?.url) {
+        console.error('No URL in response:', data);
+        throw new Error('No authorization URL received');
+      }
+      
+      console.log('Redirecting to Fitbit authorization:', data.url);
+      window.location.href = data.url;
     } catch (error) {
       console.error('Error connecting Fitbit:', error);
       toast({
         title: 'Connection Error',
-        description: 'Failed to connect to Fitbit. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to connect to Fitbit. Please try again.',
         variant: 'destructive',
       });
     } finally {

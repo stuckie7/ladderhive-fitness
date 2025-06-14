@@ -1,3 +1,4 @@
+
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -79,43 +80,24 @@ const HealthIntegration = () => {
       setIsLoading(true);
       setError(null);
 
-      // Get the current session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
-
       console.log('Initiating Fitbit connection...');
       
-      // Make the request to get the Fitbit authorization URL
-      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fitbit-simple`;
-      console.log('Fetching Fitbit auth URL from:', functionUrl);
-      
-      const response = await fetch(functionUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Accept': 'application/json',
-        },
+      // Call the edge function to get authorization URL
+      const { data, error } = await supabase.functions.invoke('fitbit-oauth', {
+        method: 'GET'
       });
       
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error) {
+        console.error('Error from edge function:', error);
+        throw new Error(error.message || 'Failed to get authorization URL');
       }
       
-      const data = await response.json();
-      console.log('Response data:', data);
-      
-      if (!data.url) {
+      if (!data?.url) {
         console.error('No URL in response:', data);
-        throw new Error('No authorization URL in response');
+        throw new Error('No authorization URL received');
       }
       
-      console.log('Redirecting to Fitbit authorization URL:', data.url);
+      console.log('Redirecting to Fitbit authorization:', data.url);
       window.location.href = data.url;
     } catch (err) {
       console.error('Error connecting to Fitbit:', err);
@@ -129,14 +111,17 @@ const HealthIntegration = () => {
     if (!user?.id) return false;
     
     try {
-      // Check the fitbit_tokens table instead of user_connections
+      // Check the fitbit_tokens table for existing connection
       const { data, error } = await supabase
         .from('fitbit_tokens')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error checking Fitbit connection:', error);
+        return false;
+      }
       
       const isConnected = !!data;
       setIsConnected(isConnected);
@@ -149,13 +134,13 @@ const HealthIntegration = () => {
   }, [user?.id]);
 
   const fetchHealthData = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id || !isConnected) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      // Mock data for now
+      // For now, use mock data since we haven't implemented the data fetching yet
       const mockData = {
         steps: 8432,
         calories: 2450,
@@ -176,26 +161,7 @@ const HealthIntegration = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
-
-  useEffect(() => {
-    const init = async () => {
-      const connected = await checkConnection();
-      if (connected) {
-        await fetchHealthData();
-      }
-    };
-    
-    init();
-  }, [checkConnection, fetchHealthData]);
-
-  const handleRefresh = useCallback(async () => {
-    await fetchHealthData();
-  }, [fetchHealthData]);
-
-  const handleConnectFitbit = useCallback(async () => {
-    await connectFitbit();
-  }, [connectFitbit]);
+  }, [user?.id, isConnected]);
 
   const disconnectFitbit = useCallback(async () => {
     if (!user?.id) return;
@@ -232,6 +198,40 @@ const HealthIntegration = () => {
     }
   }, [user?.id]);
 
+  // Check for connection status and URL parameters on mount
+  useEffect(() => {
+    const init = async () => {
+      // Check for OAuth callback parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const fitbitConnected = urlParams.get('fitbit_connected');
+      const error = urlParams.get('error');
+      
+      if (fitbitConnected === 'true') {
+        console.log('Fitbit connection successful');
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
+      if (error) {
+        console.error('Fitbit connection error:', error);
+        setError(decodeURIComponent(error));
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
+      const connected = await checkConnection();
+      if (connected) {
+        await fetchHealthData();
+      }
+    };
+    
+    init();
+  }, [checkConnection, fetchHealthData]);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchHealthData();
+  }, [fetchHealthData]);
+
   return (
     <div className="space-y-4">
       <Card className="w-full">
@@ -242,18 +242,20 @@ const HealthIntegration = () => {
               <CardDescription>
                 {stats.lastSynced
                   ? `Last synced ${formatDistanceToNow(new Date(stats.lastSynced), { addSuffix: true })}`
-                  : 'Not synced yet'}
+                  : 'Connect your Fitbit to sync health data'}
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleRefresh} disabled={isLoading} variant="outline" size="sm">
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                )}
-                {isLoading ? 'Syncing...' : 'Refresh'}
-              </Button>
+              {isConnected && (
+                <Button onClick={handleRefresh} disabled={isLoading} variant="outline" size="sm">
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                  )}
+                  {isLoading ? 'Syncing...' : 'Refresh'}
+                </Button>
+              )}
               {isConnected && (
                 <Button 
                   onClick={disconnectFitbit} 
@@ -275,7 +277,7 @@ const HealthIntegration = () => {
                 <span>Connect your Fitbit account to track your health metrics automatically.</span>
               </div>
               <Button 
-                onClick={handleConnectFitbit} 
+                onClick={connectFitbit} 
                 disabled={isLoading} 
                 className="w-full sm:w-auto"
               >
