@@ -9,6 +9,8 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('Fitbit OAuth request:', req.method, req.url)
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -41,7 +43,7 @@ serve(async (req) => {
 })
 
 async function handleAuthRequest(req: Request) {
-  const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID')
+  const fitbitClientId = '23QJQ3'
   const siteUrl = Deno.env.get('SITE_URL') || 'https://jrwyptpespjvjisrwnbh.supabase.co'
   
   console.log('Environment check:', {
@@ -87,21 +89,23 @@ async function handleCallback(req: Request) {
 
   console.log('Callback received:', { code: !!code, state, error })
 
+  const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:8080'
+
   if (error) {
     console.error('OAuth error:', error)
-    return Response.redirect(`${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/profile?error=${encodeURIComponent(error)}`)
+    return Response.redirect(`${siteUrl}/profile?error=${encodeURIComponent(error)}`)
   }
 
   if (!code || !state) {
     console.error('Missing code or state')
-    return Response.redirect(`${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/profile?error=missing_parameters`)
+    return Response.redirect(`${siteUrl}/profile?error=missing_parameters`)
   }
 
   try {
     // Exchange code for tokens
-    const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID')
-    const fitbitClientSecret = Deno.env.get('FITBIT_CLIENT_SECRET')
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://jrwyptpespjvjisrwnbh.supabase.co'
+    const fitbitClientId = '23QJQ3'
+    const fitbitClientSecret = 'ff2f252180742b4c336459edc3f3d6c0'
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://jrwyptpespjvjisrwnbh.supabase.co'
 
     if (!fitbitClientId || !fitbitClientSecret) {
       throw new Error('Missing Fitbit credentials')
@@ -110,7 +114,7 @@ async function handleCallback(req: Request) {
     const tokenParams = new URLSearchParams({
       client_id: fitbitClientId,
       grant_type: 'authorization_code',
-      redirect_uri: `${siteUrl}/functions/v1/fitbit-oauth`,
+      redirect_uri: `${supabaseUrl}/functions/v1/fitbit-oauth`,
       code: code
     })
 
@@ -138,12 +142,45 @@ async function handleCallback(req: Request) {
       expiresIn: tokens.expires_in
     })
 
-    // Store tokens in database (we'll implement this next)
-    // For now, just redirect with success
-    return Response.redirect(`${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/profile?fitbit_connected=true`)
+    // Get user info from auth header if available
+    const authHeader = req.headers.get('Authorization')
+    if (authHeader) {
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: { Authorization: authHeader }
+        }
+      })
+
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        // Store tokens in database
+        const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000))
+        
+        const { error: insertError } = await supabase
+          .from('fitbit_tokens')
+          .upsert({
+            user_id: user.id,
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token,
+            expires_at: expiresAt.toISOString(),
+            scope: tokens.scope
+          })
+
+        if (insertError) {
+          console.error('Error storing tokens:', insertError)
+        } else {
+          console.log('Tokens stored successfully')
+        }
+      }
+    }
+
+    // Redirect with success
+    return Response.redirect(`${siteUrl}/profile?fitbit_connected=true`)
 
   } catch (error) {
     console.error('Error in callback:', error)
-    return Response.redirect(`${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/profile?error=${encodeURIComponent(error.message)}`)
+    return Response.redirect(`${siteUrl}/profile?error=${encodeURIComponent(error.message)}`)
   }
 }

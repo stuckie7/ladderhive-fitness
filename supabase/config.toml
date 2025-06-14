@@ -39,3 +39,6 @@ port = 54330
 
 [functions.fitbit-oauth]
 verify_jwt = false
+
+[functions.fitbit-callback]
+verify_jwt = false

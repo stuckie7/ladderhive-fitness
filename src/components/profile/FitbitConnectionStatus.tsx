@@ -33,7 +33,7 @@ const FitbitConnectionStatus = () => {
       }
 
       // Check if token is expired
-      const isExpired = new Date(data.expires_at * 1000) < new Date();
+      const isExpired = new Date(data.expires_at) < new Date();
       setIsConnected(!isExpired);
     } catch (error) {
       console.error('Error checking Fitbit connection:', error);
@@ -49,23 +49,24 @@ const FitbitConnectionStatus = () => {
       
       console.log('Initiating Fitbit connection...');
       
-      // Call the edge function to get authorization URL
-      const { data, error } = await supabase.functions.invoke('fitbit-oauth', {
-        method: 'GET'
+      // Create authorization URL directly
+      const fitbitClientId = '23QJQ3';
+      const redirectUri = `${window.location.origin.includes('localhost') ? 'https://jrwyptpespjvjisrwnbh.supabase.co' : window.location.origin}/functions/v1/fitbit-callback`;
+      const state = crypto.randomUUID();
+      
+      const authParams = new URLSearchParams({
+        response_type: 'code',
+        client_id: fitbitClientId,
+        redirect_uri: redirectUri,
+        scope: 'activity heartrate location nutrition profile settings sleep social weight',
+        state: state,
+        expires_in: '604800'
       });
+
+      const authUrl = `https://www.fitbit.com/oauth2/authorize?${authParams.toString()}`;
       
-      if (error) {
-        console.error('Error from edge function:', error);
-        throw new Error(error.message || 'Failed to get authorization URL');
-      }
-      
-      if (!data?.url) {
-        console.error('No URL in response:', data);
-        throw new Error('No authorization URL received');
-      }
-      
-      console.log('Redirecting to Fitbit authorization:', data.url);
-      window.location.href = data.url;
+      console.log('Redirecting to Fitbit authorization:', authUrl);
+      window.location.href = authUrl;
     } catch (error) {
       console.error('Error connecting Fitbit:', error);
       toast({
@@ -78,9 +79,98 @@ const FitbitConnectionStatus = () => {
     }
   };
 
+  const handleDisconnect = async () => {
+    try {
+      setIsLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) return;
+
+      const { error } = await supabase
+        .from('fitbit_tokens')
+        .delete()
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+
+      setIsConnected(false);
+      toast({
+        title: 'Disconnected',
+        description: 'Your Fitbit account has been disconnected.',
+      });
+    } catch (error) {
+      console.error('Error disconnecting Fitbit:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to disconnect Fitbit account.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     checkConnection();
-  }, []);
+
+    // Check for OAuth callback parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const fitbitConnected = urlParams.get('fitbit_connected');
+    const error = urlParams.get('error');
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    const expiresIn = urlParams.get('expires_in');
+    
+    if (fitbitConnected === 'true' && accessToken && refreshToken && expiresIn) {
+      // Store tokens in database
+      const storeTokens = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const expiresAt = new Date(Date.now() + (parseInt(expiresIn) * 1000));
+          
+          const { error } = await supabase
+            .from('fitbit_tokens')
+            .upsert({
+              user_id: session.user.id,
+              access_token: accessToken,
+              refresh_token: refreshToken,
+              expires_at: expiresAt.toISOString(),
+              scope: 'activity heartrate location nutrition profile settings sleep social weight'
+            });
+
+          if (error) {
+            console.error('Error storing tokens:', error);
+          } else {
+            setIsConnected(true);
+            toast({
+              title: 'Connected!',
+              description: 'Your Fitbit account has been successfully connected.',
+            });
+          }
+        } catch (error) {
+          console.error('Error storing tokens:', error);
+        }
+      };
+
+      storeTokens();
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    if (error) {
+      console.error('Fitbit connection error:', error);
+      toast({
+        title: 'Connection Error',
+        description: decodeURIComponent(error),
+        variant: 'destructive',
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
 
   if (isLoading) {
     return (
@@ -99,10 +189,20 @@ const FitbitConnectionStatus = () => {
         </div>
         <div className="flex items-center space-x-2">
           {isConnected ? (
-            <span className="inline-flex items-center text-sm text-green-600">
-              <CheckCircle2 className="mr-1 h-4 w-4" />
-              Connected
-            </span>
+            <>
+              <span className="inline-flex items-center text-sm text-green-600">
+                <CheckCircle2 className="mr-1 h-4 w-4" />
+                Connected
+              </span>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={handleDisconnect}
+                disabled={isLoading}
+              >
+                Disconnect
+              </Button>
+            </>
           ) : (
             <Button 
               size="sm" 
