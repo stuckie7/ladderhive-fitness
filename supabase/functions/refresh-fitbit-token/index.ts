@@ -5,7 +5,7 @@ import {
   corsHeaders, 
   getEnvVars,
   type SupabaseClient
-} from '../deps.js';
+} from '../deps.ts';
 
 const { serve } = deno;
 
