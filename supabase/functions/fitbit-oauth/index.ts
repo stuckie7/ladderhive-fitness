@@ -1,103 +1,149 @@
-// Fitbit OAuth 2.0 Connect Endpoint with Debug Logging
-console.log('Initializing Fitbit OAuth function...');
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-// Log environment variables (without sensitive values)
-console.log('Environment variables:', {
-  HAS_SUPABASE_URL: !!Deno.env.get('SUPABASE_URL'),
-  HAS_FITBIT_CLIENT_ID: !!Deno.env.get('FITBIT_CLIENT_ID'),
-  HAS_SITE_URL: !!Deno.env.get('SITE_URL')
-});
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-};
+}
 
 serve(async (req) => {
-  // Handle CORS preflight
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Only allow GET requests
-    if (req.method !== 'GET') {
-      return new Response(
-        JSON.stringify({ error: 'Method not allowed' }),
-        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const url = new URL(req.url)
+    
+    // Handle the authorization request
+    if (req.method === 'GET' && !url.searchParams.get('code')) {
+      return handleAuthRequest(req)
     }
-
-    // Get environment variables
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID') || '';
-    const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:3000';
-
-    if (!fitbitClientId) {
-      throw new Error('Missing required environment variables');
+    
+    // Handle the callback with authorization code
+    if (req.method === 'GET' && url.searchParams.get('code')) {
+      return handleCallback(req)
     }
-
-    // Get authorization header
-    const authHeader = req.headers.get('Authorization') || '';
     
-    // Initialize Supabase client
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: { 
-          Authorization: authHeader,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      }
-    });
-
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized', details: 'User not authenticated' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Generate a random state parameter for CSRF protection
-    const state = crypto.randomUUID();
-    
-    // Create the Fitbit authorization URL
-    const params = new URLSearchParams({
-      client_id: fitbitClientId,
-      response_type: 'code',
-      scope: 'activity heartrate location nutrition profile settings sleep social weight',
-      redirect_uri: `${siteUrl}/api/auth/callback`,
-      state: state,
-      code_challenge: 'challenge', // You should implement PKCE for better security
-      code_challenge_method: 'plain'
-    });
-
-    const authUrl = `https://www.fitbit.com/oauth2/authorize?${params.toString()}`;
-    
-    // Return the URL to the client
     return new Response(
-      JSON.stringify({ url: authUrl }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-    
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
-    console.error('Error in Fitbit connect handler:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+    console.error('Error in Fitbit OAuth:', error)
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        details: errorMessage 
-      }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   }
-});
+})
+
+async function handleAuthRequest(req: Request) {
+  const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID')
+  const siteUrl = Deno.env.get('SITE_URL') || 'https://jrwyptpespjvjisrwnbh.supabase.co'
+  
+  console.log('Environment check:', {
+    hasClientId: !!fitbitClientId,
+    siteUrl
+  })
+
+  if (!fitbitClientId) {
+    return new Response(
+      JSON.stringify({ error: 'Fitbit client ID not configured' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Generate state for security
+  const state = crypto.randomUUID()
+  
+  // Build authorization URL
+  const authParams = new URLSearchParams({
+    response_type: 'code',
+    client_id: fitbitClientId,
+    redirect_uri: `${siteUrl}/functions/v1/fitbit-oauth`,
+    scope: 'activity heartrate location nutrition profile settings sleep social weight',
+    state: state,
+    expires_in: '604800' // 7 days
+  })
+
+  const authUrl = `https://www.fitbit.com/oauth2/authorize?${authParams.toString()}`
+  
+  console.log('Generated auth URL:', authUrl)
+  
+  return new Response(
+    JSON.stringify({ url: authUrl }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+async function handleCallback(req: Request) {
+  const url = new URL(req.url)
+  const code = url.searchParams.get('code')
+  const state = url.searchParams.get('state')
+  const error = url.searchParams.get('error')
+
+  console.log('Callback received:', { code: !!code, state, error })
+
+  if (error) {
+    console.error('OAuth error:', error)
+    return Response.redirect(`${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/profile?error=${encodeURIComponent(error)}`)
+  }
+
+  if (!code || !state) {
+    console.error('Missing code or state')
+    return Response.redirect(`${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/profile?error=missing_parameters`)
+  }
+
+  try {
+    // Exchange code for tokens
+    const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID')
+    const fitbitClientSecret = Deno.env.get('FITBIT_CLIENT_SECRET')
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://jrwyptpespjvjisrwnbh.supabase.co'
+
+    if (!fitbitClientId || !fitbitClientSecret) {
+      throw new Error('Missing Fitbit credentials')
+    }
+
+    const tokenParams = new URLSearchParams({
+      client_id: fitbitClientId,
+      grant_type: 'authorization_code',
+      redirect_uri: `${siteUrl}/functions/v1/fitbit-oauth`,
+      code: code
+    })
+
+    console.log('Exchanging code for tokens...')
+    
+    const tokenResponse = await fetch('https://api.fitbit.com/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${btoa(`${fitbitClientId}:${fitbitClientSecret}`)}`
+      },
+      body: tokenParams
+    })
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text()
+      console.error('Token exchange failed:', errorText)
+      throw new Error(`Token exchange failed: ${tokenResponse.status}`)
+    }
+
+    const tokens = await tokenResponse.json()
+    console.log('Tokens received:', { 
+      hasAccessToken: !!tokens.access_token,
+      hasRefreshToken: !!tokens.refresh_token,
+      expiresIn: tokens.expires_in
+    })
+
+    // Store tokens in database (we'll implement this next)
+    // For now, just redirect with success
+    return Response.redirect(`${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/profile?fitbit_connected=true`)
+
+  } catch (error) {
+    console.error('Error in callback:', error)
+    return Response.redirect(`${Deno.env.get('SITE_URL') || 'http://localhost:8080'}/profile?error=${encodeURIComponent(error.message)}`)
+  }
+}

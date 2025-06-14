@@ -447,6 +447,39 @@ export type Database = {
         }
         Relationships: []
       }
+      fitbit_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          refresh_token: string
+          scope: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          refresh_token: string
+          scope?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string
+          scope?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       forum_categories: {
         Row: {
           created_at: string
@@ -1674,6 +1707,36 @@ export type Database = {
           notes?: string | null
           user_id?: string | null
           workout_name?: string
+        }
+        Relationships: []
+      }
+      workout_schedules: {
+        Row: {
+          created_at: string
+          id: string
+          scheduled_date: string
+          status: string | null
+          updated_at: string
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scheduled_date: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scheduled_date?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+          workout_id?: string
         }
         Relationships: []
       }
