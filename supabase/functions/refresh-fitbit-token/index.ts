@@ -1,13 +1,23 @@
-// Import from deps.ts for better dependency management
-import { 
-  deno, 
-  createClient, 
-  corsHeaders, 
-  getEnvVars,
-  type SupabaseClient
-} from '../deps.js';
 
-const { serve } = deno;
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+}
+
+// Get environment variables
+function getEnvVars() {
+  return {
+    SUPABASE_URL: Deno.env.get('SUPABASE_URL') || '',
+    SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY') || '',
+    FITBIT_CLIENT_ID: Deno.env.get('FITBIT_CLIENT_ID') || '',
+    FITBIT_CLIENT_SECRET: Deno.env.get('FITBIT_CLIENT_SECRET') || '',
+    SITE_URL: Deno.env.get('SITE_URL') || 'http://localhost:3000',
+  };
+}
 
 // Simple response helper
 const createResponse = (
