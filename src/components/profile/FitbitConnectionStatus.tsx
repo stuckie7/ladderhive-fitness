@@ -49,24 +49,19 @@ const FitbitConnectionStatus = () => {
       
       console.log('Initiating Fitbit connection...');
       
-      // Create authorization URL directly
-      const fitbitClientId = '23QJQ3';
-      const redirectUri = `${window.location.origin.includes('localhost') ? 'https://jrwyptpespjvjisrwnbh.supabase.co' : window.location.origin}/functions/v1/fitbit-callback`;
-      const state = crypto.randomUUID();
+      // Get the authorization URL from our edge function
+      const { data, error } = await supabase.functions.invoke('fitbit-oauth');
       
-      const authParams = new URLSearchParams({
-        response_type: 'code',
-        client_id: fitbitClientId,
-        redirect_uri: redirectUri,
-        scope: 'activity heartrate location nutrition profile settings sleep social weight',
-        state: state,
-        expires_in: '604800'
-      });
-
-      const authUrl = `https://www.fitbit.com/oauth2/authorize?${authParams.toString()}`;
+      if (error) {
+        throw new Error(error.message || 'Failed to get authorization URL');
+      }
       
-      console.log('Redirecting to Fitbit authorization:', authUrl);
-      window.location.href = authUrl;
+      if (!data?.url) {
+        throw new Error('No authorization URL returned');
+      }
+      
+      console.log('Redirecting to Fitbit authorization:', data.url);
+      window.location.href = data.url;
     } catch (error) {
       console.error('Error connecting Fitbit:', error);
       toast({
@@ -117,44 +112,13 @@ const FitbitConnectionStatus = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const fitbitConnected = urlParams.get('fitbit_connected');
     const error = urlParams.get('error');
-    const accessToken = urlParams.get('access_token');
-    const refreshToken = urlParams.get('refresh_token');
-    const expiresIn = urlParams.get('expires_in');
     
-    if (fitbitConnected === 'true' && accessToken && refreshToken && expiresIn) {
-      // Store tokens in database
-      const storeTokens = async () => {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) return;
-
-          const expiresAt = new Date(Date.now() + (parseInt(expiresIn) * 1000));
-          
-          const { error } = await supabase
-            .from('fitbit_tokens')
-            .upsert({
-              user_id: session.user.id,
-              access_token: accessToken,
-              refresh_token: refreshToken,
-              expires_at: expiresAt.toISOString(),
-              scope: 'activity heartrate location nutrition profile settings sleep social weight'
-            });
-
-          if (error) {
-            console.error('Error storing tokens:', error);
-          } else {
-            setIsConnected(true);
-            toast({
-              title: 'Connected!',
-              description: 'Your Fitbit account has been successfully connected.',
-            });
-          }
-        } catch (error) {
-          console.error('Error storing tokens:', error);
-        }
-      };
-
-      storeTokens();
+    if (fitbitConnected === 'true') {
+      setIsConnected(true);
+      toast({
+        title: 'Connected!',
+        description: 'Your Fitbit account has been successfully connected.',
+      });
       
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
