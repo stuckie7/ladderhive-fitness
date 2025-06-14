@@ -1,4 +1,3 @@
-
 // Import from deps.ts for better dependency management
 import { 
   deno, 
@@ -6,8 +5,8 @@ import {
   corsHeaders, 
   getEnvVars,
   type SupabaseClient
-} from '../deps.ts';
-import { getFitbitAccessToken, fetchFitbitData, refreshFitbitToken } from '../fitbit-utils.ts';
+} from '../deps.js';
+import { getFitbitAccessToken, fetchFitbitData, refreshFitbitToken } from '../fitbit-utils.js';
 
 const { serve } = deno;
 

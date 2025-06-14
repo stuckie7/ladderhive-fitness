@@ -1,4 +1,4 @@
-import { createClient, getEnvVars } from './deps.ts';
+import { createClient, getEnvVars } from './deps.js';
 
 interface FitbitTokenData {
   access_token: string;
