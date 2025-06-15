@@ -34,7 +34,7 @@ export function BottomNavigation() {
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm z-40 shadow-lg">
-      <nav className="flex justify-between items-center px-1 py-1.5 sm:px-2">
+      <nav className="flex justify-between items-center px-1 py-1.5 sm:px-2" role="navigation" aria-label="Main navigation">
         {/* Home */}
         <Link 
           to="/dashboard" 
@@ -42,6 +42,7 @@ export function BottomNavigation() {
             "flex flex-col items-center p-2 rounded-lg transition-colors",
             isActive('/dashboard') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
           )}
+          aria-label="Home - Dashboard"
         >
           <House size={22} className="mb-0.5" />
           <span className="text-[10px] sm:text-xs font-medium">Home</span>
@@ -54,6 +55,7 @@ export function BottomNavigation() {
             "flex flex-col items-center p-2 rounded-lg transition-colors",
             isActive('/workouts') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
           )}
+          aria-label="Workouts"
         >
           <Dumbbell size={22} className="mb-0.5" />
           <span className="text-[10px] sm:text-xs font-medium">Workouts</span>
@@ -66,6 +68,7 @@ export function BottomNavigation() {
             "flex flex-col items-center p-2 rounded-lg transition-colors",
             isActive('/wods') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
           )}
+          aria-label="Workout of the Day"
         >
           <Flame size={22} className="mb-0.5" />
           <span className="text-[10px] sm:text-xs font-medium">WOD</span>
@@ -78,6 +81,7 @@ export function BottomNavigation() {
             "flex flex-col items-center p-2 rounded-lg transition-colors",
             isActive('/mindful-movement') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
           )}
+          aria-label="Recovery and mindful movement"
         >
           <Clock size={22} className="mb-0.5" />
           <span className="text-[10px] sm:text-xs font-medium">Recovery</span>
@@ -90,6 +94,7 @@ export function BottomNavigation() {
             "flex flex-col items-center p-2 rounded-lg transition-colors",
             isActive('/forums') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
           )}
+          aria-label="Community forums"
         >
           <MessageSquare size={22} className="mb-0.5" />
           <span className="text-[10px] sm:text-xs font-medium">Forums</span>
@@ -104,12 +109,20 @@ export function BottomNavigation() {
                 "flex flex-col items-center p-2 h-auto rounded-lg transition-colors",
                 isActive('/more') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'
               )}
+              aria-label="Open more menu options"
+              aria-haspopup="dialog"
+              aria-expanded="false"
             >
-              <Menu size={22} className="mb-0.5" />
+              <Menu size={22} className="mb-0.5" aria-hidden="true" />
               <span className="text-[10px] sm:text-xs font-medium">More</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl overflow-y-auto">
+          <SheetContent 
+            side="bottom" 
+            className="h-[70vh] rounded-t-2xl overflow-y-auto"
+            role="dialog"
+            aria-label="More menu options"
+          >
             <SheetHeader className="mb-6">
               {user && (
                 <div className="flex items-center gap-4 p-4 bg-accent/20 rounded-lg">
@@ -129,43 +142,69 @@ export function BottomNavigation() {
             
             {/* Start Workout - Prominently placed */}
             <div className="mb-6">
-              <Link to="/my-workouts" className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors">
-                <PlayCircle size={24} className="text-primary" />
+              <Link 
+                to="/my-workouts" 
+                className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors"
+                aria-label="Start a new workout session"
+              >
+                <PlayCircle size={24} className="text-primary" aria-hidden="true" />
                 <span className="text-lg font-semibold text-primary">Start Workout</span>
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 p-4">
+            <div className="grid grid-cols-2 gap-4 p-4" role="grid" aria-label="App features">
               <a 
                 href="/exercises/enhanced" 
                 onClick={handleExerciseClick}
                 className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
+                role="gridcell"
+                aria-label="Browse exercise library"
               >
-                <List size={24} />
+                <List size={24} aria-hidden="true" />
                 <span className="mt-2 text-sm font-medium">Exercises</span>
               </a>
               
-              <Link to="/saved-workouts" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Bookmark size={24} />
+              <Link 
+                to="/saved-workouts" 
+                className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
+                role="gridcell"
+                aria-label="View saved workouts"
+              >
+                <Bookmark size={24} aria-hidden="true" />
                 <span className="mt-2 text-sm font-medium">Saved</span>
               </Link>
               
-              <Link to="/schedule" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Calendar size={24} />
+              <Link 
+                to="/schedule" 
+                className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
+                role="gridcell"
+                aria-label="View workout schedule"
+              >
+                <Calendar size={24} aria-hidden="true" />
                 <span className="mt-2 text-sm font-medium">Schedule</span>
               </Link>
               
-              <Link to="/profile" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Settings size={24} />
+              <Link 
+                to="/profile" 
+                className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
+                role="gridcell"
+                aria-label="View user profile"
+              >
+                <Settings size={24} aria-hidden="true" />
                 <span className="mt-2 text-sm font-medium">Profile</span>
               </Link>
 
-              <Link to="/settings" className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors">
-                <Settings size={24} />
+              <Link 
+                to="/settings" 
+                className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
+                role="gridcell"
+                aria-label="App settings"
+              >
+                <Settings size={24} aria-hidden="true" />
                 <span className="mt-2 text-sm font-medium">Settings</span>
               </Link>
               
-              <div className="col-span-1">
+              <div className="col-span-1" role="gridcell">
                 <AdminNavLink />
               </div>
             </div>
