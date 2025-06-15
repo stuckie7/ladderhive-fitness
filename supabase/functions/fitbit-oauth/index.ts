@@ -44,17 +44,26 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id)
 
-    // Get environment variables
-    const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID') || '23QJQ3'
+    // Get environment variables and secrets
+    const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID')
+    const siteUrl = Deno.env.get('SITE_URL')
     
     console.log('Environment check:', {
       hasClientId: !!fitbitClientId,
+      hasSiteUrl: !!siteUrl,
       supabaseUrl
     })
 
     if (!fitbitClientId) {
       return new Response(
         JSON.stringify({ error: 'Fitbit client ID not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!siteUrl) {
+      return new Response(
+        JSON.stringify({ error: 'Site URL not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

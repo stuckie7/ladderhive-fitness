@@ -24,6 +24,7 @@ serve(async (req) => {
 
     console.log('Callback parameters:', { code: !!code, state, error })
 
+    // Get site URL from environment
     const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:8080'
 
     if (error) {
@@ -55,9 +56,14 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Exchange code for tokens
-    const fitbitClientId = '23QJQ3'
-    const fitbitClientSecret = 'ff2f252180742b4c336459edc3f3d6c0'
+    // Get Fitbit credentials from environment
+    const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID')
+    const fitbitClientSecret = Deno.env.get('FITBIT_CLIENT_SECRET')
+
+    if (!fitbitClientId || !fitbitClientSecret) {
+      console.error('Missing Fitbit credentials')
+      return Response.redirect(`${siteUrl}/profile?error=missing_credentials`)
+    }
 
     const tokenParams = new URLSearchParams({
       client_id: fitbitClientId,
