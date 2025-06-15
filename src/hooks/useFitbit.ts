@@ -101,14 +101,26 @@ export function useFitbit() {
         throw new Error('No authorization URL returned');
       }
       
-      console.log('Redirecting to Fitbit authorization:', data.url);
+      console.log('Opening Fitbit authorization in new window:', data.url);
       
-      // Force redirect at the top-level window to break out of any iframe
-      if (window.top) {
-        window.top.location.href = data.url;
-      } else {
-        window.location.href = data.url;
+      // Open in a new window/tab to avoid iframe restrictions
+      const newWindow = window.open(data.url, 'fitbit-auth', 'width=600,height=700,scrollbars=yes,resizable=yes');
+      
+      if (!newWindow) {
+        throw new Error('Failed to open authorization window. Please allow popups for this site.');
       }
+      
+      // Listen for the window to close (user completed or cancelled auth)
+      const checkClosed = setInterval(() => {
+        if (newWindow.closed) {
+          clearInterval(checkClosed);
+          // Check connection status after window closes
+          setTimeout(() => {
+            checkConnection();
+          }, 1000);
+        }
+      }, 1000);
+      
     } catch (err) {
       console.error('Error connecting Fitbit:', err);
       const error = err instanceof Error ? err : new Error('Failed to connect Fitbit');
@@ -117,7 +129,7 @@ export function useFitbit() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [checkConnection]);
 
   const disconnect = useCallback(async (): Promise<void> => {
     try {
