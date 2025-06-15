@@ -14,26 +14,52 @@ const FitbitConnectionStatus = () => {
   const checkConnection = async () => {
     try {
       setIsLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session) {
+      // First, check if user is authenticated
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
         setIsConnected(false);
         return;
       }
 
+      if (!session?.user) {
+        console.log('No authenticated user found');
+        setIsConnected(false);
+        return;
+      }
+
+      console.log('Checking Fitbit connection for user:', session.user.id);
+
+      // Use maybeSingle() to handle cases where no token exists
       const { data, error } = await supabase
         .from('fitbit_tokens')
         .select('expires_at')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
+      if (error) {
+        console.error('Error checking Fitbit connection:', error);
+        // Don't show error for RLS/permission issues, just assume not connected
+        if (error.code === 'PGRST301' || error.message.includes('RLS') || error.message.includes('permission')) {
+          console.log('RLS/Permission issue, treating as not connected');
+          setIsConnected(false);
+        } else {
+          setIsConnected(false);
+        }
+        return;
+      }
+
+      if (!data) {
+        console.log('No Fitbit token found for user');
         setIsConnected(false);
         return;
       }
 
       // Check if token is expired
       const isExpired = new Date(data.expires_at) < new Date();
+      console.log('Token expired:', isExpired);
       setIsConnected(!isExpired);
     } catch (error) {
       console.error('Error checking Fitbit connection:', error);
@@ -47,6 +73,18 @@ const FitbitConnectionStatus = () => {
     try {
       setIsConnecting(true);
       
+      // Verify authentication before attempting connection
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.user) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in to connect your Fitbit account.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       console.log('Initiating Fitbit connection...');
       
       // Get the authorization URL from our edge function
@@ -77,16 +115,32 @@ const FitbitConnectionStatus = () => {
   const handleDisconnect = async () => {
     try {
       setIsLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session) return;
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.user) {
+        toast({
+          title: 'Authentication Error',
+          description: 'Unable to verify authentication.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       const { error } = await supabase
         .from('fitbit_tokens')
         .delete()
         .eq('user_id', session.user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error disconnecting Fitbit:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to disconnect Fitbit account.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       setIsConnected(false);
       toast({

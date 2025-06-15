@@ -14,6 +14,7 @@ import * as z from "zod";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Save, User, Smartphone } from "lucide-react";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
+import FitbitConnectionStatus from "@/components/profile/FitbitConnectionStatus";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -380,33 +381,20 @@ const Settings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium flex items-center">
-                      <Smartphone className="mr-2 h-5 w-5" /> Fitbit
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Connect your Fitbit account to sync steps, activities, and more.
-                    </p>
-                    <Button variant="outline" className="mt-2">
-                      Connect Fitbit
-                    </Button>
-                    {/* TODO: Add disconnect button and status if connected */}
-                  </div>
-                  <hr />
-                  <div>
-                    <h3 className="text-lg font-medium flex items-center">
-                      <Smartphone className="mr-2 h-5 w-5" /> Garmin
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Connect your Garmin account to sync activities, heart rate, and other metrics.
-                    </p>
-                    <Button variant="outline" className="mt-2">
-                      Connect Garmin
-                    </Button>
-                    {/* TODO: Add disconnect button and status if connected */}
-                  </div>
-                   {/* Add more services here as needed */}
+                <FitbitConnectionStatus />
+                
+                <hr />
+                
+                <div>
+                  <h3 className="text-lg font-medium flex items-center">
+                    <Smartphone className="mr-2 h-5 w-5" /> Garmin
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Connect your Garmin account to sync activities, heart rate, and other metrics.
+                  </p>
+                  <Button variant="outline" className="mt-2" disabled>
+                    Coming Soon
+                  </Button>
                 </div>
               </CardContent>
             </Card>

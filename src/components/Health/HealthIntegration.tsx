@@ -80,6 +80,12 @@ const HealthIntegration = () => {
       setIsLoading(true);
       setError(null);
 
+      // Verify authentication before attempting connection
+      if (!user?.id) {
+        setError('Please log in to connect your Fitbit account.');
+        return;
+      }
+
       console.log('Initiating Fitbit connection...');
       
       // Get the authorization URL from our edge function
@@ -101,13 +107,18 @@ const HealthIntegration = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   const checkConnection = useCallback(async () => {
-    if (!user?.id) return false;
+    if (!user?.id) {
+      console.log('No user ID available');
+      return false;
+    }
     
     try {
-      // Check the fitbit_tokens table for existing connection
+      console.log('Checking Fitbit connection for user:', user.id);
+      
+      // Use maybeSingle() to handle cases where no token exists
       const { data, error } = await supabase
         .from('fitbit_tokens')
         .select('*')
@@ -116,21 +127,40 @@ const HealthIntegration = () => {
 
       if (error) {
         console.error('Error checking Fitbit connection:', error);
+        // Don't show error for RLS/permission issues, just assume not connected
+        if (error.code === 'PGRST301' || error.message.includes('RLS') || error.message.includes('permission')) {
+          console.log('RLS/Permission issue, treating as not connected');
+          setIsConnected(false);
+        } else {
+          setError('Failed to check Fitbit connection');
+          setIsConnected(false);
+        }
         return false;
       }
       
-      const isConnected = !!data && new Date(data.expires_at) > new Date();
-      setIsConnected(isConnected);
-      return isConnected;
+      if (!data) {
+        console.log('No Fitbit token found for user');
+        setIsConnected(false);
+        return false;
+      }
+      
+      const isTokenValid = new Date(data.expires_at) > new Date();
+      console.log('Token valid:', isTokenValid);
+      setIsConnected(isTokenValid);
+      return isTokenValid;
     } catch (error) {
       console.error('Error checking Fitbit connection:', error);
       setError('Failed to check Fitbit connection');
+      setIsConnected(false);
       return false;
     }
   }, [user?.id]);
 
   const fetchHealthData = useCallback(async () => {
-    if (!user?.id || !isConnected) return;
+    if (!user?.id || !isConnected) {
+      console.log('Cannot fetch health data: user not authenticated or Fitbit not connected');
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
@@ -160,7 +190,10 @@ const HealthIntegration = () => {
   }, [user?.id, isConnected]);
 
   const disconnectFitbit = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setError('User not authenticated');
+      return;
+    }
     
     try {
       setIsLoading(true);
@@ -171,7 +204,10 @@ const HealthIntegration = () => {
         .delete()
         .eq('user_id', user.id);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error disconnecting Fitbit:', error);
+        throw error;
+      }
       
       setIsConnected(false);
       setStats({
@@ -197,13 +233,20 @@ const HealthIntegration = () => {
   // Check for connection status and URL parameters on mount
   useEffect(() => {
     const init = async () => {
+      // Only proceed if user is authenticated
+      if (!user?.id) {
+        console.log('User not authenticated, skipping Fitbit check');
+        return;
+      }
+
       // Check for OAuth callback parameters
       const urlParams = new URLSearchParams(window.location.search);
       const fitbitConnected = urlParams.get('fitbit_connected');
       const error = urlParams.get('error');
       
-      if (fitbitConnected === 'true' && user?.id) {
+      if (fitbitConnected === 'true') {
         console.log('Fitbit connection successful');
+        setIsConnected(true);
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -221,9 +264,7 @@ const HealthIntegration = () => {
       }
     };
     
-    if (user?.id) {
-      init();
-    }
+    init();
   }, [user?.id, checkConnection, fetchHealthData]);
 
   const handleRefresh = useCallback(async () => {
@@ -268,7 +309,14 @@ const HealthIntegration = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {!isConnected ? (
+          {!user?.id ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Activity className="h-4 w-4" />
+                <span>Please log in to connect your Fitbit account.</span>
+              </div>
+            </div>
+          ) : !isConnected ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Activity className="h-4 w-4" />
