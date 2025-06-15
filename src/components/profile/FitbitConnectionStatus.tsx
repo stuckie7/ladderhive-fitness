@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -99,7 +98,13 @@ const FitbitConnectionStatus = () => {
       }
       
       console.log('Redirecting to Fitbit authorization:', data.url);
-      window.location.href = data.url;
+      
+      // Force redirect at the top-level window to break out of any iframe
+      if (window.top) {
+        window.top.location.href = data.url;
+      } else {
+        window.location.href = data.url;
+      }
     } catch (error) {
       console.error('Error connecting Fitbit:', error);
       toast({

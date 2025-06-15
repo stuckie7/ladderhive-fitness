@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -100,7 +99,13 @@ const HealthIntegration = () => {
       }
       
       console.log('Redirecting to Fitbit authorization:', data.url);
-      window.location.href = data.url;
+      
+      // Force redirect at the top-level window to break out of any iframe
+      if (window.top) {
+        window.top.location.href = data.url;
+      } else {
+        window.location.href = data.url;
+      }
     } catch (err) {
       console.error('Error connecting to Fitbit:', err);
       setError(err instanceof Error ? err.message : 'Failed to connect to Fitbit');

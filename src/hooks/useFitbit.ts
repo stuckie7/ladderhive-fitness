@@ -101,7 +101,14 @@ export function useFitbit() {
         throw new Error('No authorization URL returned');
       }
       
-      window.location.href = data.url;
+      console.log('Redirecting to Fitbit authorization:', data.url);
+      
+      // Force redirect at the top-level window to break out of any iframe
+      if (window.top) {
+        window.top.location.href = data.url;
+      } else {
+        window.location.href = data.url;
+      }
     } catch (err) {
       console.error('Error connecting Fitbit:', err);
       const error = err instanceof Error ? err : new Error('Failed to connect Fitbit');
