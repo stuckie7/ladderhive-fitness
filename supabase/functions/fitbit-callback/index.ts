@@ -31,15 +31,33 @@ serve(async (req) => {
       return Response.redirect(`${siteUrl}/profile?error=${encodeURIComponent(error)}`)
     }
 
-    if (!code) {
-      console.error('Missing authorization code')
-      return Response.redirect(`${siteUrl}/profile?error=missing_code`)
+    if (!code || !state) {
+      console.error('Missing authorization code or state')
+      return Response.redirect(`${siteUrl}/profile?error=missing_parameters`)
     }
+
+    // Parse state to get user ID
+    let userId: string
+    try {
+      const stateData = JSON.parse(state)
+      userId = stateData.userId
+      if (!userId) {
+        throw new Error('No user ID in state')
+      }
+      console.log('Extracted user ID from state:', userId)
+    } catch (parseError) {
+      console.error('Error parsing state:', parseError)
+      return Response.redirect(`${siteUrl}/profile?error=invalid_state`)
+    }
+
+    // Initialize Supabase client with service role key for database operations
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Exchange code for tokens
     const fitbitClientId = '23QJQ3'
     const fitbitClientSecret = 'ff2f252180742b4c336459edc3f3d6c0'
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://jrwyptpespjvjisrwnbh.supabase.co'
 
     const tokenParams = new URLSearchParams({
       client_id: fitbitClientId,
@@ -66,17 +84,38 @@ serve(async (req) => {
     }
 
     const tokens = await tokenResponse.json()
-    console.log('Tokens received successfully')
+    console.log('Tokens received successfully', { 
+      hasAccessToken: !!tokens.access_token,
+      hasRefreshToken: !!tokens.refresh_token,
+      expiresIn: tokens.expires_in
+    })
 
-    // Store tokens in a temporary way (in real app, you'd want to associate with a user)
-    // For now, redirect with success and let the frontend handle token storage
-    const redirectUrl = new URL(`${siteUrl}/profile`)
-    redirectUrl.searchParams.set('fitbit_connected', 'true')
-    redirectUrl.searchParams.set('access_token', tokens.access_token)
-    redirectUrl.searchParams.set('refresh_token', tokens.refresh_token)
-    redirectUrl.searchParams.set('expires_in', tokens.expires_in.toString())
+    // Calculate expiration time
+    const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000)).toISOString()
 
-    return Response.redirect(redirectUrl.toString())
+    // Store tokens in database using upsert to handle existing records
+    const { error: dbError } = await supabase
+      .from('fitbit_tokens')
+      .upsert({
+        user_id: userId,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: expiresAt,
+        scope: tokens.scope || 'activity heartrate location nutrition profile settings sleep social weight',
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      })
+
+    if (dbError) {
+      console.error('Database error storing tokens:', dbError)
+      return Response.redirect(`${siteUrl}/profile?error=database_error`)
+    }
+
+    console.log('Tokens stored successfully in database for user:', userId)
+
+    // Redirect to success page
+    return Response.redirect(`${siteUrl}/profile?fitbit_connected=true`)
 
   } catch (error) {
     console.error('Error in Fitbit callback:', error)

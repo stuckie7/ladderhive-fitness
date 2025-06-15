@@ -85,10 +85,22 @@ const HealthIntegration = () => {
         return;
       }
 
+      // Get current session for auth token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.user) {
+        setError('Please log in to connect your Fitbit account.');
+        return;
+      }
+
       console.log('Initiating Fitbit connection...');
       
-      // Get the authorization URL from our edge function
-      const { data, error } = await supabase.functions.invoke('fitbit-oauth');
+      // Get the authorization URL from our edge function with proper auth header
+      const { data, error } = await supabase.functions.invoke('fitbit-oauth', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
       
       if (error) {
         throw new Error(error.message || 'Failed to get authorization URL');

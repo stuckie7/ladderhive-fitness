@@ -91,7 +91,12 @@ export function useFitbit() {
 
       console.log('Initiating Fitbit connection...');
       
-      const { data, error } = await supabase.functions.invoke('fitbit-oauth');
+      // Call the edge function with proper authorization header
+      const { data, error } = await supabase.functions.invoke('fitbit-oauth', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
       
       if (error) {
         throw new Error(error.message || 'Failed to get authorization URL');
