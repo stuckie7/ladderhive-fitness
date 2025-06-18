@@ -17,6 +17,7 @@ interface FitbitApiResponse {
 }
 
 serve(async (req: Request) => {
+  console.log('Function execution started. Version: 3'); // Diagnostic log
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
