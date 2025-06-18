@@ -95,25 +95,32 @@ const HealthIntegration = () => {
 
       console.log('Initiating Fitbit connection...');
       
-      // Get the authorization URL from our edge function with proper auth header
-      const { data, error } = await supabase.functions.invoke('fitbit-oauth', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
+      // Make the request to get the Fitbit authorization URL from our 'fitbit-initiate' Edge Function
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('fitbit-initiate', {
+        // Ensure you are passing any necessary body if your function expects it,
+        // or an empty object if it doesn't.
+        // For 'fitbit-initiate', it primarily relies on the Authorization header
+        // and generates state/verifier internally.
+      }
+      // Note: The invoke method automatically includes the Authorization header with the user's session token.
+      );
       
-      if (error) {
-        throw new Error(error.message || 'Failed to get authorization URL');
+      if (functionError) {
+        console.error('Error invoking fitbit-initiate:', functionError);
+        throw new Error(functionError.message || 'Failed to get authorization URL from fitbit-initiate');
       }
       
-      if (!data?.url) {
-        throw new Error('No authorization URL returned');
+      const fitbitAuthUrl = functionData?.url; // Assuming the function returns { url: "..." }
+
+      if (!fitbitAuthUrl) {
+        console.error('No authorization URL returned from fitbit-initiate:', functionData);
+        throw new Error('No authorization URL returned from fitbit-initiate');
       }
       
-      console.log('Opening Fitbit authorization in new window:', data.url);
+      console.log('Opening Fitbit authorization in new window:', fitbitAuthUrl);
       
       // Open in a new window/tab to avoid iframe restrictions
-      const newWindow = window.open(data.url, 'fitbit-auth', 'width=600,height=700,scrollbars=yes,resizable=yes');
+      const newWindow = window.open(fitbitAuthUrl, 'fitbit-auth', 'width=600,height=700,scrollbars=yes,resizable=yes');
       
       if (!newWindow) {
         throw new Error('Failed to open authorization window. Please allow popups for this site.');
