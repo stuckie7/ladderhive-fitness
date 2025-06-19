@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
-import { Button } from '@/components/ui/button';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMetricsSection from '@/components/dashboard/DashboardMetricsSection';
 import QuickActionsSection from '@/components/dashboard/QuickActionsSection';
@@ -15,24 +14,27 @@ import { useToast } from '@/components/ui/use-toast';
 import DashboardError from '@/components/dashboard/DashboardError';
 import { useProfile } from '@/hooks/use-profile';
 import { useWorkouts } from '@/hooks/workouts';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Dumbbell } from 'lucide-react';
 import { useActivityProgress } from '@/hooks/use-activity-progress';
+import SuggestionDisplay from '@/components/dashboard/SuggestionDisplay';
 
 // Import components with default exports
-import UpcomingWorkouts from '@/components/dashboard/UpcomingWorkouts';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { isLoading: profileLoading } = useProfile();
   const { exercises, isLoading: exercisesLoading } = useFavoriteExercises();
-  const { workouts, isLoading: workoutsLoading } = useUpcomingWorkouts();
-  const { workouts: recentWorkouts, isLoading: recentWorkoutsLoading } = useWorkouts();
+  useUpcomingWorkouts(); // workouts and workoutsLoading were unused
+  const { workouts: recentWorkouts } = useWorkouts(); // recentWorkoutsLoading was unused
   const { weeklyData, isLoading: weeklyDataLoading } = useActivityProgress();
   const [error, setError] = useState<Error | null>(null);
   const [isLoadingRandom, setIsLoadingRandom] = useState(false);
+  const [fitbitSteps, setFitbitSteps] = useState<number | null>(null);
+  const [fitbitLoading, setFitbitLoading] = useState<boolean>(false);
+  const [fitbitError, setFitbitError] = useState<string | null>(null);
+  const [stepGoal, setStepGoal] = useState<number>(10000); // Default goal
+  const [activeSuggestion, setActiveSuggestion] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -79,6 +81,77 @@ const Dashboard = () => {
 
     fetchData();
   }, [user]);
+
+  useEffect(() => {
+    if (fitbitSteps !== null && stepGoal > 0) {
+      const progress = (fitbitSteps / stepGoal) * 100;
+      if (progress >= 70 && progress < 100) {
+        setActiveSuggestion("You're close to your step goal, how about a quick walk?");
+      } else {
+        setActiveSuggestion(null);
+      }
+    } else {
+      setActiveSuggestion(null);
+    }
+  }, [fitbitSteps, stepGoal]);
+
+  useEffect(() => {
+    const fetchFitbitData = async () => {
+      if (!user) return;
+
+      setFitbitLoading(true);
+      setFitbitError(null);
+      try {
+        // Fetch user's step goal from their profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('daily_step_goal')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching step goal:', profileError);
+          // We can proceed with the default goal, so no need to throw an error
+        } else if (profileData?.daily_step_goal) {
+          setStepGoal(profileData.daily_step_goal);
+        }
+
+        // Ensure the function name matches exactly what's deployed in Supabase
+        const { data, error: invokeError } = await supabase.functions.invoke('fitbit-fetch-data', {
+          // body: {}, // Send empty body if not needed, or specific parameters
+          // method: 'POST', // Supabase client defaults to POST for invoke
+        });
+
+        if (invokeError) {
+          if (invokeError.message.toLowerCase().includes('fitbit not connected')) {
+            setFitbitError('Connect Fitbit in Profile'); // Shorter message for UI
+          } else if (invokeError.message.toLowerCase().includes('failed to fetch') || invokeError.message.toLowerCase().includes('network error')) {
+            setFitbitError('Network issue fetching steps.');
+          } else {
+            // Generic error for other Supabase function invocation issues
+            setFitbitError('Could not fetch steps.');
+          }
+          console.error('Supabase function invoke error:', invokeError);
+          setFitbitSteps(null);
+        } else if (data && typeof data.steps !== 'undefined') {
+          setFitbitSteps(data.steps);
+        } else {
+          // Handle cases where data is returned but not in the expected format
+          console.warn('Fitbit data received but steps not found or in unexpected format:', data);
+          setFitbitError('Steps data unavailable.');
+          setFitbitSteps(null);
+        }
+      } catch (err: any) {
+        console.error("Error fetching Fitbit data:", err);
+        setFitbitError("Couldn't load Fitbit steps.");
+        setFitbitSteps(null);
+      } finally {
+        setFitbitLoading(false);
+      }
+    };
+
+    fetchFitbitData();
+  }, [user, supabase]); // Added supabase to dependency array as it's used inside
 
   if (error) {
     return (
@@ -194,14 +267,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleViewExercises = () => {
-    navigate('/exercises');
-  };
-
-  const handleViewWorkouts = () => {
-    navigate('/workouts');
-  };
-
   const handleRefresh = () => {
     window.location.reload();
   };
@@ -210,10 +275,14 @@ const Dashboard = () => {
     <AppLayout>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <DashboardHeader 
-          isLoading={profileLoading || isLoadingRandom} 
+          isLoading={profileLoading || isLoadingRandom || fitbitLoading}
           onRefresh={handleRefresh}
           onStartWorkout={handleStartWorkout}
+          fitbitSteps={fitbitSteps}
+          fitbitError={fitbitError}
+          dailyStepGoal={stepGoal}
         />
+        <SuggestionDisplay suggestion={activeSuggestion} />
 
         <div className="flex flex-col space-y-8">
           {/* Quick Actions Bar */}
