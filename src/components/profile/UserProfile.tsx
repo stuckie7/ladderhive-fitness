@@ -122,7 +122,7 @@ const UserProfile = ({ userData }: UserProfileProps) => {
         <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              <span>Health & Fitness Integration</span>
+              <span className="text-2xl font-semibold text-slate-100">Health & Fitness Integration</span>
               <Button 
                 variant="ghost" 
                 size="icon" 

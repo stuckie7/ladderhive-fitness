@@ -32,20 +32,20 @@ const StatCard = ({ title, value, icon, goal, progress }: {
     <CardContent className="pt-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-base text-slate-300">{title}</p>
+          <p className="text-4xl font-bold text-slate-100">{value}</p>
         </div>
-        <div className="p-2 rounded-full bg-primary/10 text-primary">
+        <div className="p-3 rounded-full bg-sky-500/20 text-sky-500">
           {icon}
         </div>
       </div>
       {goal !== undefined && progress !== undefined && (
         <div className="mt-4">
-          <div className="flex justify-between text-sm mb-1">
+          <div className="flex justify-between text-sm mb-1 text-slate-300">
             <span>Progress</span>
-            <span className="font-medium">{Math.round(progress)}%</span>
+            <span className="font-semibold text-slate-200">{Math.round(progress)}%</span>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary rounded-full" 
               style={{ width: `${Math.min(progress, 100)}%` }}
@@ -317,8 +317,8 @@ const HealthIntegration = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl font-bold">Health Stats</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-3xl font-bold text-slate-100">Health Stats</CardTitle>
+              <CardDescription className="text-slate-400">
                 {stats.lastSynced
                   ? `Last synced ${formatDistanceToNow(new Date(stats.lastSynced), { addSuffix: true })}`
                   : 'Connect your Fitbit to sync health data'}
@@ -326,7 +326,7 @@ const HealthIntegration = () => {
             </div>
             <div className="flex gap-2">
               {isConnected && (
-                <Button onClick={handleRefresh} disabled={isLoading} variant="outline" size="sm">
+                <Button onClick={handleRefresh} disabled={isLoading} variant="outline" size="sm" className="text-slate-300 hover:text-slate-100 border-slate-600 hover:border-slate-500 hover:bg-slate-700/50">
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
@@ -380,24 +380,24 @@ const HealthIntegration = () => {
               <StatCard 
                 title="Steps" 
                 value={stats.steps?.toLocaleString() || '0'} 
-                icon={<Activity className="h-5 w-5" />}
+                icon={<Activity className="h-6 w-6" />}
                 goal={stats.goal}
                 progress={stats.progress || 0}
               />
               <StatCard 
                 title="Calories" 
                 value={stats.calories?.toLocaleString() || '0'} 
-                icon={<Zap className="h-5 w-5" />}
+                icon={<Zap className="h-6 w-6" />}
               />
               <StatCard 
                 title="Active Minutes" 
                 value={stats.activeMinutes?.toString() || '0'} 
-                icon={<HeartPulse className="h-5 w-5" />}
+                icon={<HeartPulse className="h-6 w-6" />}
               />
               <StatCard 
                 title="Sleep" 
                 value={stats.sleepDuration ? `${stats.sleepDuration.toFixed(1)}h` : '--'} 
-                icon={<Moon className="h-5 w-5" />}
+                icon={<Moon className="h-6 w-6" />}
               />
             </div>
           )}
