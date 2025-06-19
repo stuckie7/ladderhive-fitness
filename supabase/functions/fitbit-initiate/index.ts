@@ -59,11 +59,11 @@ serve(async (req) => {
   const corsHeaders = createCorsHeaders(origin);
   
   try {
-    // Only allow GET requests
-    if (req.method !== 'GET') {
+    // Allow POST requests (used by supabase.functions.invoke)
+    if (req.method !== 'POST') {
       return createResponse(
         405,
-        { error: 'Method not allowed' },
+        { error: `Method ${req.method} not allowed. Please use POST.` },
         origin
       );
     }
