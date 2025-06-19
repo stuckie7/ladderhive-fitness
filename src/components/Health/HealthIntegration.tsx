@@ -3,10 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, HeartPulse, Zap, Loader2, AlertCircle, RefreshCw, Moon } from 'lucide-react';
+import { Activity, HeartPulse, Zap, Loader2, AlertCircle, RefreshCw, Moon, Target } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { fetchFitbitData } from '@/lib/fitbit';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
 
 interface HealthStats {
   steps: number;
@@ -28,7 +31,7 @@ const StatCard = ({ title, value, icon, goal, progress }: {
   goal?: number;
   progress?: number;
 }) => (
-  <Card>
+  <Card className="bg-slate-800/50 border-slate-800">
     <CardContent className="pt-6">
       <div className="flex items-center justify-between">
         <div>
@@ -57,11 +60,18 @@ const StatCard = ({ title, value, icon, goal, progress }: {
   </Card>
 );
 
-const HealthIntegration = () => {
+interface HealthIntegrationProps {
+  initialStepGoal?: number;
+}
+
+const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal = 10000 }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [stepGoal, setStepGoal] = useState(initialStepGoal);
   const [stats, setStats] = useState<Partial<HealthStats>>({
     steps: 0,
     calories: 0,
@@ -75,63 +85,50 @@ const HealthIntegration = () => {
     workouts: 0
   });
 
+  useEffect(() => {
+    if (initialStepGoal) {
+        setStepGoal(initialStepGoal);
+    }
+  }, [initialStepGoal]);
+
   const connectFitbit = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Verify authentication before attempting connection
       if (!user?.id) {
         setError('Please log in to connect your Fitbit account.');
         return;
       }
 
-      // Get current session for auth token
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (sessionError || !session?.user) {
+      if (!session?.user) {
         setError('Please log in to connect your Fitbit account.');
         return;
       }
+      
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('fitbit-initiate');
 
-      console.log('Initiating Fitbit connection...');
-      
-      // Make the request to get the Fitbit authorization URL from our 'fitbit-initiate' Edge Function
-      const { data: functionData, error: functionError } = await supabase.functions.invoke('fitbit-initiate', {
-        // Ensure you are passing any necessary body if your function expects it,
-        // or an empty object if it doesn't.
-        // For 'fitbit-initiate', it primarily relies on the Authorization header
-        // and generates state/verifier internally.
-      }
-      // Note: The invoke method automatically includes the Authorization header with the user's session token.
-      );
-      
       if (functionError) {
-        console.error('Error invoking fitbit-initiate:', functionError);
         throw new Error(functionError.message || 'Failed to get authorization URL from fitbit-initiate');
       }
       
-      const fitbitAuthUrl = functionData?.url; // Assuming the function returns { url: "..." }
+      const fitbitAuthUrl = functionData?.url;
 
       if (!fitbitAuthUrl) {
-        console.error('No authorization URL returned from fitbit-initiate:', functionData);
         throw new Error('No authorization URL returned from fitbit-initiate');
       }
       
-      console.log('Opening Fitbit authorization in new window:', fitbitAuthUrl);
-      
-      // Open in a new window/tab to avoid iframe restrictions
       const newWindow = window.open(fitbitAuthUrl, 'fitbit-auth', 'width=600,height=700,scrollbars=yes,resizable=yes');
       
       if (!newWindow) {
         throw new Error('Failed to open authorization window. Please allow popups for this site.');
       }
       
-      // Listen for the window to close (user completed or cancelled auth)
       const checkClosed = setInterval(() => {
         if (newWindow.closed) {
           clearInterval(checkClosed);
-          // Check connection status after window closes
           setTimeout(() => {
             checkConnection();
           }, 1000);
@@ -139,7 +136,6 @@ const HealthIntegration = () => {
       }, 1000);
       
     } catch (err) {
-      console.error('Error connecting to Fitbit:', err);
       setError(err instanceof Error ? err.message : 'Failed to connect to Fitbit');
     } finally {
       setIsLoading(false);
@@ -147,15 +143,9 @@ const HealthIntegration = () => {
   }, [user?.id]);
 
   const checkConnection = useCallback(async () => {
-    if (!user?.id) {
-      console.log('No user ID available');
-      return false;
-    }
+    if (!user?.id) return false;
     
     try {
-      console.log('Checking Fitbit connection for user:', user.id);
-      
-      // Use maybeSingle() to handle cases where no token exists
       const { data, error } = await supabase
         .from('fitbit_tokens')
         .select('*')
@@ -163,10 +153,7 @@ const HealthIntegration = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error checking Fitbit connection:', error);
-        // Don't show error for RLS/permission issues, just assume not connected
-        if (error.code === 'PGRST301' || error.message.includes('RLS') || error.message.includes('permission')) {
-          console.log('RLS/Permission issue, treating as not connected');
+        if (error.code === 'PGRST301' || error.message.includes('RLS')) {
           setIsConnected(false);
         } else {
           setError('Failed to check Fitbit connection');
@@ -176,17 +163,14 @@ const HealthIntegration = () => {
       }
       
       if (!data) {
-        console.log('No Fitbit token found for user');
         setIsConnected(false);
         return false;
       }
       
       const isTokenValid = new Date(data.expires_at) > new Date();
-      console.log('Token valid:', isTokenValid);
       setIsConnected(isTokenValid);
       return isTokenValid;
     } catch (error) {
-      console.error('Error checking Fitbit connection:', error);
       setError('Failed to check Fitbit connection');
       setIsConnected(false);
       return false;
@@ -194,10 +178,7 @@ const HealthIntegration = () => {
   }, [user?.id]);
 
   const fetchHealthData = useCallback(async () => {
-    if (!user?.id || !isConnected) {
-      console.log('Cannot fetch health data: user not authenticated or Fitbit not connected');
-      return;
-    }
+    if (!user?.id || !isConnected) return;
     
     setIsLoading(true);
     setError(null);
@@ -210,7 +191,6 @@ const HealthIntegration = () => {
       };
       setStats(newStats);
     } catch (error) {
-      console.error('Error fetching health data:', error);
       setError('Failed to fetch health data. Please try again.');
     } finally {
       setIsLoading(false);
@@ -232,84 +212,89 @@ const HealthIntegration = () => {
         .delete()
         .eq('user_id', user.id);
         
-      if (error) {
-        console.error('Error disconnecting Fitbit:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       setIsConnected(false);
       setStats({
-        steps: 0,
-        calories: 0,
-        distance: 0,
-        activeMinutes: 0,
-        heartRate: null,
-        sleepDuration: null,
-        lastSynced: null,
-        goal: 10000,
-        progress: 0,
-        workouts: 0
+        steps: 0, calories: 0, distance: 0, activeMinutes: 0, heartRate: null,
+        sleepDuration: null, lastSynced: null, goal: 10000, progress: 0, workouts: 0
       });
     } catch (err) {
-      console.error('Error disconnecting Fitbit:', err);
       setError('Failed to disconnect Fitbit');
     } finally {
       setIsLoading(false);
     }
   }, [user?.id]);
 
-  // Check for connection status and URL parameters on mount
   useEffect(() => {
     const init = async () => {
-      // Only proceed if user is authenticated
-      if (!user?.id) {
-        console.log('User not authenticated, skipping Fitbit check');
-        return;
-      }
+      if (!user?.id) return;
 
-      // Check for OAuth callback parameters
       const urlParams = new URLSearchParams(window.location.search);
       const fitbitConnectedParam = urlParams.get('fitbit_connected');
       const errorParam = urlParams.get('error');
       
       let wasConnectedViaParam = false;
       if (fitbitConnectedParam === 'true') {
-        console.log('Fitbit connection successful (from URL param)');
-        setIsConnected(true); // Set state
+        setIsConnected(true);
         wasConnectedViaParam = true;
-        // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }
       
       if (errorParam) {
-        console.error('Fitbit connection error (from URL param):', decodeURIComponent(errorParam));
         setError(decodeURIComponent(errorParam));
-        // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }
       
-      // If not already set as connected by URL params, then check the DB.
-      // This also ensures that if URL params were stale or incorrect,
-      // the DB (source of truth) is checked.
       if (!wasConnectedViaParam) {
-          await checkConnection(); // This will call setIsConnected internally
+          await checkConnection();
       }
     };
     
     init();
-  }, [user?.id, checkConnection]); // Removed fetchHealthData from this dependency array
+  }, [user?.id, checkConnection]);
 
-  // New useEffect to fetch data when isConnected becomes true (and user is available)
   useEffect(() => {
     if (isConnected && user?.id) {
-      console.log('Fitbit is connected and user is available, attempting to fetch health data...');
       fetchHealthData();
     }
-  }, [isConnected, user?.id, fetchHealthData]); // Dependencies ensure this runs when needed
+  }, [isConnected, user?.id, fetchHealthData]);
 
   const handleRefresh = useCallback(async () => {
     await fetchHealthData();
   }, [fetchHealthData]);
+
+  const handleSaveGoal = async () => {
+    if (!user) {
+      toast({ title: "Error", description: "You must be logged in to save a goal.", variant: "destructive" });
+      return;
+    }
+    if (!stepGoal || stepGoal <= 0) {
+      toast({ title: "Invalid Goal", description: "Please enter a valid step goal.", variant: "destructive" });
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ daily_step_goal: stepGoal })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setStats(prevStats => ({
+        ...prevStats,
+        goal: stepGoal,
+        progress: prevStats.steps ? (prevStats.steps / stepGoal) * 100 : 0
+      }));
+
+      toast({ title: "Success", description: "Your step goal has been updated." });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to save step goal.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -327,21 +312,12 @@ const HealthIntegration = () => {
             <div className="flex gap-2">
               {isConnected && (
                 <Button onClick={handleRefresh} disabled={isLoading} variant="outline" size="sm" className="text-slate-300 hover:text-slate-100 border-slate-600 hover:border-slate-500 hover:bg-slate-700/50">
-                  {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                  )}
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                   {isLoading ? 'Syncing...' : 'Refresh'}
                 </Button>
               )}
               {isConnected && (
-                <Button 
-                  onClick={disconnectFitbit} 
-                  disabled={isLoading} 
-                  variant="destructive" 
-                  size="sm"
-                >
+                <Button onClick={disconnectFitbit} disabled={isLoading} variant="destructive" size="sm">
                   Disconnect
                 </Button>
               )}
@@ -350,11 +326,9 @@ const HealthIntegration = () => {
         </CardHeader>
         <CardContent>
           {!user?.id ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Activity className="h-4 w-4" />
-                <span>Please log in to connect your Fitbit account.</span>
-              </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Activity className="h-4 w-4" />
+              <span>Please log in to connect your Fitbit account.</span>
             </div>
           ) : !isConnected ? (
             <div className="space-y-4">
@@ -362,43 +336,17 @@ const HealthIntegration = () => {
                 <Activity className="h-4 w-4" />
                 <span>Connect your Fitbit account to track your health metrics automatically.</span>
               </div>
-              <Button 
-                onClick={connectFitbit} 
-                disabled={isLoading} 
-                className="w-full sm:w-auto"
-              >
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Activity className="mr-2 h-4 w-4" />
-                )}
+              <Button onClick={connectFitbit} disabled={isLoading} className="w-full sm:w-auto">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
                 {isLoading ? 'Connecting...' : 'Connect Fitbit'}
               </Button>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatCard 
-                title="Steps" 
-                value={stats.steps?.toLocaleString() || '0'} 
-                icon={<Activity className="h-6 w-6" />}
-                goal={stats.goal}
-                progress={stats.progress || 0}
-              />
-              <StatCard 
-                title="Calories" 
-                value={stats.calories?.toLocaleString() || '0'} 
-                icon={<Zap className="h-6 w-6" />}
-              />
-              <StatCard 
-                title="Active Minutes" 
-                value={stats.activeMinutes?.toString() || '0'} 
-                icon={<HeartPulse className="h-6 w-6" />}
-              />
-              <StatCard 
-                title="Sleep" 
-                value={stats.sleepDuration ? `${stats.sleepDuration.toFixed(1)}h` : '--'} 
-                icon={<Moon className="h-6 w-6" />}
-              />
+              <StatCard title="Steps" value={stats.steps?.toLocaleString() || '0'} icon={<Activity className="h-6 w-6" />} goal={stats.goal} progress={stats.progress || 0} />
+              <StatCard title="Calories" value={stats.calories?.toLocaleString() || '0'} icon={<Zap className="h-6 w-6" />} />
+              <StatCard title="Active Minutes" value={stats.activeMinutes?.toString() || '0'} icon={<HeartPulse className="h-6 w-6" />} />
+              <StatCard title="Sleep" value={stats.sleepDuration ? `${stats.sleepDuration.toFixed(1)}h` : '--'} icon={<Moon className="h-6 w-6" />} />
             </div>
           )}
           
@@ -410,6 +358,36 @@ const HealthIntegration = () => {
           )}
         </CardContent>
       </Card>
+
+      {isConnected && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-400">
+              <Target className="h-5 w-5" />
+              Your Daily Goal
+            </CardTitle>
+            <CardDescription className="text-slate-400">Set a daily step goal to personalize your progress tracking.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-end gap-4">
+            <div className="grid flex-grow items-center gap-1.5">
+              <Label htmlFor="step-goal" className="text-slate-400">Steps</Label>
+              <Input
+                id="step-goal"
+                type="number"
+                value={stepGoal}
+                onChange={(e) => setStepGoal(Number(e.target.value))}
+                className="text-base border-slate-700 placeholder:text-slate-300 text-sky-400 font-bold"
+                placeholder="e.g., 10000"
+                disabled={isSaving}
+              />
+            </div>
+            <Button onClick={handleSaveGoal} disabled={isSaving} className="btn-fitness-primary w-full md:w-auto text-white">
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
