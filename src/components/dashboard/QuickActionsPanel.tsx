@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Dumbbell, Plus } from "lucide-react";
+import { Calendar, Dumbbell, Plus, Activity } from "lucide-react";
 
 const QuickActionsPanel: React.FC = () => {
   return (
@@ -30,6 +30,14 @@ const QuickActionsPanel: React.FC = () => {
             className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-orange group"
           >
             <Dumbbell className="mr-2 h-5 w-5 text-fitness-orange group-hover:animate-pulse-soft" /> Exercise Library
+          </Button>
+        </Link>
+        <Link to="/profile">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start border-gray-800 hover:bg-gray-800/50 hover:text-fitness-green group"
+          >
+            <Activity className="mr-2 h-5 w-5 text-fitness-green group-hover:animate-pulse-soft" /> View Health Stats
           </Button>
         </Link>
       </CardContent>
