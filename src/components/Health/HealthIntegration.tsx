@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Activity, HeartPulse, Zap, Loader2, AlertCircle, RefreshCw, Moon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/lib/supabase';
+import { fetchFitbitData } from '@/lib/fitbit';
 
 interface HealthStats {
   steps: number;
@@ -202,21 +203,12 @@ const HealthIntegration = () => {
     setError(null);
     
     try {
-      // For now, use mock data since we haven't implemented the data fetching yet
-      const mockData = {
-        steps: 8432,
-        calories: 2450,
-        distance: 6.2,
-        activeMinutes: 45,
-        heartRate: 68,
-        sleepDuration: 7.5,
-        lastSynced: new Date(),
-        goal: 10000,
-        progress: 84,
-        workouts: 2
+      const fitbitData = await fetchFitbitData();
+      const newStats = {
+        ...fitbitData,
+        lastSynced: fitbitData.lastSynced ? new Date(fitbitData.lastSynced) : null,
       };
-      
-      setStats(mockData);
+      setStats(newStats);
     } catch (error) {
       console.error('Error fetching health data:', error);
       setError('Failed to fetch health data. Please try again.');
@@ -277,31 +269,43 @@ const HealthIntegration = () => {
 
       // Check for OAuth callback parameters
       const urlParams = new URLSearchParams(window.location.search);
-      const fitbitConnected = urlParams.get('fitbit_connected');
-      const error = urlParams.get('error');
+      const fitbitConnectedParam = urlParams.get('fitbit_connected');
+      const errorParam = urlParams.get('error');
       
-      if (fitbitConnected === 'true') {
-        console.log('Fitbit connection successful');
-        setIsConnected(true);
+      let wasConnectedViaParam = false;
+      if (fitbitConnectedParam === 'true') {
+        console.log('Fitbit connection successful (from URL param)');
+        setIsConnected(true); // Set state
+        wasConnectedViaParam = true;
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }
       
-      if (error) {
-        console.error('Fitbit connection error:', error);
-        setError(decodeURIComponent(error));
+      if (errorParam) {
+        console.error('Fitbit connection error (from URL param):', decodeURIComponent(errorParam));
+        setError(decodeURIComponent(errorParam));
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }
       
-      const connected = await checkConnection();
-      if (connected) {
-        await fetchHealthData();
+      // If not already set as connected by URL params, then check the DB.
+      // This also ensures that if URL params were stale or incorrect,
+      // the DB (source of truth) is checked.
+      if (!wasConnectedViaParam) {
+          await checkConnection(); // This will call setIsConnected internally
       }
     };
     
     init();
-  }, [user?.id, checkConnection, fetchHealthData]);
+  }, [user?.id, checkConnection]); // Removed fetchHealthData from this dependency array
+
+  // New useEffect to fetch data when isConnected becomes true (and user is available)
+  useEffect(() => {
+    if (isConnected && user?.id) {
+      console.log('Fitbit is connected and user is available, attempting to fetch health data...');
+      fetchHealthData();
+    }
+  }, [isConnected, user?.id, fetchHealthData]); // Dependencies ensure this runs when needed
 
   const handleRefresh = useCallback(async () => {
     await fetchHealthData();
