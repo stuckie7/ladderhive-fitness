@@ -59,14 +59,8 @@ serve(async (req) => {
   const corsHeaders = createCorsHeaders(origin);
   
   try {
-    // Only allow GET requests
-    if (req.method !== 'GET') {
-      return createResponse(
-        405,
-        { error: 'Method not allowed' },
-        origin
-      );
-    }
+    // Allow POST requests (supabase.functions.invoke defaults to POST)
+    // The OPTIONS check above handles preflight for POST.
 
     // Get environment variables
     const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID');
