@@ -1,5 +1,19 @@
 import { supabase } from '@/lib/supabase';
 
+export interface LastPostStat {
+  created_at: string;
+  thread_id: number;
+  id: number;
+  profiles: { username: string } | null;
+  forum_threads: { title: string; slug: string } | null;
+}
+
+export interface CategoryStats {
+  threadCount: number;
+  postCount: number;
+  lastPost: LastPostStat | null;
+}
+
 export interface ForumCategory {
   id: number;
   name: string;
@@ -609,7 +623,7 @@ export class ForumService {
   }
 
   // Statistics
-  static async getCategoryStats(categoryId: number) {
+  static async getCategoryStats(categoryId: number): Promise<CategoryStats> {
     const { data: threads, error: threadsError } = await supabase
       .from('forum_threads')
       .select('id')
@@ -630,7 +644,7 @@ export class ForumService {
         created_at,
         thread_id,
         profiles (username),
-        forum_threads (title)
+        forum_threads (title, slug)
       `)
       .in('thread_id', threadIds)
       .order('created_at', { ascending: false })
@@ -645,10 +659,28 @@ export class ForumService {
 
     if (countError) throw countError;
 
+    const lastPostData = posts?.[0];
+
+    if (!lastPostData) {
+      return {
+        threadCount: threads.length,
+        postCount: postCount || 0,
+        lastPost: null,
+      };
+    }
+
+    // Supabase returns to-one relationships as an array if the FK is not unique.
+    // We manually flatten it to a single object.
+    const flattenedPost = {
+      ...lastPostData,
+      profiles: Array.isArray(lastPostData.profiles) ? lastPostData.profiles[0] : lastPostData.profiles,
+      forum_threads: Array.isArray(lastPostData.forum_threads) ? lastPostData.forum_threads[0] : lastPostData.forum_threads,
+    };
+
     return {
       threadCount: threads.length,
       postCount: postCount || 0,
-      lastPost: posts?.[0] || null
+      lastPost: flattenedPost,
     };
   }
 

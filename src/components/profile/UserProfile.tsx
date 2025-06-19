@@ -31,6 +31,7 @@ interface UserData {
     chest?: number;
     waist?: number;
     hips?: number;
+    daily_step_goal?: number;
   };
   stats?: {
     workoutsCompleted: number;
@@ -134,7 +135,7 @@ const UserProfile = ({ userData }: UserProfileProps) => {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <HealthIntegration />
+            <HealthIntegration initialStepGoal={userData.profile?.daily_step_goal} />
           </div>
         </DialogContent>
       </Dialog>

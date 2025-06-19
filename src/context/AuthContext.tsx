@@ -23,45 +23,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener');
-    let mounted = true;
     
-    // Set up auth state listener FIRST
+    // The onAuthStateChange listener fires immediately with the initial session state.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        if (mounted) {
-          console.log("Auth state changed:", event, currentSession?.user?.email);
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-          setLoading(false);
-        }
+      (_event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        setLoading(false);
+        console.log("Auth state updated. Event:", _event, "User:", currentSession?.user?.email);
       }
     );
-    
-    // THEN check for existing session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
-        // Only update state if component is still mounted
-        if (mounted) {
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-          setLoading(false);
-          console.log("Initial session check complete:", currentSession?.user?.email || "No user");
-        }
-      } catch (error) {
-        console.error("Error getting session:", error);
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-    
-    getInitialSession();
-    
-    // Clean up subscription and mounted flag
+
+    // Clean up subscription on unmount
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
   }, []);

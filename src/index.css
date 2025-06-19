@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -9,4 +9,18 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes highlight-post {
+  from {
+    background-color: rgba(255, 255, 0, 0.4);
+    border-radius: 0.5rem;
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.post-highlight {
+  animation: highlight-post 2s ease-out;
 }

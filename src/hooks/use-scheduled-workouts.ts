@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -25,81 +25,74 @@ interface ScheduledWorkout {
   } | null;
 }
 
-export const useScheduledWorkouts = (selectedDate?: Date) => {
-  const [scheduledWorkouts, setScheduledWorkouts] = useState<ScheduledWorkout[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export const useScheduledWorkouts = ({ selectedDate, month }: { selectedDate?: Date; month?: Date }) => {
   const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchScheduledWorkouts = async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
+    if (!user) return [];
+
+    let query = supabase
+      .from('scheduled_workouts')
+      .select(`
+        *,
+        prepared_workouts (
+          id,
+          title,
+          difficulty,
+          duration_minutes,
+          description,
+          thumbnail_url,
+          video_url
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('scheduled_date', { ascending: true });
+
+    if (selectedDate) {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      query = query.eq('scheduled_date', dateStr);
+    } else {
+      const baseDate = month || new Date();
+      const monthStart = startOfMonth(subMonths(baseDate, 1));
+      const monthEnd = endOfMonth(addMonths(baseDate, 1));
+      
+      const startStr = format(monthStart, 'yyyy-MM-dd');
+      const endStr = format(monthEnd, 'yyyy-MM-dd');
+      
+      query = query.gte('scheduled_date', startStr).lte('scheduled_date', endStr);
     }
 
-    try {
-      setIsLoading(true);
+    const { data, error } = await query;
 
-      let query = supabase
-        .from('scheduled_workouts')
-        .select(`
-          *,
-          prepared_workouts (
-            id,
-            title,
-            difficulty,
-            duration_minutes,
-            description,
-            thumbnail_url,
-            video_url
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('scheduled_date', { ascending: true });
+    if (error) {
+      throw new Error(error.message);
+    }
 
-      // If a specific date is selected, filter by that date
-      // Otherwise, fetch the current month's workouts for calendar view
-      if (selectedDate) {
-        const dateStr = selectedDate.toISOString().split('T')[0];
-        query = query.eq('scheduled_date', dateStr);
-      } else {
-        // Fetch a 3-month range (previous month, current month, and next month) for calendar view
-        const now = new Date();
-        const monthStart = startOfMonth(subMonths(now, 1));
-        const monthEnd = endOfMonth(addMonths(now, 1));
-        
-        const startStr = format(monthStart, 'yyyy-MM-dd');
-        const endStr = format(monthEnd, 'yyyy-MM-dd');
-        
-        query = query.gte('scheduled_date', startStr).lte('scheduled_date', endStr);
-      }
+    return data || [];
+  };
 
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      setScheduledWorkouts(data || []);
-    } catch (err) {
+  const {
+    data: scheduledWorkouts,
+    isLoading,
+    refetch,
+  } = useQuery<ScheduledWorkout[], Error>({
+    queryKey: ['scheduledWorkouts', user?.id, selectedDate?.getTime(), month?.getTime()],
+    queryFn: fetchScheduledWorkouts,
+    enabled: !!user,
+    onError: (err) => {
       console.error('Error fetching scheduled workouts:', err);
       toast({
         title: 'Error',
         description: 'Failed to load scheduled workouts',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchScheduledWorkouts();
-  }, [user, selectedDate]);
+    },
+  });
 
   return {
-    scheduledWorkouts,
+    scheduledWorkouts: scheduledWorkouts ?? [],
     isLoading,
-    refetch: fetchScheduledWorkouts
+    refetch,
   };
 };

@@ -23,7 +23,7 @@ import { CalendarGrid } from "@/components/schedule/CalendarGrid";
 import { DayExpansionPanel } from "@/components/schedule/DayExpansionPanel";
 import { CalendarNavigation } from "@/components/schedule/CalendarNavigation";
 import { useToast } from "@/hooks/use-toast";
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { useNavigate } from "react-router-dom";
 
 interface ScheduledWorkout {
   id: string;
@@ -51,50 +51,23 @@ const Schedule = () => {
   const [expandedDate, setExpandedDate] = useState<Date | null>(null);
   const [expandedWorkouts, setExpandedWorkouts] = useState<ScheduledWorkout[]>([]);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Get scheduled workouts for the current calendar month
-  const { data: calendarWorkouts, isLoading: isLoadingCalendar, refetch: refetchCalendar } = useQuery({
-    queryKey: ['calendar-scheduled-workouts', calendarDate.getFullYear(), calendarDate.getMonth()],
-    queryFn: async () => {
-      if (!user) return [];
-      
-      const monthStart = startOfMonth(calendarDate);
-      const monthEnd = endOfMonth(calendarDate);
-      
-      const startStr = format(monthStart, 'yyyy-MM-dd');
-      const endStr = format(monthEnd, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('scheduled_workouts')
-        .select(`
-          *,
-          prepared_workouts (
-            id,
-            title,
-            difficulty,
-            duration_minutes,
-            description,
-            thumbnail_url,
-            video_url
-          )
-        `)
-        .eq('user_id', user.id)
-        .gte('scheduled_date', startStr)
-        .lte('scheduled_date', endStr)
-        .order('scheduled_date', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching calendar workouts:', error);
-        return [];
-      }
-      
-      return data as ScheduledWorkout[];
-    },
-    enabled: !!user,
-  });
+  // Use the custom hook for fetching scheduled workouts
+  const { 
+    scheduledWorkouts: calendarWorkouts, 
+    isLoading: isLoadingCalendar, 
+    refetch: refetchCalendar 
+  } = useScheduledWorkouts({ month: calendarDate });
+
+  const { 
+    scheduledWorkouts: selectedDateWorkouts, 
+    isLoading: isLoadingScheduled, 
+    refetch: refetchScheduled 
+  } = useScheduledWorkouts({ selectedDate: date });
   
-  // Get planned workouts for the selected date (existing functionality)
+  // Get self-planned workouts for the selected date (from a different table)
   const { data: plannedWorkouts, isLoading: isLoadingPlanned } = useQuery({
     queryKey: ['planned-workouts', date?.toISOString()],
     queryFn: async () => {
@@ -120,42 +93,6 @@ const Schedule = () => {
       }
       
       return data as any[];
-    },
-    enabled: !!user && !!date,
-  });
-
-  // Get scheduled workouts for the selected date
-  const { data: selectedDateWorkouts, isLoading: isLoadingScheduled, refetch: refetchScheduled } = useQuery({
-    queryKey: ['scheduled-workouts-date', date?.toISOString()],
-    queryFn: async () => {
-      if (!user || !date) return [];
-      
-      const dateStr = format(date, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('scheduled_workouts')
-        .select(`
-          *,
-          prepared_workouts (
-            id,
-            title,
-            difficulty,
-            duration_minutes,
-            description,
-            thumbnail_url,
-            video_url
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('scheduled_date', dateStr)
-        .order('scheduled_date', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching scheduled workouts:', error);
-        return [];
-      }
-      
-      return data as ScheduledWorkout[];
     },
     enabled: !!user && !!date,
   });
@@ -207,12 +144,15 @@ const Schedule = () => {
   };
   
   const handleStartWorkout = (workout: ScheduledWorkout) => {
-    // TODO: Implement workout start functionality
-    console.log('Starting workout:', workout);
-    toast({
-      title: 'Starting Workout',
-      description: `Starting ${workout.prepared_workouts?.title}`,
-    });
+    if (!workout.prepared_workouts?.id) {
+      toast({
+        title: "Cannot Start Workout",
+        description: "This scheduled item is missing workout details.",
+        variant: "destructive",
+      });
+      return;
+    }
+    navigate(`/workouts/${workout.prepared_workouts.id}`);
   };
 
   // Refetch calendar workouts when calendar date changes
@@ -347,7 +287,7 @@ const Schedule = () => {
                     </p>
                     <Button 
                       className="mt-4"
-                      onClick={() => window.location.href = '/workouts'}
+                      onClick={() => navigate('/workouts')}
                     >
                       Add Workout
                     </Button>

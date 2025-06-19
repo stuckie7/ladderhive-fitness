@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { House, Dumbbell, Flame, Clock, MessageSquare, Menu, List, Bookmark, Calendar, PlayCircle, Settings, Shield } from 'lucide-react';
+import { House, Dumbbell, Flame, Clock, MessageSquare, Menu, List, Bookmark, Calendar, PlayCircle, User, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -143,7 +143,7 @@ export function BottomNavigation() {
             {/* Start Workout - Prominently placed */}
             <div className="mb-6">
               <Link 
-                to="/my-workouts" 
+                to="/workout-builder" 
                 className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors"
                 aria-label="Start a new workout session"
               >
@@ -185,23 +185,23 @@ export function BottomNavigation() {
               </Link>
               
               <Link 
-                to="/profile" 
+                to="/progress" 
                 className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
                 role="gridcell"
-                aria-label="View user profile"
+                aria-label="View your progress"
               >
-                <Settings size={24} aria-hidden="true" />
-                <span className="mt-2 text-sm font-medium">Profile</span>
+                <TrendingUp size={24} aria-hidden="true" />
+                <span className="mt-2 text-sm font-medium">Progress</span>
               </Link>
 
               <Link 
-                to="/settings" 
+                to="/profile" 
                 className="flex flex-col items-center p-4 border rounded-lg hover:bg-accent transition-colors"
                 role="gridcell"
-                aria-label="App settings"
+                aria-label="View user profile and settings"
               >
-                <Settings size={24} aria-hidden="true" />
-                <span className="mt-2 text-sm font-medium">Settings</span>
+                <User size={24} aria-hidden="true" />
+                <span className="mt-2 text-sm font-medium">Profile</span>
               </Link>
               
               <div className="col-span-1" role="gridcell">

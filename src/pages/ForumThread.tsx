@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -58,6 +58,7 @@ interface Thread {
 const ForumThread: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [thread, setThread] = useState<Thread | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +66,7 @@ const ForumThread: React.FC = () => {
   const [replyContent, setReplyContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
-  const [subscription, setSubscription] = useState<any>(null);
+  
   const [isMarkingAsSolved, setIsMarkingAsSolved] = useState<number | null>(null);
 
   const markAsSolved = async (postId: number, threadId: number) => {
@@ -113,77 +114,46 @@ const ForumThread: React.FC = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     const fetchThreadData = async () => {
       if (!slug) return;
       
       try {
-        setIsLoading(true);
-        setError(null);
+        if (isMounted) {
+          setIsLoading(true);
+          setError(null);
+        }
 
-        // Fetch thread details with category info and profile
         const { data: threadData, error: threadError } = await supabase
           .from('forum_threads')
-          .select(`
-            *,
-            profiles!forum_threads_user_id_fkey (
-              username,
-              avatar_url,
-              profile_photo_url,
-              first_name,
-              last_name
-            ),
-            forum_categories (
-              id,
-              name,
-              slug
-            )
-          `)
+          .select(`*, profiles!forum_threads_user_id_fkey(username, avatar_url, profile_photo_url, first_name, last_name), forum_categories(id, name, slug)`)
           .or(`id.eq.${slug},slug.eq.${slug}`)
           .single();
 
-        if (threadError || !threadData) {
-          throw threadError || new Error('Thread not found');
-        }
-
+        if (!isMounted) return;
+        if (threadError || !threadData) throw threadError || new Error('Thread not found');
+        
         setThread(threadData);
-
-        // Increment view count
         await supabase.rpc('increment_thread_views', { thread_id: threadData.id });
 
-        // Fetch posts for this thread with profiles
         const { data: postsData, error: postsError } = await supabase
           .from('forum_posts')
-          .select(`
-            *,
-            profiles!forum_posts_user_id_fkey (
-              username,
-              avatar_url,
-              profile_photo_url,
-              first_name,
-              last_name
-            )
-          `)
+          .select(`*, profiles!forum_posts_user_id_fkey(username, avatar_url, profile_photo_url, first_name, last_name)`)
           .eq('thread_id', threadData.id)
           .order('created_at', { ascending: true });
 
+        if (!isMounted) return;
         if (postsError) throw postsError;
 
         setPosts(postsData || []);
 
-        // Subscribe to new posts in this thread
-        const newSubscription = supabase
+        channel = supabase
           .channel(`public:forum_posts:thread_id=eq.${threadData.id}`)
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'forum_posts',
-              filter: `thread_id=eq.${threadData.id}`
-            },
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'forum_posts', filter: `thread_id=eq.${threadData.id}` },
             (payload) => {
               const newPost = payload.new as Post;
-              // Fetch the profile for the new post
               const fetchProfile = async () => {
                 const { data: profileData } = await supabase
                   .from('profiles')
@@ -191,38 +161,54 @@ const ForumThread: React.FC = () => {
                   .eq('id', newPost.user_id)
                   .single();
                 
-                setPosts(prevPosts => [
-                  ...prevPosts,
-                  {
-                    ...newPost,
-                    profiles: profileData
-                  }
-                ]);
+                if (isMounted) {
+                  setPosts(prevPosts => [...prevPosts, { ...newPost, profiles: profileData }]);
+                }
               };
-              
               fetchProfile();
             }
           )
           .subscribe();
 
-        setSubscription(newSubscription);
       } catch (err) {
-        console.error('Error fetching thread data:', err);
-        setError('Failed to load thread. It may have been deleted or you may not have permission to view it.');
+        if (isMounted) {
+          console.error('Error fetching thread data:', err);
+          setError('Failed to load thread. It may have been deleted or you may not have permission to view it.');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchThreadData();
 
-    // Cleanup subscription on unmount
     return () => {
-      if (subscription) {
-        supabase.removeChannel(subscription);
+      isMounted = false;
+      if (channel) {
+        supabase.removeChannel(channel);
       }
     };
-  }, [slug, subscription]);
+  }, [slug]);
+
+  useEffect(() => {
+    if (location.hash && posts.length > 0 && !isLoading) {
+      const postId = location.hash.replace('#', '');
+      const postElement = document.getElementById(postId);
+      
+      if (postElement) {
+        setTimeout(() => {
+          postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          postElement.classList.add('post-highlight');
+          
+          setTimeout(() => {
+            postElement.classList.remove('post-highlight');
+          }, 2000);
+        }, 100);
+      }
+    }
+  }, [posts, isLoading, location.hash]);
 
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();

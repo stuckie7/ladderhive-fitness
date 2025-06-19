@@ -23,20 +23,6 @@ interface UserProfileData {
   };
 }
 
-interface UserWorkout {
-  id: string;
-  user_id: string;
-  workout_id: string;
-  status: string;
-  completed_at: string | null;
-  workout: {
-    id: string;
-    title: string;
-    description: string;
-    duration: number;
-    difficulty: string;
-  };
-}
 
 const Profile = () => {
   const [userData, setUserData] = useState<UserProfileData | null>(null);
@@ -97,7 +83,8 @@ const Profile = () => {
               neck: profile.neck,
               chest: profile.chest,
               waist: profile.waist,
-              hips: profile.hips
+              hips: profile.hips,
+              daily_step_goal: profile.daily_step_goal
             },
             stats: {
               workoutsCompleted: completedWorkouts ? completedWorkouts.length : 0,

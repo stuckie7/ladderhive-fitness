@@ -130,9 +130,20 @@ serve(async (req) => {
     }
 
     if (tokensError || !tokens) {
+      console.log('No Fitbit connection found for user:', user.id);
       return createResponse(
-        400,
-        { error: 'Fitbit not connected' },
+        200, 
+        { 
+          connected: false, 
+          error: 'Fitbit not connected',
+          steps: 0,
+          calories: 0,
+          distance: 0,
+          activeMinutes: 0,
+          heartRate: null,
+          sleepDuration: null,
+          workouts: 0
+        },
         origin
       );
     }
@@ -173,7 +184,7 @@ serve(async (req) => {
       
       // Update the tokens in the database
       await supabase
-        .from('user_connections')
+        .from('fitbit_tokens')
         .update({
           access_token: tokenData.access_token,
           refresh_token: tokenData.refresh_token || tokens.refresh_token,

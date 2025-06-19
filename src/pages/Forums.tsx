@@ -1,10 +1,10 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ForumService, SearchPostResult, ForumThreadWithRelations } from '@/services/forumService';
+import { ForumService, SearchPostResult, ForumThreadWithRelations, ForumCategory, LastPostStat, CategoryStats } from '@/services/forumService';
 import { ensureForumCategoriesExist } from '@/utils/forumSetup';
 import { useAuth } from '@/context/AuthContext';
-import { MessageSquare, Search as SearchIcon, Clock, CheckCircle, Bell, Megaphone, X } from 'lucide-react';
+import { MessageSquare, Search as SearchIcon, CheckCircle, Bell, Megaphone, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,17 +12,10 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { SearchResults } from '@/components/forum/SearchResults';
 import { debounce } from 'lodash';
 
-interface ForumCategory {
-  id: number;
-  name: string;
-  description: string | null;
-  slug: string;
-  thread_count?: number;
-  last_post?: {
-    created_at: string;
-    thread_title?: string;
-    username?: string;
-  } | null;
+interface CategoryWithStats extends ForumCategory {
+  threadCount: number;
+  postCount: number;
+  lastPost: LastPostStat | null;
 }
 
 interface ForumThreadWithUser extends ForumThreadWithRelations {
@@ -34,7 +27,7 @@ interface ForumThreadWithUser extends ForumThreadWithRelations {
 }
 
 const Forums: React.FC = () => {
-  const [categories, setCategories] = useState<ForumCategory[]>([]);
+  const [categories, setCategories] = useState<CategoryWithStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -142,25 +135,24 @@ const Forums: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
-        
-        console.log('Forums: Starting to fetch categories...');
-        
-        // Ensure at least one category exists
-        await ensureForumCategoriesExist();
-        
-        const data = await ForumService.getCategories();
-        console.log('Forums: Categories fetched successfully:', data);
-        
-        const transformedData = data.map(category => ({
-          id: category.id,
-          name: category.name,
-          description: category.description,
-          slug: category.slug,
-          thread_count: 0,
-          last_post: null
-        }));
 
-        setCategories(transformedData);
+        await ensureForumCategoriesExist();
+
+        const fetchedCategories: ForumCategory[] = await ForumService.getCategories();
+
+        const categoriesWithStats: CategoryWithStats[] = await Promise.all(
+          fetchedCategories.map(async (category) => {
+            const stats: CategoryStats = await ForumService.getCategoryStats(category.id);
+            return {
+              ...category,
+              threadCount: stats.threadCount,
+              postCount: stats.postCount,
+              lastPost: stats.lastPost,
+            };
+          })
+        );
+
+        setCategories(categoriesWithStats);
       } catch (err) {
         console.error('Forums: Error fetching categories:', err);
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -281,27 +273,42 @@ const Forums: React.FC = () => {
               </div>
             ) : (
               categories.map((category) => (
-                <Card key={category.id} className="hover:border-primary/50 transition-colors">
-                  <Link to={`/forums/category/${category.slug}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0 bg-primary/10 p-3 rounded-lg">
-                          <MessageSquare className="h-6 w-6 text-primary" />
+                <Card key={category.id} className="flex flex-col justify-between hover:border-primary/50 transition-colors">
+                  <div>
+                    <Link to={`/forums/category/${category.slug}`} className="block">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0 bg-primary/10 p-3 rounded-lg">
+                            <MessageSquare className="h-6 w-6 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-foreground mb-1">
+                              {category.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {category.threadCount || 0} {category.threadCount === 1 ? 'thread' : 'threads'}
+                            </p>
+                            {category.description && (
+                              <p className="text-sm text-muted-foreground/90 line-clamp-2">{category.description}</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-foreground mb-1">
-                            {category.name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {category.thread_count || 0} {category.thread_count === 1 ? 'post' : 'posts'}
-                          </p>
-                          {category.description && (
-                            <p className="text-sm text-muted-foreground/90">{category.description}</p>
-                          )}
-                        </div>
+                      </CardHeader>
+                    </Link>
+                  </div>
+                  {category.lastPost && (
+                    <CardContent className="pt-2 pb-4 text-sm">
+                      <div className="border-t border-border pt-3">
+                        <p className="font-medium text-muted-foreground mb-1">Last Post</p>
+                        <Link to={`/forums/thread/${category.lastPost.forum_threads?.slug}#post-${category.lastPost.id}`} className="font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
+                          {category.lastPost.forum_threads?.title}
+                        </Link>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          by {category.lastPost.profiles?.username || 'User'} • {formatDistanceToNow(new Date(category.lastPost.created_at), { addSuffix: true })}
+                        </p>
                       </div>
-                    </CardHeader>
-                  </Link>
+                    </CardContent>
+                  )}
                 </Card>
               ))
             )}

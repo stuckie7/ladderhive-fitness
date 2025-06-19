@@ -1,21 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../types/supabase';
+import { supabase } from './supabase';
 import type { FitbitHealthData } from '../types/fitbit-api';
 
-// Create a type-safe Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
-}
-
-const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
 
 // Types for API responses
 interface ConnectFitbitResponse {

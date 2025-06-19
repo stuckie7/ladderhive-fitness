@@ -96,9 +96,19 @@ const Dashboard = () => {
   }, [fitbitSteps, stepGoal]);
 
   useEffect(() => {
-    const fetchFitbitData = async () => {
-      if (!user) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('fitbit_disconnected')) {
+      setFitbitSteps(null);
+      setFitbitError(null);
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
+  useEffect(() => {
+    if (!user || window.location.search.includes('fitbit_disconnected')) return;
+
+    const fetchFitbitData = async () => {
       setFitbitLoading(true);
       setFitbitError(null);
       try {
@@ -116,34 +126,28 @@ const Dashboard = () => {
           setStepGoal(profileData.daily_step_goal);
         }
 
-        // Ensure the function name matches exactly what's deployed in Supabase
-        const { data, error: invokeError } = await supabase.functions.invoke('fitbit-fetch-data', {
-          // body: {}, // Send empty body if not needed, or specific parameters
-          // method: 'POST', // Supabase client defaults to POST for invoke
-        });
+        // Invoke the backend function
+        const { data, error: invokeError } = await supabase.functions.invoke('fitbit-fetch-data');
 
         if (invokeError) {
-          if (invokeError.message.toLowerCase().includes('fitbit not connected')) {
-            setFitbitError('Connect Fitbit in Profile'); // Shorter message for UI
-          } else if (invokeError.message.toLowerCase().includes('failed to fetch') || invokeError.message.toLowerCase().includes('network error')) {
-            setFitbitError('Network issue fetching steps.');
-          } else {
-            // Generic error for other Supabase function invocation issues
-            setFitbitError('Could not fetch steps.');
-          }
+          // This now only catches real network/server errors, not the "not connected" case
           console.error('Supabase function invoke error:', invokeError);
+          setFitbitError('Could not fetch steps.');
           setFitbitSteps(null);
-        } else if (data && typeof data.steps !== 'undefined') {
-          setFitbitSteps(data.steps);
-        } else {
-          // Handle cases where data is returned but not in the expected format
-          console.warn('Fitbit data received but steps not found or in unexpected format:', data);
-          setFitbitError('Steps data unavailable.');
-          setFitbitSteps(null);
+        } else if (data) {
+          // The backend now returns a `connected` flag
+          if (data.connected) {
+            setFitbitSteps(data.steps);
+            setFitbitError(null); // Clear any previous errors
+          } else {
+            // User is not connected. This is not an error.
+            setFitbitSteps(null);
+            setFitbitError(null); // UI will show connect button based on other components
+          }
         }
-      } catch (err: any) {
-        console.error("Error fetching Fitbit data:", err);
-        setFitbitError("Couldn't load Fitbit steps.");
+      } catch (err) {
+        console.error('Error fetching Fitbit data:', err);
+        setFitbitError('An unexpected error occurred.');
         setFitbitSteps(null);
       } finally {
         setFitbitLoading(false);

@@ -10,7 +10,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0">
             <Link to="/" className="text-xl font-bold text-gray-900">
-              LadderHive Fitness
+              FitTrack Pro
             </Link>
           </div>
           <div className="hidden md:block">

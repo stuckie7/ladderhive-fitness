@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, HeartPulse, Zap, Loader2, AlertCircle, RefreshCw, Moon, Target } from 'lucide-react';
+import { Activity, HeartPulse, Zap, Loader2, AlertCircle, RefreshCw, Moon, Target, Flame, Footprints, Dumbbell } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { fetchFitbitData } from '@/lib/fitbit';
@@ -72,6 +72,7 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [stepGoal, setStepGoal] = useState(initialStepGoal);
+  const [showMore, setShowMore] = useState(false);
   const [stats, setStats] = useState<Partial<HealthStats>>({
     steps: 0,
     calories: 0,
@@ -219,8 +220,15 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
         steps: 0, calories: 0, distance: 0, activeMinutes: 0, heartRate: null,
         sleepDuration: null, lastSynced: null, goal: 10000, progress: 0, workouts: 0
       });
+      
+      toast({ title: 'Success', description: 'Fitbit account disconnected.' });
+      
+      // Navigate to dashboard with a query param to signal disconnection
+      window.location.href = '/dashboard?fitbit_disconnected=true';
     } catch (err) {
-      setError('Failed to disconnect Fitbit');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to disconnect Fitbit';
+      setError(errorMessage);
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -342,12 +350,28 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
               </Button>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatCard title="Steps" value={stats.steps?.toLocaleString() || '0'} icon={<Activity className="h-6 w-6" />} goal={stats.goal} progress={stats.progress || 0} />
-              <StatCard title="Calories" value={stats.calories?.toLocaleString() || '0'} icon={<Zap className="h-6 w-6" />} />
-              <StatCard title="Active Minutes" value={stats.activeMinutes?.toString() || '0'} icon={<HeartPulse className="h-6 w-6" />} />
-              <StatCard title="Sleep" value={stats.sleepDuration ? `${stats.sleepDuration.toFixed(1)}h` : '--'} icon={<Moon className="h-6 w-6" />} />
-            </div>
+            <>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard title="Steps" value={stats.steps?.toLocaleString() || '0'} icon={<Activity className="h-6 w-6" />} goal={stats.goal} progress={stats.progress || 0} />
+                <StatCard title="Calories" value={stats.calories?.toLocaleString() || '0'} icon={<Flame className="h-6 w-6" />} />
+                <StatCard title="Active Minutes" value={stats.activeMinutes?.toString() || '0'} icon={<Zap className="h-6 w-6" />} />
+                <StatCard title="Sleep" value={stats.sleepDuration ? `${stats.sleepDuration.toFixed(1)}h` : '--'} icon={<Moon className="h-6 w-6" />} />
+              </div>
+
+              {showMore && (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
+                  <StatCard title="Distance" value={stats.distance ? `${stats.distance.toFixed(2)} mi` : '--'} icon={<Footprints className="h-6 w-6" />} />
+                  <StatCard title="Heart Rate" value={stats.heartRate || '--'} icon={<HeartPulse className="h-6 w-6" />} />
+                  <StatCard title="Workouts" value={stats.workouts ? stats.workouts.toString() : '0'} icon={<Dumbbell className="h-6 w-6" />} />
+                </div>
+              )}
+
+              <div className="mt-4">
+                <Button onClick={() => setShowMore(!showMore)} variant="outline" className="w-full text-slate-300 hover:text-slate-100 border-slate-600 hover:border-slate-500 hover:bg-slate-700/50">
+                  {showMore ? 'Show Less' : 'Show More Stats'}
+                </Button>
+              </div>
+            </>
           )}
           
           {error && (
