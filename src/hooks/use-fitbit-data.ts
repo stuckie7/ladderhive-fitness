@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -22,9 +23,42 @@ export const useFitbitData = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [stats, setStats] = useState<Partial<HealthStats>>({});
+  // react-query manages stats
+  const queryClient = useQueryClient();
+  const {
+    data: statsData,
+    isFetching: isFetchingStats,
+    refetch: refetchStats,
+    error: statsError,
+  } = useQuery<{ stale?: boolean; stats: Partial<HealthStats> }>(
+    ['fitbit-stats', user?.id],
+    async () => {
+      if (!user) throw new Error('No user');
+      const today = new Date().toLocaleDateString('en-CA');
+      const { data, error } = await supabase.functions.invoke('fitbit-fetch-data', {
+        method: 'POST',
+        body: { date: today },
+      });
+      if (error) throw error;
+      return data;
+    },
+    {
+      enabled: !!user && isConnected, // only when connected
+      staleTime: 10 * 60 * 1000,
+      refetchInterval: 10 * 60 * 1000,
+      select: (data) => data?.stale ? undefined : data, // ignore stale payloads
+      onError: (err: any) => {
+        if (err?.status === 429) {
+          toast({ title: 'Fitbit limit reached', description: 'Data will refresh again later.', variant: 'default' });
+        }
+      },
+    }
+  );
+
+  const stats = statsData?.stats || {};
 
   const fetchHealthData = useCallback(async () => {
+    await refetchStats();
     if (!user) return;
     setIsLoading(true);
     setError(null);
@@ -130,7 +164,7 @@ export const useFitbitData = () => {
       if (error) throw error;
 
       setIsConnected(false);
-      setStats({});
+      queryClient.removeQueries(['fitbit-stats', user.id]);
       toast({ title: 'Success', description: 'Fitbit account disconnected.' });
     } catch (err: any) {
       setError(err.message || 'Failed to disconnect Fitbit.');
@@ -140,14 +174,7 @@ export const useFitbitData = () => {
     }
   };
 
-  // Auto-refresh every 10 minutes while connected
-  useEffect(() => {
-    if (!isConnected) return;
-    const id = setInterval(() => {
-      fetchHealthData();
-    }, 10 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [isConnected, fetchHealthData]);
+  
 
   return { isLoading, error, isConnected, stats, connectFitbit, disconnectFitbit, fetchHealthData };
 };
