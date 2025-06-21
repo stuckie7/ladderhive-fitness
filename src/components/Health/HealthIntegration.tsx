@@ -66,6 +66,12 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
     }
   }, [initialStepGoal]);
 
+  useEffect(() => {
+    if (isConnected) {
+      fetchHealthData();
+    }
+  }, [isConnected]);
+
   const handleSaveGoal = async () => {
     if (!user) {
       toast({ title: "Error", description: "You must be logged in to save a goal.", variant: "destructive" });
