@@ -12,7 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { HeartPulse, X } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import HealthIntegration from "@/components/Health/HealthIntegration";
 
 interface UserData {
@@ -133,6 +133,7 @@ const UserProfile = ({ userData }: UserProfileProps) => {
                 <X className="h-4 w-4" />
               </Button>
             </DialogTitle>
+            <DialogDescription className="sr-only">A dashboard displaying your health and wellness statistics from connected services like Fitbit.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <HealthIntegration initialStepGoal={userData.profile?.daily_step_goal} />

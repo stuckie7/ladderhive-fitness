@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
@@ -7,7 +6,7 @@ import DashboardMetricsSection from '@/components/dashboard/DashboardMetricsSect
 import QuickActionsSection from '@/components/dashboard/QuickActionsSection';
 import FavoritesAndAchievementsSection from '@/components/dashboard/FavoritesAndAchievementsSection';
 import { useFavoriteExercises } from '@/hooks/use-favorite-exercises';
-import { useUpcomingWorkouts } from '@/hooks/use-upcoming-workouts';
+import { useFitbitData } from '@/hooks/use-fitbit-data';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -17,29 +16,38 @@ import { useWorkouts } from '@/hooks/workouts';
 import { useActivityProgress } from '@/hooks/use-activity-progress';
 import SuggestionDisplay from '@/components/dashboard/SuggestionDisplay';
 
-// Import components with default exports
-
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isLoading: profileLoading } = useProfile();
   const { exercises, isLoading: exercisesLoading } = useFavoriteExercises();
-  useUpcomingWorkouts(); // workouts and workoutsLoading were unused
-  const { workouts: recentWorkouts } = useWorkouts(); // recentWorkoutsLoading was unused
+  const { 
+    stats: fitbitStats, 
+    isConnected: isFitbitConnected, 
+    isLoading: fitbitLoading, 
+    error: fitbitError, 
+    fetchHealthData 
+  } = useFitbitData();
+  const { workouts: recentWorkouts, isLoading: recentWorkoutsLoading } = useWorkouts();
   const { weeklyData, isLoading: weeklyDataLoading } = useActivityProgress();
   const [error, setError] = useState<Error | null>(null);
   const [isLoadingRandom, setIsLoadingRandom] = useState(false);
-  const [fitbitSteps, setFitbitSteps] = useState<number | null>(null);
-  const [fitbitLoading, setFitbitLoading] = useState<boolean>(false);
-  const [fitbitError, setFitbitError] = useState<string | null>(null);
+
   const [stepGoal, setStepGoal] = useState<number>(10000); // Default goal
   const [activeSuggestion, setActiveSuggestion] = useState<string | null>(null);
 
+  // Fetch Fitbit data when connection is established
+  useEffect(() => {
+    if (isFitbitConnected) {
+      fetchHealthData();
+    }
+  }, [isFitbitConnected, fetchHealthData]);
+
+  // This useEffect is for debugging workout data availability, seems useful to keep.
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Debug: List available workout tables and counts
         console.log('Fetching workout data for debugging...');
         
         const [
@@ -61,30 +69,35 @@ const Dashboard = () => {
           userWorkouts: userWorkoutsCount || 0
         });
         
-        // Get a sample of available workouts
-        const { data: sampleWorkouts } = await supabase
-          .from('prepared_workouts')
-          .select('*')
-          .limit(3);
-          
-        console.log('Sample workouts:', sampleWorkouts);
-        
       } catch (err) {
-        console.error("Error fetching dashboard data:", err);
+        console.error("Error fetching dashboard debug data:", err);
         if (err instanceof Error) {
           setError(err);
         } else {
-          setError(new Error('An unknown error occurred'));
+          setError(new Error('An unknown error occurred while fetching debug data'));
         }
       }
     };
 
-    fetchData();
-  }, [user]);
+    if (user) {
+        fetchData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
+  const handleStepGoalChange = (newGoal: number) => {
+    setStepGoal(newGoal);
+    // Future: Add logic to persist this change (e.g., to user profile in Supabase)
+    toast({
+      title: "Step Goal Updated",
+      description: `Your daily step goal is now ${newGoal.toLocaleString()}.`,
+    });
+  };
+
+  // useEffect for generating suggestions based on Fitbit data
   useEffect(() => {
-    if (fitbitSteps !== null && stepGoal > 0) {
-      const progress = (fitbitSteps / stepGoal) * 100;
+    if (fitbitStats?.steps !== undefined && stepGoal > 0) {
+      const progress = (fitbitStats.steps / stepGoal) * 100;
       if (progress >= 70 && progress < 100) {
         setActiveSuggestion("You're close to your step goal, how about a quick walk?");
       } else {
@@ -93,69 +106,21 @@ const Dashboard = () => {
     } else {
       setActiveSuggestion(null);
     }
-  }, [fitbitSteps, stepGoal]);
+  }, [fitbitStats, stepGoal]);
 
+  // useEffect to handle the post-disconnect redirect
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('fitbit_disconnected')) {
-      setFitbitSteps(null);
-      setFitbitError(null);
+      toast({
+        title: "Fitbit Disconnected",
+        description: "Your Fitbit account has been successfully disconnected.",
+      });
       // Clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, []);
+  }, [toast]);
 
-  useEffect(() => {
-    if (!user || window.location.search.includes('fitbit_disconnected')) return;
-
-    const fetchFitbitData = async () => {
-      setFitbitLoading(true);
-      setFitbitError(null);
-      try {
-        // Fetch user's step goal from their profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('daily_step_goal')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Error fetching step goal:', profileError);
-          // We can proceed with the default goal, so no need to throw an error
-        } else if (profileData?.daily_step_goal) {
-          setStepGoal(profileData.daily_step_goal);
-        }
-
-        // Invoke the backend function
-        const { data, error: invokeError } = await supabase.functions.invoke('fitbit-fetch-data');
-
-        if (invokeError) {
-          // This now only catches real network/server errors, not the "not connected" case
-          console.error('Supabase function invoke error:', invokeError);
-          setFitbitError('Could not fetch steps.');
-          setFitbitSteps(null);
-        } else if (data) {
-          // The backend now returns a `connected` flag
-          if (data.connected) {
-            setFitbitSteps(data.steps);
-            setFitbitError(null); // Clear any previous errors
-          } else {
-            // User is not connected. This is not an error.
-            setFitbitSteps(null);
-            setFitbitError(null); // UI will show connect button based on other components
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching Fitbit data:', err);
-        setFitbitError('An unexpected error occurred.');
-        setFitbitSteps(null);
-      } finally {
-        setFitbitLoading(false);
-      }
-    };
-
-    fetchFitbitData();
-  }, [user, supabase]); // Added supabase to dependency array as it's used inside
 
   if (error) {
     return (
@@ -171,91 +136,45 @@ const Dashboard = () => {
     try {
       setIsLoadingRandom(true);
       
-      // Get all available workout types
       const [
         { data: preparedWorkouts, error: preparedError },
         { data: wods, error: wodsError },
         { data: mindfulMovements, error: mindfulError }
       ] = await Promise.all([
-        supabase.from('prepared_workouts').select('*').limit(100),
-        supabase.from('wods').select('*').limit(100),
-        supabase.from('mindful_movements').select('*').limit(100)
+        supabase.from('prepared_workouts').select('id').limit(100),
+        supabase.from('wods').select('id').limit(100),
+        supabase.from('mindful_movements').select('id').limit(100)
       ]);
       
-      // Log any errors but continue with available data
       if (preparedError) console.error('Error fetching prepared workouts:', preparedError);
       if (wodsError) console.error('Error fetching WODs:', wodsError);
       if (mindfulError) console.error('Error fetching mindful movements:', mindfulError);
       
-      // Filter out any empty or invalid responses
       const allOptions = [
         ...(preparedWorkouts || []).map((w: any) => ({ ...w, type: 'workout' })),
         ...(wods || []).map((w: any) => ({ ...w, type: 'wod' })),
         ...(mindfulMovements || []).map((m: any) => ({ ...m, type: 'mindful' }))
-      ].filter(Boolean); // Remove any null/undefined items
-      
-      console.log('Available workout options:', allOptions);
+      ].filter(Boolean);
       
       if (allOptions.length === 0) {
-        console.log('No workout options available, redirecting to new workout');
+        toast({ title: 'No workouts found', description: 'Creating a new one for you.', variant: 'default' });
         navigate('/workouts/new');
         return;
       }
       
-      // Select a random item
       const randomItem = allOptions[Math.floor(Math.random() * allOptions.length)];
-      console.log('Selected random workout:', randomItem);
       
-      // Navigate based on the type
       switch (randomItem.type) {
         case 'workout':
-          // First check if the workout exists
-          const { data: workout, error: workoutError } = await supabase
-            .from('prepared_workouts')
-            .select('*')
-            .eq('id', randomItem.id)
-            .single();
-            
-          if (workoutError || !workout) {
-            console.error('Workout not found:', randomItem.id, workoutError);
-            throw new Error('Workout not found');
-          }
-          
           navigate(`/workouts/${randomItem.id}`);
           break;
-          
         case 'wod':
-          const { data: wod, error: wodError } = await supabase
-            .from('wods')
-            .select('*')
-            .eq('id', randomItem.id)
-            .single();
-            
-          if (wodError || !wod) {
-            console.error('WOD not found:', randomItem.id, wodError);
-            throw new Error('WOD not found');
-          }
-          
           navigate(`/wods/${randomItem.id}`);
           break;
-          
         case 'mindful':
-          const { data: mindful, error: mindfulErrorCheck } = await supabase
-            .from('mindful_movements')
-            .select('*')
-            .eq('id', randomItem.id)
-            .single();
-            
-          if (mindfulErrorCheck || !mindful) {
-            console.error('Mindful movement not found:', randomItem.id, mindfulErrorCheck);
-            throw new Error('Mindful movement not found');
-          }
-          
           navigate(`/mindful-movement/${randomItem.id}`);
           break;
-          
         default:
-          console.log('No valid workout type, redirecting to new workout');
           navigate('/workouts/new');
       }
     } catch (error) {
@@ -275,48 +194,47 @@ const Dashboard = () => {
     window.location.reload();
   };
 
+  const isLoading = profileLoading || isLoadingRandom || fitbitLoading || exercisesLoading || recentWorkoutsLoading || weeklyDataLoading;
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <DashboardHeader 
-          isLoading={profileLoading || isLoadingRandom || fitbitLoading}
+          isLoading={isLoading}
           onRefresh={handleRefresh}
           onStartWorkout={handleStartWorkout}
-          fitbitSteps={fitbitSteps}
+          fitbitStats={fitbitStats}
+          isFitbitConnected={isFitbitConnected}
           fitbitError={fitbitError}
           dailyStepGoal={stepGoal}
+          onStepGoalChange={handleStepGoalChange}
         />
         <SuggestionDisplay suggestion={activeSuggestion} />
 
-        <div className="flex flex-col space-y-8">
-          {/* Quick Actions Bar */}
-          <div className="w-full">
-            <QuickActionsSection
-              onScheduleWorkout={handleStartWorkout}
-            />
-          </div>
+        <div className="mt-8 flex flex-col space-y-8">
+          <QuickActionsSection
+            onScheduleWorkout={handleStartWorkout}
+            fitbitStats={fitbitStats}
+          />
 
-          {/* Main Content */}
-          <div className="w-full space-y-8">
-            <DashboardMetricsSection 
-              weeklyChartData={weeklyData || []}
-              recentWorkouts={recentWorkouts || []}
-              isLoading={weeklyDataLoading} 
-              onSelectDate={(date) => console.log("Selected date", date)}
-              onSelectWorkout={(id) => navigate(`/workouts/${id}`)}
-            />
+          <DashboardMetricsSection 
+            weeklyChartData={weeklyData || []}
+            recentWorkouts={recentWorkouts || []}
+            isLoading={weeklyDataLoading || recentWorkoutsLoading} 
+            onSelectDate={(date) => console.log("Selected date", date)}
+            onSelectWorkout={(id) => navigate(`/workouts/${id}`)}
+          />
 
-            <FavoritesAndAchievementsSection 
-              favoriteExercises={exercises}
-              achievements={[]}
-              isLoading={exercisesLoading}
-              onAddFavorite={() => navigate('/exercises')}
-              onRemoveFavorite={async (id) => {
-                console.log("Remove favorite", id);
-                // Implementation would go here
-              }}
-            />
-          </div>
+          <FavoritesAndAchievementsSection 
+            favoriteExercises={exercises}
+            achievements={[]}
+            isLoading={exercisesLoading}
+            onAddFavorite={() => navigate('/exercises')}
+            onRemoveFavorite={async (id) => {
+              console.log("Remove favorite", id);
+              // Implementation would go here
+            }}
+          />
         </div>
       </div>
     </AppLayout>

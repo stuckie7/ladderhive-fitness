@@ -1,28 +1,15 @@
 import * as React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, HeartPulse, Zap, Loader2, AlertCircle, RefreshCw, Moon, Target, Flame, Footprints, Dumbbell } from 'lucide-react';
+import { Activity, HeartPulse, Zap, Loader2, AlertCircle, Moon, Target, Flame, Footprints, Dumbbell, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { supabase } from '@/lib/supabase';
-import { fetchFitbitData } from '@/lib/fitbit';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-
-interface HealthStats {
-  steps: number;
-  calories: number;
-  distance: number;
-  activeMinutes: number;
-  heartRate: number | null;
-  sleepDuration: number | null;
-  lastSynced: Date | null;
-  goal: number;
-  progress: number;
-  workouts: number;
-}
+import { useFitbitData } from '@/hooks/use-fitbit-data';
+import { supabase } from '@/lib/supabase';
 
 const StatCard = ({ title, value, icon, goal, progress }: { 
   title: string; 
@@ -67,210 +54,17 @@ interface HealthIntegrationProps {
 const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal = 10000 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const { isLoading, error, isConnected, stats = {}, connectFitbit, disconnectFitbit, fetchHealthData } = useFitbitData();
+  
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [stepGoal, setStepGoal] = useState(initialStepGoal);
   const [showMore, setShowMore] = useState(false);
-  const [stats, setStats] = useState<Partial<HealthStats>>({
-    steps: 0,
-    calories: 0,
-    distance: 0,
-    activeMinutes: 0,
-    heartRate: null,
-    sleepDuration: null,
-    lastSynced: null,
-    goal: 10000,
-    progress: 0,
-    workouts: 0
-  });
 
   useEffect(() => {
     if (initialStepGoal) {
         setStepGoal(initialStepGoal);
     }
   }, [initialStepGoal]);
-
-  const connectFitbit = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      if (!user?.id) {
-        setError('Please log in to connect your Fitbit account.');
-        return;
-      }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.user) {
-        setError('Please log in to connect your Fitbit account.');
-        return;
-      }
-      
-      const { data: functionData, error: functionError } = await supabase.functions.invoke('fitbit-initiate');
-
-      if (functionError) {
-        throw new Error(functionError.message || 'Failed to get authorization URL from fitbit-initiate');
-      }
-      
-      const fitbitAuthUrl = functionData?.url;
-
-      if (!fitbitAuthUrl) {
-        throw new Error('No authorization URL returned from fitbit-initiate');
-      }
-      
-      const newWindow = window.open(fitbitAuthUrl, 'fitbit-auth', 'width=600,height=700,scrollbars=yes,resizable=yes');
-      
-      if (!newWindow) {
-        throw new Error('Failed to open authorization window. Please allow popups for this site.');
-      }
-      
-      const checkClosed = setInterval(() => {
-        if (newWindow.closed) {
-          clearInterval(checkClosed);
-          setTimeout(() => {
-            checkConnection();
-          }, 1000);
-        }
-      }, 1000);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect to Fitbit');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
-
-  const checkConnection = useCallback(async () => {
-    if (!user?.id) return false;
-    
-    try {
-      const { data, error } = await supabase
-        .from('fitbit_tokens')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        if (error.code === 'PGRST301' || error.message.includes('RLS')) {
-          setIsConnected(false);
-        } else {
-          setError('Failed to check Fitbit connection');
-          setIsConnected(false);
-        }
-        return false;
-      }
-      
-      if (!data) {
-        setIsConnected(false);
-        return false;
-      }
-      
-      const isTokenValid = new Date(data.expires_at) > new Date();
-      setIsConnected(isTokenValid);
-      return isTokenValid;
-    } catch (error) {
-      setError('Failed to check Fitbit connection');
-      setIsConnected(false);
-      return false;
-    }
-  }, [user?.id]);
-
-  const fetchHealthData = useCallback(async () => {
-    if (!user?.id || !isConnected) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const fitbitData = await fetchFitbitData();
-      const newStats = {
-        ...fitbitData,
-        lastSynced: fitbitData.lastSynced ? new Date(fitbitData.lastSynced) : null,
-      };
-      setStats(newStats);
-    } catch (error) {
-      setError('Failed to fetch health data. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id, isConnected]);
-
-  const disconnectFitbit = useCallback(async () => {
-    if (!user?.id) {
-      setError('User not authenticated');
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { error } = await supabase
-        .from('fitbit_tokens')
-        .delete()
-        .eq('user_id', user.id);
-        
-      if (error) throw error;
-      
-      setIsConnected(false);
-      setStats({
-        steps: 0, calories: 0, distance: 0, activeMinutes: 0, heartRate: null,
-        sleepDuration: null, lastSynced: null, goal: 10000, progress: 0, workouts: 0
-      });
-      
-      toast({ title: 'Success', description: 'Fitbit account disconnected.' });
-      
-      // Navigate to dashboard with a query param to signal disconnection
-      window.location.href = '/dashboard?fitbit_disconnected=true';
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to disconnect Fitbit';
-      setError(errorMessage);
-      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    const init = async () => {
-      if (!user?.id) return;
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const fitbitConnectedParam = urlParams.get('fitbit_connected');
-      const errorParam = urlParams.get('error');
-      
-      let wasConnectedViaParam = false;
-      if (fitbitConnectedParam === 'true') {
-        setIsConnected(true);
-        wasConnectedViaParam = true;
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-      
-      if (errorParam) {
-        setError(decodeURIComponent(errorParam));
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-      
-      if (!wasConnectedViaParam) {
-          await checkConnection();
-      }
-    };
-    
-    init();
-  }, [user?.id, checkConnection]);
-
-  useEffect(() => {
-    if (isConnected && user?.id) {
-      fetchHealthData();
-    }
-  }, [isConnected, user?.id, fetchHealthData]);
-
-  const handleRefresh = useCallback(async () => {
-    await fetchHealthData();
-  }, [fetchHealthData]);
 
   const handleSaveGoal = async () => {
     if (!user) {
@@ -290,18 +84,18 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
 
       if (error) throw error;
 
-      setStats(prevStats => ({
-        ...prevStats,
-        goal: stepGoal,
-        progress: prevStats.steps ? (prevStats.steps / stepGoal) * 100 : 0
-      }));
-
       toast({ title: "Success", description: "Your step goal has been updated." });
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to save step goal.", variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const displayStats = {
+    ...stats,
+    goal: stepGoal,
+    progress: stats.steps && stepGoal > 0 ? (stats.steps / stepGoal) * 100 : 0,
   };
 
   return (
@@ -312,14 +106,14 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
             <div>
               <CardTitle className="text-3xl font-bold text-slate-100">Health Stats</CardTitle>
               <CardDescription className="text-slate-400">
-                {stats.lastSynced
-                  ? `Last synced ${formatDistanceToNow(new Date(stats.lastSynced), { addSuffix: true })}`
+                {displayStats.lastSynced
+                  ? `Last synced ${formatDistanceToNow(new Date(displayStats.lastSynced), { addSuffix: true })}`
                   : 'Connect your Fitbit to sync health data'}
               </CardDescription>
             </div>
             <div className="flex gap-2">
               {isConnected && (
-                <Button onClick={handleRefresh} disabled={isLoading} variant="outline" size="sm" className="text-slate-300 hover:text-slate-100 border-slate-600 hover:border-slate-500 hover:bg-slate-700/50">
+                <Button onClick={fetchHealthData} disabled={isLoading} variant="outline" size="sm" className="text-slate-300 hover:text-slate-100 border-slate-600 hover:border-slate-500 hover:bg-slate-700/50">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                   {isLoading ? 'Syncing...' : 'Refresh'}
                 </Button>
@@ -352,17 +146,17 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
           ) : (
             <>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Steps" value={stats.steps?.toLocaleString() || '0'} icon={<Activity className="h-6 w-6" />} goal={stats.goal} progress={stats.progress || 0} />
-                <StatCard title="Calories" value={stats.calories?.toLocaleString() || '0'} icon={<Flame className="h-6 w-6" />} />
-                <StatCard title="Active Minutes" value={stats.activeMinutes?.toString() || '0'} icon={<Zap className="h-6 w-6" />} />
-                <StatCard title="Sleep" value={stats.sleepDuration ? `${stats.sleepDuration.toFixed(1)}h` : '--'} icon={<Moon className="h-6 w-6" />} />
+                <StatCard title="Steps" value={displayStats.steps != null ? displayStats.steps.toLocaleString() : '--'} icon={<Activity className="h-6 w-6" />} goal={displayStats.goal} progress={displayStats.progress || 0} />
+                <StatCard title="Calories" value={displayStats.calories != null ? displayStats.calories.toLocaleString() : '--'} icon={<Flame className="h-6 w-6" />} />
+                <StatCard title="Active Minutes" value={displayStats.activeMinutes != null ? displayStats.activeMinutes.toString() : '--'} icon={<Zap className="h-6 w-6" />} />
+                <StatCard title="Sleep" value={displayStats.sleepDuration ? `${(displayStats.sleepDuration / 60).toFixed(1)}h` : '--'} icon={<Moon className="h-6 w-6" />} />
               </div>
 
               {showMore && (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
-                  <StatCard title="Distance" value={stats.distance ? `${stats.distance.toFixed(2)} mi` : '--'} icon={<Footprints className="h-6 w-6" />} />
-                  <StatCard title="Heart Rate" value={stats.heartRate || '--'} icon={<HeartPulse className="h-6 w-6" />} />
-                  <StatCard title="Workouts" value={stats.workouts ? stats.workouts.toString() : '0'} icon={<Dumbbell className="h-6 w-6" />} />
+                  <StatCard title="Distance" value={displayStats.distance ? `${displayStats.distance.toFixed(2)} mi` : '--'} icon={<Footprints className="h-6 w-6" />} />
+                  <StatCard title="Heart Rate" value={displayStats.heartRate || '--'} icon={<HeartPulse className="h-6 w-6" />} />
+                  <StatCard title="Workouts" value={displayStats.workouts != null ? displayStats.workouts.toString() : '--'} icon={<Dumbbell className="h-6 w-6" />} />
                 </div>
               )}
 

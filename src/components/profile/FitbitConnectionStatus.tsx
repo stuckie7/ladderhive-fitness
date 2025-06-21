@@ -31,35 +31,20 @@ const FitbitConnectionStatus = () => {
 
       console.log('Checking Fitbit connection for user:', session.user.id);
 
-      // Use maybeSingle() to handle cases where no token exists
-      const { data, error } = await supabase
-        .from('fitbit_tokens')
-        .select('expires_at')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
+      // Invoke the edge function to check for a valid, non-expired token and profile
+      const { error } = await supabase.functions.invoke('get-fitbit-profile', {
+        method: 'GET',
+      });
 
       if (error) {
-        console.error('Error checking Fitbit connection:', error);
-        // Don't show error for RLS/permission issues, just assume not connected
-        if (error.code === 'PGRST301' || error.message.includes('RLS') || error.message.includes('permission')) {
-          console.log('RLS/Permission issue, treating as not connected');
-          setIsConnected(false);
-        } else {
-          setIsConnected(false);
-        }
-        return;
-      }
-
-      if (!data) {
-        console.log('No Fitbit token found for user');
+        console.log('Fitbit not connected or token invalid:', error.message);
         setIsConnected(false);
         return;
       }
 
-      // Check if token is expired
-      const isExpired = new Date(data.expires_at) < new Date();
-      console.log('Token expired:', isExpired);
-      setIsConnected(!isExpired);
+      // If the function returns successfully, the user is connected.
+      console.log('Fitbit connection confirmed.');
+      setIsConnected(true);
     } catch (error) {
       console.error('Error checking Fitbit connection:', error);
       setIsConnected(false);

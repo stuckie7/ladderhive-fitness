@@ -42,12 +42,32 @@ const createErrorResponse = (
 
 // Get environment variables
 function getEnvVars() {
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+  const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const FITBIT_CLIENT_ID = Deno.env.get('FITBIT_CLIENT_ID');
+  const FITBIT_CLIENT_SECRET = Deno.env.get('FITBIT_CLIENT_SECRET');
+  const SITE_URL = Deno.env.get('SITE_URL') || 'http://localhost:3000';
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY || !FITBIT_CLIENT_ID || !FITBIT_CLIENT_SECRET) {
+    const missingVars = [
+      !SUPABASE_URL && 'SUPABASE_URL',
+      !SUPABASE_ANON_KEY && 'SUPABASE_ANON_KEY',
+      !SUPABASE_SERVICE_ROLE_KEY && 'SUPABASE_SERVICE_ROLE_KEY',
+      !FITBIT_CLIENT_ID && 'FITBIT_CLIENT_ID',
+      !FITBIT_CLIENT_SECRET && 'FITBIT_CLIENT_SECRET',
+    ].filter(Boolean).join(', ');
+    console.error(`Missing required environment variables: ${missingVars}`);
+    throw new Error(`Server configuration error: Missing required environment variables: ${missingVars}.`);
+  }
+
   return {
-    SUPABASE_URL: Deno.env.get('SUPABASE_URL') || '',
-    SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY') || '',
-    FITBIT_CLIENT_ID: Deno.env.get('FITBIT_CLIENT_ID') || '',
-    FITBIT_CLIENT_SECRET: Deno.env.get('FITBIT_CLIENT_SECRET') || '',
-    SITE_URL: Deno.env.get('SITE_URL') || 'http://localhost:3000',
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY,
+    FITBIT_CLIENT_ID,
+    FITBIT_CLIENT_SECRET,
+    SITE_URL,
   };
 }
 
@@ -97,7 +117,7 @@ async function refreshFitbitToken(userId: string): Promise<any> {
   const env = getEnvVars();
   const supabase = createClient(
     env.SUPABASE_URL,
-    env.SUPABASE_ANON_KEY,
+    env.SUPABASE_SERVICE_ROLE_KEY,
     {
       auth: {
         autoRefreshToken: false,
@@ -165,7 +185,8 @@ async function refreshFitbitToken(userId: string): Promise<any> {
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return createResponse('', 204);
+    // Return 200 OK with CORS headers, consistent with other functions
+    return new Response('ok', { headers: corsHeaders });
   }
 
   // Only allow GET requests
@@ -206,18 +227,29 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Get the access token
-    let accessToken = await getFitbitAccessToken(supabase, user.id);
+    let accessToken: string | null = await getFitbitAccessToken(supabase, user.id);
     
-    // If no token or token is expired, try to refresh it
-    if (!accessToken) {
-      const newToken = await refreshFitbitToken(user.id);
-      if (!newToken) {
-        return createErrorResponse(401, 'Fitbit not connected or session expired');
+    // If no token or token is expired (i.e., accessToken is null or potentially an empty string from a bad state)
+    if (!accessToken) { // This covers null and empty string
+      console.log('Access token not found or expired, attempting refresh for user:', user.id);
+      const newTokenData = await refreshFitbitToken(user.id);
+      
+      if (!newTokenData || typeof newTokenData.access_token !== 'string' || !newTokenData.access_token) {
+        console.error('Failed to refresh token or refreshed token data is invalid for user:', user.id, JSON.stringify(newTokenData));
+        return createErrorResponse(401, 'Fitbit not connected or session expired. Failed to refresh token or retrieve a valid new access token.');
       }
-      accessToken = newToken.access_token;
+      console.log('Token refreshed successfully for user:', user.id);
+      accessToken = newTokenData.access_token;
+    }
+
+    // Final check: accessToken must be a non-empty string here
+    if (typeof accessToken !== 'string' || !accessToken) {
+        console.error('Critical error: Access token is invalid before calling fetchFitbitData. Value:', accessToken, 'User ID:', user.id);
+        return createErrorResponse(500, 'Internal server error: Invalid access token state.');
     }
 
     // Fetch the user's profile from Fitbit
+    console.log('Fetching Fitbit profile with access token for user:', user.id);
     const profile = await fetchFitbitData(accessToken, 'profile.json');
     
     // Return the profile data

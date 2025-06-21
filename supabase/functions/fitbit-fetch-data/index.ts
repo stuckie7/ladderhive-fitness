@@ -40,79 +40,49 @@ serve(async (req) => {
   const origin = req.headers.get('origin') || '*';
   const corsHeaders = createCorsHeaders(origin);
   
-  // Handle CORS preflight
+  // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204,
-      headers: {
-        ...corsHeaders,
-        'Content-Length': '0',
-      } 
-    });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Only allow GET requests
+    // Only allow POST requests
     if (req.method !== 'POST') {
-      return createResponse(
-        405,
-        { error: `Method ${req.method} not allowed. Please use POST.` },
-        origin
-      );
+      return createResponse(405, { error: 'Method Not Allowed' }, origin);
     }
 
-    // Get environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return createResponse(
-        500,
-        { error: 'Server configuration error' },
-        origin
-      );
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+      return createResponse(500, { error: 'Server configuration error: Missing Supabase credentials.' }, origin);
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Create a Supabase client with the user's authentication context
+    const supabase = createClient(
+      supabaseUrl,
+      anonKey,
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    );
 
-    // Get the current user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return createResponse(
-        401,
-        { error: 'Unauthorized' },
-        origin
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    console.log('Extracted token:', token);
-    console.log('Attempting supabase.auth.getUser...');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    console.log('supabase.auth.getUser completed.');
-    if (userError) {
-      console.error('Error from supabase.auth.getUser:', JSON.stringify(userError));
-    }
-    if (user) {
-      console.log('User object from supabase.auth.getUser:', JSON.stringify(user));
-    } else {
-      console.log('No user object returned from supabase.auth.getUser.');
-    }
+    // Get the user from the JWT
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.error('Authentication failed: userError or no user object.', userError ? JSON.stringify(userError) : 'No user object');
-      return createResponse(
-        401,
-        { error: 'Unauthorized' },
-        origin
-      );
+      console.error('Authentication error:', userError?.message || 'No user found.');
+      return createResponse(401, { error: 'Unauthorized' }, origin);
     }
+
+    console.log('User authenticated:', user.id);
+
+    // Create a separate admin client to perform privileged operations
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     console.log('PASSED AUTH CHECK BLOCK. User object should be valid.');
 
     // Get the user's Fitbit tokens
-    const { data: tokens, error: tokensError } = await supabase
+    const { data: tokens, error: tokensError } = await supabaseAdmin
       .from('fitbit_tokens') // Changed table name
       .select('*')
       .eq('user_id', user.id)
@@ -120,13 +90,13 @@ serve(async (req) => {
       .single();
 
     if (tokensError) {
-      console.error('Error fetching tokens from user_connections:', JSON.stringify(tokensError));
+      console.error('Error fetching tokens from fitbit_tokens:', JSON.stringify(tokensError));
     }
     if (!tokens) {
-      console.log('No tokens found in user_connections for user:', user.id);
+      console.log('No tokens found in fitbit_tokens for user:', user.id);
     }
     if (tokens) {
-      console.log('Tokens fetched from user_connections:', JSON.stringify(tokens));
+      console.log('Tokens fetched from fitbit_tokens:', JSON.stringify(tokens));
     }
 
     if (tokensError || !tokens) {
@@ -180,37 +150,64 @@ serve(async (req) => {
         );
       }
 
-      const tokenData = await refreshResponse.json();
-      
+      // 'refreshedTokensData' already contains the parsed JSON.
       // Update the tokens in the database
-      await supabase
+      await supabaseAdmin
         .from('fitbit_tokens')
         .update({
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token || tokens.refresh_token,
-          expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+          access_token: refreshedTokensData.access_token,
+          refresh_token: refreshedTokensData.refresh_token || tokens.refresh_token,
+          expires_at: new Date(Date.now() + refreshedTokensData.expires_in * 1000).toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', tokens.id);
       
-      tokens.access_token = tokenData.access_token;
+      tokens.access_token = refreshedTokensData.access_token;
     }
 
     // Fetch data from Fitbit API
-    const today = new Date().toISOString().split('T')[0];
+    const body = await req.json();
+    const date = body.date;
+    console.log('Received request body:', JSON.stringify(body));
+
+    const dateToFetch = date && /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? date
+      : new Date().toISOString().split('T')[0];
+    
+    console.log(`Date being used for Fitbit API call: ${dateToFetch}`);
+
+    console.log(`Fetching Fitbit data for date: ${dateToFetch} using token starting with: ${tokens.access_token.substring(0, 10)}...`);
+
     const [activityResponse, heartRateResponse, sleepResponse] = await Promise.all([
-      fetch(`https://api.fitbit.com/1/user/-/activities/date/${today}.json`, {
+      fetch(`https://api.fitbit.com/1/user/-/activities/date/${dateToFetch}.json`, {
         headers: { 'Authorization': `Bearer ${tokens.access_token}` }
       }),
-      fetch(`https://api.fitbit.com/1/user/-/activities/heart/date/${today}/1d/1min.json`, {
+      fetch(`https://api.fitbit.com/1/user/-/activities/heart/date/${dateToFetch}/1d/1min.json`, {
         headers: { 'Authorization': `Bearer ${tokens.access_token}` }
       }),
-      fetch(`https://api.fitbit.com/1.2/user/-/sleep/date/${today}.json`, {
+      fetch(`https://api.fitbit.com/1.2/user/-/sleep/date/${dateToFetch}.json`, {
         headers: { 'Authorization': `Bearer ${tokens.access_token}` }
       })
     ]);
 
+    console.log(`Fitbit API - Activity Status: ${activityResponse.status}`);
+    console.log(`Fitbit API - Heart Rate Status: ${heartRateResponse.status}`);
+    console.log(`Fitbit API - Sleep Status: ${sleepResponse.status}`);
+
     if (!activityResponse.ok || !heartRateResponse.ok || !sleepResponse.ok) {
+      if (!activityResponse.ok) {
+        const errorBody = await activityResponse.text();
+        console.error(`Fitbit API - Activity Error: ${activityResponse.status}, Body: ${errorBody}`);
+      }
+      if (!heartRateResponse.ok) {
+        const errorBody = await heartRateResponse.text();
+        console.error(`Fitbit API - Heart Rate Error: ${heartRateResponse.status}, Body: ${errorBody}`);
+      }
+      if (!sleepResponse.ok) {
+        const errorBody = await sleepResponse.text();
+        console.error(`Fitbit API - Sleep Error: ${sleepResponse.status}, Body: ${errorBody}`);
+      }
+
       return createResponse(
         500,
         { error: 'Failed to fetch data from Fitbit' },
@@ -228,18 +225,26 @@ serve(async (req) => {
     console.log('Raw Fitbit Heart Rate Data:', JSON.stringify(heartRateData, null, 2));
     console.log('Raw Fitbit Sleep Data:', JSON.stringify(sleepData, null, 2));
 
-    // Process the data
-    const responseData: FitbitApiResponse = {
-      steps: activityData.summary?.steps || 0,
-      calories: activityData.summary?.caloriesOut || 0,
-      distance: activityData.summary?.distances?.find((d: any) => d.activity === 'total')?.distance || 0,
-      activeMinutes: activityData.summary?.fairlyActiveMinutes + activityData.summary?.veryActiveMinutes || 0,
-      heartRate: heartRateData['activities-heart']?.[0]?.value?.restingHeartRate || null,
-      sleepDuration: sleepData.sleep?.[0]?.minutesAsleep || null,
-      workouts: activityData.summary?.activityCalories > 0 ? 1 : 0
+    const responsePayload = {
+      message: 'Successfully fetched Fitbit data',
+      stats: {
+        steps: activityData.summary?.steps || 0,
+        calories: activityData.summary?.caloriesOut || 0,
+        distance: activityData.summary?.distances?.find((d: any) => d.activity === 'total')?.distance || 0,
+        activeMinutes: (activityData.summary?.lightlyActiveMinutes || 0) + (activityData.summary?.fairlyActiveMinutes || 0) + (activityData.summary?.veryActiveMinutes || 0),
+        heartRate: heartRateData['activities-heart']?.[0]?.value?.restingHeartRate || null,
+        sleepDuration: sleepData.summary?.totalMinutesAsleep || 0,
+        lastSynced: new Date(),
+        goal: activityData.goals?.steps || 0,
+        progress: (activityData.summary?.steps / activityData.goals?.steps) * 100 || 0,
+        workouts: activityData.activities?.length || 0,
+      },
+      raw: { activityData, heartRateData, sleepData },
     };
 
-    return createResponse(200, responseData, origin);
+    console.log('Final payload being sent to client:', JSON.stringify(responsePayload.stats));
+
+    return createResponse(200, responsePayload, origin);
     
   } catch (error) {
     console.error('Error in fitbit-fetch-data:', error);

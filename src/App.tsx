@@ -22,6 +22,7 @@ import Forums from '@/pages/Forums';
 import Progress from '@/pages/Progress';
 import ForumCategory from '@/pages/ForumCategory';
 import ForumThread from '@/pages/ForumThread';
+import ExerciseDetailPage from '@/pages/ExerciseDetailPage'; // Added import
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -116,6 +117,7 @@ function App() {
             <Route path="forums/:category" element={<ForumCategory />} />
             <Route path="forums/thread/:id" element={<ForumThread />} />
             <Route path="progress" element={<Progress />} />
+            <Route path="exercises/enhanced/:exerciseId" element={<ExerciseDetailPage />} />
           </Route>
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />

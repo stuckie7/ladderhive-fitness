@@ -4,13 +4,16 @@ import QuickActionsPanel from './QuickActionsPanel';
 import UpcomingWorkouts from "@/components/dashboard/UpcomingWorkouts";
 import { useNavigate } from 'react-router-dom';
 import { useRecommendedWorkouts } from '@/hooks/workouts/use-recommended-workouts';
+import { HealthStats } from '@/hooks/use-fitbit-data';
 
 interface QuickActionsSectionProps {
   onScheduleWorkout: () => void;
+  fitbitStats?: Partial<HealthStats>;
 }
 
 const QuickActionsSection: React.FC<QuickActionsSectionProps> = ({
   onScheduleWorkout,
+  fitbitStats,
 }) => {
   const navigate = useNavigate();
   const { recommendedWorkouts, isLoading, refreshRecommendations } = useRecommendedWorkouts();
@@ -42,7 +45,7 @@ const QuickActionsSection: React.FC<QuickActionsSectionProps> = ({
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <QuickActionsPanel />
+      <QuickActionsPanel fitbitStats={fitbitStats} />
       <div className="col-span-2">
         <UpcomingWorkouts 
           workouts={recommendedWorkouts} 

@@ -96,6 +96,12 @@ async function exchangeCodeForToken(code: string, codeVerifier: string) {
 }
 
 serve(async (req: Request) => {
+  // Handle CORS preflight request
+  if (req.method === 'OPTIONS') {
+    console.log('fitbit-handler: Handling OPTIONS preflight request');
+    return new Response('ok', { headers: corsHeaders }); // Respond with 200 OK and CORS headers
+  }
+
   const url = new URL(req.url);
   console.log(`[${new Date().toISOString()}] fitbit-handler: Request: ${req.method} ${url.pathname}${url.search}`);
 
@@ -222,53 +228,43 @@ serve(async (req: Request) => {
     // --- End of DB Upsert and Redirect ---
 
   } catch (error) {
-    // processingErrorMsg should have been set by the specific error throw points above
-    // or if not, set it from the generic error object here.
-    if (!processingErrorMsg) {
-        processingErrorMsg = error instanceof Error ? error.message : 'Unknown error during Fitbit callback processing.';
-    }
-    console.error('fitbit-handler: Catch-all error in processing:', processingErrorMsg, error instanceof Error ? error.stack : '');
-    
-    // Ensure extractedOrigin is set if possible, for error redirect (though not used in this JSON response step)
-    if (decodedStateData && decodedStateData.origin) {
-        extractedOrigin = decodedStateData.origin;
-    } else if (parsedStateString) {
-        try { 
-            const tempState = JSON.parse(decodeURIComponent(parsedStateString)); 
-            extractedOrigin = tempState.origin || extractedOrigin;
-        } catch (e) { /* use existing extractedOrigin */ }
+    let errorMsg: string;
+    let errorStack: string | undefined;
+
+    if (error instanceof Error) {
+      errorMsg = error.message;
+      errorStack = error.stack;
+    } else {
+      errorMsg = 'An unknown error object was thrown.';
     }
 
-    // Initialize or update responsePayload with error information
-    // If responsePayload wasn't initialized in try (e.g. error in initial param check), create it here.
-    if (!responsePayload) { 
-        responsePayload = { 
-            message: "fitbit-handler: Error occurred before full processing",
-            timestamp: new Date().toISOString(),
-            params: { codeReceived: !!parsedCode, stateReceived: !!parsedStateString, errorReceived: parsedErrorParam },
-            decodedState: { 
-                userId: extractedUserId, 
-                origin: extractedOrigin, 
-                codeVerifierIsPresent: !!extractedCodeVerifier, 
-                rawStateString: parsedStateString 
-            },
-            processingOutcome: { error: processingErrorMsg }, 
-            envVarsCheck: { 
-                FITBIT_CLIENT_ID_IS_SET: !!FITBIT_CLIENT_ID,
-                SUPABASE_CLIENT_INITIALIZED: !!supabaseAdminClient
-            },
-            fitbitTokenResponse: null 
-        };
-    } else {
-        // If responsePayload *was* initialized in try, but an error occurred later (e.g., DB upsert),
-        // ensure the error is set. fitbitTokenResponse might contain data if token exchange succeeded before DB error.
-        responsePayload.processingOutcome.error = processingErrorMsg;
+    console.error(`fitbit-handler: Error processing request: ${errorMsg}`);
+    if (errorStack) {
+      console.error(errorStack);
     }
-    // At this point, responsePayload exists and processingOutcome.error is set.
-    return new Response(JSON.stringify(responsePayload), {
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+
+    // Use the processingErrorMsg if it was set by a more specific error, otherwise use the caught error's message
+    const finalProcessingErrorMsg = processingErrorMsg || errorMsg || 'An unknown error occurred during Fitbit OAuth processing.';
+
+    // Initialize responsePayload for the error case
+    responsePayload = {
+      success: false,
+      error: finalProcessingErrorMsg,
+      details: "Error during Fitbit OAuth processing. Attempting to redirect with error."
+    };
+
+    // Redirect to SITE_URL with error status
+    // Ensure siteUrl is defined; provide a fallback if necessary, though it should always be set via env vars.
+    const targetSiteUrl = siteUrl || 'http://localhost:3000'; // Fallback, should not be needed
+    const redirectUrl = new URL(targetSiteUrl);
+    redirectUrl.pathname = '/profile'; // Or a dedicated error page
+    redirectUrl.searchParams.set('status', 'error');
+    redirectUrl.searchParams.set('provider', 'fitbit');
+    redirectUrl.searchParams.set('error_message', finalProcessingErrorMsg);
+
+    console.log(`fitbit-handler: Responding with error - Redirecting to: ${redirectUrl.toString()}`);
+
+    return Response.redirect(redirectUrl.toString(), 302);
   }
   // If no error was caught, the function should have already returned a Response.redirect.
   // This part should ideally not be reached if everything in try was successful and redirected.

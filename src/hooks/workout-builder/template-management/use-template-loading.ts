@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { WorkoutTemplate, TemplateExercise } from './template-types';
+import { WodComponent } from '@/types/wod'; // Added import for WodComponent type
 
 // Export the hook directly without wrapper
 export const useLoadTemplate = ({ 
@@ -184,11 +185,12 @@ export const useLoadTemplate = ({
       // Fetch the WOD
       const { data: wodData, error: wodError } = await supabase
         .from('wods')
-        .select('*')
+        .select('*, components(*, exercises(*))') // Eagerly load components and their exercises if possible
         .eq('id', wodId)
         .single();
 
       if (wodError) {
+        console.error("Supabase error fetching WOD:", wodError);
         throw wodError;
       }
 
@@ -196,37 +198,94 @@ export const useLoadTemplate = ({
         throw new Error("WOD not found");
       }
 
-      // Create a simple template from the WOD
+      let processedExercises: TemplateExercise[] = [];
+      let overallOrderIndex = 0;
+
+      // Check if wodData.components is an array before trying to iterate
+      if (Array.isArray(wodData.components) && wodData.components.length > 0) {
+        const allWodExerciseEntries: any[] = [];
+        wodData.components.forEach((component: WodComponent) => { // Added WodComponent type
+          // Check if component.exercises is an array
+          if (Array.isArray(component.exercises) && component.exercises.length > 0) {
+            component.exercises.forEach((exerciseEntry: any) => {
+              if (exerciseEntry.exercise_id) { // Ensure exercise_id exists
+                allWodExerciseEntries.push({
+                  ...exerciseEntry, // Contains exercise_id, reps, sets, notes etc. from WOD component
+                  component_description: component.description, // Carry over component description for context
+                  order_index: overallOrderIndex++
+                });
+              }
+            });
+          }
+        });
+
+        if (allWodExerciseEntries.length > 0) {
+          const exerciseIdsToFetch = [
+            ...new Set(allWodExerciseEntries.map(ex => ex.exercise_id).filter(id => id != null))
+          ];
+
+          if (exerciseIdsToFetch.length > 0) {
+            const { data: exerciseDetails, error: exerciseDetailsError } = await supabase
+              .from('exercises_full') // Assuming 'exercises_full' has comprehensive details
+              .select('id, name, prime_mover_muscle, primary_equipment') // Select necessary fields
+              .in('id', exerciseIdsToFetch);
+
+            if (exerciseDetailsError) {
+              console.error("Supabase error fetching exercise details:", exerciseDetailsError);
+              throw exerciseDetailsError;
+            }
+
+            if (exerciseDetails) {
+              processedExercises = allWodExerciseEntries.map(entry => {
+                const detail = exerciseDetails.find(d => d.id === entry.exercise_id);
+                return {
+                  id: `wod-ex-${entry.exercise_id}-${entry.order_index}`, // Temporary unique ID for the template exercise instance
+                  exerciseId: String(entry.exercise_id),
+                  name: detail?.name || 'Unknown Exercise',
+                  reps: String(entry.reps || ''), // Ensure reps is a string
+                  sets: entry.sets || undefined, // Handle optional sets
+                  notes: entry.notes || entry.component_description || '', // Prioritize exercise notes, then component desc.
+                  // You might want to add other fields like prime_mover_muscle from detail if needed by TemplateExercise
+                };
+              }).sort((a, b) => {
+                // Ensure consistent sorting if order_index was not perfectly sequential or if entries were mixed
+                const aOrder = parseInt(a.id.split('-').pop() || '0');
+                const bOrder = parseInt(b.id.split('-').pop() || '0');
+                return aOrder - bOrder;
+              });
+            }
+          }
+        }
+      }
+
+      // Create a template from the WOD data including processed exercises
       const template: WorkoutTemplate = {
-        id: undefined, // New template, no ID yet
-        title: `${wodData.name} Template`,
-        name: wodData.name,
-        description: wodData.description,
+        id: undefined, // New template, no DB ID yet
+        title: `${wodData.name || 'Unnamed WOD'} (from WOD)`,
+        name: wodData.name || 'Unnamed WOD',
+        description: wodData.description || '',
         category: wodData.category || 'WOD',
         difficulty: wodData.difficulty || 'Intermediate',
         created_at: new Date().toISOString(),
-        exercises: [],
-        source_wod_id: wodId
+        exercises: processedExercises, // Use the processed exercises
+        source_wod_id: wodData.id, // Corrected: use wodData.id instead of undefined wodId variable
       };
 
       setCurrentTemplate(template);
       
       toast({
-        title: "WOD Loaded",
-        description: `${wodData.name} loaded as template.`,
+        title: "WOD Loaded as Template",
+        description: `${wodData.name} and its exercises are ready in the builder.`,
       });
       
       return template;
     } catch (error: any) {
       console.error("Error loading WOD as template:", error);
       toast({
-        title: "Error",
+        title: "Error Loading WOD",
         description: `Failed to load WOD as template: ${error.message}`,
         variant: "destructive",
       });
-      return null;
-    } finally {
-      setIsLoading(false);
     }
   }, [toast, setCurrentTemplate]);
 

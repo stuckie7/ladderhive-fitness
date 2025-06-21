@@ -3,19 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 
-interface WorkoutSchedule {
-  id: string;
-  workout_id: string;
-  scheduled_date: string;
-  status: string;
-}
 
-interface SuggestedWorkout {
-  id: string;
-  name: string;
-  duration: number;
-  difficulty: string;
-}
 
 interface UpcomingWorkout {
   id: string;
@@ -32,7 +20,7 @@ export const useUpcomingWorkouts = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    const fetchUpcomingWorkouts = async () => {
+    const fetchRecommendedWorkouts = async () => {
       if (!user) {
         setIsLoading(false);
         return;
@@ -40,61 +28,38 @@ export const useUpcomingWorkouts = () => {
 
       try {
         setIsLoading(true);
+        setError(null);
 
-        // First get the scheduled workouts
-        const { data: schedules, error: schedulesError } = await supabase
-          .from('workout_schedules')
-          .select('id, workout_id, scheduled_date, status')
-          .eq('user_id', user.id)
-          .gt('scheduled_date', new Date().toISOString())
-          .eq('status', 'scheduled')
-          .order('scheduled_date', { ascending: true })
-          .limit(3);
-        
-        if (schedulesError) {
-          throw new Error(schedulesError.message);
-        }
-        
-        if (!schedules || schedules.length === 0) {
-          setWorkouts([]);
-          return;
-        }
-        
-        // Get the workout details for the scheduled workouts
-        const workoutIds = schedules.map(s => s.workout_id);
-        const { data: workouts, error: workoutsError } = await supabase
+        // For now, we fetch a few workouts as "recommendations".
+        // A real implementation would use a more sophisticated recommendation engine.
+        const { data, error } = await supabase
           .from('suggested_workouts')
           .select('id, name, duration, difficulty')
-          .in('id', workoutIds);
-          
-        if (workoutsError) {
-          throw new Error(workoutsError.message);
+          .limit(5);
+
+        if (error) {
+          throw error;
         }
-        
-        // Join the data
-        const workoutMap = new Map(workouts?.map(workout => [workout.id, workout]) || []);
-        
-        const formattedWorkouts: UpcomingWorkout[] = schedules.map(schedule => {
-          const workout = workoutMap.get(schedule.workout_id) || {} as Partial<SuggestedWorkout>;
-          return {
-            id: schedule.id,
-            title: workout.name || 'Scheduled Workout',
-            scheduled_date: schedule.scheduled_date,
-            duration_minutes: workout.duration || 30,
-            difficulty: workout.difficulty || 'intermediate'
-          };
-        });
-        
-        setWorkouts(formattedWorkouts);
-      } catch (err) {
-        console.error('Error fetching upcoming workouts:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load upcoming workouts');
+
+        if (data) {
+          const formattedWorkouts: UpcomingWorkout[] = data.map(workout => ({
+            id: workout.id,
+            title: workout.name,
+            scheduled_date: '', // This is a recommendation, not scheduled yet.
+            duration_minutes: workout.duration,
+            difficulty: workout.difficulty,
+          }));
+          setWorkouts(formattedWorkouts);
+        }
+      } catch (err: any) {
+        console.error('Error fetching recommended workouts:', err);
+        setError(err.message || 'Failed to load recommendations.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUpcomingWorkouts();
+    fetchRecommendedWorkouts();
   }, [user]);
 
   return { workouts, isLoading, error };
