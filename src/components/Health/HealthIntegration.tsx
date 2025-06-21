@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, HeartPulse, Zap, Loader2, AlertCircle, Moon, Target, Flame, Footprints, Dumbbell, RefreshCw } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,6 +61,17 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
   const [stepGoal, setStepGoal] = useState(initialStepGoal);
   const [showMore, setShowMore] = useState(false);
 
+  // Keyboard shortcut \"r\" to refresh stats
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'r' && isConnected) {
+        fetchHealthData();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isConnected, fetchHealthData]);
+
   useEffect(() => {
     if (initialStepGoal) {
         setStepGoal(initialStepGoal);
@@ -110,7 +122,18 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-3xl font-bold text-slate-100 flex items-center gap-2">Health Stats {isConnected && <Button size="icon" variant="ghost" onClick={fetchHealthData}><RefreshCw className="w-4 h-4" /></Button>}</CardTitle>
+              <CardTitle className="text-3xl font-bold text-slate-100 flex items-center gap-2">Health Stats {isConnected && (
+                  <TooltipProvider delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" onClick={fetchHealthData} aria-label="Refresh (R)">
+                          <RefreshCw className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">Refresh (press “R”)</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}</CardTitle>
               <CardDescription className="text-slate-400">
                 {displayStats.lastSynced
                   ? `Last synced ${formatDistanceToNow(new Date(displayStats.lastSynced), { addSuffix: true })}`
