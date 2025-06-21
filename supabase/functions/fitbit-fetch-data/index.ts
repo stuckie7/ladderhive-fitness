@@ -23,6 +23,64 @@ const createResponse = (status: number, body: any, origin: string) => {
   );
 };
 
+// Helper function to refresh Fitbit token and update the database
+async function refreshFitbitToken(refreshToken: string, tokenId: string) {
+  console.log(`Starting token refresh for token ID: ${tokenId}`);
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const fitbitClientId = Deno.env.get('FITBIT_CLIENT_ID');
+  const fitbitClientSecret = Deno.env.get('FITBIT_CLIENT_SECRET');
+
+  if (!supabaseUrl || !serviceRoleKey || !fitbitClientId || !fitbitClientSecret) {
+    throw new Error('Server configuration error: Missing credentials for token refresh.');
+  }
+
+  // Use a dedicated admin client to ensure permissions
+  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+  const refreshResponse = await fetch('https://api.fitbit.com/oauth2/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${btoa(`${fitbitClientId}:${fitbitClientSecret}`)}`,
+    },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    }).toString(),
+  });
+  
+  const responseBodyText = await refreshResponse.text();
+  console.log(`Fitbit token refresh API response status: ${refreshResponse.status}`);
+  console.log(`Fitbit token refresh API response body: ${responseBodyText}`);
+
+  if (!refreshResponse.ok) {
+    throw new Error(`Failed to refresh token from Fitbit API: ${responseBodyText}`);
+  }
+
+  const refreshedTokensData = JSON.parse(responseBodyText);
+
+  const newExpiresAt = new Date(Date.now() + refreshedTokensData.expires_in * 1000).toISOString();
+  
+  const { error: updateError } = await supabaseAdmin
+    .from('fitbit_tokens')
+    .update({
+      access_token: refreshedTokensData.access_token,
+      refresh_token: refreshedTokensData.refresh_token || refreshToken,
+      expires_at: newExpiresAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', tokenId);
+
+  if (updateError) {
+    console.error('Database error while updating token:', JSON.stringify(updateError));
+    throw new Error(`Failed to save refreshed token to database: ${updateError.message}`);
+  }
+  
+  console.log(`Successfully updated token ${tokenId} in the database.`);
+  return refreshedTokensData.access_token;
+}
+
 // Interface for the response data
 interface FitbitApiResponse {
   steps: number;
@@ -124,45 +182,19 @@ serve(async (req) => {
     console.log('Token expiresAt:', expiresAt ? expiresAt.toISOString() : 'null', 'Current time:', now.toISOString());
 
     if (expiresAt && now >= expiresAt) {
-      // Token is expired, refresh it
-      console.log('Fitbit token expired, attempting refresh...');
-      const refreshResponse = await fetch('https://api.fitbit.com/oauth2/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${btoa(`${Deno.env.get('FITBIT_CLIENT_ID')}:${Deno.env.get('FITBIT_CLIENT_SECRET')}`)}`
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: tokens.refresh_token,
-        }).toString(),
-      });
-
-      console.log('Fitbit token refresh response status:', refreshResponse.status);
-      const refreshedTokensData = await refreshResponse.json();
-      console.log('Fitbit token refresh response data:', JSON.stringify(refreshedTokensData));
-
-      if (!refreshResponse.ok) {
+      try {
+        console.log('Fitbit token expired, attempting refresh via helper function...');
+        const newAccessToken = await refreshFitbitToken(tokens.refresh_token, tokens.id);
+        tokens.access_token = newAccessToken;
+        console.log('Fitbit token successfully refreshed and updated in local context.');
+      } catch (refreshError) {
+        console.error('Token refresh process failed:', refreshError.message);
         return createResponse(
-          400,
-          { error: 'Failed to refresh token' },
+          500, 
+          { error: 'Failed to refresh Fitbit token.', details: refreshError.message }, 
           origin
         );
       }
-
-      // 'refreshedTokensData' already contains the parsed JSON.
-      // Update the tokens in the database
-      await supabaseAdmin
-        .from('fitbit_tokens')
-        .update({
-          access_token: refreshedTokensData.access_token,
-          refresh_token: refreshedTokensData.refresh_token || tokens.refresh_token,
-          expires_at: new Date(Date.now() + refreshedTokensData.expires_in * 1000).toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', tokens.id);
-      
-      tokens.access_token = refreshedTokensData.access_token;
     }
 
     // Fetch data from Fitbit API
