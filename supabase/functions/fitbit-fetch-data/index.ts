@@ -92,7 +92,7 @@ interface FitbitApiResponse {
   workouts: number;
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   console.log(`fitbit-fetch-data invoked. Method: ${req.method}, Headers: ${JSON.stringify(Object.fromEntries(req.headers))}`);
   // Get the origin from the request headers
   const origin = req.headers.get('origin') || '*';
@@ -141,11 +141,10 @@ serve(async (req) => {
 
     // Get the user's Fitbit tokens
     const { data: tokens, error: tokensError } = await supabaseAdmin
-      .from('fitbit_tokens') // Changed table name
+      .from('fitbit_tokens')
       .select('*')
       .eq('user_id', user.id)
-      // .eq('provider', 'fitbit') // Removed provider filter
-      .single();
+      .maybeSingle();
 
     if (tokensError) {
       console.error('Error fetching tokens from fitbit_tokens:', JSON.stringify(tokensError));
@@ -187,7 +186,8 @@ serve(async (req) => {
         const newAccessToken = await refreshFitbitToken(tokens.refresh_token, tokens.id);
         tokens.access_token = newAccessToken;
         console.log('Fitbit token successfully refreshed and updated in local context.');
-      } catch (refreshError) {
+      } catch (e) {
+        const refreshError = e instanceof Error ? e : new Error(String(e));
         console.error('Token refresh process failed:', refreshError.message);
         return createResponse(
           500, 
