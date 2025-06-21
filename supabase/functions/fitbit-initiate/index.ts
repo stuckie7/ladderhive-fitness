@@ -127,7 +127,7 @@ serve(async (req: Request) => {
       });
       
       // Create the Fitbit authorization URL
-      const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/fitbit-handler`;
+      const redirectUri = new URL('/functions/v1/fitbit-handler', Deno.env.get('SUPABASE_URL')!).href;
       console.log('Using redirect URI:', redirectUri);
       
       const params = new URLSearchParams({
