@@ -1,5 +1,5 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   console.log('Fitbit OAuth request:', req.method, req.url)
   
   // Handle CORS preflight requests
@@ -75,7 +75,7 @@ serve(async (req) => {
     })
     
     // Build authorization URL - Use the callback function for redirect
-    const redirectUri = `${supabaseUrl}/functions/v1/fitbit-callback`
+        const redirectUri = `${supabaseUrl}/functions/v1/fitbit-handler`
     
     const authParams = new URLSearchParams({
       response_type: 'code',
@@ -96,7 +96,8 @@ serve(async (req) => {
       JSON.stringify({ url: authUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-  } catch (error) {
+  } catch (e) {
+    const error = e as Error;
     console.error('Error in Fitbit OAuth:', error)
     return new Response(
       JSON.stringify({ error: 'Internal server error', details: error.message }),

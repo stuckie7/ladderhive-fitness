@@ -39,3 +39,6 @@ verify_jwt = false
 
 [functions.fitbit-callback]
 verify_jwt = false
+
+[functions.fitbit-handler]
+verify_jwt = false

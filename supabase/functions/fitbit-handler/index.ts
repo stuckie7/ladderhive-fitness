@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 console.log("fitbit-handler: Loading with core logic test (Fitbit call and DB upsert commented out)...");
@@ -206,14 +206,20 @@ serve(async (req: Request) => {
       throw new Error(processingErrorMsg); 
     }
     console.log('fitbit-handler: Attempting to save tokens to Supabase for user:', extractedUserId);
-    const { error: dbError } = await supabaseAdminClient.from('fitbit_tokens').upsert({
+        const { data: dbData, error: dbError } = await supabaseAdminClient.from('fitbit_tokens').upsert({
       user_id: extractedUserId, // This is the Supabase auth user ID
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token,
       expires_at: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString(),
       scope: tokenData.scope,
       fitbit_user_id: tokenData.user_id, // This is the Fitbit user ID
-    }, { onConflict: 'user_id' });
+    }, { onConflict: 'user_id' }).select();
+
+        if (!dbData || dbData.length === 0) {
+      processingErrorMsg = `Database upsert did not return the saved record, indicating a potential silent failure.`;
+      console.error('fitbit-handler: Database upsert error:', processingErrorMsg);
+      throw new Error(processingErrorMsg);
+    }
 
     if (dbError) {
       processingErrorMsg = `Failed to save Fitbit tokens to database: ${dbError.message}`;

@@ -34,9 +34,24 @@ export const useFitbitData = () => {
         method: 'POST',
         body: { date: today },
       });
-      if (healthError) throw healthError;
-      setStats(healthData?.stats || {});
+      if (healthError) {
+        // If Fitbit API quota exceeded, healthError.status will be 429
+        if ((healthError as any).status === 429) {
+          console.warn('Fitbit rate limit hit – displaying stale data');
+          toast({ title: 'Fitbit limit reached', description: 'Data will refresh again in a few minutes.', variant: 'default' });
+          return; // keep existing stats
+        }
+        throw healthError;
+      }
+      if (!healthData?.stale) {
+        setStats(healthData?.stats || {});
+      }
     } catch (err: any) {
+      if (err?.status === 429 || err?.message?.includes('429')) {
+        console.warn('Fitbit rate limit (catch)');
+        toast({ title: 'Fitbit limit reached', description: 'Data will refresh again later.', variant: 'default' });
+        return;
+      }
       setError(err.message || 'Failed to fetch Fitbit data.');
     } finally {
       setIsLoading(false);

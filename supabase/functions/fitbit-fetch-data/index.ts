@@ -1,4 +1,7 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
+
+// In-memory cache – survives within the same edge function container instance
+const inMemoryCache: Record<string, { timestamp: number; stats: FitbitApiResponse }> = {};
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Helper function to create CORS headers
@@ -118,10 +121,15 @@ serve(async (req: Request) => {
     }
 
     // Create a Supabase client with the user's authentication context
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return createResponse(401, { error: 'Missing Authorization header' }, origin);
+    }
+
     const supabase = createClient(
       supabaseUrl,
       anonKey,
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      { global: { headers: { Authorization: authHeader } } }
     );
 
     // Get the user from the JWT
@@ -197,10 +205,18 @@ serve(async (req: Request) => {
       }
     }
 
-    // Fetch data from Fitbit API
+    // Extract date param from body
     const body = await req.json();
     const date = body.date;
     console.log('Received request body:', JSON.stringify(body));
+
+    // ---- CACHING ----
+    const cacheKey = `${user.id}-${date || 'today'}`;
+    const cached = inMemoryCache[cacheKey];
+    if (cached && Date.now() - cached.timestamp < 15 * 60 * 1000) {
+      console.log(`Serving Fitbit data from cache for ${cacheKey}`);
+      return createResponse(200, { message: 'cached', stats: cached.stats }, origin);
+    }
 
     const dateToFetch = date && /^\d{4}-\d{2}-\d{2}$/.test(date)
       ? date
@@ -227,6 +243,14 @@ serve(async (req: Request) => {
     console.log(`Fitbit API - Sleep Status: ${sleepResponse.status}`);
 
     if (!activityResponse.ok || !heartRateResponse.ok || !sleepResponse.ok) {
+      // If any endpoint returns 429, propagate a 429 so frontend can show friendly notice
+            if ([activityResponse, heartRateResponse, sleepResponse].some(r => r.status === 429)) {
+        console.warn('Fitbit rate limit hit – serving stale data if available');
+        if (cached) {
+          return createResponse(200, { message: 'stale', stale: true, stats: cached.stats }, origin);
+        }
+        return createResponse(200, { message: 'rate_limited', stale: true }, origin);
+      }
       if (!activityResponse.ok) {
         const errorBody = await activityResponse.text();
         console.error(`Fitbit API - Activity Error: ${activityResponse.status}, Body: ${errorBody}`);
@@ -275,6 +299,9 @@ serve(async (req: Request) => {
     };
 
     console.log('Final payload being sent to client:', JSON.stringify(responsePayload.stats));
+
+    // Save to cache
+    inMemoryCache[cacheKey] = { timestamp: Date.now(), stats: responsePayload.stats };
 
     return createResponse(200, responsePayload, origin);
     
