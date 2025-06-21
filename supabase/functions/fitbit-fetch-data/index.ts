@@ -140,14 +140,14 @@ serve(async (req: Request) => {
     console.log('PASSED AUTH CHECK BLOCK. User object should be valid.');
 
     // Get the user's Fitbit tokens
-    const { data: tokens, error: tokensError } = await supabaseAdmin
+    const { data: tokens, error: dbError } = await supabaseAdmin
       .from('fitbit_tokens')
-      .select('*')
+      .select('access_token, refresh_token, expires_at, id')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (tokensError) {
-      console.error('Error fetching tokens from fitbit_tokens:', JSON.stringify(tokensError));
+    if (dbError) {
+      console.error('Error fetching tokens from fitbit_tokens:', JSON.stringify(dbError));
     }
     if (!tokens) {
       console.log('No tokens found in fitbit_tokens for user:', user.id);
@@ -156,7 +156,7 @@ serve(async (req: Request) => {
       console.log('Tokens fetched from fitbit_tokens:', JSON.stringify(tokens));
     }
 
-    if (tokensError || !tokens) {
+    if (dbError || !tokens) {
       console.log('No Fitbit connection found for user:', user.id);
       return createResponse(
         200, 

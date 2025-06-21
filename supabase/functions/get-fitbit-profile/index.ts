@@ -77,7 +77,7 @@ async function getFitbitAccessToken(supabase: any, userId: string): Promise<stri
     .from('fitbit_tokens')
     .select('access_token, expires_at')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     console.error('Error fetching Fitbit token:', error);
@@ -131,7 +131,7 @@ async function refreshFitbitToken(userId: string): Promise<any> {
     .from('fitbit_tokens')
     .select('refresh_token')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   if (tokenError || !tokenData) {
     console.error('No refresh token found for user:', userId);

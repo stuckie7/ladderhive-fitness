@@ -24,6 +24,7 @@ const Dashboard = () => {
   const { exercises, isLoading: exercisesLoading } = useFavoriteExercises();
   const { 
     stats: fitbitStats, 
+    isConnected: isFitbitConnected, 
     isLoading: fitbitLoading, 
     error: fitbitError 
   } = useFitbitData();
