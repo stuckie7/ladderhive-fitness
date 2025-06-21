@@ -46,7 +46,7 @@ const generateCodeChallenge = async (verifier: string): Promise<string> => {
     .replace(/=+$/, '');
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     const origin = req.headers.get('origin') || Deno.env.get('SITE_URL') || 'http://localhost:3000';
@@ -127,7 +127,7 @@ serve(async (req) => {
       });
       
       // Create the Fitbit authorization URL
-      const redirectUri = `https://jrwyptpespjvjisrwnbh.supabase.co/functions/v1/fitbit-handler`;
+      const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/fitbit-handler`;
       console.log('Using redirect URI:', redirectUri);
       
       const params = new URLSearchParams({
