@@ -213,7 +213,7 @@ serve(async (req: Request) => {
     // ---- CACHING ----
     const cacheKey = `${user.id}-${date || 'today'}`;
     const cached = inMemoryCache[cacheKey];
-    if (cached && Date.now() - cached.timestamp < 15 * 60 * 1000) {
+    if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
       console.log(`Serving Fitbit data from cache for ${cacheKey}`);
       return createResponse(200, { message: 'cached', stats: cached.stats }, origin);
     }

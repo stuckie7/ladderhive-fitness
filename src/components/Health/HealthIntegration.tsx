@@ -110,7 +110,7 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-3xl font-bold text-slate-100">Health Stats</CardTitle>
+              <CardTitle className="text-3xl font-bold text-slate-100 flex items-center gap-2">Health Stats {isConnected && <Button size="icon" variant="ghost" onClick={fetchHealthData}><RefreshCw className="w-4 h-4" /></Button>}</CardTitle>
               <CardDescription className="text-slate-400">
                 {displayStats.lastSynced
                   ? `Last synced ${formatDistanceToNow(new Date(displayStats.lastSynced), { addSuffix: true })}`

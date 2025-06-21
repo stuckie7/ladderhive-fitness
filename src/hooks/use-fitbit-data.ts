@@ -140,5 +140,14 @@ export const useFitbitData = () => {
     }
   };
 
+  // Auto-refresh every 10 minutes while connected
+  useEffect(() => {
+    if (!isConnected) return;
+    const id = setInterval(() => {
+      fetchHealthData();
+    }, 10 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [isConnected, fetchHealthData]);
+
   return { isLoading, error, isConnected, stats, connectFitbit, disconnectFitbit, fetchHealthData };
 };
