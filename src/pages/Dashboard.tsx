@@ -24,10 +24,8 @@ const Dashboard = () => {
   const { exercises, isLoading: exercisesLoading } = useFavoriteExercises();
   const { 
     stats: fitbitStats, 
-    isConnected: isFitbitConnected, 
     isLoading: fitbitLoading, 
-    error: fitbitError, 
-    fetchHealthData 
+    error: fitbitError 
   } = useFitbitData();
   const { workouts: recentWorkouts, isLoading: recentWorkoutsLoading } = useWorkouts();
   const { weeklyData, isLoading: weeklyDataLoading } = useActivityProgress();
@@ -37,12 +35,7 @@ const Dashboard = () => {
   const [stepGoal, setStepGoal] = useState<number>(10000); // Default goal
   const [activeSuggestion, setActiveSuggestion] = useState<string | null>(null);
 
-  // Fetch Fitbit data when connection is established
-  useEffect(() => {
-    if (isFitbitConnected) {
-      fetchHealthData();
-    }
-  }, [isFitbitConnected, fetchHealthData]);
+
 
   // This useEffect is for debugging workout data availability, seems useful to keep.
   useEffect(() => {
