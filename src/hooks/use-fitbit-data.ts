@@ -30,9 +30,9 @@ export const useFitbitData = () => {
     isFetching: isFetchingStats,
     refetch: refetchStats,
     error: statsError,
-  } = useQuery<{ stale?: boolean; stats: Partial<HealthStats> }>(
-    ['fitbit-stats', user?.id],
-    async () => {
+  } = useQuery<{ stale?: boolean; stats: Partial<HealthStats> }, Error>({
+    queryKey: ['fitbit-stats', user?.id],
+    queryFn: async () => {
       if (!user) throw new Error('No user');
       const today = new Date().toLocaleDateString('en-CA');
       const { data, error } = await supabase.functions.invoke('fitbit-fetch-data', {
@@ -42,55 +42,23 @@ export const useFitbitData = () => {
       if (error) throw error;
       return data;
     },
-    {
-      enabled: !!user && isConnected, // only when connected
-      staleTime: 10 * 60 * 1000,
-      refetchInterval: 10 * 60 * 1000,
-      select: (data) => data?.stale ? undefined : data, // ignore stale payloads
-      onError: (err: any) => {
-        if (err?.status === 429) {
-          toast({ title: 'Fitbit limit reached', description: 'Data will refresh again later.', variant: 'default' });
-        }
-      },
-    }
-  );
+    enabled: !!user && isConnected,
+    staleTime: 10 * 60 * 1000,
+    refetchInterval: 10 * 60 * 1000,
+  });
 
-  const stats = statsData?.stats || {};
+  const stats: Partial<HealthStats> = (statsData as any)?.stale ? {} : (statsData as any)?.stats ?? {};
 
   const fetchHealthData = useCallback(async () => {
-    await refetchStats();
-    if (!user) return;
     setIsLoading(true);
     setError(null);
     try {
-      const today = new Date().toLocaleDateString('en-CA'); // 'en-CA' gives YYYY-MM-DD format
-      const { data: healthData, error: healthError } = await supabase.functions.invoke('fitbit-fetch-data', {
-        method: 'POST',
-        body: { date: today },
-      });
-      if (healthError) {
-        // If Fitbit API quota exceeded, healthError.status will be 429
-        if ((healthError as any).status === 429) {
-          console.warn('Fitbit rate limit hit – displaying stale data');
-          toast({ title: 'Fitbit limit reached', description: 'Data will refresh again in a few minutes.', variant: 'default' });
-          return; // keep existing stats
-        }
-        throw healthError;
-      }
-      if (!healthData?.stale) {
-        setStats(healthData?.stats || {});
-      }
-    } catch (err: any) {
-      if (err?.status === 429 || err?.message?.includes('429')) {
-        console.warn('Fitbit rate limit (catch)');
-        toast({ title: 'Fitbit limit reached', description: 'Data will refresh again later.', variant: 'default' });
-        return;
-      }
-      setError(err.message || 'Failed to fetch Fitbit data.');
+      await queryClient.invalidateQueries({ queryKey: ['fitbit-stats', user?.id] });
+      await refetchStats();
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [refetchStats]);
 
   const checkConnectionAndFetch = useCallback(async () => {
     if (!user) return;
@@ -164,7 +132,7 @@ export const useFitbitData = () => {
       if (error) throw error;
 
       setIsConnected(false);
-      queryClient.removeQueries(['fitbit-stats', user.id]);
+      queryClient.removeQueries({ queryKey: ['fitbit-stats', user.id] });
       toast({ title: 'Success', description: 'Fitbit account disconnected.' });
     } catch (err: any) {
       setError(err.message || 'Failed to disconnect Fitbit.');
