@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckCircle, CheckCircle2 } from 'lucide-react';
-import { ReactionButton } from '@/components/forum/ReactionButton';
+import { ReactionButton } from '@/components/forum/ReactionButton.tsx';
 import { toast } from 'react-hot-toast';
 
 interface Post {

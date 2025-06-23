@@ -31,9 +31,12 @@ const FitbitConnectionStatus = () => {
 
       console.log('Checking Fitbit connection for user:', session.user.id);
 
-      // Invoke the edge function to check for a valid, non-expired token and profile
+      // Invoke the edge function with auth header so Supabase Edge Function can authenticate the user
       const { error } = await supabase.functions.invoke('get-fitbit-profile', {
         method: 'GET',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {

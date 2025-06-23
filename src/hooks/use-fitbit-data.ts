@@ -65,8 +65,14 @@ export const useFitbitData = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // First, check if we can get a profile. If this fails, the user is not connected.
-      await supabase.functions.invoke('get-fitbit-profile', { method: 'GET' });
+      // First, check if we can get a profile. Pass Authorization header so the Edge Function can verify the user.
+      const { data: _profile, error: profileError } = await supabase.functions.invoke('get-fitbit-profile', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+        },
+      });
+      if (profileError) throw profileError;
       setIsConnected(true);
       // If connected, immediately fetch the latest health data.
       await fetchHealthData();

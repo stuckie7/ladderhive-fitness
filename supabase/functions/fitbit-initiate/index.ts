@@ -1,5 +1,6 @@
 // Simple Fitbit OAuth 2.0 Connect Endpoint
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Helper function to create CORS headers
 const createCorsHeaders = (origin: string) => ({
@@ -118,12 +119,20 @@ serve(async (req: Request) => {
       const codeVerifier = generateCodeVerifier(128);
       const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-      // Create state with user ID, origin, and random string for CSRF protection
+      // Store verifier in temporary table keyed by a nonce
+      const nonce = crypto.randomUUID();
+      const supabaseAdmin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false, autoRefreshToken: false }});
+      const { error: pkceError } = await supabaseAdmin.from('fitbit_pkce').insert({ pkce_key: nonce, user_id: user.id, code_verifier: codeVerifier });
+      if (pkceError) {
+        console.error('Failed to store PKCE verifier:', pkceError);
+        return createResponse(500, { error: 'Server PKCE storage failure' }, origin);
+      }
+
+      // Create state (no raw codeVerifier)
       const state = JSON.stringify({
         userId: user.id,
-        nonce: crypto.randomUUID(),
-        origin: origin,
-        codeVerifier: codeVerifier,
+        nonce,
+        origin,
       });
       
       // Create the Fitbit authorization URL

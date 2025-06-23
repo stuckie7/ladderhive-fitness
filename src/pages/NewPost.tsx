@@ -136,21 +136,55 @@ const NewPost: React.FC = () => {
         return;
       }
       
-      // Create the post
+      // 1. Upload selected files (if any) to Supabase Storage
+      let attachments: Array<{ url: string; fileName: string; mimeType: string; size: number }> = [];
+      if (files.length > 0) {
+        for (const file of files) {
+          const filePath = `${user.id}/${Date.now()}-${file.name}`;
+          // Upload the file to the authenticated user's folder in the `forum-attachments` bucket
+          const { error: uploadError } = await supabase
+            .storage
+            .from('forum-attachments')
+            .upload(filePath, file, {
+              contentType: file.type,
+              upsert: false,
+            });
+          if (uploadError) {
+            console.error('File upload failed:', uploadError);
+            throw uploadError;
+          }
+          // Get the public URL so the file can be rendered in the UI later
+          const { data: publicUrlData } = supabase
+            .storage
+            .from('forum-attachments')
+            .getPublicUrl(filePath);
+          attachments.push({
+            url: publicUrlData.publicUrl,
+            fileName: file.name,
+            mimeType: file.type,
+            size: file.size,
+          });
+        }
+      }
+
+      // 2. Insert the post with the attachments JSONB array
       const { data: post, error: postError } = await supabase
         .from('forum_posts')
-        .insert([{
-          thread_id: thread.id,
-          user_id: user.id,
-          content: content.trim(),
-          parent_post_id: isReply ? searchParams.get('parent') || null : null
-        }])
+        .insert([
+          {
+            thread_id: thread.id,
+            user_id: user.id,
+            content: content.trim(),
+            attachments,
+            parent_post_id: isReply ? searchParams.get('parent') || null : null,
+          },
+        ])
         .select()
         .single();
-      
+
       if (postError) throw postError;
-      
-      // Update thread's last activity
+
+      // 3. Update thread's last activity
       await supabase
         .from('forum_threads')
         .update({ last_activity_at: new Date().toISOString() })
