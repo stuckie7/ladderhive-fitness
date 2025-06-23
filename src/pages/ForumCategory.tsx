@@ -45,7 +45,8 @@ interface Category {
 }
 
 const ForumCategory: React.FC = () => {
-  const { categorySlug } = useParams<{ categorySlug: string }>();
+  // Route is defined as /forums/:category in App.tsx
+const { category: categorySlug } = useParams<{ category: string }>();
   const navigate = useNavigate();
   const [category, setCategory] = useState<Category | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);

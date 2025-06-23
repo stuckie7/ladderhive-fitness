@@ -275,7 +275,7 @@ const Forums: React.FC = () => {
               categories.map((category) => (
                 <Card key={category.id} className="flex flex-col justify-between hover:border-primary/50 transition-colors">
                   <div>
-                    <Link to={`/forums/category/${category.slug}`} className="block">
+                    <Link to={`/forums/${category.slug}`} className="block">
                       <CardHeader className="pb-3">
                         <div className="flex items-start space-x-4">
                           <div className="flex-shrink-0 bg-primary/10 p-3 rounded-lg">

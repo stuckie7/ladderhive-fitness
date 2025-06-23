@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckCircle, CheckCircle2 } from 'lucide-react';
+import { ReactionButton } from '@/components/forum/ReactionButton';
 import { toast } from 'react-hot-toast';
 
 interface Post {
@@ -56,7 +57,9 @@ interface Thread {
 }
 
 const ForumThread: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  // Route is /forums/thread/:id so param name is `id`
+const { id: threadSlug } = useParams<{ id: string }>();
+  console.log('ForumThread mount, slug =', threadSlug);
   const navigate = useNavigate();
   const location = useLocation();
   const [thread, setThread] = useState<Thread | null>(null);
@@ -118,7 +121,7 @@ const ForumThread: React.FC = () => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const fetchThreadData = async () => {
-      if (!slug) return;
+      if (!threadSlug) return;
       
       try {
         if (isMounted) {
@@ -126,10 +129,18 @@ const ForumThread: React.FC = () => {
           setError(null);
         }
 
+        // build safe filter – avoid casting errors if threadSlug is not numeric
+        const filters = [
+          `slug.eq.${threadSlug}`
+        ];
+        if (/^\d+$/.test(threadSlug)) {
+          filters.push(`id.eq.${threadSlug}`);
+        }
+
         const { data: threadData, error: threadError } = await supabase
           .from('forum_threads')
           .select(`*, profiles!forum_threads_user_id_fkey(username, avatar_url, profile_photo_url, first_name, last_name), forum_categories(id, name, slug)`)
-          .or(`id.eq.${slug},slug.eq.${slug}`)
+          .or(filters.join(','))
           .single();
 
         if (!isMounted) return;
@@ -190,7 +201,7 @@ const ForumThread: React.FC = () => {
         supabase.removeChannel(channel);
       }
     };
-  }, [slug]);
+  }, [threadSlug]);
 
   useEffect(() => {
     if (location.hash && posts.length > 0 && !isLoading) {
@@ -525,12 +536,7 @@ const ForumThread: React.FC = () => {
                 
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex space-x-2">
-                    <button
-                      onClick={() => {}}
-                      className="text-sm text-gray-500 hover:text-gray-700"
-                    >
-                      Like
-                    </button>
+                    <ReactionButton postId={post.id} />
                     <button
                       onClick={() => {
                         const replyInput = document.getElementById('reply-content');
