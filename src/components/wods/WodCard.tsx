@@ -98,7 +98,7 @@ const WodCard: React.FC<WodCardProps> = ({ wod, onToggleFavorite, isFavorite: is
 
   const handleStartWorkout = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/workout-builder?wod=${wod.id}`);
+    navigate(`/workout-player/${wod.id}`);
   };
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {

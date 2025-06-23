@@ -11,6 +11,7 @@ import Profile from '@/pages/Profile';
 import Layout from '@/components/Layout';
 import Workouts from '@/pages/Workouts';
 import WorkoutBuilder from '@/pages/WorkoutBuilder';
+import WorkoutPlayer from '@/pages/WorkoutPlayer';
 import Schedule from '@/pages/Schedule';
 import ExerciseLibraryEnhanced from '@/pages/ExerciseLibraryEnhanced';
 import WorkoutDetail from '@/pages/WorkoutDetail';
@@ -106,6 +107,7 @@ function App() {
             <Route path="workouts" element={<Workouts />} />
             <Route path="workouts/:id" element={<WorkoutDetail />} />
             <Route path="workout-builder" element={<WorkoutBuilder />} />
+            <Route path="workout-player/:id" element={<WorkoutPlayer />} />
             <Route path="schedule" element={<Schedule />} />
             <Route path="exercises/enhanced" element={<ExerciseLibraryEnhanced />} />
             <Route path="wods" element={<Wods />} />

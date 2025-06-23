@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ExerciseFull } from '@/types/exercise';
 import { Info, Plus, Trash2, Edit, Video } from 'lucide-react';
+import SelectWorkoutModal from '@/components/workouts/SelectWorkoutModal';
 import { useNavigate } from 'react-router-dom';
 
 interface ExerciseCardProps {
@@ -14,6 +16,7 @@ interface ExerciseCardProps {
 }
 
 const ExerciseCard = ({ exercise, onEdit, onDelete }: ExerciseCardProps) => {
+  const [showSelectWorkout, setShowSelectWorkout] = useState(false);
   const navigate = useNavigate();
   
   const handleViewDetails = () => {
@@ -21,6 +24,7 @@ const ExerciseCard = ({ exercise, onEdit, onDelete }: ExerciseCardProps) => {
   };
   
   const handleAddToWorkout = () => {
+    setShowSelectWorkout(true);
     // This would be implemented later with a modal
     console.log('Add to workout:', exercise.id);
   };
@@ -143,13 +147,23 @@ const ExerciseCard = ({ exercise, onEdit, onDelete }: ExerciseCardProps) => {
             <Info className="h-4 w-4 mr-2" />
             View Details
           </Button>
-          <Button 
+          <Button
             className="flex-1"
             onClick={handleAddToWorkout}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add to Workout
           </Button>
+
+          {/* Modal */}
+          <Dialog open={showSelectWorkout} onOpenChange={setShowSelectWorkout}>
+            <DialogContent>
+              <SelectWorkoutModal
+                exerciseId={exercise.id}
+                onClose={() => setShowSelectWorkout(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </CardContent>
     </Card>

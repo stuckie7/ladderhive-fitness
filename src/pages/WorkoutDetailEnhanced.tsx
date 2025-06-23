@@ -25,7 +25,7 @@ const WorkoutDetailEnhanced: React.FC = () => {
   }, [id]);
 
   const handleBack = () => {
-    navigate(-1);
+    navigate('/'); // return to dashboard
   };
 
   const getDifficultyColor = (difficulty: string | undefined) => {

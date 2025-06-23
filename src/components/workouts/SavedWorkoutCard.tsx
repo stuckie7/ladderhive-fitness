@@ -28,7 +28,7 @@ const SavedWorkoutCard: React.FC<SavedWorkoutCardProps> = ({
   
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200">
-      <Link to={`/workouts/${workout.id}`}>
+      <Link to={`/workout-player/${workout.id}`}>
         <div className="aspect-video bg-muted relative overflow-hidden">
           {workout.category && (
             <Badge className="absolute top-2 right-2 capitalize bg-fitness-secondary text-white">
@@ -99,6 +99,16 @@ const SavedWorkoutCard: React.FC<SavedWorkoutCardProps> = ({
           <Link to={`/workout-builder/${workout.id}`}>
             <Edit className="h-4 w-4 mr-2" />
             Edit
+          </Link>
+        </Button>
+        <Button 
+          size="sm"
+          className="ml-2"
+          asChild
+        >
+          <Link to={`/workout-player/${workout.id}`}>
+            <Dumbbell className="h-4 w-4 mr-2" />
+            Start
           </Link>
         </Button>
         

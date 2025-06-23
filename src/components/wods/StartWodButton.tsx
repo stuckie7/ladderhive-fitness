@@ -31,7 +31,7 @@ const StartWodButton: React.FC<StartWodButtonProps> = ({ wod, showIcon = true })
       if (template) {
         // Navigate to the workout builder with the template data
         // This ensures we're using the workout builder which will have all the details loaded
-        navigate(`/workout-builder?wod=${wod.id}&name=${encodeURIComponent(wod.name)}`);
+        navigate(`/workout-player/${wod.id}`);
       } else {
         // If no template was created, show the enhanced workout detail as a fallback
         navigate(`/workout-enhanced/${wod.id}`);
