@@ -1,3 +1,5 @@
+// Disable default JWT verification for this public callback endpoint
+export const verifyJwt = false;
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -151,12 +153,24 @@ serve(async (req: Request) => {
     try {
       decodedStateData = JSON.parse(decodeURIComponent(parsedStateString));
       extractedUserId = decodedStateData.userId;
+      const nonce = decodedStateData.nonce;
       extractedOrigin = decodedStateData.origin || siteUrl;
-      extractedCodeVerifier = decodedStateData.codeVerifier;
-      if (!extractedUserId || !extractedCodeVerifier) {
-        processingErrorMsg = 'Incomplete state data: userId or codeVerifier missing.';
+      if (!extractedUserId || !nonce) {
+        processingErrorMsg = 'Incomplete state data: userId or nonce missing.';
         throw new Error(processingErrorMsg);
       }
+      // Retrieve code verifier from PKCE table
+      if (!supabaseAdminClient) {
+        throw new Error('Supabase admin client not initialized');
+      }
+      const { data: pkceRow, error: pkceErr } = await supabaseAdminClient.from('fitbit_pkce').select('code_verifier').eq('pkce_key', nonce).single();
+      if (pkceErr || !pkceRow?.code_verifier) {
+        processingErrorMsg = 'PKCE verifier not found or DB error';
+        throw new Error(processingErrorMsg);
+      }
+      extractedCodeVerifier = pkceRow.code_verifier;
+      // Clean up row (best-effort)
+      await supabaseAdminClient.from('fitbit_pkce').delete().eq('pkce_key', nonce);
       console.log(`fitbit-handler: Extracted from state - userId: ${extractedUserId}, origin: ${extractedOrigin}, codeVerifier: ${extractedCodeVerifier ? 'present' : 'absent'}`);
     } catch (e) {
       const stateParseErrorMessage = e instanceof Error ? e.message : 'Unknown error parsing state.';

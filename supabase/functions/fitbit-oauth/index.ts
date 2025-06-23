@@ -68,23 +68,63 @@ serve(async (req: Request) => {
       )
     }
 
-    // Generate state with user ID for security
-    const state = JSON.stringify({
-      userId: user.id,
-      nonce: crypto.randomUUID()
-    })
-    
-    // Build authorization URL - Use the callback function for redirect
-        const redirectUri = `${supabaseUrl}/functions/v1/fitbit-handler`
-    
+    // Origin for CORS and later redirect
+    const originHeader = req.headers.get('origin') || '*';
+
+    // Generate PKCE values
+    const generateCodeVerifier = (length: number): string => {
+      const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+      let text = '';
+      for (let i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+      }
+      return text;
+    };
+
+    const generateCodeChallenge = async (verifier: string): Promise<string> => {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(verifier);
+      const digest = await crypto.subtle.digest('SHA-256', data);
+      return btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    };
+
+    // Create verifier/challenge
+    const codeVerifier = generateCodeVerifier(128);
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+    // Nonce to link verifier
+    const nonce = crypto.randomUUID();
+
+    // Persist verifier in fitbit_pkce (service role bypasses RLS)
+    const { error: pkceErr } = await supabase.from('fitbit_pkce').insert({
+      pkce_key: nonce,
+      user_id: user.id,
+      code_verifier: codeVerifier,
+    });
+    if (pkceErr) {
+      console.error('Failed to store PKCE verifier:', pkceErr);
+      return new Response(
+        JSON.stringify({ error: 'Server PKCE storage failure' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Build state without exposing verifier
+    const state = JSON.stringify({ userId: user.id, nonce, origin: originHeader });
+
+    // Build authorization URL with PKCE params
+    const redirectUri = `${supabaseUrl}/functions/v1/fitbit-handler`;
     const authParams = new URLSearchParams({
       response_type: 'code',
       client_id: fitbitClientId,
       redirect_uri: redirectUri,
       scope: 'activity heartrate location nutrition profile settings sleep social weight',
-      state: state,
-      expires_in: '604800' // 7 days
-    })
+      state,
+      expires_in: '604800',
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
+    });
 
     const authUrl = `https://www.fitbit.com/oauth2/authorize?${authParams.toString()}`
     
