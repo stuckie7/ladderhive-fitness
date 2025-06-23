@@ -66,12 +66,13 @@ export const useDailyProgress = () => {
 
           setProgress(newProgress);
         } else {
-          // Update workouts completed from workout history for today
+          // Count workouts from workout_sessions for today
           const { data: todayWorkouts, error: workoutError } = await supabase
-            .from('workout_history')
+            .from('workout_sessions')
             .select('id')
             .eq('user_id', user.id)
-            .eq('date', today);
+            .gte('started_at', `${today} 00:00:00`)
+            .lte('started_at', `${today} 23:59:59`);
 
           if (!workoutError) {
             const workoutsCompleted = todayWorkouts?.length || 0;
