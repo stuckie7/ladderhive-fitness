@@ -114,56 +114,59 @@ const Forums: React.FC = () => {
     }
   };
 
-  // Fetch recently solved threads
-  useEffect(() => {
-    const fetchRecentlySolved = async () => {
-      try {
-        const threads = await ForumService.getRecentlySolvedThreads(3);
-        setRecentlySolvedThreads(threads);
-      } catch (error) {
-        console.error('Error fetching recently solved threads:', error);
-      } finally {
-        setIsLoadingSolved(false);
-      }
-    };
-
-    fetchRecentlySolved();
+  // ------------------------------
+  // Data fetching helpers
+  const fetchCategories = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await ensureForumCategoriesExist();
+      const fetchedCategories: ForumCategory[] = await ForumService.getCategories();
+      const categoriesWithStats: CategoryWithStats[] = await Promise.all(
+        fetchedCategories.map(async (category) => {
+          const stats: CategoryStats = await ForumService.getCategoryStats(category.id);
+          return {
+            ...category,
+            threadCount: stats.threadCount,
+            postCount: stats.postCount,
+            lastPost: stats.lastPost,
+          };
+        })
+      );
+      setCategories(categoriesWithStats);
+    } catch (err) {
+      console.error('Forums: Error fetching categories:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to load forum categories: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
+  const fetchRecentlySolved = useCallback(async () => {
+    try {
+      setIsLoadingSolved(true);
+      const threads = await ForumService.getRecentlySolvedThreads(3);
+      setRecentlySolvedThreads(threads);
+    } catch (error) {
+      console.error('Error fetching recently solved threads:', error);
+    } finally {
+      setIsLoadingSolved(false);
+    }
+  }, []);
+
+  // ------------------------------
+  // Data fetching on mount
+  // ------------------------------
+  // Load categories and statistics + recently-solved list as soon as the page mounts
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        await ensureForumCategoriesExist();
-
-        const fetchedCategories: ForumCategory[] = await ForumService.getCategories();
-
-        const categoriesWithStats: CategoryWithStats[] = await Promise.all(
-          fetchedCategories.map(async (category) => {
-            const stats: CategoryStats = await ForumService.getCategoryStats(category.id);
-            return {
-              ...category,
-              threadCount: stats.threadCount,
-              postCount: stats.postCount,
-              lastPost: stats.lastPost,
-            };
-          })
-        );
-
-        setCategories(categoriesWithStats);
-      } catch (err) {
-        console.error('Forums: Error fetching categories:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-        setError(`Failed to load forum categories: ${errorMessage}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchCategories();
+    fetchRecentlySolved();
+
   }, []);
+
+
+
 
   if (isLoading) {
     return (
@@ -275,7 +278,8 @@ const Forums: React.FC = () => {
               categories.map((category) => (
                 <Card key={category.id} className="flex flex-col justify-between hover:border-primary/50 transition-colors">
                   <div>
-                    <Link to={`/forums/${category.slug}`} className="block">
+                    {/* Use slug if it exists and is not the string 'undefined', otherwise fall back to the numeric id */}
+<Link to={`/forums/category/${category.slug && category.slug !== 'undefined' ? category.slug : category.id}`} className="block">
                       <CardHeader className="pb-3">
                         <div className="flex items-start space-x-4">
                           <div className="flex-shrink-0 bg-primary/10 p-3 rounded-lg">
@@ -300,7 +304,8 @@ const Forums: React.FC = () => {
                     <CardContent className="pt-2 pb-4 text-sm">
                       <div className="border-t border-border pt-3">
                         <p className="font-medium text-muted-foreground mb-1">Last Post</p>
-                        <Link to={`/forums/thread/${category.lastPost.forum_threads?.slug}#post-${category.lastPost.id}`} className="font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
+                        {/* Same slug fallback logic for last post link */}
+<Link to={`/forums/thread/${(category.lastPost.forum_threads?.slug && category.lastPost.forum_threads?.slug !== 'undefined') ? category.lastPost.forum_threads?.slug : category.lastPost.forum_threads?.id}#post-${category.lastPost.id}`} className="font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
                           {category.lastPost.forum_threads?.title}
                         </Link>
                         <p className="text-xs text-muted-foreground mt-1">

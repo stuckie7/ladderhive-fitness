@@ -57,8 +57,11 @@ interface Thread {
 }
 
 const ForumThread: React.FC = () => {
-  // Route is /forums/thread/:id so param name is `id`
-const { id: threadSlug } = useParams<{ id: string }>();
+  // Route is /forums/thread/:threadSlug (legacy: /forums/thread/:id)
+// Accept both param names for backward compatibility
+const { threadSlug, id: legacyId } = useParams<{ threadSlug?: string; id?: string }>();
+const effectiveSlug = threadSlug ?? legacyId;
+console.log('ForumThread mount, slug =', effectiveSlug);
   console.log('ForumThread mount, slug =', threadSlug);
   const navigate = useNavigate();
   const location = useLocation();
@@ -121,7 +124,7 @@ const { id: threadSlug } = useParams<{ id: string }>();
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const fetchThreadData = async () => {
-      if (!threadSlug) return;
+      if (!effectiveSlug) return;
       
       try {
         if (isMounted) {
@@ -131,10 +134,10 @@ const { id: threadSlug } = useParams<{ id: string }>();
 
         // build safe filter – avoid casting errors if threadSlug is not numeric
         const filters = [
-          `slug.eq.${threadSlug}`
+          `slug.eq.${effectiveSlug}`
         ];
-        if (/^\d+$/.test(threadSlug)) {
-          filters.push(`id.eq.${threadSlug}`);
+        if (/^\d+$/.test(effectiveSlug)) {
+          filters.push(`id.eq.${effectiveSlug}`);
         }
 
         const { data: threadData, error: threadError } = await supabase
@@ -201,7 +204,7 @@ const { id: threadSlug } = useParams<{ id: string }>();
         supabase.removeChannel(channel);
       }
     };
-  }, [threadSlug]);
+  }, [effectiveSlug]);
 
   useEffect(() => {
     if (location.hash && posts.length > 0 && !isLoading) {

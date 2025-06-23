@@ -20,16 +20,24 @@ const NewThread: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Determine initial loading state based on whether a *valid* category parameter was supplied.
+// React-Router may sometimes supply the literal string "undefined" for an optional param that was
+// omitted (for example when you navigate to /forums/new-thread). Treat this exactly the same as an
+// absent parameter so that we don’t get stuck on the loading spinner.
+const rawCategoryParam = categoryId === 'undefined' ? undefined : categoryId;
+const [isLoading, setIsLoading] = useState(!!rawCategoryParam);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
 
   useEffect(() => {
     const fetchCategory = async () => {
-      if (!categoryId) {
-        setIsLoading(false);
-        return;
-      }
+    // Treat both undefined and the literal string "undefined" as missing.
+    if (!rawCategoryParam) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
 
       try {
         console.log('Fetching category with ID:', categoryId);
@@ -38,7 +46,7 @@ const NewThread: React.FC = () => {
         const { data, error: fetchError } = await supabase
           .from('forum_categories')
           .select('id, name, slug')
-          .or(`id.eq.${categoryId},slug.eq.${categoryId}`)
+          .or(`id.eq.${rawCategoryParam},slug.eq.${rawCategoryParam}`)
           .single();
 
         if (fetchError) {
@@ -62,7 +70,7 @@ const NewThread: React.FC = () => {
     };
 
     fetchCategory();
-  }, [categoryId]);
+  }, [rawCategoryParam]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

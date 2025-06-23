@@ -14,33 +14,12 @@ interface StartWodButtonProps {
 
 const StartWodButton: React.FC<StartWodButtonProps> = ({ wod, showIcon = true }) => {
   const navigate = useNavigate();
-  const { loadTemplateFromWod } = useTemplateManagement();
+  // const { loadTemplateFromWod } = useTemplateManagement();
   const { toast } = useToast();
   
   const handleStartWorkout = async () => {
     try {
-      // Show loading toast
-      toast({
-        title: "Creating Workout",
-        description: "Setting up your workout based on the WOD...",
-      });
-      
-      // Load the WOD as a template
-      const template = await loadTemplateFromWod(wod.id);
-      
-      if (template) {
-        // Navigate to the workout builder with the template data
-        // This ensures we're using the workout builder which will have all the details loaded
-        navigate(`/workout-player/${wod.id}`);
-      } else {
-        // If no template was created, show the enhanced workout detail as a fallback
-        navigate(`/workout-enhanced/${wod.id}`);
-        
-        toast({
-          title: "Workout Ready",
-          description: "Viewing workout details",
-        });
-      }
+      navigate(`/workout-player/${wod.id}`);
     } catch (error) {
       console.error("Error starting workout:", error);
       toast({
@@ -49,14 +28,13 @@ const StartWodButton: React.FC<StartWodButtonProps> = ({ wod, showIcon = true })
         variant: "destructive"
       });
       
-      // Fallback navigation to the enhanced view
-      navigate(`/workout-enhanced/${wod.id}`);
+      // fallback – remain on same page
     }
   };
   
   return (
     <Button 
-      className="bg-fitness-primary hover:bg-fitness-primary/90"
+      className="bg-primary"
       onClick={handleStartWorkout}
     >
       {showIcon && <Play className="mr-2 h-4 w-4" />}

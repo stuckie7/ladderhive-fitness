@@ -45,8 +45,9 @@ interface Category {
 }
 
 const ForumCategory: React.FC = () => {
-  // Route is defined as /forums/:category in App.tsx
-const { category: categorySlug } = useParams<{ category: string }>();
+  // Route can be /forums/category/:slug (preferred) or /forums/:category (legacy)
+const { slug, category: legacyCategory } = useParams<{ slug?: string; category?: string }>();
+const categorySlug = slug ?? legacyCategory;
   const navigate = useNavigate();
   const [category, setCategory] = useState<Category | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -64,14 +65,15 @@ const { category: categorySlug } = useParams<{ category: string }>();
       try {
         setIsLoading(true);
         setError(null);
-        console.log('Fetching category with slug:', categorySlug);
+        console.log('Fetching category by slug or id:', categorySlug);
 
-        // Fetch category details
+        // Determine if param is numeric id or slug
+        const isNumericId = /^\d+$/.test(categorySlug);
         const { data: categoryData, error: categoryError } = await supabase
           .from('forum_categories')
           .select('*')
-          .eq('slug', categorySlug)
-          .single();
+          [isNumericId ? 'eq' : 'eq'](isNumericId ? 'id' : 'slug', categorySlug)
+          .maybeSingle();
 
         console.log('Category fetch result:', { categoryData, categoryError });
 
@@ -320,9 +322,12 @@ const { category: categorySlug } = useParams<{ category: string }>();
           </div>
         ) : (
           <ul>
-            {threads.map(thread => (
+            {threads.map(thread => {
+                const pathSegment = thread.slug && thread.slug !== 'undefined' ? thread.slug : thread.id;
+                return (
               <li key={thread.id} className={`group hover:bg-gray-50 transition-colors duration-150 ${thread.is_pinned ? 'bg-blue-50' : 'bg-white'}`}>
-                <Link to={`/forums/thread/${thread.slug || thread.id}`} className="block p-4">
+                
+<Link to={`/forums/thread/${pathSegment}`} className="block p-4">
                   <div className="flex items-start">
                     <div className="flex-shrink-0 mr-3 sm:mr-4">
                       <Avatar className="h-10 w-10">
@@ -376,7 +381,8 @@ const { category: categorySlug } = useParams<{ category: string }>();
                   </div>
                 </Link>
               </li>
-            ))}
+            );
+            })}
           </ul>
         )}
       </div>

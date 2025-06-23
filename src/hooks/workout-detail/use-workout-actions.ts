@@ -22,7 +22,7 @@ export const useWorkoutActions = (workoutId: string) => {
         .select('id')
         .eq('user_id', userId)
         .eq('workout_id', workoutId)
-        .single();
+        .maybeSingle();
       
       if (error && error.code !== 'PGRST116') { // PGRST116 is no rows returned
         throw error;

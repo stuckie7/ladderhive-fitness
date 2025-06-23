@@ -23,6 +23,7 @@ import Forums from '@/pages/Forums';
 import Progress from '@/pages/Progress';
 import ForumCategory from '@/pages/ForumCategory';
 import ForumThread from '@/pages/ForumThread';
+import NewThread from '@/pages/NewThread';
 import ExerciseDetailPage from '@/pages/ExerciseDetailPage'; // Added import
 
 // Protected Route Component
@@ -116,7 +117,18 @@ function App() {
             <Route path="mindful-movement/:id" element={<MindfulMovementPage />} />
             <Route path="saved-workouts" element={<SavedWorkouts />} />
             <Route path="forums" element={<Forums />} />
+            {/* Forums */}
+            <Route path="forums" element={<Forums />} />
+            {/* handle /forums/category/:slug links */}
+            <Route path="forums/category/:slug" element={<ForumCategory />} />
+            {/* fallback legacy route /forums/:category */}
             <Route path="forums/:category" element={<ForumCategory />} />
+            {/* New thread (optional category param) */}
+            <Route path="forums/new-thread" element={<NewThread />} />
+            <Route path="forums/new-thread/:categoryId" element={<NewThread />} />
+
+            {/* thread by slug (preferred) or numeric id (legacy) */}
+            <Route path="forums/thread/:threadSlug" element={<ForumThread />} />
             <Route path="forums/thread/:id" element={<ForumThread />} />
             <Route path="progress" element={<Progress />} />
             <Route path="exercises/enhanced/:exerciseId" element={<ExerciseDetailPage />} />

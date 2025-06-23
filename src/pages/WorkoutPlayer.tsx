@@ -1,13 +1,24 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import { Button } from '@/components/ui/button';
+import useSWR from 'swr';
+import VideoEmbed from '@/components/workouts/detail/VideoEmbed';
 import { ArrowLeft } from 'lucide-react';
 import { useWorkoutDetail } from '@/hooks/workout-detail';
 import { useWods } from '@/hooks/wods/use-wods';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { getBestVideoUrl } from '@/utils/video';
+
+// Local helper types
+type Step = {
+  id: number | string;
+  label: string;
+  detail: string;
+};
 
 // Very lightweight workout "player".  For now it simply shows the workout title
 // and starts a timer immediately.  This fulfils the requested behaviour of
@@ -28,7 +39,7 @@ const WorkoutPlayer: React.FC = () => {
   }, [isLoading, workout, id, fetchWodById]);
 
   // derive steps (exercises or wod parts)
-  const steps = React.useMemo(() => {
+  const steps = React.useMemo<Step[]>(() => {
     if (workout && workout.exercises) {
       return workout.exercises.map((ex: any, idx: number) => ({
         id: ex.id || idx,
@@ -52,24 +63,119 @@ const WorkoutPlayer: React.FC = () => {
       if (partFields.length > 0) {
         return partFields.map((p, idx) => ({ id: idx, label: p as string, detail: '' }));
       }
-      if (selectedWod.components) {
-        return Object.keys(selectedWod.components).map((key, idx) => ({ id: idx, label: key, detail: JSON.stringify(selectedWod.components[key]) }));
+      // Fallback – interpret `components` if present
+      if (selectedWod?.components) {
+        // Array form
+        if (Array.isArray(selectedWod.components)) {
+          return selectedWod.components.map((comp: any, idx) => ({
+            id: idx,
+            label: comp?.name ?? `Component ${idx + 1}`,
+            detail: JSON.stringify(comp),
+          }));
+        }
+        // Object map form
+        if (typeof selectedWod.components === 'object') {
+          return Object.entries(selectedWod.components as Record<string, unknown>).map(([key, val], idx) => ({
+            id: idx,
+            label: key,
+            detail: JSON.stringify(val),
+          }));
+        }
       }
     }
     return [];
   }, [workout, selectedWod]);
 
-  // current step index
+  // current step index - declare early so it's defined for other hooks
   const [currentStep, setCurrentStep] = useState(0);
+
+  // current exercise video url
+  const currentVideoUrl = React.useMemo(() => {
+    const exerciseObj = workout && workout.exercises && workout.exercises[currentStep]
+      ? workout.exercises[currentStep].exercise
+      : undefined;
+    return getBestVideoUrl(exerciseObj, selectedWod) || '';
+    
+    if (workout && workout.exercises && workout.exercises[currentStep]) {
+      const ex = workout.exercises[currentStep].exercise;
+      const exUrl = ex?.video_url || ex?.short_youtube_demo || ex?.video_demonstration_url;
+      if (exUrl) return exUrl;
+    }
+    // Fallback to WOD-level demo video
+    if (selectedWod?.video_demo) {
+      return selectedWod.video_demo;
+    }
+    
+  }, [workout, currentStep, selectedWod]);
+
+  // auto-advance cycle (work/rest)
+  const WORK_SEC = 45;
+  const REST_SEC = 15;
+
+  // finish handler extracted to keep JSX tidy
+  const handleFinish = async () => {
+    if (!user) {
+      toast({ title: 'Please sign in' });
+      return;
+    }
+    try {
+      await supabase.from('workout_sessions').insert({
+        user_id: user.id,
+        workout_id: workout ? workout.id : null,
+        wod_id: selectedWod ? selectedWod.id : null,
+        started_at: startTimeRef.current?.toISOString(),
+        ended_at: new Date().toISOString(),
+      });
+      toast({ title: 'Workout logged! 🎉' });
+      navigate('/progress');
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Error saving session', variant: 'destructive' });
+    }
+  };
+  const [phase, setPhase] = useState<'work' | 'rest'>('work');
+  const [phaseRemaining, setPhaseRemaining] = useState(WORK_SEC);
 
   // simple seconds counter
   const [seconds, setSeconds] = useState(0);
   const startTimeRef = useRef<Date | null>(null);
   useEffect(() => {
     startTimeRef.current = new Date();
-    const interval = setInterval(() => setSeconds((s) => s + 1), 1000);
-    return () => clearInterval(interval);
+    const main = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(main);
   }, []);
+
+  // phase countdown and auto-advance
+  useEffect(() => {
+    if (steps.length === 0) return;
+    const timer = setInterval(() => {
+      setPhaseRemaining((prev) => {
+        if (prev > 1) return prev - 1;
+
+        // === Phase finished ===
+        if (phase === 'work') {
+          // Switch to rest, if any
+          if (REST_SEC > 0) {
+            setPhase('rest');
+            return REST_SEC;
+          }
+        } else {
+          // Rest just ended – time to advance or finish
+          if (currentStep >= steps.length - 1) {
+            clearInterval(timer);
+            handleFinish();
+            return 0;
+          }
+          // move to next step
+          setPhase('work');
+          setCurrentStep((s) => s + 1);
+          return WORK_SEC;
+        }
+        return prev;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [phase, currentStep, steps.length]);
 
   const formatTime = (total: number) => {
     const mins = Math.floor(total / 60)
@@ -79,28 +185,76 @@ const WorkoutPlayer: React.FC = () => {
     return `${mins}:${secs}`;
   };
 
+  // progress percentage for current phase (0 – 100)
+  const phasePercent = React.useMemo(() => {
+    const total = phase === 'work' ? WORK_SEC : REST_SEC;
+    return ((total - phaseRemaining) / total) * 100;
+  }, [phase, phaseRemaining]);
+
+  // haptic / audio cue on phase change
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(100);
+    }
+    // optional audio beep (commented until asset added)
+    // new Audio('/beep.mp3').play().catch(() => {});
+  }, [phase]);
+
+  // last-done lookup
+  const { data: lastSession } = useSWR(
+    user && id ? `/api/last-session/${id}` : null,
+    async () => {
+      const { data } = await supabase
+        .from('workout_sessions')
+        .select('performed_at')
+        .eq('user_id', user?.id)
+        .eq('workout_id', id)
+        .order('performed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data?.performed_at as string | undefined;
+    }
+  );
+
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/')}>  {/* Back home */}
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Home
-        </Button>
+      <ErrorBoundary>
+        <div className="p-4">
+          {lastSession && (
+            <div className="mb-2 text-sm text-muted-foreground text-right">
+              Last done: {new Date(lastSession).toLocaleDateString()}
+            </div>
+          )}
+          <div className="container mx-auto px-4 py-6 space-y-6">
+            <Button variant="ghost" onClick={() => navigate('/')}>  {/* Back home */}
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Home
+            </Button>
 
-        {(isLoading || wodLoading) && !workout && !selectedWod ? (
-          <p className="text-center text-muted-foreground">Loading workout…</p>
-        ) : (
+            {(isLoading || wodLoading) && !workout && !selectedWod ? (
+              <p className="text-center text-muted-foreground">Loading workout…</p>
+            ) : (
+
           <div className="space-y-6 text-center">
             <h1 className="text-3xl font-bold">{workout ? workout.title : selectedWod?.name}</h1>
             <p className="text-6xl font-mono">{formatTime(seconds)}</p>
-            <p className="text-muted-foreground">
-              This is a minimal workout player. A richer experience (rep counting,
-              rest tracking, etc.) will land soon.
+            {/* Phase progress bar */}
+            <div className="w-full max-w-md mx-auto bg-muted/30 h-2 rounded">
+              <div
+                className="h-2 bg-primary rounded transition-all"
+                style={{ width: `${phasePercent}%` }}
+              />
+            </div>
+
+            {/* Video area */}
+            {currentVideoUrl && <VideoEmbed videoUrl={currentVideoUrl} />}
+            <p className="text-lg font-semibold capitalize">
+              {phase === 'work' ? 'Work' : 'Rest'} — {phaseRemaining}s
             </p>
                       {/* Steps list */}
             {steps.length > 0 && (
               <div className="max-w-md mx-auto space-y-2 text-left">
-                {steps.map((step, idx) => (
+                {steps.map((step: Step, idx: number) => (
                   <div
                     key={step.id}
                     className={`p-3 rounded-lg border ${idx === currentStep ? 'bg-primary/10 border-primary' : 'border-muted'}`}
@@ -112,42 +266,16 @@ const WorkoutPlayer: React.FC = () => {
               </div>
             )}
 
-            {steps.length > 0 && currentStep < steps.length - 1 && (
-              <Button onClick={() => setCurrentStep((s) => s + 1)} className="mt-4">
-                Next
-              </Button>
-            )}
 
             {/* Finish button */}
-            <Button
-              variant="default"
-              className="mt-6"
-              onClick={async () => {
-                if (!user) {
-                  toast({ title: 'Please sign in' });
-                  return;
-                }
-                try {
-                  await supabase.from('workout_sessions').insert({
-                    user_id: user.id,
-                    workout_id: workout ? workout.id : null,
-                    wod_id: selectedWod ? selectedWod.id : null,
-                    started_at: startTimeRef.current?.toISOString(),
-                    ended_at: new Date().toISOString(),
-                  });
-                  toast({ title: 'Workout logged! 🎉' });
-                  navigate('/progress');
-                } catch (e) {
-                  console.error(e);
-                  toast({ title: 'Error saving session', variant: 'destructive' });
-                }
-              }}
-            >
+            <Button className="mt-6" onClick={handleFinish}>
               Finish Workout
             </Button>
           </div>
         )}
       </div>
+        </div>
+          </ErrorBoundary>
     </AppLayout>
   );
 };

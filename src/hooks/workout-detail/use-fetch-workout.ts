@@ -10,15 +10,15 @@ export const fetchWorkoutById = async (workoutId: string) => {
       .from('prepared_workouts')
       .select('*')
       .eq('id', workoutId)
-      .single();
+      .maybeSingle();
       
-    if (error && error.code === 'PGRST116') {
+    if (!data) {
       // If not found in prepared workouts, try user created workouts
       const { data: userWorkout, error: userWorkoutError } = await supabase
         .from('user_created_workouts')
         .select('*')
         .eq('id', workoutId)
-        .single();
+        .maybeSingle();
         
       if (userWorkoutError) {
         console.error('Error fetching workout:', userWorkoutError);
