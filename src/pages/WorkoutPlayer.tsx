@@ -24,21 +24,60 @@ type Step = {
 const WorkoutPlayer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { workout, isLoading: workoutLoading } = useWorkoutDetail(id);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { selectedWod, isLoading: wodLoading, fetchWodById } = useWods();
+  
+  // Simplified loading states
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [contentLoaded, setContentLoaded] = useState(false);
+  const [workout, setWorkout] = useState<any>(null);
+  const [selectedWod, setSelectedWod] = useState<any>(null);
 
-  const [hasTriedWod, setHasTriedWod] = useState(false);
-
-  // if workout not found, try fetching WOD once
+  // Initialize content loading
   useEffect(() => {
-    if (!workoutLoading && !workout && id && !hasTriedWod) {
-      console.log('Workout not found, trying to fetch WOD...');
-      fetchWodById(id);
-      setHasTriedWod(true);
-    }
-  }, [workoutLoading, workout, id, fetchWodById, hasTriedWod]);
+    const initializeContent = async () => {
+      if (!id) {
+        setIsInitializing(false);
+        return;
+      }
+
+      console.log('Initializing workout player for ID:', id);
+      
+      try {
+        // Try to fetch workout first
+        const { data: workoutData } = await supabase
+          .from('prepared_workouts')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (workoutData) {
+          console.log('Found workout:', workoutData.title);
+          setWorkout(workoutData);
+          setContentLoaded(true);
+        } else {
+          // Try to fetch WOD
+          const { data: wodData } = await supabase
+            .from('wods')
+            .select('*')
+            .eq('id', id)
+            .maybeSingle();
+
+          if (wodData) {
+            console.log('Found WOD:', wodData.name);
+            setSelectedWod(wodData);
+            setContentLoaded(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing content:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeContent();
+  }, [id]);
 
   // derive steps (exercises or wod parts)
   const steps = React.useMemo<Step[]>(() => {
@@ -88,7 +127,7 @@ const WorkoutPlayer: React.FC = () => {
     return [];
   }, [workout, selectedWod]);
 
-  // current step index - declare early so it's defined for other hooks
+  // current step index
   const [currentStep, setCurrentStep] = useState(0);
 
   // current exercise video url
@@ -103,7 +142,7 @@ const WorkoutPlayer: React.FC = () => {
   const WORK_SEC = 45;
   const REST_SEC = 15;
 
-  // finish handler extracted to keep JSX tidy
+  // finish handler
   const handleFinish = async () => {
     if (!user) {
       toast({ title: 'Please sign in' });
@@ -131,15 +170,19 @@ const WorkoutPlayer: React.FC = () => {
   // simple seconds counter
   const [seconds, setSeconds] = useState(0);
   const startTimeRef = useRef<Date | null>(null);
+  
   useEffect(() => {
+    if (!contentLoaded) return;
+    
     startTimeRef.current = new Date();
     const main = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(main);
-  }, []);
+  }, [contentLoaded]);
 
   // phase countdown and auto-advance
   useEffect(() => {
-    if (steps.length === 0) return;
+    if (steps.length === 0 || !contentLoaded) return;
+    
     const timer = setInterval(() => {
       setPhaseRemaining((prev) => {
         if (prev > 1) return prev - 1;
@@ -167,7 +210,7 @@ const WorkoutPlayer: React.FC = () => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [phase, currentStep, steps.length]);
+  }, [phase, currentStep, steps.length, contentLoaded]);
 
   const formatTime = (total: number) => {
     const mins = Math.floor(total / 60)
@@ -185,16 +228,16 @@ const WorkoutPlayer: React.FC = () => {
 
   // haptic / audio cue on phase change
   useEffect(() => {
+    if (!contentLoaded) return;
+    
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(100);
     }
-    // optional audio beep (commented until asset added)
-    // new Audio('/beep.mp3').play().catch(() => {});
-  }, [phase]);
+  }, [phase, contentLoaded]);
 
   // last-done lookup
   const { data: lastSession } = useSWR(
-    user && id ? `/api/last-session/${id}` : null,
+    user && id && contentLoaded ? `/api/last-session/${id}` : null,
     async () => {
       const { data } = await supabase
         .from('workout_sessions')
@@ -208,12 +251,8 @@ const WorkoutPlayer: React.FC = () => {
     }
   );
 
-  // Determine if we're still loading
-  const isLoading = workoutLoading || (wodLoading && !hasTriedWod);
-  const hasContent = workout || selectedWod;
-
   // Show error if no content found after loading
-  if (!isLoading && !hasContent) {
+  if (!isInitializing && !contentLoaded) {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-6 space-y-6">
@@ -248,7 +287,7 @@ const WorkoutPlayer: React.FC = () => {
               Home
             </Button>
 
-            {isLoading ? (
+            {isInitializing ? (
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
                 <p className="text-muted-foreground">Loading workout…</p>
