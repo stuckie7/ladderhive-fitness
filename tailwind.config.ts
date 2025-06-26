@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -67,16 +66,16 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
         },
-        // Fitness app specific colors with new neon palette
+        // Updated fitness app colors to match the green/teal theme in the image
         fitness: {
-          primary: '#00FFBB',   // Neon teal/green
-          secondary: '#00CCFF', // Electric blue
-          accent: '#FF00FF',    // Hot pink
-          orange: '#FF7700',    // Bright orange
-          muted: '#555555',     // Dark gray
-          dark: '#121212',      // Near black
-          darker: '#0A0A0A',    // Darkest black
-          light: '#FFFFFF',     // Pure white
+          primary: '#00D9C4',     // Bright teal/green (matches the buttons in image)
+          secondary: '#00B8A7',   // Slightly darker teal
+          accent: '#1DE9B6',      // Brighter green accent
+          orange: '#FF6B35',      // Warm orange for variety
+          muted: '#4A5568',       // Medium gray
+          dark: '#1A202C',        // Dark background
+          darker: '#171923',      // Darker background
+          light: '#F7FAFC',       // Light text/elements
         }
       },
       borderRadius: {
@@ -121,10 +120,10 @@ export default {
         },
         'glow': {
           '0%, 100%': {
-            boxShadow: '0 0 8px 2px rgba(0, 255, 187, 0.3)'
+            boxShadow: '0 0 8px 2px rgba(0, 217, 196, 0.3)'
           },
           '50%': {
-            boxShadow: '0 0 16px 4px rgba(0, 255, 187, 0.6)'
+            boxShadow: '0 0 16px 4px rgba(0, 217, 196, 0.6)'
           }
         },
         'gradient-shift': {
@@ -144,7 +143,7 @@ export default {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'neon-gradient': 'linear-gradient(90deg, #00FFBB, #00CCFF, #FF00FF, #FF7700)',
+        'neon-gradient': 'linear-gradient(90deg, #00D9C4, #1DE9B6, #00B8A7)',
       }
     }
   },
