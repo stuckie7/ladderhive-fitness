@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -20,23 +21,24 @@ type Step = {
   detail: string;
 };
 
-// Very lightweight workout "player".  For now it simply shows the workout title
-// and starts a timer immediately.  This fulfils the requested behaviour of
-// displaying a read-only view with a running timer.
 const WorkoutPlayer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { workout, isLoading } = useWorkoutDetail(id);
+  const { workout, isLoading: workoutLoading } = useWorkoutDetail(id);
   const { user } = useAuth();
   const { toast } = useToast();
   const { selectedWod, isLoading: wodLoading, fetchWodById } = useWods();
 
+  const [hasTriedWod, setHasTriedWod] = useState(false);
+
   // if workout not found, try fetching WOD once
   useEffect(() => {
-    if (!isLoading && !workout && id) {
+    if (!workoutLoading && !workout && id && !hasTriedWod) {
+      console.log('Workout not found, trying to fetch WOD...');
       fetchWodById(id);
+      setHasTriedWod(true);
     }
-  }, [isLoading, workout, id, fetchWodById]);
+  }, [workoutLoading, workout, id, fetchWodById, hasTriedWod]);
 
   // derive steps (exercises or wod parts)
   const steps = React.useMemo<Step[]>(() => {
@@ -95,17 +97,6 @@ const WorkoutPlayer: React.FC = () => {
       ? workout.exercises[currentStep].exercise
       : undefined;
     return getBestVideoUrl(exerciseObj, selectedWod) || '';
-    
-    if (workout && workout.exercises && workout.exercises[currentStep]) {
-      const ex = workout.exercises[currentStep].exercise;
-      const exUrl = ex?.video_url || ex?.short_youtube_demo || ex?.video_demonstration_url;
-      if (exUrl) return exUrl;
-    }
-    // Fallback to WOD-level demo video
-    if (selectedWod?.video_demo) {
-      return selectedWod.video_demo;
-    }
-    
   }, [workout, currentStep, selectedWod]);
 
   // auto-advance cycle (work/rest)
@@ -133,6 +124,7 @@ const WorkoutPlayer: React.FC = () => {
       toast({ title: 'Error saving session', variant: 'destructive' });
     }
   };
+  
   const [phase, setPhase] = useState<'work' | 'rest'>('work');
   const [phaseRemaining, setPhaseRemaining] = useState(WORK_SEC);
 
@@ -216,6 +208,31 @@ const WorkoutPlayer: React.FC = () => {
     }
   );
 
+  // Determine if we're still loading
+  const isLoading = workoutLoading || (wodLoading && !hasTriedWod);
+  const hasContent = workout || selectedWod;
+
+  // Show error if no content found after loading
+  if (!isLoading && !hasContent) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto px-4 py-6 space-y-6">
+          <Button variant="ghost" onClick={() => navigate('/')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Home
+          </Button>
+          <div className="text-center space-y-4">
+            <h1 className="text-2xl font-bold">Workout Not Found</h1>
+            <p className="text-muted-foreground">The workout you're looking for doesn't exist.</p>
+            <Button onClick={() => navigate('/workouts')}>
+              Browse Workouts
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <ErrorBoundary>
@@ -226,56 +243,60 @@ const WorkoutPlayer: React.FC = () => {
             </div>
           )}
           <div className="container mx-auto px-4 py-6 space-y-6">
-            <Button variant="ghost" onClick={() => navigate('/')}>  {/* Back home */}
+            <Button variant="ghost" onClick={() => navigate('/')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Home
             </Button>
 
-            {(isLoading || wodLoading) && !workout && !selectedWod ? (
-              <p className="text-center text-muted-foreground">Loading workout…</p>
+            {isLoading ? (
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-muted-foreground">Loading workout…</p>
+              </div>
             ) : (
-
-          <div className="space-y-6 text-center">
-            <h1 className="text-3xl font-bold">{workout ? workout.title : selectedWod?.name}</h1>
-            <p className="text-6xl font-mono">{formatTime(seconds)}</p>
-            {/* Phase progress bar */}
-            <div className="w-full max-w-md mx-auto bg-muted/30 h-2 rounded">
-              <div
-                className="h-2 bg-primary rounded transition-all"
-                style={{ width: `${phasePercent}%` }}
-              />
-            </div>
-
-            {/* Video area */}
-            {currentVideoUrl && <VideoEmbed videoUrl={currentVideoUrl} />}
-            <p className="text-lg font-semibold capitalize">
-              {phase === 'work' ? 'Work' : 'Rest'} — {phaseRemaining}s
-            </p>
-                      {/* Steps list */}
-            {steps.length > 0 && (
-              <div className="max-w-md mx-auto space-y-2 text-left">
-                {steps.map((step: Step, idx: number) => (
+              <div className="space-y-6 text-center">
+                <h1 className="text-3xl font-bold">{workout ? workout.title : selectedWod?.name}</h1>
+                <p className="text-6xl font-mono">{formatTime(seconds)}</p>
+                
+                {/* Phase progress bar */}
+                <div className="w-full max-w-md mx-auto bg-muted/30 h-2 rounded">
                   <div
-                    key={step.id}
-                    className={`p-3 rounded-lg border ${idx === currentStep ? 'bg-primary/10 border-primary' : 'border-muted'}`}
-                  >
-                    <div className="font-medium">{step.label}</div>
-                    {step.detail && <div className="text-sm text-muted-foreground">{step.detail}</div>}
+                    className="h-2 bg-primary rounded transition-all"
+                    style={{ width: `${phasePercent}%` }}
+                  />
+                </div>
+
+                {/* Video area */}
+                {currentVideoUrl && <VideoEmbed videoUrl={currentVideoUrl} />}
+                
+                <p className="text-lg font-semibold capitalize">
+                  {phase === 'work' ? 'Work' : 'Rest'} — {phaseRemaining}s
+                </p>
+                
+                {/* Steps list */}
+                {steps.length > 0 && (
+                  <div className="max-w-md mx-auto space-y-2 text-left">
+                    {steps.map((step: Step, idx: number) => (
+                      <div
+                        key={step.id}
+                        className={`p-3 rounded-lg border ${idx === currentStep ? 'bg-primary/10 border-primary' : 'border-muted'}`}
+                      >
+                        <div className="font-medium">{step.label}</div>
+                        {step.detail && <div className="text-sm text-muted-foreground">{step.detail}</div>}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+
+                {/* Finish button */}
+                <Button className="mt-6" onClick={handleFinish}>
+                  Finish Workout
+                </Button>
               </div>
             )}
-
-
-            {/* Finish button */}
-            <Button className="mt-6" onClick={handleFinish}>
-              Finish Workout
-            </Button>
           </div>
-        )}
-      </div>
         </div>
-          </ErrorBoundary>
+      </ErrorBoundary>
     </AppLayout>
   );
 };
