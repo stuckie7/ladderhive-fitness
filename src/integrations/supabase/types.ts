@@ -447,11 +447,33 @@ export type Database = {
         }
         Relationships: []
       }
+      fitbit_pkce: {
+        Row: {
+          code_verifier: string
+          created_at: string | null
+          pkce_key: string
+          user_id: string | null
+        }
+        Insert: {
+          code_verifier: string
+          created_at?: string | null
+          pkce_key: string
+          user_id?: string | null
+        }
+        Update: {
+          code_verifier?: string
+          created_at?: string | null
+          pkce_key?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       fitbit_tokens: {
         Row: {
           access_token: string
           created_at: string
           expires_at: string
+          fitbit_user_id: string | null
           id: string
           refresh_token: string
           scope: string | null
@@ -462,6 +484,7 @@ export type Database = {
           access_token: string
           created_at?: string
           expires_at: string
+          fitbit_user_id?: string | null
           id?: string
           refresh_token: string
           scope?: string | null
@@ -472,6 +495,7 @@ export type Database = {
           access_token?: string
           created_at?: string
           expires_at?: string
+          fitbit_user_id?: string | null
           id?: string
           refresh_token?: string
           scope?: string | null
@@ -694,6 +718,39 @@ export type Database = {
         }
         Relationships: []
       }
+      mindful_sessions: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          session_type: string | null
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          session_type?: string | null
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          session_type?: string | null
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       muscle_groups: {
         Row: {
           body_region: string
@@ -773,6 +830,35 @@ export type Database = {
             columns: ["reference_thread_id"]
             isOneToOne: false
             referencedRelation: "forum_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          post_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji?: string
+          post_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          post_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
             referencedColumns: ["id"]
           },
         ]
@@ -1023,6 +1109,7 @@ export type Database = {
           bio: string | null
           chest: number | null
           created_at: string
+          daily_step_goal: number | null
           first_name: string | null
           fitness_goals: string[] | null
           fitness_level: string | null
@@ -1045,6 +1132,7 @@ export type Database = {
           bio?: string | null
           chest?: number | null
           created_at?: string
+          daily_step_goal?: number | null
           first_name?: string | null
           fitness_goals?: string[] | null
           fitness_level?: string | null
@@ -1067,6 +1155,7 @@ export type Database = {
           bio?: string | null
           chest?: number | null
           created_at?: string
+          daily_step_goal?: number | null
           first_name?: string | null
           fitness_goals?: string[] | null
           fitness_level?: string | null
@@ -1084,6 +1173,71 @@ export type Database = {
           workout_days?: string[] | null
         }
         Relationships: []
+      }
+      progress_logs: {
+        Row: {
+          completed_at: string
+          id: number
+          mindful_session_id: string | null
+          user_id: string
+          workout_id: string | null
+        }
+        Insert: {
+          completed_at?: string
+          id?: number
+          mindful_session_id?: string | null
+          user_id: string
+          workout_id?: string | null
+        }
+        Update: {
+          completed_at?: string
+          id?: number
+          mindful_session_id?: string | null
+          user_id?: string
+          workout_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_logs_mindful_session_id_fkey"
+            columns: ["mindful_session_id"]
+            isOneToOne: false
+            referencedRelation: "mindful_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_logs_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_workouts: {
+        Row: {
+          saved_at: string
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          saved_at?: string
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          saved_at?: string
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_workouts_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_workouts: {
         Row: {
@@ -1557,6 +1711,64 @@ export type Database = {
           },
         ]
       }
+      wod_components: {
+        Row: {
+          component_type: string
+          created_at: string | null
+          duration_seconds: number | null
+          exercise_id: string | null
+          id: string
+          order: number | null
+          order_index: number
+          reps: number | null
+          wod_id: string | null
+        }
+        Insert: {
+          component_type: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          exercise_id?: string | null
+          id?: string
+          order?: number | null
+          order_index: number
+          reps?: number | null
+          wod_id?: string | null
+        }
+        Update: {
+          component_type?: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          exercise_id?: string | null
+          id?: string
+          order?: number | null
+          order_index?: number
+          reps?: number | null
+          wod_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wod_components_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wod_components_wod_id_fkey"
+            columns: ["wod_id"]
+            isOneToOne: false
+            referencedRelation: "wods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wod_components_wod_id_fkey"
+            columns: ["wod_id"]
+            isOneToOne: false
+            referencedRelation: "workout_statistics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wods: {
         Row: {
           avg_duration_minutes: number | null
@@ -1737,6 +1949,39 @@ export type Database = {
           updated_at?: string
           user_id?: string
           workout_id?: string
+        }
+        Relationships: []
+      }
+      workout_sessions: {
+        Row: {
+          duration_sec: number | null
+          ended_at: string | null
+          id: string
+          notes: string | null
+          started_at: string
+          user_id: string | null
+          wod_id: string | null
+          workout_id: string | null
+        }
+        Insert: {
+          duration_sec?: number | null
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          user_id?: string | null
+          wod_id?: string | null
+          workout_id?: string | null
+        }
+        Update: {
+          duration_sec?: number | null
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          user_id?: string | null
+          wod_id?: string | null
+          workout_id?: string | null
         }
         Relationships: []
       }
