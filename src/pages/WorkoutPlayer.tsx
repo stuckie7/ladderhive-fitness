@@ -289,8 +289,11 @@ const WorkoutPlayer: React.FC = () => {
 
             {isInitializing ? (
               <div className="text-center space-y-4">
-                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-muted-foreground">Loading workout…</p>
+                <h1 className="text-2xl font-bold">Loading workout...</h1>
+                <p className="text-muted-foreground mb-6">Having trouble loading this workout?</p>
+                <Button onClick={() => navigate('/workouts')} className="bg-primary">
+                  Go to Workouts
+                </Button>
               </div>
             ) : (
               <div className="space-y-6 text-center">
