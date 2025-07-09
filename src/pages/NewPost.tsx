@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase'; // Using the same import as the rest of the codebase
 import { useAuth } from '../context/AuthContext';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface Thread {
   id: number;
@@ -248,7 +249,8 @@ const NewPost: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8">
       <nav className="flex mb-6" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
@@ -427,7 +429,8 @@ const NewPost: React.FC = () => {
           </div>
         </form>
       </div>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

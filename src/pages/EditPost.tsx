@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface Post {
   id: number;
@@ -303,7 +304,8 @@ const EditPost: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="flex mb-6" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -581,7 +583,8 @@ const EditPost: React.FC = () => {
           </div>
         </form>
       </div>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

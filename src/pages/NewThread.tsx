@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { ForumService } from '@/services/forumService';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface Category {
   id: number;
@@ -294,7 +295,8 @@ const [isLoading, setIsLoading] = useState(!!rawCategoryParam);
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="flex mb-6" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -532,7 +534,8 @@ const [isLoading, setIsLoading] = useState(!!rawCategoryParam);
           </div>
         </form>
       </div>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckCircle, CheckCircle2 } from 'lucide-react';
 import { ReactionButton } from '@/components/forum/ReactionButton.tsx';
 import { toast } from 'react-hot-toast';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface Post {
   id: number;
@@ -356,7 +357,8 @@ console.log('ForumThread mount, slug =', effectiveSlug);
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="flex mb-6" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -666,7 +668,8 @@ console.log('ForumThread mount, slug =', effectiveSlug);
           </p>
         </div>
       )}
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

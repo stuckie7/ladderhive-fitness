@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { SearchResults } from '@/components/forum/SearchResults';
 import { debounce } from 'lodash';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface CategoryWithStats extends ForumCategory {
   threadCount: number;
@@ -201,7 +202,8 @@ const Forums: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <AppLayout>
+      <div className="min-h-screen bg-background">
       {/* Header with search */}
       <header className="bg-card border-b border-border py-12">
         <div className="max-w-6xl mx-auto px-4">
@@ -418,7 +420,8 @@ const Forums: React.FC = () => {
           </section>
         </div>
       </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

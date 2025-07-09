@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MessageIcon from '@mui/icons-material/MessageOutlined';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface Thread {
   id: number;
@@ -269,7 +270,8 @@ const categorySlug = slug ?? legacyCategory;
   }
 
   return (
-    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+    <AppLayout>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
       {/* Breadcrumb */}
       <nav className="flex mb-6" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -386,7 +388,8 @@ const categorySlug = slug ?? legacyCategory;
           </ul>
         )}
       </div>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 
