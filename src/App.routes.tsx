@@ -43,6 +43,7 @@ import { useAdmin } from "./context/AdminContext";
 import { useEffect, useState } from "react";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import FitbitTest from "./pages/FitbitTest";
 
 // Forum pages
 import Forums from "@/pages/Forums";
@@ -313,6 +314,10 @@ const router = createBrowserRouter([
   {
     path: "/wods",
     element: <Wods />
+  },
+  {
+    path: "/fitbit-test",
+    element: <FitbitTest />
   },
   {
     path: "/wods/:id",
