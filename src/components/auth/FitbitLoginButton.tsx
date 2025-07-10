@@ -21,17 +21,36 @@ export function FitbitLoginButton({
     try {
       setIsLoading(true);
       
-      // Open Fitbit OAuth in a new tab
-      const width = 500;
-      const height = 600;
-      const left = window.screen.width / 2 - width / 2;
-      const top = window.screen.height / 2 - height / 2;
+      // Store the current URL to return to after auth
+      const returnUrl = window.location.pathname + window.location.search;
+      localStorage.setItem('fitbit_return_url', returnUrl);
       
-      window.open(
-        '/api/auth/fitbit',
-        'FitbitAuth',
-        `width=${width},height=${height},top=${top},left=${left}`
-      );
+      // For Mobstead environment, we'll open in a new tab instead of a popup
+      const isMobstead = window.self !== window.top; // Check if we're in an iframe
+      
+      if (isMobstead || window.innerWidth < 768) {
+        // In Mobstead or mobile, open in a new tab
+        const url = `${window.location.origin}/api/auth/fitbit`;
+        window.open(url, '_blank');
+      } else {
+        // In regular desktop browser, open in a popup
+        const width = 500;
+        const height = 600;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+        
+        const popup = window.open(
+          '/api/auth/fitbit',
+          'FitbitAuth',
+          `width=${width},height=${height},top=${top},left=${left}`
+        );
+        
+        // Check if popup was blocked
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          // Popup was blocked, fall back to new tab
+          window.open('/api/auth/fitbit', '_blank');
+        }
+      }
     } catch (error) {
       console.error('Failed to open Fitbit login:', error);
       onError?.(error as Error);

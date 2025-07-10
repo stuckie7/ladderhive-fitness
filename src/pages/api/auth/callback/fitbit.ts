@@ -124,16 +124,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           </div>
           <script>
             // Notify the parent window that authentication was successful
-            if (window.opener) {
-              window.opener.postMessage({ type: 'FITBIT_AUTH_SUCCESS' }, window.location.origin);
-              
-              // Close the popup after a short delay
-              setTimeout(() => {
+            try {
+              // Try to notify the opener first (for popup flow)
+              if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ 
+                  type: 'FITBIT_AUTH_SUCCESS',
+                  timestamp: Date.now()
+                }, window.location.origin);
+                
+                // Close the popup after a short delay
+                setTimeout(() => {
+                  window.close();
+                }, 1000);
+              } 
+              // If we're in a tab (like in Mobstead), try to redirect back to the app
+              else if (window.self === window.top) {
+                // Try to get the return URL from localStorage or default to the root
+                const returnUrl = localStorage.getItem('fitbit_return_url') || '/';
+                localStorage.removeItem('fitbit_return_url');
+                
+                // Add a small delay to ensure the message is processed
+                setTimeout(() => {
+                  window.location.href = returnUrl;
+                }, 1000);
+              }
+              // Fallback: just close the window if we can't do anything else
+              else {
                 window.close();
-              }, 1500);
-            } else {
-              // If there's no opener, just close the window
-              window.close();
+              }
+            } catch (error) {
+              console.error('Error in callback:', error);
+              // Last resort: redirect to home
+              window.location.href = '/';
             }
           </script>
         </body>
