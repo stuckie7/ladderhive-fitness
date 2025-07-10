@@ -125,36 +125,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           <script>
             // Notify the parent window that authentication was successful
             try {
+              // Set status in localStorage for the parent window to detect
+              localStorage.setItem('fitbit_auth_status', 'success');
+              
               // Try to notify the opener first (for popup flow)
               if (window.opener && !window.opener.closed) {
-                window.opener.postMessage({ 
-                  type: 'FITBIT_AUTH_SUCCESS',
-                  timestamp: Date.now()
-                }, window.location.origin);
-                
-                // Close the popup after a short delay
-                setTimeout(() => {
+                try {
+                  window.opener.postMessage({ 
+                    type: 'FITBIT_AUTH_SUCCESS',
+                    timestamp: Date.now()
+                  }, window.location.origin);
+                } catch (e) {
+                  console.log('Could not post message to opener, using localStorage fallback');
+                }
+              }
+              
+              // Get the return URL from localStorage or default to the root
+              const returnUrl = localStorage.getItem('fitbit_return_url') || '/';
+              localStorage.removeItem('fitbit_return_url');
+              
+              // Close the window after a short delay
+              setTimeout(() => {
+                try {
                   window.close();
-                }, 1000);
-              } 
-              // If we're in a tab (like in Mobstead), try to redirect back to the app
-              else if (window.self === window.top) {
-                // Try to get the return URL from localStorage or default to the root
-                const returnUrl = localStorage.getItem('fitbit_return_url') || '/';
-                localStorage.removeItem('fitbit_return_url');
-                
-                // Add a small delay to ensure the message is processed
-                setTimeout(() => {
+                } catch (e) {
+                  // If we can't close the window, redirect back to the app
                   window.location.href = returnUrl;
-                }, 1000);
-              }
-              // Fallback: just close the window if we can't do anything else
-              else {
-                window.close();
-              }
+                }
+              }, 500);
+              
             } catch (error) {
               console.error('Error in callback:', error);
-              // Last resort: redirect to home
+              // Set error status in localStorage
+              localStorage.setItem('fitbit_auth_status', 'error');
+              // Redirect to home as fallback
               window.location.href = '/';
             }
           </script>
