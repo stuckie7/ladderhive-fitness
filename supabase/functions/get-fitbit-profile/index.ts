@@ -70,28 +70,39 @@ function getEnvVars() {
 }
 
 // Get Fitbit access token
-async function getFitbitAccessToken(supabase: any, userId: string): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('fitbit_tokens')
-    .select('access_token, expires_at')
-    .eq('user_id', userId)
-    .maybeSingle();
+async function getFitbitAccessToken(adminClient: any, userId: string): Promise<string | null> {
+  try {
+    const { data, error } = await adminClient
+      .from('fitbit_tokens')
+      .select('access_token, expires_at')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-  if (error) {
-    console.error('Error fetching Fitbit token:', error);
+    if (error) {
+      console.error('Error fetching Fitbit token:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.log('No Fitbit token found for user:', userId);
+      return null; // No token found, needs refresh
+    }
+
+    // Check if token is expired
+    const expiresAt = new Date(data.expires_at);
+    const now = new Date();
+    
+    if (expiresAt < now) {
+      console.log('Fitbit token expired for user:', userId, 'Expired at:', expiresAt);
+      return null; // Token expired, needs refresh
+    }
+
+    console.log('Valid Fitbit token found for user:', userId);
+    return data.access_token;
+  } catch (error) {
+    console.error('Unexpected error in getFitbitAccessToken:', error);
     return null;
   }
-
-  if (!data) {
-    return null; // No token found, needs refresh
-  }
-
-  // Check if token is expired
-  if (new Date(data.expires_at) < new Date()) {
-    return null; // Token expired, needs refresh
-  }
-
-  return data.access_token;
 }
 
 // Fetch data from Fitbit API
@@ -115,14 +126,13 @@ async function fetchFitbitData(accessToken: string, endpoint: string): Promise<a
 }
 
 // Refresh Fitbit token (now with robust error handling)
-async function refreshFitbitToken(userId: string): Promise<any> {
+async function refreshFitbitToken(adminClient: any, userId: string): Promise<any> {
   try {
     const env = getEnvVars();
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
-    const { data: tokenData, error: tokenError } = await supabase
+    
+    console.log('Attempting to refresh token for user:', userId);
+    
+    const { data: tokenData, error: tokenError } = await adminClient
       .from('fitbit_tokens')
       .select('refresh_token')
       .eq('user_id', userId)
@@ -150,7 +160,7 @@ async function refreshFitbitToken(userId: string): Promise<any> {
       console.error('Failed to refresh token from Fitbit API:', errorBody);
       if (errorBody.includes('invalid_grant')) {
         console.log('Refresh token is invalid. Deleting token record for user:', userId);
-        await supabase.from('fitbit_tokens').delete().eq('user_id', userId);
+        await adminClient.from('fitbit_tokens').delete().eq('user_id', userId);
       }
       return null;
     }
@@ -159,7 +169,7 @@ async function refreshFitbitToken(userId: string): Promise<any> {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + newTokenData.expires_in * 1000);
 
-    const { data: updatedToken, error: updateError } = await supabase
+    const { data: updatedToken, error: updateError } = await adminClient
       .from('fitbit_tokens')
       .update({
         access_token: newTokenData.access_token,
@@ -172,11 +182,16 @@ async function refreshFitbitToken(userId: string): Promise<any> {
       .single();
 
     if (updateError) {
-      console.error('Error updating tokens in database:', updateError);
-      return null;
+      console.error('Error updating token in database:', updateError);
+      throw updateError;
     }
 
-    return updatedToken;
+    console.log('Successfully refreshed and stored new token for user:', userId);
+    return {
+      access_token: newTokenData.access_token,
+      refresh_token: newTokenData.refresh_token || tokenData.refresh_token,
+      expires_at: expiresAt.toISOString()
+    };
   } catch (error) {
     console.error('Critical error in refreshFitbitToken:', error);
     return null;
@@ -196,27 +211,40 @@ serve(async (req: Request): Promise<Response> => {
 
     const env = getEnvVars();
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return createErrorResponse(401, 'Missing Authorization header');
+    // Get the JWT token from the Authorization header
+    const authHeader = req.headers.get('Authorization') || '';
+    const token = authHeader.replace('Bearer ', '');
+    
+    if (!token) {
+      return createErrorResponse(401, 'Missing authentication token');
     }
 
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { autoRefreshToken: false, persistSession: false },
+    // Create admin client to verify the token
+    const adminClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     });
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Verify the JWT token
+    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
 
     if (userError || !user) {
+      console.error('User authentication failed:', userError?.message || 'No user found');
       return createErrorResponse(401, 'Unauthorized', userError?.message);
     }
 
-    let accessToken = await getFitbitAccessToken(supabase, user.id);
+    console.log('Authenticated user:', user.id);
+
+    // Get the access token using the admin client
+    let accessToken = await getFitbitAccessToken(adminClient, user.id);
 
     if (!accessToken) {
       console.log('Access token not found or expired, attempting refresh for user:', user.id);
-      const newTokenData = await refreshFitbitToken(user.id);
+      
+      // Update refreshFitbitToken call to use admin client
+      const newTokenData = await refreshFitbitToken(adminClient, user.id);
 
       if (!newTokenData || !newTokenData.access_token) {
         console.error('Failed to refresh token or refreshed token data is invalid for user:', user.id);
