@@ -11,6 +11,7 @@ import { getYouTubeEmbedUrl } from '@/utils/wodHelpers';
 interface WodDetailProps {
   wod: Wod;
   onToggleFavorite: (wodId: string) => Promise<void>;
+  viewMode?: 'readonly' | 'edit';
 }
 
 const WodDetail: React.FC<WodDetailProps> = ({ wod, onToggleFavorite }) => {

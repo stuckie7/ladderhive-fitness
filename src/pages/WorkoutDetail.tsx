@@ -1,8 +1,6 @@
 
-import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWorkoutDetail } from '@/hooks/workout-detail';
-import { Exercise } from '@/types/exercise';
 import AppLayout from '@/components/layout/AppLayout';
 
 // Import the components requested
@@ -30,32 +28,13 @@ export default function WorkoutDetail() {
     error,
     handleAddExercise,
     handleSaveWorkout,
-    handleCompleteWorkout,
     removeExerciseFromWorkout
   } = useWorkoutDetail(id);
   
-  // States for UI feedback
-  const [isStarting, setIsStarting] = useState(false);
-  
   // Handle starting a workout (navigate to workout session)
-  const handleStartWorkout = async () => {
-    setIsStarting(true);
-    try {
-      // Implement workout start logic here
-      toast({
-        title: "Coming Soon",
-        description: "Workout session feature will be available soon!",
-      });
-    } catch (error) {
-      console.error('Error starting workout:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start workout",
-        variant: "destructive",
-      });
-    } finally {
-      setIsStarting(false);
-    }
+  const handleStartWorkout = () => {
+    if (!id) return;
+    navigate(`/workout-player/${id}`);
   };
 
   // Handle saving/unsaving a workout
@@ -140,7 +119,7 @@ export default function WorkoutDetail() {
           isLoading={exercisesLoading}
           onAddExercise={handleAddExercise}
           onRemoveExercise={removeExerciseFromWorkout}
-          viewMode="circuit" // Set default to circuit view
+          viewMode="readonly" // Set to readonly to hide Add Exercise button
         />
         
         {/* Additional information */}
@@ -167,9 +146,7 @@ export default function WorkoutDetail() {
           <Button 
             className="bg-fitness-primary hover:bg-fitness-primary/90"
             onClick={handleStartWorkout}
-            disabled={isStarting}
           >
-            {isStarting ? <Spinner className="mr-2 h-4 w-4" /> : null}
             Start Workout
           </Button>
         </div>

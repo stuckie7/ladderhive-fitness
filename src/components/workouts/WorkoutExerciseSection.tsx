@@ -116,18 +116,20 @@ const WorkoutExerciseSection = ({
             </div>
           )}
         </div>
-        <Button 
-          onClick={() => setSearchModalOpen(true)}
-          className="bg-fitness-primary hover:bg-fitness-primary/90"
-        >
-          <Search className="h-4 w-4 mr-2" />
-          Add Exercise
-        </Button>
+        {viewMode !== 'readonly' && (
+          <Button 
+            onClick={() => setSearchModalOpen(true)}
+            className="bg-fitness-primary hover:bg-fitness-primary/90"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Add Exercise
+          </Button>
+        )}
       </div>
       
       {isLoading ? (
         <WorkoutExerciseSkeleton />
-      ) : formattedExercises.length > 0 ? (
+      ) : formattedExercises.length > 0 && (
         <div className="space-y-4">
           {formattedExercises.map((exercise, index) => {
             const embedUrl = exercise.videoUrl ? getYoutubeEmbedUrl(exercise.videoUrl) : null;
@@ -204,23 +206,6 @@ const WorkoutExerciseSection = ({
             );
           })}
         </div>
-      ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <Dumbbell className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No exercises yet</h3>
-            <p className="text-muted-foreground mb-6 max-w-md">
-              This workout doesn't have any exercises yet. Add some to get started with your fitness journey.
-            </p>
-            <Button 
-              onClick={() => setSearchModalOpen(true)}
-              className="bg-fitness-primary hover:bg-fitness-primary/90"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Add Your First Exercise
-            </Button>
-          </CardContent>
-        </Card>
       )}
       
       {/* Video Modal */}

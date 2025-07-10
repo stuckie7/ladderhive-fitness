@@ -5,14 +5,14 @@ import AppLayout from '@/components/layout/AppLayout';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import useSWR from 'swr';
-import VideoEmbed from '@/components/workouts/detail/VideoEmbed';
-import { ArrowLeft } from 'lucide-react';
-import { useWorkoutDetail } from '@/hooks/workout-detail';
-import { useWods } from '@/hooks/wods/use-wods';
+import { ArrowLeft, Video } from 'lucide-react';
+// Importing types only
+import type { Workout, WorkoutExercise } from '@/types/workout';
+import type { Wod } from '@/types/wod';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { getBestVideoUrl } from '@/utils/video';
+import { getBestVideoUrl, getYoutubeEmbedUrl } from '@/utils/video';
 
 // Local helper types
 type Step = {
@@ -30,8 +30,8 @@ const WorkoutPlayer: React.FC = () => {
   // Simplified loading states
   const [isInitializing, setIsInitializing] = useState(true);
   const [contentLoaded, setContentLoaded] = useState(false);
-  const [workout, setWorkout] = useState<any>(null);
-  const [selectedWod, setSelectedWod] = useState<any>(null);
+  const [workout, setWorkout] = useState<Workout | null>(null);
+  const [selectedWod, setSelectedWod] = useState<Wod | null>(null);
 
   // Initialize content loading
   useEffect(() => {
@@ -81,10 +81,12 @@ const WorkoutPlayer: React.FC = () => {
 
   // derive steps (exercises or wod parts)
   const steps = React.useMemo<Step[]>(() => {
-    if (workout && workout.exercises) {
-      return workout.exercises.map((ex: any, idx: number) => ({
-        id: ex.id || idx,
-        label: ex.exercise?.name || `Exercise ${idx + 1}`,
+    if (workout && 'exercises' in workout && Array.isArray(workout.exercises)) {
+      return workout.exercises.map((ex: WorkoutExercise, idx: number) => ({
+        id: ex.id || idx.toString(),
+        label: (typeof ex.exercise === 'object' && ex.exercise !== null && 'name' in ex.exercise) 
+          ? ex.exercise.name 
+          : `Exercise ${idx + 1}`,
         detail: `${ex.sets || ''}x${ex.reps || ''}`.replace(/^x|x$/, '')
       }));
     }
@@ -130,13 +132,71 @@ const WorkoutPlayer: React.FC = () => {
   // current step index
   const [currentStep, setCurrentStep] = useState(0);
 
-  // current exercise video url
+  // Fetch the prepared workout data including the video URL
+  const { data: preparedWorkout } = useSWR(
+    workout?.id ? `/api/prepared-workout/${workout.id}` : null,
+    async () => {
+      const { data, error } = await supabase
+        .from('prepared_workouts')
+        .select('*')
+        .eq('id', workout?.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching prepared workout:', error);
+        return null;
+      }
+      return data;
+    }
+  );
+
+  // current exercise video url with YouTube embed support
   const currentVideoUrl = React.useMemo(() => {
-    const exerciseObj = workout && workout.exercises && workout.exercises[currentStep]
-      ? workout.exercises[currentStep].exercise
-      : undefined;
-    return getBestVideoUrl(exerciseObj, selectedWod) || '';
-  }, [workout, currentStep, selectedWod]);
+    console.log('Current workout:', workout);
+    console.log('Prepared workout data:', preparedWorkout);
+    
+    // First check if we have a video URL in the prepared workout
+    if (preparedWorkout?.video_url) {
+      console.log('Found video URL in prepared workout:', preparedWorkout.video_url);
+      const embedUrl = getYoutubeEmbedUrl(preparedWorkout.video_url);
+      if (embedUrl) {
+        return `${embedUrl}&autoplay=1&modestbranding=1&rel=0`;
+      }
+    }
+    
+    // Fallback to exercise-specific videos if available
+    if (workout && 'exercises' in workout && Array.isArray(workout.exercises) && workout.exercises.length > 0) {
+      const currentExercise = workout.exercises[currentStep];
+      const exerciseObj = currentExercise?.exercise;
+      console.log('Current exercise:', exerciseObj);
+      
+      // Try to get a video URL from the current exercise
+      const videoUrl = getBestVideoUrl(exerciseObj, selectedWod);
+      if (videoUrl) {
+        console.log('Found exercise video URL:', videoUrl);
+        const embedUrl = getYoutubeEmbedUrl(videoUrl);
+        if (embedUrl) {
+          return `${embedUrl}&autoplay=1&modestbranding=1&rel=0`;
+        }
+      }
+    }
+    
+    // Fallback to WOD video if available
+    if (selectedWod) {
+      console.log('Trying to get video from WOD');
+      const wodVideoUrl = getBestVideoUrl(undefined, selectedWod);
+      if (wodVideoUrl) {
+        console.log('Found WOD video URL:', wodVideoUrl);
+        const embedUrl = getYoutubeEmbedUrl(wodVideoUrl);
+        if (embedUrl) {
+          return `${embedUrl}&autoplay=1&modestbranding=1&rel=0`;
+        }
+      }
+    }
+    
+    console.log('No video URL found in any source');
+    return null;
+  }, [workout, preparedWorkout, currentStep, selectedWod]);
 
   // auto-advance cycle (work/rest)
   const WORK_SEC = 45;
@@ -275,65 +335,235 @@ const WorkoutPlayer: React.FC = () => {
   return (
     <AppLayout>
       <ErrorBoundary>
-        <div className="p-4">
-          {lastSession && (
-            <div className="mb-2 text-sm text-muted-foreground text-right">
-              Last done: {new Date(lastSession).toLocaleDateString()}
+        <div className="bg-background min-h-screen">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex justify-between items-center mb-6">
+              <Button variant="ghost" onClick={() => navigate(-1)}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+              {lastSession && (
+                <div className="text-sm text-muted-foreground">
+                  Last done: {new Date(lastSession).toLocaleDateString()}
+                </div>
+              )}
             </div>
-          )}
-          <div className="container mx-auto px-4 py-6 space-y-6">
-            <Button variant="ghost" onClick={() => navigate('/')}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Home
-            </Button>
 
             {isInitializing ? (
-              <div className="text-center space-y-4">
-                <h1 className="text-2xl font-bold">Loading workout...</h1>
-                <p className="text-muted-foreground mb-6">Having trouble loading this workout?</p>
-                <Button onClick={() => navigate('/workouts')} className="bg-primary">
-                  Go to Workouts
-                </Button>
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <h2 className="text-xl font-semibold">Loading Workout</h2>
+                <p className="text-muted-foreground">Getting everything ready for you...</p>
               </div>
             ) : (
-              <div className="space-y-6 text-center">
-                <h1 className="text-3xl font-bold">{workout ? workout.title : selectedWod?.name}</h1>
-                <p className="text-6xl font-mono">{formatTime(seconds)}</p>
-                
-                {/* Phase progress bar */}
-                <div className="w-full max-w-md mx-auto bg-muted/30 h-2 rounded">
-                  <div
-                    className="h-2 bg-primary rounded transition-all"
-                    style={{ width: `${phasePercent}%` }}
-                  />
+              <div className="max-w-3xl mx-auto space-y-8">
+                {/* Workout Header */}
+                <div className="text-center space-y-2">
+                  <h1 className="text-3xl font-bold tracking-tight">
+                    {workout ? workout.title : selectedWod?.name}
+                  </h1>
+                  <p className="text-muted-foreground">
+                    {workout?.description || selectedWod?.description || 'Complete all exercises'}
+                  </p>
                 </div>
 
-                {/* Video area */}
-                {currentVideoUrl && <VideoEmbed videoUrl={currentVideoUrl} />}
-                
-                <p className="text-lg font-semibold capitalize">
-                  {phase === 'work' ? 'Work' : 'Rest'} — {phaseRemaining}s
-                </p>
-                
-                {/* Steps list */}
-                {steps.length > 0 && (
-                  <div className="max-w-md mx-auto space-y-2 text-left">
+                {/* Timer and Progress */}
+                <div className="bg-card rounded-xl p-6 shadow-sm border">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {phase === 'work' ? 'Current Exercise' : 'Rest'}
+                      </span>
+                      <h3 className="text-2xl font-bold">
+                        {steps[currentStep]?.label || 'Workout Complete'}
+                      </h3>
+                      {steps[currentStep]?.detail && (
+                        <p className="text-muted-foreground">{steps[currentStep]?.detail}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">Time Elapsed</div>
+                      <div className="text-4xl font-mono font-bold">
+                        {formatTime(seconds)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-muted/30 h-3 rounded-full overflow-hidden mb-4">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${phasePercent}%` }}
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="text-lg font-semibold">
+                      {phase === 'work' ? 'Work' : 'Rest'} — {phaseRemaining}s
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {currentStep + 1} of {steps.length} exercises
+                    </div>
+                  </div>
+                </div>
+
+                {/* Video Section */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">
+                    {preparedWorkout?.title || 'Exercise'} Video
+                  </h3>
+                  <div className="bg-card rounded-xl p-4 border">
+                    {currentVideoUrl ? (
+                      <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                        <div className="w-full h-full flex items-center justify-center">
+                          <iframe
+                            className="w-full h-full"
+                            src={currentVideoUrl}
+                            title={`${preparedWorkout?.title || 'Exercise'} Demonstration`}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            onError={(e) => {
+                              console.error('Error loading video:', e);
+                              // You might want to set a state to show an error message
+                            }}
+                          ></iframe>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="aspect-video flex flex-col items-center justify-center bg-muted/30 rounded-lg p-6 text-center">
+                        <Video className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-muted-foreground font-medium">
+                          No video available for this {preparedWorkout ? 'workout' : 'exercise'}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {preparedWorkout?.id 
+                            ? 'This workout does not have an associated video.'
+                            : 'This exercise does not have an associated video.'
+                          }
+                        </p>
+                        {process.env.NODE_ENV === 'development' && (
+                          <div className="mt-4 p-3 bg-muted/50 rounded-md text-left text-xs">
+                            <p className="font-mono">Debug Info:</p>
+                            <p>Workout ID: {workout?.id || 'N/A'}</p>
+                            <p>Prepared Workout: {preparedWorkout ? 'Loaded' : 'Not found'}</p>
+                            <p>Video URL: {preparedWorkout?.video_url || 'Not set'}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Exercise Instructions */}
+                    {steps[currentStep]?.detail && (
+                      <div className="mt-4 p-4 bg-muted/10 rounded-lg">
+                        <h4 className="font-semibold text-foreground mb-2">Instructions:</h4>
+                        <div className="prose prose-sm prose-gray dark:prose-invert">
+                          <p className="whitespace-pre-line">{steps[currentStep]?.detail}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Workout Description */}
+                    {preparedWorkout?.description && !steps[currentStep]?.detail && (
+                      <div className="mt-4 p-4 bg-muted/10 rounded-lg">
+                        <h4 className="font-semibold text-foreground mb-2">Workout Description:</h4>
+                        <div className="prose prose-sm prose-gray dark:prose-invert">
+                          <p className="whitespace-pre-line">{preparedWorkout.description}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Exercise List */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">Workout Plan</h3>
+                  <div className="space-y-2">
                     {steps.map((step: Step, idx: number) => (
                       <div
                         key={step.id}
-                        className={`p-3 rounded-lg border ${idx === currentStep ? 'bg-primary/10 border-primary' : 'border-muted'}`}
+                        className={`p-4 rounded-lg border transition-colors ${
+                          idx === currentStep
+                            ? 'bg-primary/10 border-primary'
+                            : idx < currentStep
+                            ? 'bg-muted/50 border-muted/50'
+                            : 'bg-card hover:bg-muted/30 border-muted'
+                        }`}
                       >
-                        <div className="font-medium">{step.label}</div>
-                        {step.detail && <div className="text-sm text-muted-foreground">{step.detail}</div>}
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-medium">
+                              {idx + 1}. {step.label}
+                            </div>
+                            {step.detail && (
+                              <div className="text-sm text-muted-foreground">
+                                {step.detail}
+                              </div>
+                            )}
+                          </div>
+                          {idx < currentStep && (
+                            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="text-white"
+                              >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
 
-                {/* Finish button */}
-                <Button className="mt-6" onClick={handleFinish}>
-                  Finish Workout
-                </Button>
+                {/* Controls */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      if (currentStep > 0) {
+                        setCurrentStep((s) => s - 1);
+                        setPhase('work');
+                        setPhaseRemaining(WORK_SEC);
+                      }
+                    }}
+                    disabled={currentStep === 0}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      if (phase === 'work') {
+                        setPhase('rest');
+                        setPhaseRemaining(REST_SEC);
+                      } else {
+                        setCurrentStep((s) => (s < steps.length - 1 ? s + 1 : s));
+                        setPhase('work');
+                        setPhaseRemaining(WORK_SEC);
+                      }
+                    }}
+                  >
+                    {phase === 'work' ? 'Skip to Rest' : 'Next Exercise'}
+                  </Button>
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={handleFinish}
+                  >
+                    Finish Workout
+                  </Button>
+                </div>
               </div>
             )}
           </div>

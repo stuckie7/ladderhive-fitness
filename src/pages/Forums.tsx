@@ -207,7 +207,7 @@ const Forums: React.FC = () => {
       {/* Header with search */}
       <header className="bg-card border-b border-border py-12">
         <div className="max-w-6xl mx-auto px-4">
-          <h1 className="text-3xl font-bold text-foreground mb-4">Find Solutions</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-4">Community forum</h1>
           <div className="relative max-w-2xl" ref={searchContainerRef}>
             <form onSubmit={handleSearchSubmit}>
               <div className="relative">

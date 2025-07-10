@@ -126,59 +126,54 @@ const Dashboard = () => {
     );
   }
 
-  const handleStartWorkout = async () => {
+  const handleStartWorkout = async (workoutId?: string) => {
     try {
       setIsLoadingRandom(true);
       
-      const [
-        { data: preparedWorkouts, error: preparedError },
-        { data: wods, error: wodsError },
-        { data: mindfulMovements, error: mindfulError }
-      ] = await Promise.all([
-        supabase.from('prepared_workouts').select('id').limit(100),
-        supabase.from('wods').select('id').limit(100),
-        supabase.from('mindful_movements').select('id').limit(100)
-      ]);
-      
-      if (preparedError) console.error('Error fetching prepared workouts:', preparedError);
-      if (wodsError) console.error('Error fetching WODs:', wodsError);
-      if (mindfulError) console.error('Error fetching mindful movements:', mindfulError);
-      
-      const allOptions = [
-        ...(preparedWorkouts || []).map((w: any) => ({ ...w, type: 'workout' })),
-        ...(wods || []).map((w: any) => ({ ...w, type: 'wod' })),
-        ...(mindfulMovements || []).map((m: any) => ({ ...m, type: 'mindful' }))
-      ].filter(Boolean);
-      
-      if (allOptions.length === 0) {
-        toast({ title: 'No workouts found', description: 'Creating a new one for you.', variant: 'default' });
-        navigate('/workouts/new');
+      if (workoutId) {
+        // Navigate directly to the workout player for the specific workout
+        navigate(`/workout-player/${workoutId}`);
         return;
       }
       
-      const randomItem = allOptions[Math.floor(Math.random() * allOptions.length)];
+      // Default behavior for the main start button
+      const { data, error } = await supabase
+        .from('prepared_workouts')
+        .select('id, title')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) throw error;
       
-      switch (randomItem.type) {
-        case 'workout':
-          navigate(`/workouts/${randomItem.id}`);
-          break;
-        case 'wod':
-          navigate(`/wods/${randomItem.id}`);
-          break;
-        case 'mindful':
-          navigate(`/mindful-movement/${randomItem.id}`);
-          break;
-        default:
-          navigate('/workouts/new');
+      if (data) {
+        // Navigate to the workout player with the most recent workout
+        navigate(`/workout-player/${data.id}`);
+      } else {
+        // If no workouts exist, create a new one
+        const { data: newWorkout, error: createError } = await supabase
+          .from('prepared_workouts')
+          .insert([{ 
+            title: 'Quick Workout',
+            description: 'Your personalized workout',
+            created_at: new Date().toISOString()
+          }])
+          .select('id')
+          .single();
+          
+        if (createError) throw createError;
+        
+        if (newWorkout) {
+          navigate(`/workout-player/${newWorkout.id}`);
+        }
       }
     } catch (error) {
-      console.error('Error in handleStartWorkout:', error);
+      console.error('Error starting workout:', error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to start workout. Creating a new one instead.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Could not start workout. Please try again.",
+        variant: "destructive",
       });
-      navigate('/workouts/new');
     } finally {
       setIsLoadingRandom(false);
     }

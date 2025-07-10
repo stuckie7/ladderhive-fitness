@@ -5,10 +5,10 @@ import { Video } from "lucide-react";
 
 interface VideoEmbedProps {
   videoUrl?: string;
-  thumbnailUrl?: string;
+  className?: string;
 }
 
-const VideoEmbed: React.FC<VideoEmbedProps> = ({ videoUrl, thumbnailUrl }) => {
+const VideoEmbed: React.FC<VideoEmbedProps> = ({ videoUrl, className = '' }) => {
   const [error, setError] = useState(false);
 
   if (!videoUrl || error) {
@@ -36,7 +36,7 @@ const VideoEmbed: React.FC<VideoEmbedProps> = ({ videoUrl, thumbnailUrl }) => {
   };
 
   return (
-    <div className="mb-6 aspect-video">
+    <div className={`${className} aspect-video`}>
       <iframe
         className="w-full h-full rounded-lg"
         src={getYouTubeEmbedUrl(videoUrl)}

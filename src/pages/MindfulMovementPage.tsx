@@ -57,30 +57,6 @@ const MindfulMovementPage = () => {
                   Take a moment to breathe, reset, and find inner calm through mindful movement practices. 
                   These sequences are designed to relieve stress and enhance your mental wellbeing.
                 </p>
-                
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Button 
-                    variant="outline" 
-                    className="w-full sm:w-auto"
-                    onClick={() => setShowMoodQuiz(true)}
-                  >
-                    <Heart className="w-4 h-4 mr-2" />
-                    Take Mood Quiz
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full sm:w-auto"
-                  >
-                    <Clock className="w-4 h-4 mr-2" />
-                    View History
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="border-white text-white hover:bg-blue-600"
-                  >
-                    Quick Relief Session
-                  </Button>
-                </div>
               </div>
               <div className="flex items-center justify-center">
                 <BreathingAnimation className="w-36 h-36" />

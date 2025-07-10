@@ -20,7 +20,7 @@ const WodDetail: React.FC = () => {
   }, [id, fetchWodById]);
   
   const handleBack = () => {
-    navigate(-1);
+    navigate('/wods');
   };
   
   const handleToggleFavorite = async (wodId: string) => {
@@ -45,7 +45,8 @@ const WodDetail: React.FC = () => {
         ) : selectedWod ? (
           <WodDetailComponent 
             wod={selectedWod} 
-            onToggleFavorite={handleToggleFavorite} 
+            onToggleFavorite={handleToggleFavorite}
+            viewMode="readonly"
           />
         ) : (
           <div className="text-center py-12">

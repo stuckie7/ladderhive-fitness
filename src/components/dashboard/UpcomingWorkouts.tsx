@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 import { format, parseISO, isToday, isTomorrow, addDays, isBefore, differenceInDays } from 'date-fns';
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
 
 interface UpcomingWorkout {
   id: string;
@@ -35,25 +34,9 @@ const UpcomingWorkouts = ({
   onViewWorkout
 }: UpcomingWorkoutsProps) => {
   const { toast } = useToast();
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   
-  // Auto-refresh recommendations every 5 minutes
-  useEffect(() => {
-    let refreshInterval: NodeJS.Timeout;
-    
-    if (autoRefreshEnabled && onRefresh) {
-      refreshInterval = setInterval(() => {
-        console.log("Auto-refreshing workout recommendations");
-        onRefresh();
-      }, 5 * 60 * 1000); // 5 minutes
-    }
-    
-    return () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-    };
-  }, [autoRefreshEnabled, onRefresh]);
+  // Disable auto-refresh for now to prevent constant reloading
+  // We'll implement a manual refresh button instead
   
   const getFormattedDate = (dateStr: string) => {
     const date = parseISO(dateStr);
@@ -79,13 +62,16 @@ const UpcomingWorkouts = ({
   // Limit to 3 for display
   const displayWorkouts = upcomingWorkouts.slice(0, 3);
   
-  const handleQuickSchedule = () => {
+  const handleQuickSchedule = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (onScheduleWorkout) {
       onScheduleWorkout();
     } else {
       toast({
-        title: "Quick Scheduling",
-        description: "Scheduling a workout for your personal routine",
+        title: "Scheduling a workout",
+        description: "Adding this workout to your personal routine"
       });
     }
   };
@@ -161,54 +147,67 @@ const UpcomingWorkouts = ({
   };
 
   // Function to determine the correct link based on workout type
-  const getWorkoutLink = (workout: UpcomingWorkout) => {
-    switch (workout.type) {
-      case 'wod':
-        return `/wods/${workout.id}`;
-      case 'mindful':
-        return `/mindful-movement/${workout.id}`;
-      case 'yoga':
-        return `/yoga/${workout.id}`;
-      default:
-        return `/workouts/${workout.id}`;
-    }
-  };
+  // This is currently not used but kept for future reference
+  // const getWorkoutLink = (workout: UpcomingWorkout) => {
+  //   switch (workout.type) {
+  //     case 'wod':
+  //       return `/wods/${workout.id}`;
+  //     case 'mindful':
+  //       return `/mindful-movement/${workout.id}`;
+  //     case 'yoga':
+  //       return `/yoga/${workout.id}`;
+  //     default:
+  //       return `/workouts/${workout.id}`;
+  //   }
+  // };
 
   return (
-    <Card className="glass-panel h-full">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xl flex items-center gap-2 text-fitness-secondary">
-          <Calendar className="h-5 w-5" />
-          <span>Recommended Workouts</span>
-        </CardTitle>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 px-2" 
-            onClick={handleRefresh}
-          >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            <span>Refresh</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 px-2" 
-            onClick={handleQuickSchedule}
-          >
-            <PlusCircle className="h-4 w-4 mr-1" />
-            <span>Quick Add</span>
-          </Button>
-          <Link to="/schedule">
-            <Button variant="ghost" size="sm" className="h-8 px-2">
-              <span>Schedule</span>
-              <ChevronRight className="h-4 w-4 ml-1" />
+    <Card className="glass-panel h-full flex flex-col">
+      <CardHeader className="z-10 bg-background/80 pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl flex items-center gap-2 text-fitness-secondary">
+            <Calendar className="h-5 w-5" />
+            <span>Recommended Workouts</span>
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 px-2 hover:bg-gray-800/50"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRefresh();
+              }}
+              disabled={!onRefresh}
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              <span>Refresh</span>
             </Button>
-          </Link>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 px-2 hover:bg-green-900/30 hover:text-green-400"
+              onClick={handleQuickSchedule}
+              disabled={!onScheduleWorkout}
+            >
+              <PlusCircle className="h-4 w-4 mr-1" />
+              <span>Quick Add</span>
+            </Button>
+            <Link to="/schedule">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 px-2 hover:bg-gray-800/50"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span>Schedule</span>
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
