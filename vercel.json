@@ -24,8 +24,17 @@
       }
     },
     {
+      "src": "/_next/static/(.*)",
+      "dest": "/_next/static/$1"
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/index.html",
+      "status": 200
     }
   ],
   "rewrites": [
@@ -33,5 +42,7 @@
   ],
   "env": {
     "NODE_VERSION": "18.x"
-  }
+  },
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }
