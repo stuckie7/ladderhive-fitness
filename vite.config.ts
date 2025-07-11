@@ -15,6 +15,13 @@ export default defineConfig({
     strictPort: true,
     open: true
   },
+  // Vercel-specific configurations
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    emptyOutDir: true,
+  },
+  base: '/', // Ensure base URL is set correctly for Vercel
   envDir: './',
   resolve: {
     alias: {
@@ -25,5 +32,14 @@ export default defineConfig({
     esbuildOptions: {
       target: 'es2020',
     },
+  },
+  // For Vercel rewrites
+  preview: {
+    port: 8080,
+    strictPort: true,
+  },
+  // Handle environment variables
+  define: {
+    'process.env': process.env,
   },
 });

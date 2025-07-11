@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum Debug</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: #dc3545;
+            padding: 10px;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Forum Database Debug</h1>
+    
+    <div class="container">
+        <h2>1. Check Database Connection</h2>
+        <button id="checkConnection" class="btn">Test Connection</button>
+        <div id="connectionResult"></div>
+    </div>
+    
+    <div class="container">
+        <h2>2. Check Forum Categories</h2>
+        <button id="checkCategories" class="btn">List Categories</button>
+        <div id="categoriesResult"></div>
+    </div>
+    
+    <div class="container">
+        <h2>3. Create Test Category</h2>
+        <button id="createTestCategory" class="btn">Create Test Category</button>
+        <div id="createCategoryResult"></div>
+    </div>
+    
+    <div class="container">
+        <h2>4. Create General Discussion</h2>
+        <button id="createGeneralCategory" class="btn">Create General Discussion</button>
+        <div id="generalCategoryResult"></div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://jrwyptpespjvjisrwnbh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impyd3lwdHBlc3Bqdmppc3J3bmJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0NTQ4MTYsImV4cCI6MjA1OTAzMDgxNn0.Ab2IxEvQekhOKlyjYbBQQjukIsOdghmRkQcmQtZNUWk';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Helper function to display results
+        function displayResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            if (isError) {
+                element.innerHTML = `<div class="error">${content}</div>`;
+            } else {
+                element.innerHTML = `<pre>${JSON.stringify(content, null, 2)}</pre>`;
+            }
+        }
+        
+        // 1. Test connection
+        document.getElementById('checkConnection').addEventListener('click', async () => {
+            const resultElement = document.getElementById('connectionResult');
+            resultElement.innerHTML = '<div class="loading">Testing connection...</div>';
+            
+            try {
+                const { data, error } = await supabase.from('forum_categories').select('count');
+                
+                if (error) throw error;
+                
+                resultElement.innerHTML = `
+                    <div class="success">
+                        ✅ Successfully connected to Supabase!
+                        <pre>${JSON.stringify({ status: 'Connected', tables: { forum_categories: { count: data?.[0]?.count || 0 } } }, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultElement.innerHTML = `
+                    <div class="error">
+                        ❌ Connection failed: ${error.message}
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    </div>
+                `;
+            }
+        });
+        
+        // 2. Check categories
+        document.getElementById('checkCategories').addEventListener('click', async () => {
+            const resultElement = document.getElementById('categoriesResult');
+            resultElement.innerHTML = '<div class="loading">Fetching categories...</div>';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('forum_categories')
+                    .select('*')
+                    .order('name');
+                
+                if (error) throw error;
+                
+                if (data.length === 0) {
+                    resultElement.innerHTML = '<div>No categories found in the database.</div>';
+                } else {
+                    resultElement.innerHTML = `
+                        <div class="success">Found ${data.length} categories:</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultElement.innerHTML = `
+                    <div class="error">❌ Error fetching categories: ${error.message}</div>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        });
+        
+        // 3. Create test category
+        document.getElementById('createTestCategory').addEventListener('click', async () => {
+            const resultElement = document.getElementById('createCategoryResult');
+            resultElement.innerHTML = '<div class="loading">Creating test category...</div>';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('forum_categories')
+                    .insert([
+                        { 
+                            name: 'Test Category', 
+                            slug: 'test-category-' + Math.random().toString(36).substring(2, 8),
+                            description: 'A test category',
+                            sort_order: 99,
+                            created_at: new Date().toISOString()
+                        }
+                    ])
+                    .select();
+                
+                if (error) throw error;
+                
+                resultElement.innerHTML = `
+                    <div class="success">✅ Successfully created test category!</div>
+                    <pre>${JSON.stringify(data?.[0], null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultElement.innerHTML = `
+                    <div class="error">❌ Error creating category: ${error.message}</div>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        });
+        
+        // 4. Create general discussion category
+        document.getElementById('createGeneralCategory').addEventListener('click', async () => {
+            const resultElement = document.getElementById('generalCategoryResult');
+            resultElement.innerHTML = '<div class="loading">Creating General Discussion category...</div>';
+            
+            try {
+                // First check if it already exists
+                const { data: existingCategory } = await supabase
+                    .from('forum_categories')
+                    .select('*')
+                    .eq('slug', 'general-discussion')
+                    .single();
+                
+                if (existingCategory) {
+                    resultElement.innerHTML = `
+                        <div class="success">ℹ️ General Discussion category already exists:</div>
+                        <pre>${JSON.stringify(existingCategory, null, 2)}</pre>
+                    `;
+                    return;
+                }
+                
+                // If not, create it
+                const { data, error } = await supabase
+                    .from('forum_categories')
+                    .insert([
+                        { 
+                            name: 'General Discussion', 
+                            slug: 'general-discussion', 
+                            description: 'General discussions about fitness and training',
+                            sort_order: 1,
+                            created_at: new Date().toISOString()
+                        }
+                    ])
+                    .select();
+                
+                if (error) throw error;
+                
+                resultElement.innerHTML = `
+                    <div class="success">✅ Successfully created General Discussion category!</div>
+                    <pre>${JSON.stringify(data?.[0], null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultElement.innerHTML = `
+                    <div class="error">❌ Error creating General Discussion category: ${error.message}</div>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
