@@ -56,6 +56,19 @@ export function startOAuthFlow(
   const left = window.screenX + (window.outerWidth - width) / 2;
   const top = window.screenY + (window.outerHeight - height) / 2;
   
+  // Ensure the auth URL has the correct parameters for popup flow
+  const url = new URL(authUrl);
+  url.searchParams.set('display', 'popup');
+  
+  // Add a unique ID to the state to prevent CSRF
+  const stateObj = {
+    ...(url.searchParams.get('state') ? { state: url.searchParams.get('state') } : {}),
+    _popup: '1',
+    _ts: Date.now()
+  };
+  url.searchParams.set('state', JSON.stringify(stateObj));
+  
+  // Open the popup with the modified URL
   const popup = window.open(
     '',
     'oauth_popup',
@@ -63,12 +76,15 @@ export function startOAuthFlow(
   );
   
   if (!popup) {
-    onError(new Error('Popup blocked. Please allow popups for this site.'));
+    onError(new Error('Popup blocked. Please allow popups for this site and try again.'));
     return null;
   }
   
   // Navigate to the auth URL in the popup
-  popup.location.href = authUrl;
+  popup.location.href = url.toString();
+  
+  // Focus the popup (might help with some browsers)
+  popup.focus();
   
   // Set up message listener for the popup
   const messageHandler = (event: MessageEvent) => {

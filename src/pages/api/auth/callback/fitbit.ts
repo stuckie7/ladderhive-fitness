@@ -41,18 +41,62 @@ export default async function handler(
 
   // Check for OAuth errors
   if (oauthError) {
-    return res.status(400).json({
-      error: 'OAuth Error',
-      message: `Failed to authorize with Fitbit: ${oauthError}`
-    });
+    const errorHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Fitbit Connection Failed</title>
+          <script>
+            window.onload = function() {
+              window.opener.postMessage({
+                type: 'oauth_callback',
+                error: 'OAuth Error',
+                message: 'Failed to authorize with Fitbit: ${oauthError}'
+              }, window.location.origin);
+              
+              // Close the popup after a short delay
+              setTimeout(() => window.close(), 1000);
+            };
+          </script>
+        </head>
+        <body>
+          <p>Failed to connect to Fitbit. You can close this window.</p>
+        </body>
+      </html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(400).send(errorHtml);
   }
 
   // Verify we have the required parameters
   if (!code || !state) {
-    return res.status(400).json({
-      error: 'Missing parameters',
-      message: 'Missing required OAuth parameters: code and state are required'
-    });
+    const errorHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Error</title>
+          <script>
+            window.onload = function() {
+              window.opener.postMessage({
+                type: 'oauth_callback',
+                error: 'Missing Parameters',
+                message: 'Missing required OAuth parameters: code and state are required'
+              }, window.location.origin);
+              
+              // Close the popup after a short delay
+              setTimeout(() => window.close(), 1000);
+            };
+          </script>
+        </head>
+        <body>
+          <p>Missing required parameters. Please try again.</p>
+        </body>
+      </html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(400).send(errorHtml);
   }
 
   try {
@@ -60,16 +104,38 @@ export default async function handler(
     let userId: string;
     try {
       const stateObj = JSON.parse(decodeURIComponent(state as string));
-      userId = stateObj.userId;
+      userId = stateObj.userId || stateObj.state?.userId;
       
       if (!userId) {
         throw new Error('User ID not found in state');
       }
     } catch (stateError) {
-      return res.status(400).json({
-        error: 'Invalid state',
-        message: 'The state parameter is invalid or corrupted'
-      });
+      const errorHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Error</title>
+            <script>
+              window.onload = function() {
+                window.opener.postMessage({
+                  type: 'oauth_callback',
+                  error: 'Invalid State',
+                  message: 'The state parameter is invalid or corrupted. Please try again.'
+                }, window.location.origin);
+                
+                // Close the popup after a short delay
+                setTimeout(() => window.close(), 1000);
+              };
+            </script>
+          </head>
+          <body>
+            <p>Invalid state parameter. Please try again.</p>
+          </body>
+        </html>
+      `;
+      
+      res.setHeader('Content-Type', 'text/html');
+      return res.status(400).send(errorHtml);
     }
 
     // Exchange the authorization code for an access token
@@ -95,7 +161,34 @@ export default async function handler(
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json().catch(() => ({}));
       console.error('Fitbit token exchange error:', errorData);
-      throw new Error(`Failed to exchange authorization code for access token: ${tokenResponse.statusText}`);
+      
+      const errorMessage = errorData?.errors?.[0]?.message || 'Failed to exchange authorization code for access token';
+      const errorHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Error</title>
+            <script>
+              window.onload = function() {
+                window.opener.postMessage({
+                  type: 'oauth_callback',
+                  error: 'Token Exchange Failed',
+                  message: '${errorMessage.replace(/'/g, "\\'")}'
+                }, window.location.origin);
+                
+                // Close the popup after a short delay
+                setTimeout(() => window.close(), 1000);
+              };
+            </script>
+          </head>
+          <body>
+            <p>Failed to exchange authorization code. Please try again.</p>
+          </body>
+        </html>
+      `;
+      
+      res.setHeader('Content-Type', 'text/html');
+      return res.status(400).send(errorHtml);
     }
 
     const tokenData = await tokenResponse.json() as FitbitTokenResponse;
@@ -135,17 +228,64 @@ export default async function handler(
     }
 
     // Return success response for the popup
-    return res.status(200).json({
-      success: true,
-      message: 'Successfully connected Fitbit account',
-      fitbit_user_id: tokenData.user_id
-    });
+    const successHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Fitbit Connection Successful</title>
+          <script>
+            // Notify the parent window and close the popup
+            window.onload = function() {
+              window.opener.postMessage({
+                type: 'oauth_callback',
+                data: {
+                  success: true,
+                  fitbit_user_id: '${tokenData.user_id}'
+                }
+              }, window.location.origin);
+              
+              // Close the popup after a short delay
+              setTimeout(() => window.close(), 500);
+            };
+          </script>
+        </head>
+        <body>
+          <p>Successfully connected to Fitbit! You can close this window.</p>
+        </body>
+      </html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(200).send(successHtml);
 
   } catch (error) {
     console.error('Fitbit callback error:', error);
-    return res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'An unexpected error occurred'
-    });
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    const errorHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Error</title>
+          <script>
+            window.onload = function() {
+              window.opener.postMessage({
+                type: 'oauth_callback',
+                error: 'Internal Server Error',
+                message: '${errorMessage.replace(/'/g, "\\'")}'
+              }, window.location.origin);
+              
+              // Close the popup after a short delay
+              setTimeout(() => window.close(), 1000);
+            };
+          </script>
+        </head>
+        <body>
+          <p>An unexpected error occurred. Please try again.</p>
+        </body>
+      </html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(500).send(errorHtml);
   }
 }
