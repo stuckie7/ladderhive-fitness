@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AdminProvider } from '@/context/AdminContext';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import Dashboard from '@/pages/Dashboard';
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
@@ -62,6 +63,7 @@ function App() {
       <AuthProvider>
         <AdminProvider>
           <Toaster />
+          <PWAInstallPrompt />
           <Routes>
           <Route
             path="/login"

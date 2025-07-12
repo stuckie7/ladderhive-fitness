@@ -34,11 +34,23 @@ export const useFitbitData = () => {
     queryKey: ['fitbit-stats', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('No user');
+      
+      // Get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('No active session found');
+      }
+
       const today = new Date().toLocaleDateString('en-CA');
       const { data, error } = await supabase.functions.invoke('fitbit-fetch-data', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
         body: { date: today },
       });
+      
       if (error) throw error;
       return data;
     },
@@ -65,21 +77,48 @@ export const useFitbitData = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('No active session found:', sessionError?.message);
+        setIsConnected(false);
+        return;
+      }
+
       // First, check if we can get a profile. Pass Authorization header so the Edge Function can verify the user.
-      const { data: _profile, error: profileError } = await supabase.functions.invoke('get-fitbit-profile', {
+      const { data: profileData, error: profileError } = await supabase.functions.invoke('get-fitbit-profile', {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
-      if (profileError) throw profileError;
+
+      if (profileError) {
+        console.error('Error fetching Fitbit profile:', profileError);
+        throw profileError;
+      }
+
+      // If we get here, the user is connected to Fitbit
       setIsConnected(true);
-      // If connected, immediately fetch the latest health data.
+      
+      // If connected, immediately fetch the latest health data
       await fetchHealthData();
     } catch (err: any) {
-      // If any part of the process fails, assume not connected. 
-      // No error is set here because this is an expected state for users who haven't connected Fitbit.
+      console.error('Error in checkConnectionAndFetch:', err);
+      // If any part of the process fails, assume not connected 
       setIsConnected(false);
+      
+      // Only show error toast if it's not a 401 (which just means not connected)
+      if (err.status !== 401) {
+        setError(err.message || 'Failed to check Fitbit connection');
+        toast({
+          title: 'Error',
+          description: err.message || 'Failed to check Fitbit connection',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
