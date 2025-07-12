@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { HeartPulse, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { startOAuthFlow } from '@/utils/oauth';
 
 const FitbitConnectionStatus = () => {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -89,37 +90,54 @@ const FitbitConnectionStatus = () => {
         throw new Error('No authorization URL returned');
       }
       
-      console.log('Opening Fitbit authorization in new window:', data.url);
-      
-      // Open in a new window/tab to avoid iframe restrictions
-      const newWindow = window.open(data.url, 'fitbit-auth', 'width=600,height=700,scrollbars=yes,resizable=yes');
-      
-      if (!newWindow) {
-        throw new Error('Failed to open authorization window. Please allow popups for this site.');
-      }
-      
-      // Listen for the window to close (user completed or cancelled auth)
-      const checkClosed = setInterval(() => {
-        if (newWindow.closed) {
-          clearInterval(checkClosed);
-          // Check connection status after window closes
-          setTimeout(() => {
-            checkConnection();
-          }, 1000);
+      // Start the OAuth flow with a popup
+      startOAuthFlow(
+        data.url,
+        async (result) => {
+          // This will be called when OAuth flow completes successfully
+          try {
+            // The callback should have already handled the token exchange
+            // Just refresh the connection status
+            await checkConnection();
+            toast({
+              title: 'Success',
+              description: 'Successfully connected to Fitbit!',
+              variant: 'default',
+            });
+          } catch (err: any) {
+            console.error('Error after OAuth:', err);
+            toast({
+              title: 'Error',
+              description: err.message || 'Failed to complete Fitbit connection',
+              variant: 'destructive',
+            });
+          } finally {
+            setIsConnecting(false);
+          }
+        },
+        (error) => {
+          // Handle errors
+          console.error('OAuth error:', error);
+          if (error.message !== 'Authentication was cancelled') {
+            toast({
+              title: 'Error',
+              description: error.message || 'Failed to connect to Fitbit',
+              variant: 'destructive',
+            });
+          }
+          setIsConnecting(false);
         }
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Error connecting Fitbit:', error);
+      );
+    } catch (error: any) {
+      console.error('Error initiating Fitbit connection:', error);
       toast({
-        title: 'Connection Error',
-        description: error instanceof Error ? error.message : 'Failed to connect to Fitbit. Please try again.',
+        title: 'Error',
+        description: error.message || 'Failed to connect to Fitbit',
         variant: 'destructive',
       });
-    } finally {
       setIsConnecting(false);
     }
-  };
+  }, [toast]);
 
   const handleDisconnect = async () => {
     try {
@@ -170,7 +188,14 @@ const FitbitConnectionStatus = () => {
 
   useEffect(() => {
     checkConnection();
+    
+    // Clean up any event listeners when component unmounts
+    return () => {
+      // Any cleanup if needed
+    };
+  }, []);
 
+  useEffect(() => {
     // Check for OAuth callback parameters
     const urlParams = new URLSearchParams(window.location.search);
     const fitbitConnected = urlParams.get('fitbit_connected');

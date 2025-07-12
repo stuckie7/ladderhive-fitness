@@ -1,245 +1,151 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { NextApiRequest, NextApiResponse } from 'next';
 
+// Initialize Supabase client with service role key
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// Fitbit API credentials
+const fitbitClientId = process.env.FITBIT_CLIENT_ID || '';
+const fitbitClientSecret = process.env.FITBIT_CLIENT_SECRET || '';
+
+// Types
+interface FitbitTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  user_id: string;
+  scope: string;
+  token_type: string;
+}
+
+interface ErrorResponse {
+  error: string;
+  message: string;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<{ success: boolean } | ErrorResponse>
+) {
+  // Only allow GET requests
+  if (req.method !== 'GET') {
+    return res.status(405).json({ 
+      error: 'Method not allowed',
+      message: 'Only GET requests are allowed'
+    });
+  }
+
+  const { code, state, error: oauthError } = req.query;
+
+  // Check for OAuth errors
+  if (oauthError) {
+    return res.status(400).json({
+      error: 'OAuth Error',
+      message: `Failed to authorize with Fitbit: ${oauthError}`
+    });
+  }
+
+  // Verify we have the required parameters
+  if (!code || !state) {
+    return res.status(400).json({
+      error: 'Missing parameters',
+      message: 'Missing required OAuth parameters: code and state are required'
+    });
+  }
+
   try {
-    const { code, state, error: oauthError } = req.query;
-
-    if (oauthError) {
-      return renderError(res, `Fitbit authorization failed: ${oauthError}`);
+    // Decode and validate the state parameter
+    let userId: string;
+    try {
+      const stateObj = JSON.parse(decodeURIComponent(state as string));
+      userId = stateObj.userId;
+      
+      if (!userId) {
+        throw new Error('User ID not found in state');
+      }
+    } catch (stateError) {
+      return res.status(400).json({
+        error: 'Invalid state',
+        message: 'The state parameter is invalid or corrupted'
+      });
     }
 
-    if (!code || !state) {
-      return renderError(res, 'Missing required parameters');
-    }
+    // Exchange the authorization code for an access token
+    const tokenUrl = 'https://api.fitbit.com/oauth2/token';
+    const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback/fitbit`;
+    const basicAuth = Buffer.from(`${fitbitClientId}:${fitbitClientSecret}`).toString('base64');
+    
+    const tokenParams = new URLSearchParams();
+    tokenParams.append('clientId', fitbitClientId);
+    tokenParams.append('code', code as string);
+    tokenParams.append('grant_type', 'authorization_code');
+    tokenParams.append('redirect_uri', redirectUri);
 
-    // Verify the state parameter
-    const stateData = JSON.parse(Buffer.from(state as string, 'base64').toString());
-    const { data: storedState, error: stateError } = await supabase
-      .from('fitbit_auth_states')
-      .select('*')
-      .eq('user_id', stateData.userId)
-      .single();
-
-    if (stateError || !storedState || storedState.state !== state) {
-      return renderError(res, 'Invalid state parameter');
-    }
-
-    // Exchange authorization code for access token
-    const tokenResponse = await fetch('https://api.fitbit.com/oauth2/token', {
+    const tokenResponse = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${process.env.FITBIT_CLIENT_ID}:${process.env.FITBIT_CLIENT_SECRET}`).toString('base64')}`
+        'Authorization': `Basic ${basicAuth}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({
-        code: code as string,
-        grant_type: 'authorization_code',
-        client_id: process.env.FITBIT_CLIENT_ID || '',
-        redirect_uri: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://fittrackpro.lovable.app'}/api/auth/callback/fitbit`,
-        code_verifier: 'challenge' // Should match the code_challenge from the authorization request
-      })
+      body: tokenParams.toString()
     });
 
-    const tokenData = await tokenResponse.json();
-
     if (!tokenResponse.ok) {
-      console.error('Error exchanging code for token:', tokenData);
-      return renderError(res, 'Failed to exchange authorization code for access token');
+      const errorData = await tokenResponse.json().catch(() => ({}));
+      console.error('Fitbit token exchange error:', errorData);
+      throw new Error(`Failed to exchange authorization code for access token: ${tokenResponse.statusText}`);
     }
 
+    const tokenData = await tokenResponse.json() as FitbitTokenResponse;
+
     // Store the tokens in the database
-    const { error: tokenError } = await supabase
+    const { error: dbError } = await supabase
       .from('fitbit_tokens')
       .upsert({
-        user_id: stateData.userId,
+        user_id: userId,
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
-        expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+        expires_at: Math.floor(Date.now() / 1000) + tokenData.expires_in,
         scope: tokenData.scope,
-        token_type: tokenData.token_type,
-        user_id_fitbit: tokenData.user_id
+        fitbit_user_id: tokenData.user_id,
+        updated_at: new Date().toISOString()
       }, {
         onConflict: 'user_id'
       });
 
-    if (tokenError) {
-      console.error('Error storing tokens:', tokenError);
-      return renderError(res, 'Failed to store authentication tokens');
+    if (dbError) {
+      console.error('Database error:', dbError);
+      throw new Error('Failed to store Fitbit tokens');
     }
 
-    // Clean up the state
-    await supabase
-      .from('fitbit_auth_states')
-      .delete()
-      .eq('user_id', stateData.userId);
+    // Update user's connection status
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        fitbit_connected: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
 
-    // Return a success page that will close the popup and notify the parent
-    return res.status(200).send(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Fitbit Connected</title>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              height: 100vh;
-              margin: 0;
-              background-color: #f8fafc;
-              color: #1e293b;
-            }
-            .container {
-              text-align: center;
-              padding: 2rem;
-              max-width: 400px;
-            }
-            .success-icon {
-              color: #10b981;
-              font-size: 4rem;
-              margin-bottom: 1rem;
-            }
-            h1 {
-              margin: 0 0 1rem 0;
-              font-size: 1.5rem;
-              font-weight: 600;
-            }
-            p {
-              margin: 0 0 2rem 0;
-              color: #64748b;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="success-icon">✓</div>
-            <h1>Successfully Connected to Fitbit!</h1>
-            <p>You can now close this window and return to the app.</p>
-          </div>
-          <script>
-            // Notify the parent window that authentication was successful
-            try {
-              // Set status in localStorage for the parent window to detect
-              localStorage.setItem('fitbit_auth_status', 'success');
-              
-              // Try to notify the opener first (for popup flow)
-              if (window.opener && !window.opener.closed) {
-                try {
-                  window.opener.postMessage({ 
-                    type: 'FITBIT_AUTH_SUCCESS',
-                    timestamp: Date.now()
-                  }, window.location.origin);
-                } catch (e) {
-                  console.log('Could not post message to opener, using localStorage fallback');
-                }
-              }
-              
-              // Get the return URL from localStorage or default to the root
-              const returnUrl = localStorage.getItem('fitbit_return_url') || '/';
-              localStorage.removeItem('fitbit_return_url');
-              
-              // Close the window after a short delay
-              setTimeout(() => {
-                try {
-                  window.close();
-                } catch (e) {
-                  // If we can't close the window, redirect back to the app
-                  window.location.href = returnUrl;
-                }
-              }, 500);
-              
-            } catch (error) {
-              console.error('Error in callback:', error);
-              // Set error status in localStorage
-              localStorage.setItem('fitbit_auth_status', 'error');
-              // Redirect to home as fallback
-              window.location.href = '/';
-            }
-          </script>
-        </body>
-      </html>
-    `);
+    if (profileError) {
+      console.error('Profile update error:', profileError);
+      // Don't fail the whole flow if profile update fails
+    }
+
+    // Return success response for the popup
+    return res.status(200).json({
+      success: true,
+      message: 'Successfully connected Fitbit account',
+      fitbit_user_id: tokenData.user_id
+    });
+
   } catch (error) {
-    console.error('Error in Fitbit callback:', error);
-    return renderError(res, 'An unexpected error occurred');
+    console.error('Fitbit callback error:', error);
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'An unexpected error occurred'
+    });
   }
-}
-
-function renderError(res: NextApiResponse, message: string) {
-  return res.status(400).send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Error Connecting to Fitbit</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f8fafc;
-            color: #1e293b;
-          }
-          .container {
-            text-align: center;
-            padding: 2rem;
-            max-width: 400px;
-          }
-          .error-icon {
-            color: #ef4444;
-            font-size: 4rem;
-            margin-bottom: 1rem;
-          }
-          h1 {
-            margin: 0 0 1rem 0;
-            font-size: 1.5rem;
-            font-weight: 600;
-          }
-          p {
-            margin: 0 0 2rem 0;
-            color: #64748b;
-          }
-          button {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 0.375rem;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-          }
-          button:hover {
-            background-color: #2563eb;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="error-icon">✕</div>
-          <h1>Error Connecting to Fitbit</h1>
-          <p>${message}</p>
-          <button onclick="window.close()">Close Window</button>
-        </div>
-        <script>
-          // Notify the parent window about the error
-          if (window.opener) {
-            window.opener.postMessage({ 
-              type: 'FITBIT_AUTH_ERROR',
-              error: '${message.replace(/'/g, "\\'")}'
-            }, window.location.origin);
-          }
-        </script>
-      </body>
-    </html>
-  `);
 }
