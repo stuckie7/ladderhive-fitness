@@ -59,8 +59,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const authUrl = new URL('https://www.fitbit.com/oauth2/authorize');
     authUrl.searchParams.append('response_type', 'code');
     authUrl.searchParams.append('client_id', process.env.FITBIT_CLIENT_ID || '');
-    authUrl.searchParams.append('redirect_uri', 'https://c97d7ea5.fittrackprov1.com/api/auth/callback/fitbit');
-    authUrl.searchParams.append('scope', 'activity heartrate location nutrition profile settings sleep social weight');
+    authUrl.searchParams.append('redirect_uri', 'https://jrwyptpespjvjisrwnbh.supabase.co/functions/v1/fitbit-handler');
+    authUrl.searchParams.append('scope', 'activity profile');
     authUrl.searchParams.append('state', state);
     authUrl.searchParams.append('code_challenge', codeChallenge);
     authUrl.searchParams.append('code_challenge_method', 'S256');

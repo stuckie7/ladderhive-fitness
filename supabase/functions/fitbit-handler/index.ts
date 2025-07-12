@@ -242,9 +242,35 @@ serve(async (req: Request) => {
     }
     console.log('fitbit-handler: Tokens saved successfully to Supabase for user:', extractedUserId);
     
-    const redirectUrl = `${extractedOrigin}/profile?status=success&provider=fitbit`;
-    console.log('fitbit-handler: Redirecting to:', redirectUrl);
-    return Response.redirect(redirectUrl, 302);
+    // Ensure the origin is a valid URL and construct the redirect URL
+    let finalRedirectUrl: string;
+    try {
+      // Use the siteUrl from environment as the base if extractedOrigin is not valid
+      const baseUrl = extractedOrigin && extractedOrigin.startsWith('http') 
+        ? extractedOrigin 
+        : siteUrl;
+      
+      // Create URL object to handle proper URL construction
+      const url = new URL('/profile', baseUrl);
+      url.searchParams.set('status', 'success');
+      url.searchParams.set('provider', 'fitbit');
+      finalRedirectUrl = url.toString();
+      
+      console.log('fitbit-handler: Success - Redirecting to:', finalRedirectUrl);
+    } catch (error) {
+      console.error('Error constructing redirect URL, falling back to default:', error);
+      // Fallback to a default URL if there's an error
+      finalRedirectUrl = `${siteUrl}/profile?status=success&provider=fitbit`;
+    }
+    
+    // Return a proper redirect response
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': finalRedirectUrl,
+        ...corsHeaders
+      }
+    });
     // --- End of DB Upsert and Redirect ---
 
   } catch (error) {
@@ -273,18 +299,31 @@ serve(async (req: Request) => {
       details: "Error during Fitbit OAuth processing. Attempting to redirect with error."
     };
 
-    // Redirect to SITE_URL with error status
-    // Ensure siteUrl is defined; provide a fallback if necessary, though it should always be set via env vars.
-    const targetSiteUrl = siteUrl || 'http://localhost:3000'; // Fallback, should not be needed
-    const redirectUrl = new URL(targetSiteUrl);
-    redirectUrl.pathname = '/profile'; // Or a dedicated error page
-    redirectUrl.searchParams.set('status', 'error');
-    redirectUrl.searchParams.set('provider', 'fitbit');
-    redirectUrl.searchParams.set('error_message', finalProcessingErrorMsg);
+    // Handle error redirect with proper URL construction
+    let errorRedirectUrl: string;
+    try {
+      const baseUrl = siteUrl || 'http://localhost:3000';
+      const url = new URL('/profile', baseUrl);
+      url.searchParams.set('status', 'error');
+      url.searchParams.set('provider', 'fitbit');
+      url.searchParams.set('error_message', encodeURIComponent(finalProcessingErrorMsg));
+      errorRedirectUrl = url.toString();
+    } catch (error) {
+      console.error('Error constructing error redirect URL:', error);
+      // Fallback to a simple URL if there's an error
+      errorRedirectUrl = `${siteUrl || 'http://localhost:3000'}/profile?status=error&provider=fitbit&error_message=${encodeURIComponent('Authentication failed')}`;
+    }
 
-    console.log(`fitbit-handler: Responding with error - Redirecting to: ${redirectUrl.toString()}`);
+    console.log(`fitbit-handler: Error - Redirecting to: ${errorRedirectUrl}`);
 
-    return Response.redirect(redirectUrl.toString(), 302);
+    // Return a proper redirect response
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': errorRedirectUrl,
+        ...corsHeaders
+      }
+    });
   }
   // If no error was caught, the function should have already returned a Response.redirect.
   // This part should ideally not be reached if everything in try was successful and redirected.
