@@ -20,11 +20,11 @@ const FitbitConnectionStatus = () => {
   const { toast } = useToast();
   
   // Memoize the showToast function to prevent unnecessary re-renders
-  const showToast = useCallback((params: ToastParams) => {
+  const showToast = useCallback(({ title, description, variant }: ToastParams) => {
     toast({
-      title: params.title,
-      description: params.description,
-      variant: params.variant,
+      title,
+      description,
+      variant,
     });
   }, [toast]);
 
