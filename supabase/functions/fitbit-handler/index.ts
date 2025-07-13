@@ -95,6 +95,33 @@ async function exchangeCodeForToken(code: string, codeVerifier: string) {
   return JSON.parse(responseBodyText);
 }
 
+// Helper function to create error responses
+function createErrorResponse(error: string, origin: string): Response {
+  console.error('Creating error response:', error);
+  
+  let redirectUrl: string;
+  try {
+    const baseUrl = origin.startsWith('http') ? origin : SITE_URL;
+    const url = new URL('/profile', baseUrl);
+    url.searchParams.set('status', 'error');
+    url.searchParams.set('provider', 'fitbit');
+    url.searchParams.set('error', encodeURIComponent(error));
+    redirectUrl = url.toString();
+  } catch (e) {
+    console.error('Error constructing error URL:', e);
+    redirectUrl = `${SITE_URL}/profile?status=error&provider=fitbit&error=authentication_failed`;
+  }
+  
+  console.log('Redirecting to error URL:', redirectUrl);
+  const responseHeaders = new Headers(corsHeaders);
+  responseHeaders.set('Location', redirectUrl);
+  
+  return new Response(null, {
+    status: 302,
+    headers: responseHeaders
+  });
+}
+
 serve(async (req: Request) => {
   // Set CORS headers for all responses
   const setCorsHeaders = (headers: Record<string, string> = {}) => ({
@@ -107,10 +134,6 @@ serve(async (req: Request) => {
     return new Response('ok', { headers: setCorsHeaders() });
   }
 
-  // Parse URL and query parameters
-  const url = new URL(req.url);
-  console.log(`[${new Date().toISOString()}] fitbit-handler: Request: ${req.method} ${url.pathname}${url.search}`);
-
   // Only allow GET requests
   if (req.method !== 'GET') {
     return new Response(
@@ -119,12 +142,20 @@ serve(async (req: Request) => {
     );
   }
 
+  // Parse URL and query parameters
+  const url = new URL(req.url);
+  console.log(`[${new Date().toISOString()}] fitbit-handler: Request: ${req.method} ${url.pathname}${url.search}`);
+
   // Extract query parameters
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
   const errorParam = url.searchParams.get('error');
 
-  console.log('Received OAuth callback:', { hasCode: !!code, hasState: !!state, error: errorParam });
+  console.log('Received OAuth callback:', { 
+    hasCode: !!code, 
+    hasState: !!state, 
+    error: errorParam 
+  });
 
   // Handle OAuth errors
   if (errorParam) {
@@ -158,6 +189,7 @@ serve(async (req: Request) => {
       if (!userId || !nonce) {
         throw new Error('Invalid state: missing userId or nonce');
       }
+      console.log('Parsed state:', { userId, nonce, origin });
     } catch (e) {
       const error = e instanceof Error ? e : new Error('Failed to parse state parameter');
       console.error('Error parsing state:', error);
@@ -169,6 +201,7 @@ serve(async (req: Request) => {
       throw new Error('Supabase admin client not initialized');
     }
 
+    console.log('Fetching PKCE verifier for nonce:', nonce);
     const { data: pkceRow, error: pkceError } = await supabaseAdminClient
       .from('fitbit_pkce')
       .select('code_verifier')
@@ -181,6 +214,7 @@ serve(async (req: Request) => {
     }
 
     const codeVerifier = pkceRow.code_verifier;
+    console.log('Found code verifier, length:', codeVerifier?.length || 0);
     
     // Clean up PKCE record (best effort)
     try {
@@ -188,6 +222,7 @@ serve(async (req: Request) => {
         .from('fitbit_pkce')
         .delete()
         .eq('pkce_key', nonce);
+      console.log('Cleaned up PKCE record');
     } catch (e) {
       console.error('Error cleaning up PKCE record:', e);
       // Continue even if cleanup fails
@@ -199,6 +234,10 @@ serve(async (req: Request) => {
     console.log('Successfully obtained tokens from Fitbit');
 
     // Store tokens in database
+    if (!supabaseAdminClient) {
+      throw new Error('Supabase admin client not initialized');
+    }
+
     const { error: upsertError } = await supabaseAdminClient
       .from('fitbit_tokens')
       .upsert({
@@ -229,17 +268,17 @@ serve(async (req: Request) => {
       url.searchParams.set('provider', 'fitbit');
       redirectUrl = url.toString();
     } catch (e) {
-      console.error('Error constructing redirect URL:', e);
+      console.error('Error constructing redirect URL, falling back to default:', e);
       redirectUrl = `${SITE_URL}/profile?status=success&provider=fitbit`;
     }
-
+    
     console.log('Redirecting to:', redirectUrl);
+    const responseHeaders = new Headers(corsHeaders);
+    responseHeaders.set('Location', redirectUrl);
+    
     return new Response(null, {
       status: 302,
-      headers: {
-        'Location': redirectUrl,
-        ...corsHeaders
-      }
+      headers: responseHeaders
     });
 
   } catch (error) {
@@ -247,235 +286,4 @@ serve(async (req: Request) => {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return createErrorResponse(errorMessage, SITE_URL);
   }
-});
-
-// Helper function to create error responses
-function createErrorResponse(error: string, origin: string): Response {
-  console.error('Creating error response:', error);
-  
-  let redirectUrl: string;
-  try {
-    const baseUrl = origin.startsWith('http') ? origin : SITE_URL;
-    const url = new URL('/profile', baseUrl);
-    url.searchParams.set('status', 'error');
-    url.searchParams.set('provider', 'fitbit');
-    url.searchParams.set('error', encodeURIComponent(error));
-    redirectUrl = url.toString();
-  } catch (e) {
-    console.error('Error constructing error URL:', e);
-    redirectUrl = `${SITE_URL}/profile?status=error&provider=fitbit&error=${encodeURIComponent('Authentication failed')}`;
-  }
-  
-  console.log('Redirecting to error URL:', redirectUrl);
-  return new Response(null, {
-    status: 302,
-    headers: {
-      'Location': redirectUrl,
-      ...corsHeaders
-    }
-  });
-}
-  if (req.method === 'OPTIONS') {
-    console.log('fitbit-handler: Handling OPTIONS preflight request');
-    return new Response('ok', { headers: corsHeaders }); // Respond with 200 OK and CORS headers
-  }
-
-  const url = new URL(req.url);
-  console.log(`[${new Date().toISOString()}] fitbit-handler: Request: ${req.method} ${url.pathname}${url.search}`);
-
-  if (req.method === 'OPTIONS') {
-    console.log('fitbit-handler: Handling OPTIONS preflight request');
-    return new Response(null, { status: 204, headers: corsHeaders });
-  }
-
-  if (req.method !== 'GET') {
-    console.log('fitbit-handler: Method not allowed:', req.method);
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  let parsedCode: string | null = null;
-  let parsedStateString: string | null = null;
-  let parsedErrorParam: string | null = null;
-  let decodedStateData: any = null;
-  let extractedUserId: string | null = null;
-  let extractedOrigin: string = siteUrl; // Default origin
-  let extractedCodeVerifier: string | null = null;
-  let processingErrorMsg: string | null = null;
-  
-  // Declare responsePayload here, to be initialized after basic parsing or in catch block
-  let responsePayload: Record<string, any>;
-
-  try {
-    parsedCode = url.searchParams.get('code');
-    parsedStateString = url.searchParams.get('state');
-    parsedErrorParam = url.searchParams.get('error');
-
-    console.log(`fitbit-handler: Received params - code: ${!!parsedCode}, state: ${!!parsedStateString}, error: ${parsedErrorParam}`);
-
-    if (parsedErrorParam) {
-      processingErrorMsg = `OAuth error from Fitbit: ${parsedErrorParam} - ${url.searchParams.get('error_description') || 'No description'}`;
-      throw new Error(processingErrorMsg); // Throw to go to catch block for consistent error handling
-    }
-
-    if (!parsedCode || !parsedStateString) {
-      const missing = [!parsedCode && 'code', !parsedStateString && 'state'].filter(Boolean).join(', ');
-      processingErrorMsg = `Missing required parameters: ${missing}`;
-      throw new Error(processingErrorMsg);
-    }
-
-    try {
-      decodedStateData = JSON.parse(decodeURIComponent(parsedStateString));
-      extractedUserId = decodedStateData.userId;
-      const nonce = decodedStateData.nonce;
-      extractedOrigin = decodedStateData.origin || siteUrl;
-      if (!extractedUserId || !nonce) {
-        processingErrorMsg = 'Incomplete state data: userId or nonce missing.';
-        throw new Error(processingErrorMsg);
-      }
-      // Retrieve code verifier from PKCE table
-      if (!supabaseAdminClient) {
-        throw new Error('Supabase admin client not initialized');
-      }
-      const { data: pkceRow, error: pkceErr } = await supabaseAdminClient.from('fitbit_pkce').select('code_verifier').eq('pkce_key', nonce).single();
-      if (pkceErr || !pkceRow?.code_verifier) {
-        processingErrorMsg = 'PKCE verifier not found or DB error';
-        throw new Error(processingErrorMsg);
-      }
-      extractedCodeVerifier = pkceRow.code_verifier;
-      // Clean up row (best-effort)
-      await supabaseAdminClient.from('fitbit_pkce').delete().eq('pkce_key', nonce);
-      console.log(`fitbit-handler: Extracted from state - userId: ${extractedUserId}, origin: ${extractedOrigin}, codeVerifier: ${extractedCodeVerifier ? 'present' : 'absent'}`);
-    } catch (e) {
-      const stateParseErrorMessage = e instanceof Error ? e.message : 'Unknown error parsing state.';
-      console.error('fitbit-handler: Error parsing state:', stateParseErrorMessage, 'Raw state:', parsedStateString);
-      processingErrorMsg = `Invalid state parameter: ${stateParseErrorMessage}.`;
-      throw new Error(processingErrorMsg); // Re-throw to be caught by the main catch
-    }
-
-    // Exchange the authorization code for tokens
-    if (!extractedCodeVerifier) {
-      throw new Error('No code verifier found for this request');
-    }
-
-    console.log('Exchanging code for tokens...');
-    const tokenData = await exchangeCodeForToken(parsedCode, extractedCodeVerifier);
-    console.log('Successfully obtained tokens from Fitbit');
-
-    // Store the tokens in the database
-    if (!supabaseAdminClient) {
-      throw new Error('Supabase admin client not initialized');
-    }
-
-    const { data: dbData, error: dbError } = await supabaseAdminClient
-      .from('fitbit_tokens')
-      .upsert(
-        {
-          user_id: extractedUserId,
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
-          scope: tokenData.scope,
-          fitbit_user_id: tokenData.user_id,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id' }
-      )
-      .select();
-
-    if (dbError) {
-      console.error('Error upserting tokens:', dbError);
-      throw new Error(`Failed to store tokens: ${dbError.message}`);
-    }
-
-    if (!dbData || dbData.length === 0) {
-      throw new Error('Database upsert did not return the saved record');
-    }
-
-    console.log('Tokens stored successfully');
-    
-    // Ensure the origin is a valid URL and construct the redirect URL
-    let finalRedirectUrl: string;
-    try {
-      // Use the siteUrl from environment as the base if extractedOrigin is not valid
-      const baseUrl = extractedOrigin && extractedOrigin.startsWith('http') 
-        ? extractedOrigin 
-        : siteUrl;
-      
-      // Create URL object to handle proper URL construction
-      const url = new URL('/profile', baseUrl);
-      url.searchParams.set('status', 'success');
-      url.searchParams.set('provider', 'fitbit');
-      finalRedirectUrl = url.toString();
-      
-      console.log('fitbit-handler: Success - Redirecting to:', finalRedirectUrl);
-    } catch (error) {
-      console.error('Error constructing redirect URL, falling back to default:', error);
-      // Fallback to a default URL if there's an error
-      finalRedirectUrl = `${siteUrl}/profile?status=success&provider=fitbit`;
-    }
-    
-    // Return a proper redirect response
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': finalRedirectUrl,
-        ...corsHeaders
-      }
-    });
-    // --- End of DB Upsert and Redirect ---
-
-  } catch (e) {
-    const error = e instanceof Error ? e : new Error(String(e));
-    console.error('Error in fitbit-handler:', error);
-    
-    // Redirect to the frontend with error status
-
-    // Initialize responsePayload for the error case
-    responsePayload = {
-      success: false,
-      error: finalProcessingErrorMsg,
-      details: "Error during Fitbit OAuth processing. Attempting to redirect with error."
-    };
-
-    // Handle error redirect with proper URL construction
-    let errorRedirectUrl: string;
-    try {
-      const baseUrl = siteUrl || 'http://localhost:3000';
-      const url = new URL('/profile', baseUrl);
-      url.searchParams.set('status', 'error');
-      url.searchParams.set('provider', 'fitbit');
-      url.searchParams.set('error_message', encodeURIComponent(finalProcessingErrorMsg));
-      errorRedirectUrl = url.toString();
-    } catch (error) {
-      console.error('Error constructing error redirect URL:', error);
-      // Fallback to a simple URL if there's an error
-      errorRedirectUrl = `${siteUrl || 'http://localhost:3000'}/profile?status=error&provider=fitbit&error_message=${encodeURIComponent('Authentication failed')}`;
-    }
-
-    console.log(`fitbit-handler: Error - Redirecting to: ${errorRedirectUrl}`);
-
-    // Return a proper redirect response
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': errorRedirectUrl,
-        ...corsHeaders
-      }
-    });
-  }
-  // If no error was caught, the function should have already returned a Response.redirect.
-  // This part should ideally not be reached if everything in try was successful and redirected.
-  // However, as a fallback, if it's reached without an error and without a redirect, return an error JSON.
-  console.error("fitbit-handler: Reached end of function without redirect or explicit error response. This indicates a logic flow issue.");
-  return new Response(JSON.stringify({
-    message: "fitbit-handler: Unexpected end of function flow.",
-    timestamp: new Date().toISOString(),
-    processingOutcome: { error: "Internal server error: Unexpected function termination."}
-  }), {
-    status: 500,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
 });
