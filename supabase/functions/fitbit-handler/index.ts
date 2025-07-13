@@ -220,7 +220,31 @@ serve(async (req: Request) => {
 
     if (pkceError || !pkceRow?.code_verifier) {
       console.error('PKCE verifier not found or DB error:', pkceError?.message || 'No code_verifier found');
-      return createErrorResponse('Invalid or expired authentication request', origin);
+      
+      // Create a redirect response with proper headers
+      const redirectUrl = new URL(origin || SITE_URL);
+      
+      // Set default headers
+      const headers = new Headers({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      });
+      
+      redirectUrl.pathname = '/profile';
+      redirectUrl.searchParams.set('status', 'error');
+      redirectUrl.searchParams.set('provider', 'fitbit');
+      redirectUrl.searchParams.set('error', 'Invalid or expired authentication request');
+      
+      console.log('Error during Fitbit OAuth, redirecting to:', redirectUrl.toString());
+      
+      // Set the Location header
+      headers.set('Location', redirectUrl.toString());
+      
+      return new Response(null, {
+        status: 302,
+        headers,
+      });
     }
 
     const codeVerifier = pkceRow.code_verifier;

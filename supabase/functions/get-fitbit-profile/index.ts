@@ -216,8 +216,11 @@ serve(async (req: Request): Promise<Response> => {
     const token = authHeader.replace('Bearer ', '');
     
     if (!token) {
+      console.error('No authorization token provided in headers');
       return createErrorResponse(401, 'Missing authentication token');
     }
+    
+    console.log('Received token for validation');
 
     // Create admin client to verify the token
     const adminClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
@@ -228,11 +231,20 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     // Verify the JWT token
-    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
-
-    if (userError || !user) {
-      console.error('User authentication failed:', userError?.message || 'No user found');
-      return createErrorResponse(401, 'Unauthorized', userError?.message);
+    let user;
+    try {
+      const { data: userData, error: userError } = await adminClient.auth.getUser(token);
+      
+      if (userError || !userData.user) {
+        console.error('User authentication failed:', userError?.message || 'No user found in token');
+        return createErrorResponse(401, 'Unauthorized', userError?.message || 'Invalid user session');
+      }
+      
+      user = userData.user;
+      console.log('Successfully authenticated user:', user.id);
+    } catch (authError) {
+      console.error('Error during authentication:', authError);
+      return createErrorResponse(401, 'Authentication failed', 'Invalid or expired token');
     }
 
     console.log('Authenticated user:', user.id);

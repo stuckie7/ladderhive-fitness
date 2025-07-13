@@ -205,19 +205,19 @@ serve(async (req: Request) => {
       }
     }
 
-    // Extract date param from body
-    let body: { date?: string } = {};
+    // Extract date param from body or use today's date if not provided
+    let date: string | undefined;
     try {
-      if (req.body) {
-        body = await req.json();
+      const contentType = req.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const body = await req.json().catch(() => ({}));
+        date = body?.date;
       }
-      console.log('Received request body:', JSON.stringify(body));
+      console.log('Received request with date:', date || 'not provided, using today');
     } catch (e) {
       console.error('Error parsing request body:', e);
-      return createResponse(400, { error: 'Invalid request body' }, origin);
+      // Continue with undefined date if parsing fails
     }
-    
-    const date = body?.date;
 
     // ---- CACHING ----
     const cacheKey = `${user.id}-${date || 'today'}`;
