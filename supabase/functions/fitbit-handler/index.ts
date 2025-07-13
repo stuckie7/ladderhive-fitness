@@ -123,14 +123,24 @@ function createErrorResponse(error: string, origin: string): Response {
 }
 
 serve(async (req: Request) => {
+  console.log('=== New Request ===');
+  console.log('Request URL:', req.url);
+  console.log('Request method:', req.method);
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+  
   // Set CORS headers for all responses
-  const setCorsHeaders = (headers: Record<string, string> = {}) => ({
-    ...corsHeaders,
-    ...headers
-  });
+  const setCorsHeaders = (headers: Record<string, string> = {}) => {
+    const allHeaders = {
+      ...corsHeaders,
+      ...headers
+    };
+    console.log('Setting response headers:', allHeaders);
+    return allHeaders;
+  };
 
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request');
     return new Response('ok', { headers: setCorsHeaders() });
   }
 
@@ -263,18 +273,31 @@ serve(async (req: Request) => {
     let redirectUrl: string;
     try {
       const baseUrl = origin.startsWith('http') ? origin : SITE_URL;
+      console.log('Creating redirect URL with base:', baseUrl);
       const url = new URL('/profile', baseUrl);
       url.searchParams.set('status', 'success');
       url.searchParams.set('provider', 'fitbit');
       redirectUrl = url.toString();
+      console.log('Successfully created redirect URL:', redirectUrl);
     } catch (e) {
       console.error('Error constructing redirect URL, falling back to default:', e);
       redirectUrl = `${SITE_URL}/profile?status=success&provider=fitbit`;
+      console.log('Using fallback redirect URL:', redirectUrl);
     }
     
     console.log('Redirecting to:', redirectUrl);
-    const responseHeaders = new Headers(corsHeaders);
+    
+    // Create response with both CORS headers and Location
+    const responseHeaders = new Headers();
+    // Add CORS headers first
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      responseHeaders.set(key, value);
+    });
+    // Then set the Location header
     responseHeaders.set('Location', redirectUrl);
+    
+    // Log the headers for debugging
+    console.log('Response headers:', Object.fromEntries(responseHeaders.entries()));
     
     return new Response(null, {
       status: 302,
