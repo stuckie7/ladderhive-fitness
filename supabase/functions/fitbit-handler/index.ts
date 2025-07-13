@@ -287,21 +287,24 @@ serve(async (req: Request) => {
     
     console.log('Final redirect URL:', redirectUrl);
     
-    // Create response headers with CORS and Location
-    const responseHeaders = new Headers({
-      'Access-Control-Allow-Origin': corsHeaders['Access-Control-Allow-Origin'],
-      'Access-Control-Allow-Methods': corsHeaders['Access-Control-Allow-Methods'],
-      'Access-Control-Allow-Headers': corsHeaders['Access-Control-Allow-Headers'],
-      'Location': redirectUrl
-    });
+    // Log the redirect URL for debugging
+    console.log('Final redirect URL:', redirectUrl);
     
-    console.log('Response headers:', Object.fromEntries(responseHeaders.entries()));
-    
-    // Return the redirect response
-    return new Response(null, {
+    // Create a simple redirect response with minimal headers
+    const response = new Response(null, {
       status: 302,
-      headers: responseHeaders
+      headers: {
+        'Location': redirectUrl,
+        'Access-Control-Allow-Origin': '*', // Allow all origins for now
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      }
     });
+    
+    // Log the response headers for debugging
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    return response;
 
   } catch (error) {
     console.error('Error in OAuth callback:', error);
