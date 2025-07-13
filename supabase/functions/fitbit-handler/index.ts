@@ -179,68 +179,46 @@ serve(async (req: Request) => {
       throw new Error(processingErrorMsg); // Re-throw to be caught by the main catch
     }
 
-    // Initialize responsePayload now that basic parameters are parsed and validated
-    responsePayload = {
-      message: "fitbit-handler: Fitbit API call test",
-      timestamp: new Date().toISOString(),
-      params: {
-          codeReceived: !!parsedCode,
-          stateReceived: !!parsedStateString,
-          errorReceived: parsedErrorParam, // Will be null if we passed initial checks
-      },
-      decodedState: {
-          userId: extractedUserId,
-          origin: extractedOrigin,
-          codeVerifierIsPresent: !!extractedCodeVerifier,
-          codeVerifierPreview: extractedCodeVerifier ? extractedCodeVerifier.substring(0, 20) + "..." : null,
-          rawStateString: parsedStateString,
-      },
-      processingOutcome: {
-          error: null, // Initially null, will be set by catch if an error occurs later
-      },
-      envVarsCheck: { 
-        FITBIT_CLIENT_ID_IS_SET: !!FITBIT_CLIENT_ID,
-        FITBIT_CLIENT_SECRET_IS_SET: !!FITBIT_CLIENT_SECRET,
-        SUPABASE_URL_IS_SET: !!SUPABASE_URL,
-        SUPABASE_SERVICE_ROLE_KEY_IS_SET: !!SUPABASE_SERVICE_ROLE_KEY,
-        SUPABASE_CLIENT_INITIALIZED: !!supabaseAdminClient
-      },
-      fitbitTokenResponse: null 
-    };
+    // Exchange the authorization code for tokens
+    if (!extractedCodeVerifier) {
+      throw new Error('No code verifier found for this request');
+    }
 
-    console.log('fitbit-handler: Attempting to exchange code for token with Fitbit API...');
+    console.log('Exchanging code for tokens...');
     const tokenData = await exchangeCodeForToken(parsedCode, extractedCodeVerifier);
-    console.log('fitbit-handler: Token exchange with Fitbit API successful for user:', extractedUserId);
-    console.log('Fitbit token data received:', tokenData);
-    responsePayload.fitbitTokenResponse = tokenData; // Assign successful token data
+    console.log('Successfully obtained tokens from Fitbit');
 
-    // --- DB Upsert and Redirect --- 
-    if (!supabaseAdminClient) { 
-      processingErrorMsg = "Supabase admin client not initialized. Cannot save tokens.";
-      throw new Error(processingErrorMsg); 
+    // Store the tokens in the database
+    if (!supabaseAdminClient) {
+      throw new Error('Supabase admin client not initialized');
     }
-    console.log('fitbit-handler: Attempting to save tokens to Supabase for user:', extractedUserId);
-        const { data: dbData, error: dbError } = await supabaseAdminClient.from('fitbit_tokens').upsert({
-      user_id: extractedUserId, // This is the Supabase auth user ID
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
-      expires_at: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString(),
-      scope: tokenData.scope,
-      fitbit_user_id: tokenData.user_id, // This is the Fitbit user ID
-    }, { onConflict: 'user_id' }).select();
 
-        if (!dbData || dbData.length === 0) {
-      processingErrorMsg = `Database upsert did not return the saved record, indicating a potential silent failure.`;
-      console.error('fitbit-handler: Database upsert error:', processingErrorMsg);
-      throw new Error(processingErrorMsg);
-    }
+    const { data: dbData, error: dbError } = await supabaseAdminClient
+      .from('fitbit_tokens')
+      .upsert(
+        {
+          user_id: extractedUserId,
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+          scope: tokenData.scope,
+          fitbit_user_id: tokenData.user_id,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      )
+      .select();
 
     if (dbError) {
-      processingErrorMsg = `Failed to save Fitbit tokens to database: ${dbError.message}`;
-      console.error('fitbit-handler: Database error:', processingErrorMsg, dbError);
-      throw new Error(processingErrorMsg);
+      console.error('Error upserting tokens:', dbError);
+      throw new Error(`Failed to store tokens: ${dbError.message}`);
     }
-    console.log('fitbit-handler: Tokens saved successfully to Supabase for user:', extractedUserId);
+
+    if (!dbData || dbData.length === 0) {
+      throw new Error('Database upsert did not return the saved record');
+    }
+
+    console.log('Tokens stored successfully');
     
     // Ensure the origin is a valid URL and construct the redirect URL
     let finalRedirectUrl: string;
@@ -273,24 +251,11 @@ serve(async (req: Request) => {
     });
     // --- End of DB Upsert and Redirect ---
 
-  } catch (error) {
-    let errorMsg: string;
-    let errorStack: string | undefined;
-
-    if (error instanceof Error) {
-      errorMsg = error.message;
-      errorStack = error.stack;
-    } else {
-      errorMsg = 'An unknown error object was thrown.';
-    }
-
-    console.error(`fitbit-handler: Error processing request: ${errorMsg}`);
-    if (errorStack) {
-      console.error(errorStack);
-    }
-
-    // Use the processingErrorMsg if it was set by a more specific error, otherwise use the caught error's message
-    const finalProcessingErrorMsg = processingErrorMsg || errorMsg || 'An unknown error occurred during Fitbit OAuth processing.';
+  } catch (e) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    console.error('Error in fitbit-handler:', error);
+    
+    // Redirect to the frontend with error status
 
     // Initialize responsePayload for the error case
     responsePayload = {
