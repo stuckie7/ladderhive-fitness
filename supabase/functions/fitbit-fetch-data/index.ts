@@ -206,9 +206,18 @@ serve(async (req: Request) => {
     }
 
     // Extract date param from body
-    const body = await req.json();
-    const date = body.date;
-    console.log('Received request body:', JSON.stringify(body));
+    let body: { date?: string } = {};
+    try {
+      if (req.body) {
+        body = await req.json();
+      }
+      console.log('Received request body:', JSON.stringify(body));
+    } catch (e) {
+      console.error('Error parsing request body:', e);
+      return createResponse(400, { error: 'Invalid request body' }, origin);
+    }
+    
+    const date = body?.date;
 
     // ---- CACHING ----
     const cacheKey = `${user.id}-${date || 'today'}`;

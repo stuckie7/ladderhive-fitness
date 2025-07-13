@@ -291,20 +291,19 @@ serve(async (req: Request) => {
     console.log('Final redirect URL:', redirectUrl);
     
     // Create a simple redirect response with minimal headers
-    const response = new Response(null, {
+    const headers = new Headers();
+    headers.set('Location', redirectUrl);
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', 'authorization, x-client-info, apikey, content-type');
+    
+    console.log('Response headers to be sent:', Object.fromEntries(headers.entries()));
+    
+    // Return the redirect response
+    return new Response(null, {
       status: 302,
-      headers: {
-        'Location': redirectUrl,
-        'Access-Control-Allow-Origin': '*', // Allow all origins for now
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      }
+      headers: headers
     });
-    
-    // Log the response headers for debugging
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-    
-    return response;
 
   } catch (error) {
     console.error('Error in OAuth callback:', error);
