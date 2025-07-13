@@ -285,20 +285,19 @@ serve(async (req: Request) => {
       console.log('Using fallback redirect URL:', redirectUrl);
     }
     
-    console.log('Redirecting to:', redirectUrl);
+    console.log('Final redirect URL:', redirectUrl);
     
-    // Create response with both CORS headers and Location
-    const responseHeaders = new Headers();
-    // Add CORS headers first
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      responseHeaders.set(key, value);
+    // Create response headers with CORS and Location
+    const responseHeaders = new Headers({
+      'Access-Control-Allow-Origin': corsHeaders['Access-Control-Allow-Origin'],
+      'Access-Control-Allow-Methods': corsHeaders['Access-Control-Allow-Methods'],
+      'Access-Control-Allow-Headers': corsHeaders['Access-Control-Allow-Headers'],
+      'Location': redirectUrl
     });
-    // Then set the Location header
-    responseHeaders.set('Location', redirectUrl);
     
-    // Log the headers for debugging
     console.log('Response headers:', Object.fromEntries(responseHeaders.entries()));
     
+    // Return the redirect response
     return new Response(null, {
       status: 302,
       headers: responseHeaders
