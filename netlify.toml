@@ -1,5 +1,5 @@
 [build]
-  command = "NODE_OPTIONS=--max_old_space_size=4096 npm run build"
+  command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
 
@@ -8,6 +8,10 @@
   NPM_FLAGS = "--legacy-peer-deps"
   NODE_OPTIONS = "--max_old_space_size=4096"
   CI = "false"
+  VITE_SUPABASE_URL = "https://jrwyptpespjvjisrwnbh.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impyd3lwdHBlc3Bqdmppc3J3bmJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0NTQ4MTYsImV4cCI6MjA1OTAzMDgxNn0.Ab2IxEvQekhOKlyjYbBQQjukIsOdghmRkQcmQtZNUWk"
+  VITE_FITBIT_CLIENT_ID = "23QJQ3"
+  VITE_SITE_URL = "https://fittrackprov1.com"
 
 [dev]
   command = "npm run dev"
@@ -18,6 +22,7 @@
 [[redirects]]
   from = "/*"
   to = "/index.html"
+  status = 200
   status = 200
 
 [[headers]]
