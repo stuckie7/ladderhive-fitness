@@ -48,10 +48,9 @@ const FitbitConnectionStatus = () => {
       }
 
       const { data, error } = await supabase
-        .from('user_connections')
-        .select('provider')
+        .from('fitbit_tokens')
+        .select('user_id')
         .eq('user_id', session.user.id)
-        .eq('provider', 'fitbit')
         .maybeSingle();
 
       if (error) {
