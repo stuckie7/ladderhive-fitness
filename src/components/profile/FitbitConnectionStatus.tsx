@@ -1,14 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { HeartPulse, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { startOAuthFlow } from '@/utils/oauth';
+
+type ToastVariant = 'default' | 'destructive';
+
+interface ToastParams {
+  title: string;
+  description: string;
+  variant?: ToastVariant;
+}
 
 const FitbitConnectionStatus = () => {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   const [isConnecting, setIsConnecting] = useState(false);
+  const { toast } = useToast();
+  
+  // Memoize the showToast function to prevent unnecessary re-renders
+  const showToast = useCallback(({ title, description, variant }: ToastParams) => {
+    toast({
+      title,
+      description,
+      variant,
+    });
+  }, [toast]);
 
   const checkConnection = async () => {
     try {
@@ -29,25 +47,19 @@ const FitbitConnectionStatus = () => {
         return;
       }
 
-      console.log('Checking Fitbit connection for user:', session.user.id);
-
-      // Invoke the edge function with auth header so Supabase Edge Function can authenticate the user
-      const { error } = await supabase.functions.invoke('get-fitbit-profile', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const { data, error } = await supabase
+        .from('fitbit_tokens')
+        .select('user_id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
       if (error) {
-        console.log('Fitbit not connected or token invalid:', error.message);
+        console.error('Error checking Fitbit connection:', error);
         setIsConnected(false);
         return;
       }
 
-      // If the function returns successfully, the user is connected.
-      console.log('Fitbit connection confirmed.');
-      setIsConnected(true);
+      setIsConnected(!!data);
     } catch (error) {
       console.error('Error checking Fitbit connection:', error);
       setIsConnected(false);
@@ -56,7 +68,7 @@ const FitbitConnectionStatus = () => {
     }
   };
 
-  const handleConnect = async () => {
+  const handleConnect = useCallback(async () => {
     try {
       setIsConnecting(true);
       
@@ -64,10 +76,10 @@ const FitbitConnectionStatus = () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session?.user) {
-        toast({
+        showToast({
           title: 'Authentication Required',
           description: 'Please log in to connect your Fitbit account.',
-          variant: 'destructive',
+          variant: 'destructive' as const
         });
         return;
       }
@@ -89,37 +101,54 @@ const FitbitConnectionStatus = () => {
         throw new Error('No authorization URL returned');
       }
       
-      console.log('Opening Fitbit authorization in new window:', data.url);
-      
-      // Open in a new window/tab to avoid iframe restrictions
-      const newWindow = window.open(data.url, 'fitbit-auth', 'width=600,height=700,scrollbars=yes,resizable=yes');
-      
-      if (!newWindow) {
-        throw new Error('Failed to open authorization window. Please allow popups for this site.');
-      }
-      
-      // Listen for the window to close (user completed or cancelled auth)
-      const checkClosed = setInterval(() => {
-        if (newWindow.closed) {
-          clearInterval(checkClosed);
-          // Check connection status after window closes
-          setTimeout(() => {
-            checkConnection();
-          }, 1000);
+      // Start the OAuth flow with a popup
+      startOAuthFlow(
+        data.url,
+        async () => {
+          // This will be called when OAuth flow completes successfully
+          try {
+            // The callback should have already handled the token exchange
+            // Just refresh the connection status
+            await checkConnection();
+            showToast({
+              title: 'Success',
+              description: 'Successfully connected to Fitbit!'
+            });
+          } catch (error: unknown) {
+            console.error('Error after OAuth:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Failed to complete Fitbit connection';
+            showToast({
+              title: 'Error',
+              description: errorMessage,
+              variant: 'destructive'
+            });
+          } finally {
+            setIsConnecting(false);
+          }
+        },
+        (error) => {
+          // Handle errors
+          console.error('OAuth error:', error);
+          if (error.message !== 'Authentication was cancelled') {
+            showToast({
+              title: 'Error',
+              description: error.message || 'Failed to connect to Fitbit',
+              variant: 'destructive'
+            });
+          }
+          setIsConnecting(false);
         }
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Error connecting Fitbit:', error);
-      toast({
-        title: 'Connection Error',
-        description: error instanceof Error ? error.message : 'Failed to connect to Fitbit. Please try again.',
-        variant: 'destructive',
+      );
+    } catch (error: any) {
+      console.error('Error initiating Fitbit connection:', error);
+      showToast({
+        title: 'Error',
+        description: error.message || 'Failed to connect to Fitbit',
+        variant: 'destructive'
       });
-    } finally {
       setIsConnecting(false);
     }
-  };
+  }, [toast]);
 
   const handleDisconnect = async () => {
     try {
@@ -128,10 +157,10 @@ const FitbitConnectionStatus = () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session?.user) {
-        toast({
+        showToast({
           title: 'Authentication Error',
           description: 'Unable to verify authentication.',
-          variant: 'destructive',
+          variant: 'destructive' as const
         });
         return;
       }
@@ -143,25 +172,25 @@ const FitbitConnectionStatus = () => {
 
       if (error) {
         console.error('Error disconnecting Fitbit:', error);
-        toast({
+        showToast({
           title: 'Error',
           description: 'Failed to disconnect Fitbit account.',
-          variant: 'destructive',
+          variant: 'destructive'
         });
         return;
       }
 
       setIsConnected(false);
-      toast({
+      showToast({
         title: 'Disconnected',
-        description: 'Your Fitbit account has been disconnected.',
+        description: 'Your Fitbit account has been disconnected.'
       });
     } catch (error) {
       console.error('Error disconnecting Fitbit:', error);
-      toast({
+      showToast({
         title: 'Error',
         description: 'Failed to disconnect Fitbit account.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
@@ -170,34 +199,41 @@ const FitbitConnectionStatus = () => {
 
   useEffect(() => {
     checkConnection();
-
-    // Check for OAuth callback parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const fitbitConnected = urlParams.get('fitbit_connected');
-    const error = urlParams.get('error');
     
-    if (fitbitConnected === 'true') {
-      setIsConnected(true);
-      toast({
-        title: 'Connected!',
-        description: 'Your Fitbit account has been successfully connected.',
-      });
+    const handleMessage = (event: MessageEvent) => {
+      // Only process messages from our own origin
+      if (event.origin !== window.location.origin) return;
       
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
+      const { type, data, error } = event.data || {};
+      
+      if (type === 'oauth_callback') {
+        if (error) {
+          console.error('Fitbit connection error:', error);
+          showToast({
+            title: 'Connection Error',
+            description: error.message || 'Failed to connect to Fitbit',
+            variant: 'destructive' as const
+          });
+          setIsConnecting(false);
+        } else if (data?.success) {
+          setIsConnected(true);
+          setIsConnecting(false);
+          showToast({
+            title: 'Connected!',
+            description: 'Your Fitbit account has been successfully connected.'
+          });
+        }
+      }
+    };
     
-    if (error) {
-      console.error('Fitbit connection error:', error);
-      toast({
-        title: 'Connection Error',
-        description: decodeURIComponent(error),
-        variant: 'destructive',
-      });
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [toast]);
+    // Add event listener for messages from the popup
+    window.addEventListener('message', handleMessage);
+    
+    // Clean up event listener when component unmounts
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [toast, checkConnection, showToast]);
 
   if (isLoading) {
     return (

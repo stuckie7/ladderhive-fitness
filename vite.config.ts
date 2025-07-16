@@ -15,15 +15,48 @@ export default defineConfig({
     strictPort: true,
     open: true
   },
+  // Vercel-specific configurations
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor and app code
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          // Split other large dependencies
+          mui: ['@mui/material', '@emotion/react', '@emotion/styled'],
+        },
+      },
+    },
+    // Reduce chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+  },
+  // Base public path when served in production
+  base: '/',
+  // Environment files directory
   envDir: './',
+  // Path aliases
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Optimize dependencies
   optimizeDeps: {
     esbuildOptions: {
       target: 'es2020',
     },
+    include: ['react', 'react-dom', 'react-router-dom'],
+  },
+  // Preview server configuration
+  preview: {
+    port: 8080,
+    strictPort: true,
+  },
+  // Environment variables
+  define: {
+    'process.env': { ...process.env },
   },
 });

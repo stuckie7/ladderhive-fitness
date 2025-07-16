@@ -10,11 +10,24 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+.pnp
+.pnp.js
+
+# Build output
 dist
 dist-ssr
-*.local
+build
+.next
+out
+
+# Environment variables
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Editor directories and files
 .vscode/*
@@ -30,3 +43,36 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Android/Java
+android/app/build/
+android/.gradle
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/gradle/
+android/local.properties
+android/gradle.properties
+android/*.iml
+android/app/*.iml
+android/*.iml
+
+# iOS
+ios/
+
+# Capacitor
+capacitor.config.json
+capacitor.config.ts
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temp files
+.temp/
+.tmp/

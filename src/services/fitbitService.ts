@@ -9,10 +9,9 @@ export interface FitbitActivity {
 export class FitbitService {
   static async getAccessToken(userId: string): Promise<string | null> {
     const { data, error } = await supabase
-      .from('user_connections')
+      .from('fitbit_tokens')
       .select('access_token, expires_at, refresh_token')
       .eq('user_id', userId)
-      .eq('provider', 'fitbit')
       .single();
 
     if (error || !data) {
@@ -21,8 +20,9 @@ export class FitbitService {
     }
 
     // Check if token is expired (with 5 minute buffer)
-    const now = Math.floor(Date.now() / 1000);
-    if (data.expires_at < now - 300) {
+    const now = new Date();
+    const expiresAt = new Date(data.expires_at);
+    if (expiresAt.getTime() < now.getTime() - 300000) { // 5 minutes buffer
       return this.refreshAccessToken(userId, data.refresh_token);
     }
 
@@ -52,16 +52,16 @@ export class FitbitService {
       }
 
       // Update the tokens in the database
+      const expiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString();
       const { error } = await supabase
-        .from('user_connections')
+        .from('fitbit_tokens')
         .update({
           access_token: data.access_token,
           refresh_token: data.refresh_token || refreshToken,
-          expires_at: Math.floor(Date.now() / 1000) + data.expires_in,
+          expires_at: expiresAt,
           updated_at: new Date().toISOString(),
         })
-        .eq('user_id', userId)
-        .eq('provider', 'fitbit');
+        .eq('user_id', userId);
 
       if (error) throw error;
 

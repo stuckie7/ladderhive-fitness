@@ -1,6 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Zap, Loader2, Footprints, Target } from "lucide-react"; // Added Footprints icon
+import { Zap, Loader2, Footprints, Target, Dumbbell } from "lucide-react";
 import { AppTitle } from "@/components/ui/AppTitle";
 import { Progress } from "@/components/ui/progress";
 
@@ -26,14 +27,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onStepGoalChange
 }) => {
   return (
-    <div className="flex flex-col gap-2 pb-4"> {/* Adjusted gap and added padding-bottom */} 
-      <div className="flex items-start justify-between"> {/* Changed items-center to items-start for better alignment with multiline text */} 
+    <div className="flex flex-col gap-2 pb-4">
+      <div className="flex items-start">
         <div>
           <AppTitle />
-          <div className="text-xs text-slate-400 mt-1.5"> {/* Adjusted margin-top */} 
+          <div className="text-xs text-slate-400 mt-1.5">
             {fitbitError ? (
               <p className="text-red-500/90 flex items-center">
-                <Zap className="mr-1.5 h-3.5 w-3.5" /> {/* Using Zap as a generic error/alert icon here */}
+                <Zap className="mr-1.5 h-3.5 w-3.5" />
                 {fitbitError}
               </p>
             ) : isLoading && !fitbitStats ? (
@@ -57,7 +58,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   </div>
                   <span className="font-bold text-green-400">{dailyStepGoal.toLocaleString()}</span>
                 </div>
-                {/* Simple input for step goal change - can be styled better later */}
                 <div className="flex items-center justify-between text-xs mt-1">
                   <label htmlFor="stepGoalInput" className="text-slate-400">Set Goal:</label>
                   <input 
@@ -79,7 +79,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     <Progress value={(fitbitStats.steps / dailyStepGoal) * 100} className="h-2" />
                   </div>
                 )}
-                {/* Display additional Fitbit metrics */}
                 {fitbitStats.calories !== null && (
                   <div className="flex items-center justify-between text-xs mt-1">
                     <span className="text-slate-400">Calories Burned:</span>
@@ -103,33 +102,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <p>Connect your Fitbit to see your stats.</p>
             )}
           </div>
-        </div>
-        <div className="flex gap-2 flex-shrink-0"> {/* Added flex-shrink-0 to prevent button squishing */} 
-          <Button 
-            variant="outline"
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="hidden sm:flex"
-          >
-            Refresh
-          </Button>
-          <Button 
-            className="btn-fitness-primary"
-            onClick={onStartWorkout}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Selecting...
-              </>
-            ) : (
-              <span className="flex items-center">
-                <Zap className="mr-2 h-4 w-4" />
-                Start Workout
-              </span>
-            )}
-          </Button>
         </div>
       </div>
     </div>

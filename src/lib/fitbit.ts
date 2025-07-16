@@ -18,14 +18,14 @@ interface FitbitApiResponse {
   workouts: number;
 }
 
-export interface UserConnection {
+export interface FitbitToken {
   id: string;
   user_id: string;
-  provider: string;
-  provider_user_id: string;
+  fitbit_user_id: string | null;
   access_token: string;
-  refresh_token: string | null;
-  expires_at: string | null;
+  refresh_token: string;
+  expires_at: string;
+  scope: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -47,27 +47,30 @@ export async function connectFitbit(): Promise<ConnectFitbitResponse> {
 
 export async function disconnectFitbit(): Promise<void> {
   const { error } = await supabase
-    .from('user_connections')
+    .from('fitbit_tokens')
     .delete()
-    .eq('provider', 'fitbit');
+    .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
     
   if (error) {
     throw new Error(error.message);
   }
 }
 
-export async function getFitbitConnection(): Promise<UserConnection | null> {
+export async function getFitbitConnection(): Promise<FitbitToken | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   const { data, error } = await supabase
-    .from('user_connections')
+    .from('fitbit_tokens')
     .select('*')
-    .eq('provider', 'fitbit')
+    .eq('user_id', user.id)
     .single();
     
   if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
     throw error;
   }
   
-  return data as UserConnection | null;
+  return data as FitbitToken | null;
 }
 
 export async function fetchFitbitData(): Promise<FitbitHealthData> {

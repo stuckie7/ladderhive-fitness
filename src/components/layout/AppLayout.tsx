@@ -185,7 +185,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center shadow-md">
               <img src="/fittrackpro-logo.jpg" alt="FitTrack Pro Logo" className="h-10 w-10 rounded-lg object-cover" />
             </div>
-            <h1 className="font-bold text-xl md:hidden" data-lovable-title>FitTrack Pro v.beta</h1>
+            <h1 className="font-bold text-xl md:hidden" data-lovable-title>FitTrack Pro v.beta1</h1>
           </Link>
         </div>
 

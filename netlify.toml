@@ -1,5 +1,5 @@
 [build]
-  command = "NODE_OPTIONS=--max_old_space_size=4096 npm run build"
+  command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
 
@@ -8,6 +8,10 @@
   NPM_FLAGS = "--legacy-peer-deps"
   NODE_OPTIONS = "--max_old_space_size=4096"
   CI = "false"
+  VITE_SUPABASE_URL = "https://jrwyptpespjvjisrwnbh.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impyd3lwdHBlc3Bqdmppc3J3bmJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0NTQ4MTYsImV4cCI6MjA1OTAzMDgxNn0.Ab2IxEvQekhOKlyjYbBQQjukIsOdghmRkQcmQtZNUWk"
+  VITE_FITBIT_CLIENT_ID = "23QJQ3"
+  VITE_SITE_URL = "https://fittrackprov1.com"
 
 [dev]
   command = "npm run dev"
@@ -27,4 +31,4 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' https:; font-src 'self' data: https://fonts.gstatic.com; media-src 'self'; object-src 'none'; frame-src 'self' https:; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co https://c97d7ea5.mobsted.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' https: https://c97d7ea5.mobsted.com; font-src 'self' data: https://fonts.gstatic.com; media-src 'self'; object-src 'none'; frame-src 'self' https: https://accounts.fitbit.com; worker-src 'self'; frame-ancestors 'self' https://accounts.fitbit.com https://c97d7ea5.mobsted.com; base-uri 'self'; form-action 'self';"
