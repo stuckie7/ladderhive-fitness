@@ -32,7 +32,7 @@ export default function FitbitTest() {
         .from('fitbit_tokens')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (fetchError || !data) {
         setIsConnected(false);
