@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FitbitLoginButtonProps {
   className?: string;
@@ -17,7 +18,7 @@ export function FitbitLoginButton({
 }: FitbitLoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     try {
       setIsLoading(true);
       
@@ -25,28 +26,49 @@ export function FitbitLoginButton({
       const returnUrl = window.location.pathname + window.location.search;
       localStorage.setItem('fitbit_return_url', returnUrl);
       
-      // Always open in a new tab to avoid CSP issues with iframes
-      const url = `${window.location.origin}/api/auth/fitbit`;
-      window.open(url, '_blank');
+      // Call the edge function to initiate Fitbit OAuth
+      const { data, error } = await supabase.functions.invoke('fitbit-initiate');
       
-      // Set a timer to check if we need to handle the auth status
-      // This is a fallback in case the message event doesn't fire
-      const authCheck = setInterval(() => {
-        // Check if we have a success indicator in localStorage
-        const authStatus = localStorage.getItem('fitbit_auth_status');
-        if (authStatus === 'success') {
-          localStorage.removeItem('fitbit_auth_status');
-          clearInterval(authCheck);
-          onSuccess?.();
-        } else if (authStatus === 'error') {
-          localStorage.removeItem('fitbit_auth_status');
-          clearInterval(authCheck);
-          onError?.(new Error('Authentication failed'));
-        }
-      }, 1000);
+      if (error) {
+        console.error('Error initiating Fitbit auth:', error);
+        onError?.(new Error('Failed to start Fitbit authentication'));
+        setIsLoading(false);
+        return;
+      }
       
-      // Clear the interval after 5 minutes
-      setTimeout(() => clearInterval(authCheck), 5 * 60 * 1000);
+      if (data?.authUrl) {
+        // Open the Fitbit authorization URL in a new window
+        window.open(data.authUrl, '_blank');
+        
+        // Set a timer to check if we need to handle the auth status
+        // This is a fallback in case the message event doesn't fire
+        const authCheck = setInterval(() => {
+          // Check if we have a success indicator in localStorage
+          const authStatus = localStorage.getItem('fitbit_auth_status');
+          if (authStatus === 'success') {
+            localStorage.removeItem('fitbit_auth_status');
+            clearInterval(authCheck);
+            setIsLoading(false);
+            onSuccess?.();
+          } else if (authStatus === 'error') {
+            localStorage.removeItem('fitbit_auth_status');
+            clearInterval(authCheck);
+            setIsLoading(false);
+            onError?.(new Error('Authentication failed'));
+          }
+        }, 1000);
+        
+        // Clear the interval after 5 minutes
+        setTimeout(() => {
+          clearInterval(authCheck);
+          setIsLoading(false);
+        }, 5 * 60 * 1000);
+      } else {
+        console.error('No authUrl returned from fitbit-initiate');
+        onError?.(new Error('Invalid authentication response'));
+        setIsLoading(false);
+        return;
+      }
     } catch (error) {
       console.error('Failed to open Fitbit login:', error);
       onError?.(error as Error);
