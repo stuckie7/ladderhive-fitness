@@ -1,14 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Zap, Loader2, Footprints, Target, Dumbbell } from "lucide-react";
+import { Zap, Loader2, Footprints, Target } from "lucide-react";
 import { AppTitle } from "@/components/ui/AppTitle";
 import { Progress } from "@/components/ui/progress";
 
 interface DashboardHeaderProps {
   isLoading: boolean;
-  onRefresh: () => void;
-  onStartWorkout: () => void;
   fitbitStats: { [key: string]: any } | null;
   isFitbitConnected: boolean;
   fitbitError: string | null;
@@ -18,8 +14,6 @@ interface DashboardHeaderProps {
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
   isLoading, 
-  onRefresh,
-  onStartWorkout,
   fitbitStats,
   isFitbitConnected,
   fitbitError,
