@@ -11,7 +11,7 @@ export function AppTitle() {
         />
       </div>
       <h1 className="text-3xl font-bold gradient-heading" data-lovable-title>
-        FitTrack Pro v.beta1.1
+        FitTrack Pro v.beta1
       </h1>
     </div>
   );
