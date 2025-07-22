@@ -324,35 +324,7 @@ serve(async (req: Request) => {
       return createErrorResponse('Invalid state parameter', SITE_URL);
     }
 
-    // Get code verifier from database
-    if (!supabaseAdminClient) {
-      throw new Error('Supabase admin client not initialized');
-    }
-
-    console.log(`[${requestId}] Fetching PKCE verifier for nonce:`, nonce);
-    
-    // First, check if the table exists and is accessible
-    const { data: tableInfo, error: tableError } = await supabaseAdminClient
-      .rpc('get_table_info', { table_name: 'fitbit_pkce' })
-      .single();
-      
-    if (tableError) {
-      console.error(`[${requestId}] Error checking fitbit_pkce table:`, tableError);
-    } else {
-      console.log(`[${requestId}] Table info:`, tableInfo);
-    }
-    
-    // Get all PKCE entries for debugging
-    const { data: allPkce, error: allPkceError } = await supabaseAdminClient
-      .from('fitbit_pkce')
-      .select('*')
-      .limit(10);
-      
-    if (allPkceError) {
-      console.error(`[${requestId}] Error fetching all PKCE entries:`, allPkceError);
-    } else {
-      console.log(`[${requestId}] Current PKCE entries:`, allPkce);
-    }
+    // Debug RPC removed – table assumed to exist.
     
     // Now try to get the specific verifier
     const { data: pkceRow, error: pkceError } = await supabaseAdminClient
@@ -456,123 +428,17 @@ serve(async (req: Request) => {
         // Continue even if cleanup fails
       }
       
-      // Create success response
-      const successUrl = new URL(origin || SITE_URL);
-      successUrl.searchParams.set('fitbit_connected', 'true');
-      
-      // Enhanced success HTML with better styling and fallback behavior
-      const successHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Fitbit Authorization Successful</title>
-          <style>
-            body { 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              height: 100vh;
-              margin: 0;
-              background-color: #f8f9fa;
-              color: #212529;
-            }
-            .container {
-              text-align: center;
-              padding: 2rem;
-              max-width: 500px;
-              background: white;
-              border-radius: 8px;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            h1 { 
-              color: #28a745; 
-              margin-top: 0; 
-            }
-            .spinner {
-              border: 4px solid rgba(0, 0, 0, 0.1);
-              width: 36px;
-              height: 36px;
-              border-radius: 50%;
-              border-left-color: #28a745;
-              animation: spin 1s linear infinite;
-              margin: 20px auto;
-            }
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            .success-message {
-              margin: 20px 0;
-              color: #28a745;
-              font-weight: 500;
-            }
-            .redirect-message {
-              color: #6c757d;
-              font-size: 0.9em;
-              margin-top: 20px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Success!</h1>
-            <div class="spinner"></div>
-            <p class="success-message">Fitbit account connected successfully</p>
-            <p class="redirect-message">You will be redirected shortly...</p>
-          </div>
-          <script>
-            // Prepare the success message
-            const message = {
-              type: 'fitbit-auth-success',
-              success: true,
-              provider: 'fitbit',
-              timestamp: new Date().toISOString()
-            };
+      // Redirect back to dashboard after success
+      const redirectUrl = new URL(origin || SITE_URL);
+      redirectUrl.pathname = '/dashboard';
+      redirectUrl.searchParams.set('fitbit_auth', 'success');
 
-            // Try to notify the parent window
-            function notifyParent() {
-              try {
-                if (window.opener) {
-                  // For popup windows
-                  window.opener.postMessage(message, '${origin || '*'}');
-                  console.log('Message sent to opener:', message);
-                  setTimeout(() => window.close(), 1000);
-                  return true;
-                } else if (window.parent !== window) {
-                  // For iframes
-                  window.parent.postMessage(message, '${origin || '*'}');
-                  return true;
-                }
-                return false;
-              } catch (e) {
-                console.error('Error sending message:', e);
-                return false;
-              }
-            }
-
-            // Execute notification when page loads
-            document.addEventListener('DOMContentLoaded', () => {
-              const notified = notifyParent();
-              
-              // If we couldn't notify the opener, redirect to the main site
-              if (!notified) {
-                setTimeout(() => {
-                  window.location.href = '${successUrl.toString()}';
-                }, 2000);
-              }
-            });
-          </script>
-        </body>
-      </html>`;
-      
-      // Return the HTML response
-      return new Response(successHtml, {
-        status: 200,
+      return new Response(null, {
+        status: 302,
         headers: {
-          'Content-Type': 'text/html',
-          ...setCorsHeaders()
-        }
+          Location: redirectUrl.toString(),
+          ...setCorsHeaders(),
+        },
       });
       
     } catch (error) {
@@ -622,135 +488,6 @@ serve(async (req: Request) => {
       });
     }
     
-    // Create success response HTML
-    const successHtml = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Fitbit Authorization Successful</title>
-        <style>
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f8f9fa;
-            color: #212529;
-          }
-          .container {
-            text-align: center;
-            padding: 2rem;
-            max-width: 500px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          }
-          h1 { color: #28a745; margin-top: 0; }
-          .message { margin: 1.5rem 0; }
-          .subtext { color: #6c757d; font-size: 0.9em; }
-          .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #28a745;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1.5rem;
-          }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>Authorization Successful</h1>
-          <div class="spinner"></div>
-          <div class="message">
-            <p>You have successfully connected your Fitbit account.</p>
-          </div>
-          <p class="subtext">You can close this window.</p>
-        </div>
-        <script>
-          // Get URL parameters
-          const urlParams = new URLSearchParams(window.location.search);
-          const stateParam = urlParams.get('state');
-          const code = urlParams.get('code');
-          
-          // Parse the state parameter
-          let state = {};
-          try {
-            state = stateParam ? JSON.parse(decodeURIComponent(stateParam)) : {};
-          } catch (e) {
-            console.error('Error parsing state:', e);
-          }
-          
-          // Prepare the success message
-          const message = {
-            type: 'fitbit-auth-success',
-            code: code,
-            state: state,
-            provider: 'fitbit'
-          };
-                  // Function to notify parent/opener window
-          function notifyParent() {
-            try {
-              if (window.opener) {
-                // For popup windows
-                window.opener.postMessage(message, state.origin || '*');
-                console.log('Message sent to opener:', message);
-                // Auto-close after a short delay
-                setTimeout(() => {
-                  try {
-                    window.close();
-                  } catch (e) {
-                    console.log('Could not close window automatically');
-                    // Fallback to redirect if window can't be closed
-                    const redirectUrl = new URL('${SITE_URL}');
-                    redirectUrl.searchParams.set('fitbit_auth', 'success');
-                    window.location.href = redirectUrl.toString();
-                  }
-                }, 1000);
-                return true;
-              } else if (window.parent !== window) {
-                // For iframes
-                window.parent.postMessage(message, state.origin || '*');
-                return true;
-              }
-              return false;
-            } catch (e) {
-              console.error('Error sending message:', e);
-              return false;
-            }
-          }
-
-          // Execute notification when page loads
-          document.addEventListener('DOMContentLoaded', () => {
-            const notified = notifyParent();
-            if (!notified) {
-              // If we couldn't notify the opener, redirect to the main site
-              const redirectUrl = new URL('${SITE_URL}');
-              redirectUrl.searchParams.set('fitbit_auth', 'success');
-              window.location.href = redirectUrl.toString();
-            }
-          });
-        </script>
-      </body>
-    </html>
-    `;
-    
-    // Return the HTML response
-    return new Response(successHtml, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/html',
-        ...corsHeaders
-      }
-    });
-
   } catch (error) {
     console.error('Error in OAuth callback:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
