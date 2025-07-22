@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { invokeWithAuth } from '@/lib/invokeWithAuth';
 import { useToast } from '@/components/ui/use-toast';
 
 export interface HealthStats {
@@ -35,23 +36,14 @@ export const useFitbitData = () => {
     queryFn: async () => {
       if (!user) throw new Error('No user');
       
-      // Get the current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error('No active session found');
-      }
-
       const today = new Date().toLocaleDateString('en-CA');
-      const { data, error } = await supabase.functions.invoke('fitbit-fetch-data', {
+      const { data, error } = await invokeWithAuth<{ stale?: boolean; stats: Partial<HealthStats> }>('fitbit-fetch-data', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
         body: { date: today },
       });
       
       if (error) throw error;
+      if (!data) throw new Error('No data returned');
       return data;
     },
     enabled: !!user && isConnected,
@@ -77,23 +69,8 @@ export const useFitbitData = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Get the current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        console.error('No active session found:', sessionError?.message);
-        setIsConnected(false);
-        return;
-      }
-
-      // First, check if we can get a profile. Pass Authorization header so the Edge Function can verify the user.
-      const { data: profileData, error: profileError } = await supabase.functions.invoke('get-fitbit-profile', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // Hit the profile endpoint; if it returns 401 we're not connected.
+      const { error: profileError } = await invokeWithAuth('get-fitbit-profile', { method: 'GET' });
 
       if (profileError) {
         console.error('Error fetching Fitbit profile:', profileError);

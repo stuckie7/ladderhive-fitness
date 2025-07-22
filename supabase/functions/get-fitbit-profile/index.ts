@@ -205,7 +205,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    if (req.method !== 'GET') {
+    if (!['GET', 'POST'].includes(req.method)) {
       return createErrorResponse(405, 'Method Not Allowed');
     }
 

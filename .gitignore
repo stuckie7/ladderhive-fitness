@@ -72,3 +72,5 @@ capacitor.config.ts
 # Temp files
 .temp/
 .tmp/
+
+.vercel
