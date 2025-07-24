@@ -29,22 +29,42 @@ export const useActivityProgress = (): ActivityProgressResult => {
         const thirtyDaysAgo = new Date(today);
         thirtyDaysAgo.setDate(today.getDate() - 29);
 
-        // Pull sessions for last 30 days
-        const { data: sessions, error } = await supabase
+        // --- Fetch workout sessions for the last 30 days ---
+        const { data: sessions, error: sessionError } = await supabase
           .from('workout_sessions')
           .select('started_at')
           .eq('user_id', user.id)
           .gte('started_at', thirtyDaysAgo.toISOString());
-        if (error) throw error;
+        if (sessionError) throw sessionError;
 
-        // group by date string
-        const countByDate: Record<string, number> = {};
+        // Count workouts per day
+        const workoutsByDate: Record<string, number> = {};
         sessions?.forEach((s) => {
           const dateStr = new Date(s.started_at).toISOString().split('T')[0];
-          countByDate[dateStr] = (countByDate[dateStr] || 0) + 1;
+          workoutsByDate[dateStr] = (workoutsByDate[dateStr] || 0) + 1;
         });
 
-        // Weekly data (last 7 days)
+        // --- Fetch Fitbit stats (steps & active minutes) saved in daily_progress ---
+        const { data: progressRows, error: progressError } = await supabase
+          .from('daily_progress')
+          .select('date, step_count, active_minutes')
+          .eq('user_id', user.id)
+          .gte('date', thirtyDaysAgo.toISOString().split('T')[0]);
+        if (progressError) throw progressError;
+
+        const stepsByDate: Record<string, number> = {};
+        const activeByDate: Record<string, number> = {};
+        let totalSteps = 0;
+        let totalActiveMinutes = 0;
+
+        progressRows?.forEach((row: { date: string; step_count: number; active_minutes: number }) => {
+          stepsByDate[row.date] = row.step_count;
+          activeByDate[row.date] = row.active_minutes;
+          totalSteps += row.step_count;
+          totalActiveMinutes += row.active_minutes;
+        });
+
+        // --- Build Weekly Data (last 7 days) ---
         const tmpWeekly: ActivityData[] = [];
         for (let i = 0; i < 7; i++) {
           const d = new Date(sevenDaysAgo);
@@ -53,29 +73,38 @@ export const useActivityProgress = (): ActivityProgressResult => {
           tmpWeekly.push({
             date: dStr,
             day: d.toLocaleDateString(undefined, { weekday: 'short' }),
-            steps: 0, // not tracked
-            active_minutes: 0,
-            workouts: countByDate[dStr] || 0,
+            steps: stepsByDate[dStr] || 0,
+            active_minutes: activeByDate[dStr] || 0,
+            workouts: workoutsByDate[dStr] || 0,
           });
         }
         setWeeklyData(tmpWeekly);
 
-        // Monthly summary
-        let totalWorkouts = 0;
-        const weeksElapsed = Math.ceil(30 / 7);
-        Object.keys(countByDate).forEach((d) => {
-          totalWorkouts += countByDate[d];
+        // --- Build Monthly Summary (last 30 days) ---
+        const daysInRange = 30;
+        const weeksElapsed = Math.ceil(daysInRange / 7);
+        const totalWorkouts = Object.values(workoutsByDate).reduce((sum, v) => sum + v, 0);
+
+        // Determine most active day by steps
+        let mostActiveDayName = '';
+        let mostActiveSteps = 0;
+        Object.keys(stepsByDate).forEach((dStr) => {
+          if (stepsByDate[dStr] > mostActiveSteps) {
+            mostActiveSteps = stepsByDate[dStr];
+            mostActiveDayName = new Date(dStr).toLocaleDateString(undefined, { weekday: 'long' });
+          }
         });
+
         const monthSum: MonthlySummary = {
-          totalSteps: 0,
-          avgStepsPerDay: 0,
-          totalActiveMinutes: 0,
-          avgActiveMinutesPerDay: 0,
+          totalSteps,
+          avgStepsPerDay: Math.round((totalSteps / daysInRange) * 10) / 10,
+          totalActiveMinutes,
+          avgActiveMinutesPerDay: Math.round((totalActiveMinutes / daysInRange) * 10) / 10,
           totalWorkouts,
-          avgWorkoutsPerWeek: Math.round(totalWorkouts / weeksElapsed * 10) / 10,
-          completionRate: (totalWorkouts / 30) * 100,
-          mostActiveDay: { name: '', steps: 0 },
-        } as MonthlySummary;
+          avgWorkoutsPerWeek: Math.round((totalWorkouts / weeksElapsed) * 10) / 10,
+          completionRate: (totalWorkouts / daysInRange) * 100,
+          mostActiveDay: { name: mostActiveDayName, steps: mostActiveSteps },
+        };
         setMonthlySummary(monthSum);
       } catch (e) {
         console.error('Error fetching activity progress', e);

@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { invokeWithAuth } from '@/lib/invokeWithAuth';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -24,79 +25,99 @@ export const useDailyProgress = () => {
         setIsLoading(false);
         return;
       }
-
       try {
         setIsLoading(true);
         const today = new Date().toISOString().split('T')[0];
 
-        // Fetch today's progress
-        const { data, error } = await supabase
+        // 1. Ensure a daily_progress row exists
+        let { data: progressRow, error: progressErr } = await supabase
           .from('daily_progress')
           .select('*')
           .eq('user_id', user.id)
           .eq('date', today)
           .single();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-          console.error('Error fetching daily progress:', error);
-          return;
-        }
+        if (progressErr && progressErr.code !== 'PGRST116') throw progressErr;
 
-        if (!data) {
-          // Create today's progress entry with defaults
-          const { data: newProgress, error: insertError } = await supabase
+        if (!progressRow) {
+          const { data: inserted, error: insertErr } = await supabase
             .from('daily_progress')
-            .insert([{
-              user_id: user.id,
-              date: today,
-              step_count: 0,
-              step_goal: 10000,
-              active_minutes: 0,
-              active_minutes_goal: 60,
-              workouts_completed: 0,
-              workouts_goal: 1
-            }])
+            .insert([
+              {
+                user_id: user.id,
+                date: today,
+                step_count: 0,
+                step_goal: 10000,
+                active_minutes: 0,
+                active_minutes_goal: 60,
+                workouts_completed: 0,
+                workouts_goal: 1,
+              },
+            ])
             .select()
             .single();
-
-          if (insertError) {
-            console.error('Error creating daily progress:', insertError);
-            return;
-          }
-
-          setProgress(newProgress);
-        } else {
-          // Count workouts from workout_sessions for today
-          const { data: todayWorkouts, error: workoutError } = await supabase
-            .from('workout_sessions')
-            .select('id')
-            .eq('user_id', user.id)
-            .gte('started_at', `${today} 00:00:00`)
-            .lte('started_at', `${today} 23:59:59`);
-
-          if (!workoutError) {
-            const workoutsCompleted = todayWorkouts?.length || 0;
-            
-            // Update the daily progress with actual workout count
-            const { data: updatedProgress, error: updateError } = await supabase
-              .from('daily_progress')
-              .update({ workouts_completed: workoutsCompleted })
-              .eq('user_id', user.id)
-              .eq('date', today)
-              .select()
-              .single();
-
-            if (!updateError && updatedProgress) {
-              setProgress(updatedProgress);
-            } else {
-              setProgress({ ...data, workouts_completed: workoutsCompleted });
-            }
-          } else {
-            setProgress(data);
-          }
+          if (insertErr) throw insertErr;
+          progressRow = inserted;
         }
-      } catch (error) {
-        console.error('Error in fetchDailyProgress:', error);
+
+        // 2. Determine workouts completed today
+        const { data: workoutsToday, error: workoutsErr } = await supabase
+          .from('workout_sessions')
+          .select('id')
+          .eq('user_id', user.id)
+          .gte('started_at', `${today} 00:00:00`)
+          .lte('started_at', `${today} 23:59:59`);
+        if (workoutsErr) throw workoutsErr;
+        const workoutsCompleted = workoutsToday?.length || 0;
+
+        // 3. Fetch Fitbit stats for the day
+        let steps = progressRow.step_count;
+        let activeMinutes = progressRow.active_minutes;
+        try {
+          const { data: fitbitRes } = await invokeWithAuth<{ stats?: { steps?: number; activeMinutes?: number } }>(
+            'fitbit-fetch-data',
+            {
+              method: 'POST',
+              body: JSON.stringify({ date: today }),
+            },
+          );
+          if (fitbitRes?.stats) {
+            steps = fitbitRes.stats.steps ?? steps;
+            activeMinutes = fitbitRes.stats.activeMinutes ?? activeMinutes;
+          }
+        } catch (fetchErr) {
+          console.warn('Unable to retrieve Fitbit data:', fetchErr);
+        }
+
+        // 4. Prepare updated object and persist changes if necessary
+        const updated: DailyProgress = {
+          ...progressRow,
+          step_count: steps,
+          active_minutes: activeMinutes,
+          workouts_completed: workoutsCompleted,
+        };
+
+        const needUpdate =
+          steps !== progressRow.step_count ||
+          activeMinutes !== progressRow.active_minutes ||
+          workoutsCompleted !== progressRow.workouts_completed;
+
+        if (needUpdate) {
+          const { error: updErr } = await supabase
+            .from('daily_progress')
+            .update({
+              step_count: steps,
+              active_minutes: activeMinutes,
+              workouts_completed: workoutsCompleted,
+            })
+            .eq('user_id', user.id)
+            .eq('date', today);
+          if (updErr) console.error('Failed to update daily_progress:', updErr);
+        }
+
+        setProgress(updated);
+      } catch (err) {
+        console.error('Error fetching daily progress:', err);
       } finally {
         setIsLoading(false);
       }

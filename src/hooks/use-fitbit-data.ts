@@ -37,21 +37,36 @@ export const useFitbitData = () => {
       if (!user) throw new Error('No user');
       
       const today = new Date().toLocaleDateString('en-CA');
-      const { data, error } = await invokeWithAuth<{ stale?: boolean; stats: Partial<HealthStats> }>('fitbit-fetch-data', {
+      // First try today
+      const { data: todayData, error: todayError } = await invokeWithAuth<{ stale?: boolean; stats: Partial<HealthStats> }>('fitbit-fetch-data', {
         method: 'POST',
-        body: { date: today },
+        body: JSON.stringify({ date: today }),
       });
-      
-      if (error) throw error;
-      if (!data) throw new Error('No data returned');
-      return data;
+      if (todayError) throw todayError;
+      if (todayData && todayData.stats && Object.values(todayData.stats).some(v => v)) {
+        return todayData;
+      }
+
+      // Fallback: try yesterday (helps when user’s timezone hasn’t rolled over yet or first sync of the day)
+      const yesterdayDate = new Date();
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterday = yesterdayDate.toLocaleDateString('en-CA');
+      const { data: yData, error: yError } = await invokeWithAuth<{ stale?: boolean; stats: Partial<HealthStats> }>('fitbit-fetch-data', {
+        method: 'POST',
+        body: JSON.stringify({ date: yesterday }),
+      });
+      if (yError) throw yError;
+      return yData ?? { stats: {} };
     },
     enabled: !!user && isConnected,
     staleTime: 10 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
   });
 
-  const stats: Partial<HealthStats> = (statsData as any)?.stale ? {} : (statsData as any)?.stats ?? {};
+  // Determine staleness returned by the edge function
+  const isStale: boolean = Boolean((statsData as any)?.stale);
+  // Always surface whatever stats were returned, even if they are marked stale
+  const stats: Partial<HealthStats> = (statsData as any)?.stats ?? {};
 
   const fetchHealthData = useCallback(async () => {
     setIsLoading(true);
@@ -166,5 +181,5 @@ export const useFitbitData = () => {
 
   
 
-  return { isLoading, error, isConnected, stats, connectFitbit, disconnectFitbit, fetchHealthData };
+  return { isLoading, error, isConnected, stats, connectFitbit, disconnectFitbit, fetchHealthData, isStale };
 };
