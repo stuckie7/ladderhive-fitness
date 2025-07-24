@@ -190,6 +190,9 @@ const UserProfile = ({ userData }: UserProfileProps) => {
               height={userData.profile.height}
               weight={userData.profile.weight}
               age={userData.profile.age}
+              fitnessGoals={userData.profile.fitnessGoals}
+              workoutDays={userData.profile.workoutDays}
+              onUpdated={() => window.location.reload()}
             />
             
             <FitnessGoals goals={userData.profile.fitnessGoals} />
