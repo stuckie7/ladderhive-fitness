@@ -104,7 +104,7 @@ export default function ExerciseDetailEnhanced() {
         {/* Header with Back Button and Save Button */}
         <div className="flex justify-between items-start">
           <Button 
-            variant="ghost" 
+            variant="outline"
             size="sm"
             onClick={handleBackClick}
             className="flex items-center"

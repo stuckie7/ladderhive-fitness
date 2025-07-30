@@ -1,5 +1,8 @@
 
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ProfilePhotoUpload from "./ProfilePhotoUpload";
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardTitle } from "@/components/ui/card";
 import { Dumbbell, Upload } from "lucide-react";
@@ -14,6 +17,8 @@ interface ProfileHeaderProps {
 
 const ProfileHeader = ({ name, email, fitnessLevel, photoUrl }: ProfileHeaderProps) => {
   const navigate = useNavigate();
+  const [showUploader, setShowUploader] = useState(false);
+  const [localPhotoUrl, setLocalPhotoUrl] = useState<string | null | undefined>(photoUrl);
 
   const getInitials = (name: string) => {
     return name
@@ -45,17 +50,17 @@ const ProfileHeader = ({ name, email, fitnessLevel, photoUrl }: ProfileHeaderPro
           </Button>
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/settings')}
+            onClick={() => setShowUploader(true) }
             className="flex items-center gap-2"
           >
             <Upload className="h-5 w-5" />
-            <span>Upload Profile Pic</span>
+            <span>Edit Profile</span>
           </Button>
         </div>
       </div>
       <div className="flex items-center gap-4 mb-4">
         <Avatar className="h-16 w-16">
-          <AvatarImage src={photoUrl || ""} alt={name} />
+          <AvatarImage src={localPhotoUrl || ""} alt={name} />
           <AvatarFallback className="bg-fitness-primary text-white text-lg">
             {getInitials(name)}
           </AvatarFallback>
@@ -67,6 +72,20 @@ const ProfileHeader = ({ name, email, fitnessLevel, photoUrl }: ProfileHeaderPro
           </div>
         )}
       </div>
+
+      {/* Photo uploader modal */}
+      <Dialog open={showUploader} onOpenChange={setShowUploader}>
+        <DialogContent className="sm:max-w-md">
+          <ProfilePhotoUpload
+            currentPhotoUrl={localPhotoUrl}
+            onPhotoUpdated={(url) => {
+              setLocalPhotoUrl(url);
+              setShowUploader(false);
+            }}
+            userName={name}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
