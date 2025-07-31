@@ -28,7 +28,7 @@ const FitbitConnectionStatus = () => {
     });
   }, [toast]);
 
-  const checkConnection = async () => {
+  const checkConnection = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -36,6 +36,7 @@ const FitbitConnectionStatus = () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
+        setIsLoading(false);
         console.error('Session error:', sessionError);
         setIsConnected(false);
         return;
@@ -66,7 +67,7 @@ const FitbitConnectionStatus = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const handleConnect = useCallback(async () => {
     try {
@@ -233,7 +234,7 @@ const FitbitConnectionStatus = () => {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [toast, checkConnection, showToast]);
+  }, [checkConnection, showToast]);
 
   if (isLoading) {
     return (
