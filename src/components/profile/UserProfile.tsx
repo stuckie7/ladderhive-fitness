@@ -170,6 +170,7 @@ const UserProfile = ({ userData }: UserProfileProps) => {
                 chest={userData.profile?.chest}
                 waist={userData.profile?.waist}
                 hips={userData.profile?.hips}
+                onUpdated={() => window.location.reload()}
               />
             </div>
             <div className="space-y-2">
@@ -213,6 +214,7 @@ const UserProfile = ({ userData }: UserProfileProps) => {
               chest={userData.profile.chest}
               waist={userData.profile.waist}
               hips={userData.profile.hips}
+              onUpdated={() => window.location.reload()}
             />
           </CardContent>
         </Card>
