@@ -164,16 +164,6 @@ const UserProfile = ({ userData }: UserProfileProps) => {
               <FitnessGoals goals={userData.profile?.fitnessGoals || []} />
             </div>
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Body Measurements</h3>
-              <BodyMeasurements 
-                neck={userData.profile?.neck}
-                chest={userData.profile?.chest}
-                waist={userData.profile?.waist}
-                hips={userData.profile?.hips}
-                onUpdated={() => window.location.reload()}
-              />
-            </div>
-            <div className="space-y-2">
               <h3 className="text-sm font-medium">Health Integrations</h3>
               <FitbitConnectionStatus />
             </div>
