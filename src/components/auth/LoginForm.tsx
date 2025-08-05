@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from "@/context/AuthContext";
 
 const LoginForm = () => {
@@ -64,9 +64,9 @@ const LoginForm = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <a href="#" className="text-sm text-fitness-primary hover:underline">
+              <Link to="/forgot-password" className="text-sm text-fitness-primary hover:underline">
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <Input
               id="password"
