@@ -89,7 +89,7 @@ export default function AssignWorkoutPage() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('workout_schedules')
+        .from('scheduled_workouts')
         .insert([
           {
             user_id: selectedUserId,

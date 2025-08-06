@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Loader2, Footprints, Target } from "lucide-react";
+import { Loader2, Footprints, Target } from "lucide-react";
 import { AppTitle } from "@/components/ui/AppTitle";
 import { Progress } from "@/components/ui/progress";
 
@@ -7,7 +7,7 @@ interface DashboardHeaderProps {
   isLoading: boolean;
   fitbitStats: { [key: string]: any } | null;
   isFitbitConnected: boolean;
-  fitbitError: string | null;
+
   dailyStepGoal?: number;
   onStepGoalChange: (newGoal: number) => void;
 }
@@ -16,7 +16,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isLoading, 
   fitbitStats,
   isFitbitConnected,
-  fitbitError,
+
   dailyStepGoal = 10000,
   onStepGoalChange
 }) => {
@@ -26,12 +26,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <div>
           <AppTitle />
           <div className="text-xs text-slate-400 mt-1.5">
-            {fitbitError ? (
-              <p className="text-red-500/90 flex items-center">
-                <Zap className="mr-1.5 h-3.5 w-3.5" />
-                {fitbitError}
-              </p>
-            ) : isLoading && !fitbitStats ? (
+            {isLoading && !fitbitStats ? (
               <p className="flex items-center">
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 Loading Fitbit data...

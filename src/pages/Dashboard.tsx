@@ -26,7 +26,6 @@ const Dashboard: React.FC = () => {
     stats: fitbitStats, 
     isConnected: isFitbitConnected, 
     isLoading: fitbitLoading, 
-    error: fitbitError 
   } = useFitbitData();
   const { workouts: recentWorkouts, isLoading: recentWorkoutsLoading } = useWorkouts();
   const { weeklyData, isLoading: weeklyDataLoading } = useActivityProgress();
@@ -177,10 +176,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleRefresh = () => {
-    window.location.reload();
-  };
-
   const isLoading = profileLoading || isLoadingRandom || fitbitLoading || exercisesLoading || recentWorkoutsLoading || weeklyDataLoading;
 
   return (
@@ -190,7 +185,6 @@ const Dashboard: React.FC = () => {
           isLoading={isLoading}
           fitbitStats={fitbitStats}
           isFitbitConnected={isFitbitConnected}
-          fitbitError={fitbitError}
           dailyStepGoal={stepGoal}
           onStepGoalChange={handleStepGoalChange}
         />

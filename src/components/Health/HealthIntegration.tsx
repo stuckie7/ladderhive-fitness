@@ -197,7 +197,7 @@ const HealthIntegration: React.FC<HealthIntegrationProps> = ({ initialStepGoal =
             </>
           )}
           
-          {error && (
+          {error && isConnected && (
             <div className="mt-4 flex items-center gap-2 text-sm text-red-500">
               <AlertCircle className="h-4 w-4" />
               {error}

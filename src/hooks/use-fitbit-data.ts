@@ -84,8 +84,14 @@ export const useFitbitData = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Hit the profile endpoint; if it returns 401 we're not connected.
+      // Hit the profile endpoint; if it returns 401 we're simply not connected yet.
       const { error: profileError } = await invokeWithAuth('get-fitbit-profile', { method: 'GET' });
+
+      // A 401 status from the edge function means the user hasn't connected their Fitbit.
+      if ((profileError as any)?.status === 401) {
+        setIsConnected(false);
+        return;
+      }
 
       if (profileError) {
         console.error('Error fetching Fitbit profile:', profileError);
@@ -101,15 +107,10 @@ export const useFitbitData = () => {
       console.error('Error in checkConnectionAndFetch:', err);
       // If any part of the process fails, assume not connected 
       setIsConnected(false);
-      
-      // Only show error toast if it's not a 401 (which just means not connected)
-      if (err.status !== 401) {
+      // Only surface the error if it's not a 401 (which just means not connected yet)
+      if ((err as any)?.status !== 401) {
+        // Only surface the error in UI for connected users; avoid global toast
         setError(err.message || 'Failed to check Fitbit connection');
-        toast({
-          title: 'Error',
-          description: err.message || 'Failed to check Fitbit connection',
-          variant: 'destructive',
-        });
       }
     } finally {
       setIsLoading(false);
