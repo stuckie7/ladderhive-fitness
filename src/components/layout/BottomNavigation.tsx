@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { House, Dumbbell, Flame, Clock, MessageSquare, Menu, List, Bookmark, Calendar, PlayCircle, User, TrendingUp } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { House, Dumbbell, Flame, Clock, MessageSquare, Menu, List, Bookmark, Calendar, PlayCircle, User, TrendingUp, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,8 @@ import { AdminNavLink } from './AdminNavLink';
 export function BottomNavigation() {
   const location = useLocation();
   const exerciseNav = useExerciseLibraryNavigation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -23,6 +24,15 @@ export function BottomNavigation() {
     e.preventDefault();
     exerciseNav.goToExerciseLibrary();
   }
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (err) {
+      console.error('Error signing out:', err);
+    }
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -208,6 +218,15 @@ export function BottomNavigation() {
                 <AdminNavLink />
               </div>
             </div>
+                      <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full mt-6 flex items-center justify-center gap-2"
+              aria-label="Log out"
+            >
+              <LogOut size={20} />
+              <span className="font-medium">Log Out</span>
+            </Button>
           </SheetContent>
         </Sheet>
       </nav>
