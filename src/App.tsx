@@ -89,14 +89,8 @@ function App() {
               </PublicRoute>
             }
           />
-          <Route
-            path="/reset-password"
-            element={
-              <PublicRoute>
-                <ResetPassword />
-              </PublicRoute>
-            }
-          />
+          {/* Allow reset-password regardless of auth status */}
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/"
             element={
